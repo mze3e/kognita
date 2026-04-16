@@ -271,6 +271,88 @@ def get_available_models() -> dict[str, list[str]]:
     }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Pricing data and cost calculation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Pricing per 1M tokens (USD) - Updated for April 2026
+MODEL_PRICING = {
+    # Anthropic (Claude)
+    "claude-3-5-sonnet-20241022": {"input": 3.00, "output": 15.00, "provider": "Anthropic"},
+    "claude-3-5-haiku-20241022": {"input": 0.80, "output": 4.00, "provider": "Anthropic"},
+    "claude-opus-4-1-20250805": {"input": 15.00, "output": 45.00, "provider": "Anthropic"},
+    "claude-opus-1-20250220": {"input": 15.00, "output": 45.00, "provider": "Anthropic"},
+    
+    # OpenAI (GPT)
+    "gpt-4": {"input": 30.00, "output": 60.00, "provider": "OpenAI"},
+    "gpt-4-turbo": {"input": 10.00, "output": 30.00, "provider": "OpenAI"},
+    "gpt-4o": {"input": 5.00, "output": 15.00, "provider": "OpenAI"},
+    "gpt-4o-mini": {"input": 0.15, "output": 0.60, "provider": "OpenAI"},
+    "gpt-3.5-turbo": {"input": 0.50, "output": 1.50, "provider": "OpenAI"},
+    
+    # Groq (very cheap)
+    "mixtral-8x7b-32768": {"input": 0.27, "output": 0.81, "provider": "Groq"},
+    "llama-3.1-70b-versatile": {"input": 0.59, "output": 0.79, "provider": "Groq"},
+    "llama-3.1-8b-instant": {"input": 0.05, "output": 0.10, "provider": "Groq"},
+    "llama-3.3-70b-versatile": {"input": 0.59, "output": 0.79, "provider": "Groq"},
+    
+    # Google Gemini
+    "gemini-1.5-pro": {"input": 1.25, "output": 5.00, "provider": "Google"},
+    "gemini-1.5-flash": {"input": 0.075, "output": 0.30, "provider": "Google"},
+    "gemini-2.0-flash": {"input": 0.075, "output": 0.30, "provider": "Google"},
+}
+
+def get_model_pricing(model_name: str) -> dict:
+    """Get pricing for a specific model."""
+    return MODEL_PRICING.get(model_name, {"input": 0, "output": 0, "provider": "Unknown"})
+
+def estimate_tokens_for_chunk(chunk: str) -> int:
+    """Rough estimate of tokens in a chunk (1 token ≈ 4 characters)."""
+    return len(chunk) // 4
+
+def estimate_total_tokens(chunks: list[str]) -> tuple[int, int]:
+    """Estimate total input and output tokens for processing."""
+    # Input tokens: all chunks combined
+    input_tokens = sum(estimate_tokens_for_chunk(chunk) for chunk in chunks)
+    
+    # Output tokens: assume ~200 tokens per chunk for entity extraction
+    # (This is a rough estimate; actual will vary)
+    output_tokens = len(chunks) * 200
+    
+    return input_tokens, output_tokens
+
+def calculate_processing_cost(chunks: list[str], model_name: str) -> dict:
+    """Calculate estimated cost for processing chunks."""
+    pricing = get_model_pricing(model_name)
+    input_tokens, output_tokens = estimate_total_tokens(chunks)
+    
+    input_cost = (input_tokens / 1_000_000) * pricing.get("input", 0)
+    output_cost = (output_tokens / 1_000_000) * pricing.get("output", 0)
+    total_cost = input_cost + output_cost
+    
+    return {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": input_tokens + output_tokens,
+        "input_cost": input_cost,
+        "output_cost": output_cost,
+        "total_cost": total_cost,
+        "provider": pricing.get("provider", "Unknown")
+    }
+
+def get_all_models_with_pricing() -> pd.DataFrame:
+    """Get all available models with pricing info."""
+    models_data = []
+    for model_name, pricing in MODEL_PRICING.items():
+        models_data.append({
+            "Model": model_name,
+            "Provider": pricing.get("provider", "Unknown"),
+            "Input Cost (per 1M tokens)": f"${pricing.get('input', 0):.2f}",
+            "Output Cost (per 1M tokens)": f"${pricing.get('output', 0):.2f}",
+            "Avg Cost (per 1M tokens)": f"${(pricing.get('input', 0) + pricing.get('output', 0)) / 2:.2f}"
+        })
+    return pd.DataFrame(models_data).sort_values("Provider")
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Page config
 # ═══════════════════════════════════════════════════════════════════════════════
 st.set_page_config(
@@ -401,6 +483,25 @@ with st.sidebar:
 
         # Store the selected processing model in session state
         st.session_state.processing_model = processing_model
+        
+        # Extract actual model name from display name
+        import re
+        match = re.search(r'\(([^)]+)\)', processing_model)
+        actual_model_name = match.group(1) if match else processing_model
+        
+        # Display pricing for selected model
+        pricing_info = get_model_pricing(actual_model_name)
+        if pricing_info.get("input", 0) > 0:
+            st.metric(
+                "💰 Cost per 1M tokens",
+                f"Input: ${pricing_info['input']:.2f} | Output: ${pricing_info['output']:.2f}"
+            )
+        
+        # Add button to show pricing modal
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            if st.button("📊 See All Pricing", help="View pricing for all available models"):
+                st.session_state.show_pricing_modal = True
     else:
         st.error("No models available for processing")
         processing_model = None
@@ -852,6 +953,26 @@ def execute_kuzu_query(query: str, db_path: str) -> list:
     except Exception as e:
         return [{"error": str(e)}]
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Pricing Modal Dialog
+# ═══════════════════════════════════════════════════════════════════════════════
+if "show_pricing_modal" not in st.session_state:
+    st.session_state.show_pricing_modal = False
+
+if st.session_state.show_pricing_modal:
+    with st.expander("📊 **Model Pricing Comparison**", expanded=True):
+        st.markdown("### All Available Models and Their Costs")
+        pricing_df = get_all_models_with_pricing()
+        st.dataframe(
+            pricing_df,
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.info("💡 **Tip:** Groq models are the cheapest option for most tasks. Click 'See All Pricing' again to close this view.")
+        if st.button("Close Pricing View"):
+            st.session_state.show_pricing_modal = False
+            st.rerun()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Two-column layout
