@@ -10,7 +10,10 @@ import os
 import hashlib
 import shutil
 import tempfile
+from collections import Counter
 from datetime import datetime
+from pathlib import Path
+import re
 import requests
 
 import fitz  # PyMuPDF
@@ -64,7 +67,7 @@ def get_saved_graphs() -> list[dict]:
                         with open(metadata_file, 'r') as f:
                             metadata = json.load(f)
                         saved_graphs.append(metadata)
-                    except:
+                    except Exception:
                         continue
     return sorted(saved_graphs, key=lambda x: x.get('processed_at', ''), reverse=True)
 
@@ -175,7 +178,7 @@ def is_pdf_already_processed(pdf_bytes: bytes) -> str:
                             metadata = json.load(f)
                         if metadata.get("pdf_hash") == pdf_hash:
                             return graph_dir
-                    except:
+                    except Exception:
                         continue
     return None
 
@@ -256,6 +259,7 @@ def get_gemini_models(api_key: str) -> list[str]:
         print(f"Error fetching Gemini models: {e}")
         return []
 
+@st.cache_data(ttl=300)
 def get_available_models() -> dict[str, list[str]]:
     """Get available models for all providers."""
     anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
@@ -485,9 +489,8 @@ with st.sidebar:
         st.session_state.processing_model = processing_model
         
         # Extract actual model name from display name
-        import re
-        match = re.search(r'\(([^)]+)\)', processing_model)
-        actual_model_name = match.group(1) if match else processing_model
+        actual_model_name = re.search(r'\(([^)]+)\)', processing_model)
+        actual_model_name = actual_model_name.group(1) if actual_model_name else processing_model
         
         # Display pricing for selected model
         pricing_info = get_model_pricing(actual_model_name)
@@ -550,6 +553,8 @@ with st.sidebar:
     st.markdown("## 📄 Chunking")
     chunk_size    = st.slider("Words per chunk",  80, 500, 220, 20)
     chunk_overlap = st.slider("Overlap words",     0,  80,  25,  5)
+    if chunk_overlap >= chunk_size:
+        st.error("⚠️ Overlap must be less than chunk size.")
 
     st.divider()
     st.markdown("## 🎨 Visualisation")
@@ -592,16 +597,38 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
     return chunks
 
 
+def extract_model_name(display_name: str) -> str:
+    """Extract the actual model name from display name.
+    
+    Handles two formats:
+    - With parentheses: "Claude Sonnet (claude-3-5-sonnet-20241022)" → "claude-3-5-sonnet-20241022"
+    - Without parentheses: "Anthropic claude-opus-4-7" → "claude-opus-4-7"
+    """
+    # Try to extract from parentheses first
+    match = re.search(r'\(([^)]+)\)', display_name)
+    if match:
+        return match.group(1)
+    
+    # If no parentheses, strip off provider prefix
+    # Providers: "Anthropic ", "Claude ", "GPT-4 ", "GPT-3.5 Turbo ", "Llama ", "Mixtral ", "Gemini Pro ", "Gemini Flash ", etc.
+    prefixes = [
+        "Anthropic ", "Claude Sonnet ", "Claude Haiku ", 
+        "GPT-4 ", "GPT-3.5 Turbo ", 
+        "Llama ", "Mixtral ", 
+        "Gemini Pro ", "Gemini Flash ", "Gemini ", "OpenAI ", "Groq "
+    ]
+    for prefix in prefixes:
+        if display_name.startswith(prefix):
+            return display_name[len(prefix):].strip()
+    
+    # If no known prefix, return as-is
+    return display_name
+
 def make_graphiti(provider: str, api_key: str, db_path: str, model: str) -> Graphiti:
     """Create a Graphiti instance with the specified LLM provider and model."""
 
-    # Extract actual model name from display name (format: "Display Name (actual-model-name)")
-    import re
-    match = re.search(r'\(([^)]+)\)', model)
-    if match:
-        actual_model = match.group(1)
-    else:
-        actual_model = model  # Fallback if no parentheses found
+    # Extract actual model name from display name
+    actual_model = extract_model_name(model)
 
     # Determine embedder (always use OpenAI for embeddings for now, as Graphiti expects it)
     embedder = OpenAIEmbedder(
@@ -701,7 +728,8 @@ async def ingest_pdf(
             quota_keywords = [
                 'quota', 'rate limit', '429', 'exceeded', 'limit exceeded',
                 'insufficient_quota', 'billing_hard_limit_reached',
-                'quota_exceeded', 'usage limit', 'rate limit exceeded'
+                'quota_exceeded', 'usage limit', 'rate limit exceeded',
+                '404', 'not_found', 'model not found', 'model: '
             ]
             if any(keyword in error_str for keyword in quota_keywords):
                 quota_exceeded = True
@@ -738,12 +766,7 @@ async def search_graph(
 
 
 def run_async(coro):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+    return asyncio.run(coro)
 
 
 def build_pyvis_html(
@@ -815,9 +838,13 @@ def build_pyvis_html(
             width=1.5,
         )
 
-    with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as f:
-        net.save_graph(f.name)
-        return Path(f.name).read_text()
+    tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False)
+    tmp.close()
+    try:
+        net.save_graph(tmp.name)
+        return Path(tmp.name).read_text(encoding="utf-8")
+    finally:
+        os.unlink(tmp.name)
 
 
 async def generate_llm_response(
@@ -852,13 +879,7 @@ Answer:"""
 
     try:
         if provider == "anthropic":
-            # Extract actual model name from display name
-            import re
-            match = re.search(r'\(([^)]+)\)', selected_model)
-            if match:
-                actual_model = match.group(1)
-            else:
-                actual_model = "claude-3-5-sonnet-20241022"  # fallback
+            actual_model = extract_model_name(selected_model) or "claude-3-5-sonnet-20241022"
 
             llm_client = AnthropicClient(
                 config=LLMConfig(
@@ -873,15 +894,8 @@ Answer:"""
             return response.content[0].text if response.content else "No response generated."
 
         elif provider == "openai":
-            # Extract actual model name from display name
-            import re
-            match = re.search(r'\(([^)]+)\)', selected_model)
-            if match:
-                actual_model = match.group(1)
-            else:
-                actual_model = "gpt-4"  # fallback
+            actual_model = extract_model_name(selected_model) or "gpt-4"
 
-            import openai
             client = openai.AsyncOpenAI(api_key=api_key)
             response = await client.chat.completions.create(
                 model=actual_model,
@@ -891,15 +905,8 @@ Answer:"""
             return response.choices[0].message.content if response.choices else "No response generated."
 
         elif provider == "groq":
-            # Extract actual model name from display name
-            import re
-            match = re.search(r'\(([^)]+)\)', selected_model)
-            if match:
-                actual_model = match.group(1)
-            else:
-                actual_model = "llama3-70b-8192"  # fallback
+            actual_model = extract_model_name(selected_model) or "llama3-70b-8192"
 
-            import openai
             client = openai.AsyncOpenAI(
                 api_key=api_key,
                 base_url="https://api.groq.com/openai/v1"
@@ -915,13 +922,7 @@ Answer:"""
             if genai is None:
                 return "Gemini library not available. Please install google-generativeai."
 
-            # Extract actual model name from display name
-            import re
-            match = re.search(r'\(([^)]+)\)', selected_model)
-            if match:
-                actual_model = match.group(1)
-            else:
-                actual_model = "gemini-1.5-pro"  # fallback
+            actual_model = extract_model_name(selected_model) or "gemini-1.5-pro"
 
             genai.configure(api_key=api_key)
             gemini_model = genai.GenerativeModel(actual_model)
@@ -936,22 +937,15 @@ Answer:"""
 
 
 def execute_kuzu_query(query: str, db_path: str) -> list:
-    """Execute a direct Kuzu query and return results."""
-    try:
-        # For now, provide some basic queries that we can handle
-        # In a full implementation, you'd use KuzuDriver's query methods
-        if "COUNT" in query.upper() and "NODE" in query.upper():
-            # Mock count query - in real implementation, execute actual query
-            return [{"node_count": 42}]  # Placeholder
-        elif "COUNT" in query.upper() and "EDGE" in query.upper():
-            return [{"edge_count": 156}]  # Placeholder
-        elif "LABELS" in query.upper():
-            return [{"labels": ["Entity", "Episode"]}]  # Placeholder
-        else:
-            # For other queries, return a message
-            return [{"result": f"Query executed: {query}", "status": "Mock result - full Kuzu integration needed"}]
-    except Exception as e:
-        return [{"error": str(e)}]
+    """Execute a direct Kuzu query and return results.
+
+    NOTE: Direct Kuzu query execution is not yet implemented.
+    Use the semantic search in the Search Graph section instead.
+    """
+    raise NotImplementedError(
+        f"Direct Kuzu query execution is not yet implemented (query: {query!r}). "
+        "Use the 'Search Graph' section for semantic queries against the knowledge graph."
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1061,16 +1055,16 @@ with left:
                 st.stop()
 
             # Determine provider and API key for processing
-            if "Anthropic" in processing_model:
+            if "Anthropic" in processing_model or "Claude" in processing_model:
                 processing_provider = "anthropic"
                 processing_api_key = anthropic_key
-            elif "OpenAI" in processing_model:
+            elif "OpenAI" in processing_model or "GPT" in processing_model:
                 processing_provider = "openai"
                 processing_api_key = openai_key
-            elif "Groq" in processing_model:
+            elif "Groq" in processing_model or "Llama" in processing_model or "Mixtral" in processing_model:
                 processing_provider = "groq"
                 processing_api_key = groq_key
-            elif "Google" in processing_model:
+            elif "Google" in processing_model or "Gemini" in processing_model:
                 processing_provider = "gemini"
                 processing_api_key = gemini_key
             else:
@@ -1151,16 +1145,16 @@ with left:
                 try:
                     # Use the same model as used for processing
                     processing_model = st.session_state.get("processing_model", "Claude Sonnet (Anthropic)")
-                    if "Anthropic" in processing_model:
+                    if "Anthropic" in processing_model or "Claude" in processing_model:
                         search_provider = "anthropic"
                         search_api_key = anthropic_key
-                    elif "OpenAI" in processing_model:
+                    elif "OpenAI" in processing_model or "GPT" in processing_model:
                         search_provider = "openai"
                         search_api_key = openai_key
-                    elif "Groq" in processing_model:
+                    elif "Groq" in processing_model or "Llama" in processing_model or "Mixtral" in processing_model:
                         search_provider = "groq"
                         search_api_key = groq_key
-                    elif "Google" in processing_model:
+                    elif "Google" in processing_model or "Gemini" in processing_model:
                         search_provider = "gemini"
                         search_api_key = gemini_key
                     else:
@@ -1353,18 +1347,21 @@ with right:
             )
 
             # Determine provider and API key based on selected model
-            if "Anthropic" in selected_model:
+            if "Anthropic" in selected_model or "Claude" in selected_model:
                 provider = "anthropic"
                 api_key = anthropic_key
-            elif "OpenAI" in selected_model:
+            elif "OpenAI" in selected_model or "GPT" in selected_model:
                 provider = "openai"
                 api_key = openai_key
-            elif "Groq" in selected_model:
+            elif "Groq" in selected_model or "Llama" in selected_model or "Mixtral" in selected_model:
                 provider = "groq"
                 api_key = groq_key
-            elif "Google" in selected_model:
+            elif "Google" in selected_model or "Gemini" in selected_model:
                 provider = "gemini"
                 api_key = gemini_key
+            else:
+                provider = ""
+                api_key = ""
 
             st.info(f"🤖 Using {provider.upper()} for LLM playground with model: {selected_model}")
 
@@ -1396,7 +1393,7 @@ with right:
             )
 
             if st.button("💬 Send", use_container_width=True) and chat_input.strip():
-                if not selected_key:
+                if not api_key:
                     st.error("Please set the API key for the selected LLM provider.")
                 else:
                     # Add user message to history
@@ -1406,16 +1403,16 @@ with right:
                         try:
                             # Search the graph using the processing model
                             processing_model = st.session_state.get("processing_model", "Claude Sonnet (Anthropic)")
-                            if "Anthropic" in processing_model:
+                            if "Anthropic" in processing_model or "Claude" in processing_model:
                                 search_provider = "anthropic"
                                 search_api_key = anthropic_key
-                            elif "OpenAI" in processing_model:
+                            elif "OpenAI" in processing_model or "GPT" in processing_model:
                                 search_provider = "openai"
                                 search_api_key = openai_key
-                            elif "Groq" in processing_model:
+                            elif "Groq" in processing_model or "Llama" in processing_model or "Mixtral" in processing_model:
                                 search_provider = "groq"
                                 search_api_key = groq_key
-                            elif "Google" in processing_model:
+                            elif "Google" in processing_model or "Gemini" in processing_model:
                                 search_provider = "gemini"
                                 search_api_key = gemini_key
                             else:
@@ -1475,20 +1472,14 @@ with right:
                 )
 
             if st.button("🔍 Execute Query", use_container_width=True) and kuzu_query.strip():
-                with st.spinner("Executing query..."):
-                    try:
-                        results = execute_kuzu_query(kuzu_query, st.session_state.db_path)
-                        st.success(f"Query executed successfully! Found {len(results)} results.")
-
-                        if results:
-                            # Display results in a nice format
-                            df = pd.DataFrame(results)
-                            st.dataframe(df, use_container_width=True)
-                        else:
-                            st.info("No results found.")
-
-                    except Exception as exc:
-                        st.error(f"Query error: {exc}")
+                try:
+                    results = execute_kuzu_query(kuzu_query, st.session_state.db_path)
+                    df = pd.DataFrame(results)
+                    st.dataframe(df, use_container_width=True)
+                except NotImplementedError as exc:
+                    st.warning(f"⚠️ {exc}")
+                except Exception as exc:
+                    st.error(f"Query error: {exc}")
 
             # Example Queries Section
             with st.expander("📚 Example Queries & Tips"):
