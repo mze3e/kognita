@@ -207,4 +207,4 @@ marimo/_lsp/
 __marimo__/
 
 # Local graph data storage (added by Kognita for caching processed graphs)
-saved_graphs/
+.saved_graphs/

@@ -11,6 +11,7 @@ import hashlib
 import shutil
 import tempfile
 from datetime import datetime
+import requests
 
 import fitz  # PyMuPDF
 import streamlit as st
@@ -39,7 +40,7 @@ from graphiti_core.nodes import EntityNode, EpisodeType
 # ═══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ═══════════════════════════════════════════════════════════════════════════════
-SAVED_GRAPHS_DIR = "saved_graphs"
+SAVED_GRAPHS_DIR = ".saved_graphs"
 os.makedirs(SAVED_GRAPHS_DIR, exist_ok=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -179,6 +180,97 @@ def is_pdf_already_processed(pdf_bytes: bytes) -> str:
     return None
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Model fetching functions
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def get_anthropic_models(api_key: str) -> list[str]:
+    """Fetch available models from Anthropic API."""
+    if not api_key:
+        return []
+    try:
+        headers = {
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01"
+        }
+        response = requests.get("https://api.anthropic.com/v1/models", headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            return [model["id"] for model in data.get("data", [])]
+        else:
+            print(f"Failed to fetch Anthropic models: {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"Error fetching Anthropic models: {e}")
+        return []
+
+def get_openai_models(api_key: str) -> list[str]:
+    """Fetch available models from OpenAI API."""
+    if not api_key:
+        return []
+    try:
+        headers = {"Authorization": f"Bearer {api_key}"}
+        response = requests.get("https://api.openai.com/v1/models", headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            # Filter for chat models
+            chat_models = [model["id"] for model in data.get("data", []) if model["id"].startswith(("gpt-", "chatgpt-"))]
+            return sorted(chat_models)
+        else:
+            print(f"Failed to fetch OpenAI models: {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"Error fetching OpenAI models: {e}")
+        return []
+
+def get_groq_models(api_key: str) -> list[str]:
+    """Fetch available models from Groq API (OpenAI-compatible)."""
+    if not api_key:
+        return []
+    try:
+        headers = {"Authorization": f"Bearer {api_key}"}
+        response = requests.get("https://api.groq.com/openai/v1/models", headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            return [model["id"] for model in data.get("data", [])]
+        else:
+            print(f"Failed to fetch Groq models: {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"Error fetching Groq models: {e}")
+        return []
+
+def get_gemini_models(api_key: str) -> list[str]:
+    """Fetch available models from Google Gemini API."""
+    if not api_key:
+        return []
+    try:
+        headers = {"x-goog-api-key": api_key}
+        response = requests.get("https://generativelanguage.googleapis.com/v1beta/models", headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            return [model["name"].replace("models/", "") for model in data.get("models", []) if "generateContent" in model.get("supportedGenerationMethods", [])]
+        else:
+            print(f"Failed to fetch Gemini models: {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"Error fetching Gemini models: {e}")
+        return []
+
+def get_available_models() -> dict[str, list[str]]:
+    """Get available models for all providers."""
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    openai_key = os.environ.get("OPENAI_API_KEY", "")
+    groq_key = os.environ.get("GROQ_API_KEY", "")
+    gemini_key = os.environ.get("GOOGLE_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
+
+    return {
+        "anthropic": get_anthropic_models(anthropic_key),
+        "openai": get_openai_models(openai_key),
+        "groq": get_groq_models(groq_key),
+        "gemini": get_gemini_models(gemini_key),
+    }
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Page config
 # ═══════════════════════════════════════════════════════════════════════════════
 st.set_page_config(
@@ -255,20 +347,45 @@ with st.sidebar:
     st.write(f"Gemini API Key: {'✅' if gemini_key else '❌'}")
 
     # Available models based on API keys
+    available_models_dict = get_available_models()
     available_models = []
-    if anthropic_key:
-        available_models.extend(["Claude Sonnet (Anthropic)", "Claude Haiku (Anthropic)"])
-    if openai_key:
-        available_models.extend(["GPT-4 (OpenAI)", "GPT-3.5 Turbo (OpenAI)"])
-    if groq_key:
-        available_models.extend(["Llama 3 70B (Groq)", "Mixtral 8x7B (Groq)"])
-    if gemini_key:
-        available_models.extend(["Gemini 1.5 Pro (Google)", "Gemini 1.5 Flash (Google)"])
+    
+    # Create user-friendly model names
+    for provider, models in available_models_dict.items():
+        for model in models:
+            if provider == "anthropic":
+                if "sonnet" in model.lower():
+                    available_models.append(f"Claude Sonnet ({model})")
+                elif "haiku" in model.lower():
+                    available_models.append(f"Claude Haiku ({model})")
+                else:
+                    available_models.append(f"Anthropic {model}")
+            elif provider == "openai":
+                if "gpt-4" in model:
+                    available_models.append(f"GPT-4 ({model})")
+                elif "gpt-3.5" in model:
+                    available_models.append(f"GPT-3.5 Turbo ({model})")
+                else:
+                    available_models.append(f"OpenAI {model}")
+            elif provider == "groq":
+                if "llama" in model.lower():
+                    available_models.append(f"Llama ({model})")
+                elif "mixtral" in model.lower():
+                    available_models.append(f"Mixtral ({model})")
+                else:
+                    available_models.append(f"Groq {model}")
+            elif provider == "gemini":
+                if "pro" in model.lower():
+                    available_models.append(f"Gemini Pro ({model})")
+                elif "flash" in model.lower():
+                    available_models.append(f"Gemini Flash ({model})")
+                else:
+                    available_models.append(f"Gemini {model}")
 
     if available_models:
         st.success(f"✅ {len(available_models)} models available")
     else:
-        st.error("❌ No API keys configured")
+        st.error("❌ No API keys configured or failed to fetch models")
 
     st.divider()
     st.markdown("## 🤖 Graph Processing Model")
@@ -377,6 +494,14 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
 def make_graphiti(provider: str, api_key: str, db_path: str, model: str) -> Graphiti:
     """Create a Graphiti instance with the specified LLM provider and model."""
 
+    # Extract actual model name from display name (format: "Display Name (actual-model-name)")
+    import re
+    match = re.search(r'\(([^)]+)\)', model)
+    if match:
+        actual_model = match.group(1)
+    else:
+        actual_model = model  # Fallback if no parentheses found
+
     # Determine embedder (always use OpenAI for embeddings for now, as Graphiti expects it)
     embedder = OpenAIEmbedder(
         config=OpenAIEmbedderConfig(
@@ -388,11 +513,6 @@ def make_graphiti(provider: str, api_key: str, db_path: str, model: str) -> Grap
 
     # Create LLM client based on provider
     if provider == "anthropic":
-        model_map = {
-            "Claude Sonnet (Anthropic)": "claude-sonnet-4-20250514",
-            "Claude Haiku (Anthropic)": "claude-3-5-haiku-20241022"
-        }
-        actual_model = model_map.get(model, "claude-sonnet-4-20250514")
         llm_client = AnthropicClient(
             config=LLMConfig(
                 api_key=api_key,
@@ -400,11 +520,6 @@ def make_graphiti(provider: str, api_key: str, db_path: str, model: str) -> Grap
             )
         )
     elif provider == "openai":
-        model_map = {
-            "GPT-4 (OpenAI)": "gpt-4",
-            "GPT-3.5 Turbo (OpenAI)": "gpt-3.5-turbo"
-        }
-        actual_model = model_map.get(model, "gpt-4")
         # For OpenAI, we need to use a compatible client
         from graphiti_core.llm_client.openai_client import OpenAIClient
         llm_client = OpenAIClient(
@@ -414,11 +529,6 @@ def make_graphiti(provider: str, api_key: str, db_path: str, model: str) -> Grap
             )
         )
     elif provider == "groq":
-        model_map = {
-            "Llama 3 70B (Groq)": "llama3-70b-8192",
-            "Mixtral 8x7B (Groq)": "mixtral-8x7b-32768"
-        }
-        actual_model = model_map.get(model, "llama3-70b-8192")
         # Groq uses OpenAI-compatible API
         from graphiti_core.llm_client.openai_generic_client import OpenAIGenericClient
         llm_client = OpenAIGenericClient(
@@ -429,11 +539,6 @@ def make_graphiti(provider: str, api_key: str, db_path: str, model: str) -> Grap
             )
         )
     elif provider == "gemini":
-        model_map = {
-            "Gemini 1.5 Pro (Google)": "gemini-1.5-pro",
-            "Gemini 1.5 Flash (Google)": "gemini-1.5-flash"
-        }
-        actual_model = model_map.get(model, "gemini-1.5-flash")
         from graphiti_core.llm_client.gemini_client import GeminiClient
         llm_client = GeminiClient(
             config=LLMConfig(
@@ -646,16 +751,18 @@ Answer:"""
 
     try:
         if provider == "anthropic":
-            model_map = {
-                "Claude Sonnet (Anthropic)": "claude-sonnet-4-20250514",
-                "Claude Haiku (Anthropic)": "claude-3-5-haiku-20241022"
-            }
-            model = model_map.get(selected_model, "claude-sonnet-4-20250514")
+            # Extract actual model name from display name
+            import re
+            match = re.search(r'\(([^)]+)\)', selected_model)
+            if match:
+                actual_model = match.group(1)
+            else:
+                actual_model = "claude-3-5-sonnet-20241022"  # fallback
 
             llm_client = AnthropicClient(
                 config=LLMConfig(
                     api_key=api_key,
-                    model=model,
+                    model=actual_model,
                 )
             )
             response = await llm_client.generate(
@@ -665,27 +772,31 @@ Answer:"""
             return response.content[0].text if response.content else "No response generated."
 
         elif provider == "openai":
-            model_map = {
-                "GPT-4 (OpenAI)": "gpt-4",
-                "GPT-3.5 Turbo (OpenAI)": "gpt-3.5-turbo"
-            }
-            model = model_map.get(selected_model, "gpt-4")
+            # Extract actual model name from display name
+            import re
+            match = re.search(r'\(([^)]+)\)', selected_model)
+            if match:
+                actual_model = match.group(1)
+            else:
+                actual_model = "gpt-4"  # fallback
 
             import openai
             client = openai.AsyncOpenAI(api_key=api_key)
             response = await client.chat.completions.create(
-                model=model,
+                model=actual_model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=1000
             )
             return response.choices[0].message.content if response.choices else "No response generated."
 
         elif provider == "groq":
-            model_map = {
-                "Llama 3 70B (Groq)": "llama3-70b-8192",
-                "Mixtral 8x7B (Groq)": "mixtral-8x7b-32768"
-            }
-            model = model_map.get(selected_model, "llama3-70b-8192")
+            # Extract actual model name from display name
+            import re
+            match = re.search(r'\(([^)]+)\)', selected_model)
+            if match:
+                actual_model = match.group(1)
+            else:
+                actual_model = "llama3-70b-8192"  # fallback
 
             import openai
             client = openai.AsyncOpenAI(
@@ -693,7 +804,7 @@ Answer:"""
                 base_url="https://api.groq.com/openai/v1"
             )
             response = await client.chat.completions.create(
-                model=model,
+                model=actual_model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=1000
             )
@@ -703,14 +814,16 @@ Answer:"""
             if genai is None:
                 return "Gemini library not available. Please install google-generativeai."
 
-            model_map = {
-                "Gemini 1.5 Pro (Google)": "gemini-1.5-pro",
-                "Gemini 1.5 Flash (Google)": "gemini-1.5-flash"
-            }
-            model = model_map.get(selected_model, "gemini-1.5-flash")
+            # Extract actual model name from display name
+            import re
+            match = re.search(r'\(([^)]+)\)', selected_model)
+            if match:
+                actual_model = match.group(1)
+            else:
+                actual_model = "gemini-1.5-pro"  # fallback
 
             genai.configure(api_key=api_key)
-            gemini_model = genai.GenerativeModel(model)
+            gemini_model = genai.GenerativeModel(actual_model)
             response = await gemini_model.generate_content_async(prompt)
             return response.text if response.text else "No response generated."
 
@@ -845,6 +958,11 @@ with left:
 
             # Debug: Show which provider is being used
             st.info(f"🔧 Using {processing_provider.upper()} for graph processing with model: {processing_model}")
+            st.info("ℹ️ Note: Embeddings always use OpenAI API, but LLM processing uses the selected provider")
+            if processing_api_key:
+                st.info(f"🔑 API key is set for {processing_provider.upper()}")
+            else:
+                st.error(f"❌ API key is NOT set for {processing_provider.upper()}")
 
             with st.spinner("Graphiti is working …"):
                 nodes, edges, ep_log, quota_exceeded = run_async(
@@ -1067,23 +1185,43 @@ with right:
             st.markdown("Interact with your knowledge graph using LLMs and explore Kuzu database functionalities.")
 
             # Get available models dynamically
-            anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
-            openai_key = os.environ.get("OPENAI_API_KEY", "")
-            groq_key = os.environ.get("GROQ_API_KEY", "")
-            gemini_key = os.environ.get("GOOGLE_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
-
+            available_models_dict = get_available_models()
             available_models = []
-            if anthropic_key:
-                available_models.extend(["Claude Sonnet (Anthropic)", "Claude Haiku (Anthropic)"])
-            if openai_key:
-                available_models.extend(["GPT-4 (OpenAI)", "GPT-3.5 Turbo (OpenAI)"])
-            if groq_key:
-                available_models.extend(["Llama 3 70B (Groq)", "Mixtral 8x7B (Groq)"])
-            if gemini_key:
-                available_models.extend(["Gemini 1.5 Pro (Google)", "Gemini 1.5 Flash (Google)"])
+            
+            # Create user-friendly model names
+            for provider, models in available_models_dict.items():
+                for model in models:
+                    if provider == "anthropic":
+                        if "sonnet" in model.lower():
+                            available_models.append(f"Claude Sonnet ({model})")
+                        elif "haiku" in model.lower():
+                            available_models.append(f"Claude Haiku ({model})")
+                        else:
+                            available_models.append(f"Anthropic {model}")
+                    elif provider == "openai":
+                        if "gpt-4" in model:
+                            available_models.append(f"GPT-4 ({model})")
+                        elif "gpt-3.5" in model:
+                            available_models.append(f"GPT-3.5 Turbo ({model})")
+                        else:
+                            available_models.append(f"OpenAI {model}")
+                    elif provider == "groq":
+                        if "llama" in model.lower():
+                            available_models.append(f"Llama ({model})")
+                        elif "mixtral" in model.lower():
+                            available_models.append(f"Mixtral ({model})")
+                        else:
+                            available_models.append(f"Groq {model}")
+                    elif provider == "gemini":
+                        if "pro" in model.lower():
+                            available_models.append(f"Gemini Pro ({model})")
+                        elif "flash" in model.lower():
+                            available_models.append(f"Gemini Flash ({model})")
+                        else:
+                            available_models.append(f"Gemini {model}")
 
             if not available_models:
-                st.error("❌ No API keys configured. Please set at least one API key in your environment variables.")
+                st.error("❌ No API keys configured or failed to fetch models.")
                 st.stop()
 
             # Model Selection
