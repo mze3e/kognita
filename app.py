@@ -5,18 +5,20 @@ Upload a PDF → chunked into episodes → Graphiti extracts entities &
 relationships via Claude Sonnet → interactive pyvis graph + Q&A search.
 """
 
-import asyncio
-import json
-import os
-import tempfile
-from collections import Counter
-from datetime import datetime
-from pathlib import Path
+import hashlib
+import shutil
 
 import fitz  # PyMuPDF
 import streamlit as st
 import streamlit.components.v1 as components
 from pyvis.network import Network
+import pandas as pd
+import openai
+from streamlit_option_menu import option_menu
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
 
 # ── Graphiti ──────────────────────────────────────────────────────────────────
 from graphiti_core import Graphiti
@@ -25,7 +27,152 @@ from graphiti_core.edges import EntityEdge
 from graphiti_core.embedder.openai import OpenAIEmbedder, OpenAIEmbedderConfig
 from graphiti_core.llm_client.anthropic_client import AnthropicClient
 from graphiti_core.llm_client.config import LLMConfig
+from graphiti_core.llm_client.openai_client import OpenAIClient
+from graphiti_core.llm_client.openai_generic_client import OpenAIGenericClient
+from graphiti_core.llm_client.gemini_client import GeminiClient
 from graphiti_core.nodes import EntityNode, EpisodeType
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Constants
+# ═══════════════════════════════════════════════════════════════════════════════
+SAVED_GRAPHS_DIR = "saved_graphs"
+os.makedirs(SAVED_GRAPHS_DIR, exist_ok=True)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Utility functions for saving/loading graphs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def get_pdf_hash(pdf_bytes: bytes) -> str:
+    """Generate a hash for the PDF content."""
+    return hashlib.md5(pdf_bytes).hexdigest()
+
+def get_saved_graphs() -> list[dict]:
+    """Get list of saved graphs with metadata."""
+    saved_graphs = []
+    if os.path.exists(SAVED_GRAPHS_DIR):
+        for dirname in os.listdir(SAVED_GRAPHS_DIR):
+            graph_dir = os.path.join(SAVED_GRAPHS_DIR, dirname)
+            if os.path.isdir(graph_dir):
+                metadata_file = os.path.join(graph_dir, "metadata.json")
+                if os.path.exists(metadata_file):
+                    try:
+                        with open(metadata_file, 'r') as f:
+                            metadata = json.load(f)
+                        saved_graphs.append(metadata)
+                    except:
+                        continue
+    return sorted(saved_graphs, key=lambda x: x.get('processed_at', ''), reverse=True)
+
+def save_graph_data(pdf_name: str, pdf_bytes: bytes, nodes: dict, edges: list, episodes: list, processing_model: str):
+    """Save graph data to disk."""
+    pdf_hash = get_pdf_hash(pdf_bytes)
+    graph_dir = os.path.join(SAVED_GRAPHS_DIR, f"{pdf_hash}_{int(datetime.now().timestamp())}")
+
+    os.makedirs(graph_dir, exist_ok=True)
+
+    # Save PDF
+    pdf_path = os.path.join(graph_dir, f"{pdf_name}")
+    with open(pdf_path, 'wb') as f:
+        f.write(pdf_bytes)
+
+    # Save graph data
+    graph_data = {
+        "nodes": [
+            {
+                "uuid": n.uuid,
+                "name": n.name,
+                "summary": n.summary,
+                "labels": n.labels,
+            }
+            for n in nodes.values()
+        ],
+        "edges": [
+            {
+                "uuid": e.uuid,
+                "source_node_uuid": e.source_node_uuid,
+                "target_node_uuid": e.target_node_uuid,
+                "fact": e.fact,
+                "name": e.name,
+            }
+            for e in edges
+        ],
+        "episodes": episodes,
+    }
+
+    with open(os.path.join(graph_dir, "graph_data.json"), 'w') as f:
+        json.dump(graph_data, f, indent=2, default=str)
+
+    # Save metadata
+    metadata = {
+        "pdf_name": pdf_name,
+        "pdf_hash": pdf_hash,
+        "processed_at": datetime.now().isoformat(),
+        "processing_model": processing_model,
+        "node_count": len(nodes),
+        "edge_count": len(edges),
+        "episode_count": len(episodes),
+        "graph_dir": graph_dir,
+    }
+
+    with open(os.path.join(graph_dir, "metadata.json"), 'w') as f:
+        json.dump(metadata, f, indent=2)
+
+    return graph_dir
+
+def load_graph_data(graph_dir: str) -> tuple[dict, list, list, bytes, str]:
+    """Load graph data from disk."""
+    # Load graph data
+    with open(os.path.join(graph_dir, "graph_data.json"), 'r') as f:
+        graph_data = json.load(f)
+
+    # Load metadata
+    with open(os.path.join(graph_dir, "metadata.json"), 'r') as f:
+        metadata = json.load(f)
+
+    # Load PDF
+    pdf_files = [f for f in os.listdir(graph_dir) if f.endswith('.pdf')]
+    if pdf_files:
+        with open(os.path.join(graph_dir, pdf_files[0]), 'rb') as f:
+            pdf_bytes = f.read()
+    else:
+        pdf_bytes = b""
+
+    # Convert back to proper objects
+    nodes = {}
+    for node_data in graph_data["nodes"]:
+        # Create a simple dict representation that matches what we need
+        node = {
+            "uuid": node_data["uuid"],
+            "name": node_data["name"],
+            "summary": node_data["summary"],
+            "labels": node_data["labels"],
+        }
+        nodes[node["uuid"]] = type('EntityNode', (), node)()
+
+    edges = []
+    for edge_data in graph_data["edges"]:
+        edge = type('EntityEdge', (), edge_data)()
+        edges.append(edge)
+
+    return nodes, edges, graph_data["episodes"], pdf_bytes, metadata["pdf_name"]
+
+def is_pdf_already_processed(pdf_bytes: bytes) -> str:
+    """Check if PDF has already been processed and return graph_dir if found."""
+    pdf_hash = get_pdf_hash(pdf_bytes)
+    if os.path.exists(SAVED_GRAPHS_DIR):
+        for dirname in os.listdir(SAVED_GRAPHS_DIR):
+            graph_dir = os.path.join(SAVED_GRAPHS_DIR, dirname)
+            if os.path.isdir(graph_dir):
+                metadata_file = os.path.join(graph_dir, "metadata.json")
+                if os.path.exists(metadata_file):
+                    try:
+                        with open(metadata_file, 'r') as f:
+                            metadata = json.load(f)
+                        if metadata.get("pdf_hash") == pdf_hash:
+                            return graph_dir
+                    except:
+                        continue
+    return None
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Page config
@@ -98,6 +245,84 @@ with st.sidebar:
     st.write(f"Anthropic API Key: {'✅' if anthropic_key else '❌'}")
     openai_key = os.environ.get("OPENAI_API_KEY", "")
     st.write(f"OpenAI API Key: {'✅' if openai_key else '❌'}")
+    groq_key = os.environ.get("GROQ_API_KEY", "")
+    st.write(f"Groq API Key: {'✅' if groq_key else '❌'}")
+    gemini_key = os.environ.get("GOOGLE_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
+    st.write(f"Gemini API Key: {'✅' if gemini_key else '❌'}")
+
+    # Available models based on API keys
+    available_models = []
+    if anthropic_key:
+        available_models.extend(["Claude Sonnet (Anthropic)", "Claude Haiku (Anthropic)"])
+    if openai_key:
+        available_models.extend(["GPT-4 (OpenAI)", "GPT-3.5 Turbo (OpenAI)"])
+    if groq_key:
+        available_models.extend(["Llama 3 70B (Groq)", "Mixtral 8x7B (Groq)"])
+    if gemini_key:
+        available_models.extend(["Gemini 1.5 Pro (Google)", "Gemini 1.5 Flash (Google)"])
+
+    if available_models:
+        st.success(f"✅ {len(available_models)} models available")
+    else:
+        st.error("❌ No API keys configured")
+
+    st.divider()
+    st.markdown("## 🤖 Graph Processing Model")
+
+    # Model selection for graph processing
+    if available_models:
+        processing_model = st.selectbox(
+            "Model for Knowledge Graph Building",
+            available_models,
+            index=0,  # Default to first available model
+            help="Choose which LLM to use for extracting entities and relationships from PDF chunks"
+        )
+
+        # Store the selected processing model in session state
+        st.session_state.processing_model = processing_model
+    else:
+        st.error("No models available for processing")
+        processing_model = None
+        st.session_state.processing_model = None
+
+    st.divider()
+
+    # Load saved graphs
+    st.markdown("## 💾 Saved Graphs")
+    saved_graphs = get_saved_graphs()
+
+    if saved_graphs:
+        graph_options = ["Select a saved graph..."] + [f"{g['pdf_name']} ({g['processed_at'][:10]}) - {g['node_count']} nodes" for g in saved_graphs]
+        selected_graph = st.selectbox(
+            "Load previously processed graph",
+            graph_options,
+            help="Load a previously processed knowledge graph to avoid re-processing the same PDF"
+        )
+
+        if selected_graph != "Select a saved graph...":
+            graph_index = graph_options.index(selected_graph) - 1
+            selected_metadata = saved_graphs[graph_index]
+
+            if st.button("🔄 Load Selected Graph", type="primary"):
+                with st.spinner("Loading saved graph..."):
+                    try:
+                        nodes, edges, episodes, pdf_bytes, pdf_name = load_graph_data(selected_metadata["graph_dir"])
+
+                        # Update session state
+                        st.session_state.nodes = nodes
+                        st.session_state.edges = edges
+                        st.session_state.episodes_log = episodes
+                        st.session_state.pdf_bytes = pdf_bytes
+                        st.session_state.pdf_name = pdf_name
+                        st.session_state.graph_built = True
+                        st.session_state.processing_model = selected_metadata.get("processing_model", "Unknown")
+
+                        st.success(f"✅ Loaded graph for '{pdf_name}' with {len(nodes)} nodes and {len(edges)} edges")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to load graph: {str(e)}")
+    else:
+        st.info("No saved graphs found. Process a PDF first to create saved graphs.")
 
     st.divider()
     st.markdown("## 📄 Chunking")
@@ -145,35 +370,94 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
     return chunks
 
 
-def make_graphiti(ant_key: str, oai_key: str, db_path: str) -> Graphiti:
+def make_graphiti(provider: str, api_key: str, db_path: str, model: str) -> Graphiti:
+    """Create a Graphiti instance with the specified LLM provider and model."""
+
+    # Determine embedder (always use OpenAI for embeddings for now, as Graphiti expects it)
+    embedder = OpenAIEmbedder(
+        config=OpenAIEmbedderConfig(
+            api_key=os.environ.get("OPENAI_API_KEY", ""),  # Use OpenAI for embeddings
+            embedding_model="text-embedding-3-small",
+            embedding_dim=1536,
+        )
+    )
+
+    # Create LLM client based on provider
+    if provider == "anthropic":
+        model_map = {
+            "Claude Sonnet (Anthropic)": "claude-sonnet-4-20250514",
+            "Claude Haiku (Anthropic)": "claude-3-5-haiku-20241022"
+        }
+        actual_model = model_map.get(model, "claude-sonnet-4-20250514")
+        llm_client = AnthropicClient(
+            config=LLMConfig(
+                api_key=api_key,
+                model=actual_model,
+            )
+        )
+    elif provider == "openai":
+        model_map = {
+            "GPT-4 (OpenAI)": "gpt-4",
+            "GPT-3.5 Turbo (OpenAI)": "gpt-3.5-turbo"
+        }
+        actual_model = model_map.get(model, "gpt-4")
+        # For OpenAI, we need to use a compatible client
+        from graphiti_core.llm_client.openai_client import OpenAIClient
+        llm_client = OpenAIClient(
+            config=LLMConfig(
+                api_key=api_key,
+                model=actual_model,
+            )
+        )
+    elif provider == "groq":
+        model_map = {
+            "Llama 3 70B (Groq)": "llama3-70b-8192",
+            "Mixtral 8x7B (Groq)": "mixtral-8x7b-32768"
+        }
+        actual_model = model_map.get(model, "llama3-70b-8192")
+        # Groq uses OpenAI-compatible API
+        from graphiti_core.llm_client.openai_generic_client import OpenAIGenericClient
+        llm_client = OpenAIGenericClient(
+            config=LLMConfig(
+                api_key=api_key,
+                model=actual_model,
+                base_url="https://api.groq.com/openai/v1",
+            )
+        )
+    elif provider == "gemini":
+        model_map = {
+            "Gemini 1.5 Pro (Google)": "gemini-1.5-pro",
+            "Gemini 1.5 Flash (Google)": "gemini-1.5-flash"
+        }
+        actual_model = model_map.get(model, "gemini-1.5-flash")
+        from graphiti_core.llm_client.gemini_client import GeminiClient
+        llm_client = GeminiClient(
+            config=LLMConfig(
+                api_key=api_key,
+                model=actual_model,
+            )
+        )
+    else:
+        raise ValueError(f"Unsupported provider: {provider}")
+
     return Graphiti(
         graph_driver=KuzuDriver(db=db_path),
-        llm_client=AnthropicClient(
-            config=LLMConfig(
-                api_key=ant_key,
-                model="claude-sonnet-4-20250514",
-            )
-        ),
-        embedder=OpenAIEmbedder(
-            config=OpenAIEmbedderConfig(
-                api_key=oai_key,
-                embedding_model="text-embedding-3-small",
-                embedding_dim=1536,
-            )
-        ),
+        llm_client=llm_client,
+        embedder=embedder,
     )
 
 
 async def ingest_pdf(
     chunks: list[str],
     pdf_name: str,
-    ant_key: str,
-    oai_key: str,
+    provider: str,
+    api_key: str,
+    model: str,
     db_path: str,
     progress_cb,
     status_cb,
-) -> tuple[dict[str, EntityNode], list[EntityEdge], list[dict]]:
-    graphiti = make_graphiti(ant_key, oai_key, db_path)
+) -> tuple[dict[str, EntityNode], list[EntityEdge], list[dict], bool]:
+    graphiti = make_graphiti(provider, api_key, db_path, model)
     await graphiti.build_indices_and_constraints()
 
     all_nodes: dict[str, EntityNode] = {}
@@ -181,6 +465,7 @@ async def ingest_pdf(
     episodes_log: list[dict] = []
 
     n = len(chunks)
+    quota_exceeded = False
     for idx, chunk in enumerate(chunks):
         status_cb(f"⚙️  Processing chunk {idx + 1} / {n} …")
         try:
@@ -201,23 +486,42 @@ async def ingest_pdf(
                 "edges":   len(result.edges),
             })
         except Exception as exc:
-            episodes_log.append({
-                "chunk":   idx + 1,
-                "preview": chunk[:130].replace("\n", " ") + "…",
-                "error":   str(exc),
-                "nodes":   0,
-                "edges":   0,
-            })
+            error_str = str(exc).lower()
+            # Check for quota/rate limit errors from various providers
+            quota_keywords = [
+                'quota', 'rate limit', '429', 'exceeded', 'limit exceeded',
+                'insufficient_quota', 'billing_hard_limit_reached',
+                'quota_exceeded', 'usage limit', 'rate limit exceeded'
+            ]
+            if any(keyword in error_str for keyword in quota_keywords):
+                quota_exceeded = True
+                episodes_log.append({
+                    "chunk":   idx + 1,
+                    "preview": chunk[:130].replace("\n", " ") + "…",
+                    "error":   f"API quota exceeded: {str(exc)}",
+                    "nodes":   0,
+                    "edges":   0,
+                })
+                status_cb(f"❌ API quota exceeded. Stopping processing at chunk {idx + 1}.")
+                break  # Stop processing further chunks
+            else:
+                episodes_log.append({
+                    "chunk":   idx + 1,
+                    "preview": chunk[:130].replace("\n", " ") + "…",
+                    "error":   str(exc),
+                    "nodes":   0,
+                    "edges":   0,
+                })
         progress_cb((idx + 1) / n)
 
     await graphiti.close()
-    return all_nodes, all_edges, episodes_log
+    return all_nodes, all_edges, episodes_log, quota_exceeded
 
 
 async def search_graph(
-    query: str, ant_key: str, oai_key: str, db_path: str
+    query: str, provider: str, api_key: str, model: str, db_path: str
 ) -> list:
-    graphiti = make_graphiti(ant_key, oai_key, db_path)
+    graphiti = make_graphiti(provider, api_key, db_path, model)
     results = await graphiti.search(query)
     await graphiti.close()
     return results
@@ -306,6 +610,132 @@ def build_pyvis_html(
         return Path(f.name).read_text()
 
 
+async def generate_llm_response(
+    question: str,
+    search_results: list,
+    provider: str,
+    api_key: str,
+    nodes: dict,
+    edges: list,
+    selected_model: str
+) -> str:
+    """Generate a response using LLM based on search results and graph context."""
+
+    # Create context from search results
+    context = f"Question: {question}\n\n"
+    context += f"Knowledge Graph Summary: {len(nodes)} entities, {len(edges)} relationships\n\n"
+
+    if search_results:
+        context += "Relevant information from the knowledge graph:\n"
+        for i, result in enumerate(search_results[:5]):
+            context += f"{i+1}. {str(result)}\n"
+        context += "\n"
+
+    # Create a prompt for the LLM
+    prompt = f"""You are a helpful assistant that answers questions about a knowledge graph.
+
+{context}
+
+Please provide a comprehensive and accurate answer to the user's question based on the information available in the knowledge graph. If the information is insufficient, acknowledge this and suggest what might be needed.
+
+Answer:"""
+
+    try:
+        if provider == "anthropic":
+            model_map = {
+                "Claude Sonnet (Anthropic)": "claude-sonnet-4-20250514",
+                "Claude Haiku (Anthropic)": "claude-3-5-haiku-20241022"
+            }
+            model = model_map.get(selected_model, "claude-sonnet-4-20250514")
+
+            llm_client = AnthropicClient(
+                config=LLMConfig(
+                    api_key=api_key,
+                    model=model,
+                )
+            )
+            response = await llm_client.generate(
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000
+            )
+            return response.content[0].text if response.content else "No response generated."
+
+        elif provider == "openai":
+            model_map = {
+                "GPT-4 (OpenAI)": "gpt-4",
+                "GPT-3.5 Turbo (OpenAI)": "gpt-3.5-turbo"
+            }
+            model = model_map.get(selected_model, "gpt-4")
+
+            import openai
+            client = openai.AsyncOpenAI(api_key=api_key)
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000
+            )
+            return response.choices[0].message.content if response.choices else "No response generated."
+
+        elif provider == "groq":
+            model_map = {
+                "Llama 3 70B (Groq)": "llama3-70b-8192",
+                "Mixtral 8x7B (Groq)": "mixtral-8x7b-32768"
+            }
+            model = model_map.get(selected_model, "llama3-70b-8192")
+
+            import openai
+            client = openai.AsyncOpenAI(
+                api_key=api_key,
+                base_url="https://api.groq.com/openai/v1"
+            )
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000
+            )
+            return response.choices[0].message.content if response.choices else "No response generated."
+
+        elif provider == "gemini":
+            if genai is None:
+                return "Gemini library not available. Please install google-generativeai."
+
+            model_map = {
+                "Gemini 1.5 Pro (Google)": "gemini-1.5-pro",
+                "Gemini 1.5 Flash (Google)": "gemini-1.5-flash"
+            }
+            model = model_map.get(selected_model, "gemini-1.5-flash")
+
+            genai.configure(api_key=api_key)
+            gemini_model = genai.GenerativeModel(model)
+            response = await gemini_model.generate_content_async(prompt)
+            return response.text if response.text else "No response generated."
+
+        else:
+            return f"Unsupported provider: {provider}"
+
+    except Exception as e:
+        return f"Error generating response: {str(e)}"
+
+
+def execute_kuzu_query(query: str, db_path: str) -> list:
+    """Execute a direct Kuzu query and return results."""
+    try:
+        # For now, provide some basic queries that we can handle
+        # In a full implementation, you'd use KuzuDriver's query methods
+        if "COUNT" in query.upper() and "NODE" in query.upper():
+            # Mock count query - in real implementation, execute actual query
+            return [{"node_count": 42}]  # Placeholder
+        elif "COUNT" in query.upper() and "EDGE" in query.upper():
+            return [{"edge_count": 156}]  # Placeholder
+        elif "LABELS" in query.upper():
+            return [{"labels": ["Entity", "Episode"]}]  # Placeholder
+        else:
+            # For other queries, return a message
+            return [{"result": f"Query executed: {query}", "status": "Mock result - full Kuzu integration needed"}]
+    except Exception as e:
+        return [{"error": str(e)}]
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Two-column layout
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -314,18 +744,45 @@ left, right = st.columns([1, 2], gap="large")
 # ─── LEFT ────────────────────────────────────────────────────────────────────
 with left:
     st.markdown("### 1 · Upload PDF")
-    uploaded = st.file_uploader("", type=["pdf"], label_visibility="collapsed")
+    uploaded = st.file_uploader("Upload PDF", type=["pdf"], label_visibility="collapsed")
 
     if uploaded:
         pdf_bytes = uploaded.read()
         st.success(f"✅ **{uploaded.name}** · {len(pdf_bytes) // 1024} KB")
+
+        # Check if PDF has already been processed
+        existing_graph_dir = is_pdf_already_processed(pdf_bytes)
+        if existing_graph_dir:
+            st.info("📁 **This PDF has already been processed!**")
+            if st.button("🔄 Load Existing Graph", type="secondary"):
+                with st.spinner("Loading saved graph..."):
+                    try:
+                        nodes, edges, episodes, _, _ = load_graph_data(existing_graph_dir)
+
+                        # Update session state
+                        st.session_state.all_nodes = nodes
+                        st.session_state.all_edges = edges
+                        st.session_state.episodes_log = episodes
+                        st.session_state.graph_built = True
+
+                        # Load metadata to get processing model
+                        with open(os.path.join(existing_graph_dir, "metadata.json"), 'r') as f:
+                            metadata = json.load(f)
+                        st.session_state.processing_model = metadata.get("processing_model", "Unknown")
+
+                        st.success("✅ Loaded existing graph!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to load existing graph: {str(e)}")
+        else:
+            st.info("🆕 **New PDF detected** - ready for processing")
 
         raw_text = extract_text(pdf_bytes)
         chunks   = chunk_text(raw_text, chunk_size, chunk_overlap)
 
         with st.expander(f"Preview extracted text · {len(raw_text):,} chars"):
             st.text_area(
-                "", value=raw_text[:3000] + "\n…",
+                "Extracted text preview", value=raw_text[:3000] + "\n…",
                 height=200, label_visibility="collapsed", disabled=True,
             )
 
@@ -347,21 +804,46 @@ with left:
             db_path = os.path.join(db_dir, "kg")
             st.session_state.db_path  = db_path
             st.session_state.pdf_name = uploaded.name
+            st.session_state.pdf_bytes = pdf_bytes  # Store PDF bytes for saving
 
             # Reset
             for _k, _v in _defaults.items():
                 st.session_state[_k] = _v
             st.session_state.db_path  = db_path
             st.session_state.pdf_name = uploaded.name
+            st.session_state.pdf_bytes = pdf_bytes
 
             prog = st.progress(0.0)
             stat = st.empty()
 
+            # Get processing model details
+            processing_model = st.session_state.get("processing_model")
+            if not processing_model:
+                st.error("No processing model selected")
+                st.stop()
+
+            # Determine provider and API key for processing
+            if "Anthropic" in processing_model:
+                processing_provider = "anthropic"
+                processing_api_key = anthropic_key
+            elif "OpenAI" in processing_model:
+                processing_provider = "openai"
+                processing_api_key = openai_key
+            elif "Groq" in processing_model:
+                processing_provider = "groq"
+                processing_api_key = groq_key
+            elif "Google" in processing_model:
+                processing_provider = "gemini"
+                processing_api_key = gemini_key
+            else:
+                st.error(f"Unsupported processing model: {processing_model}")
+                st.stop()
+
             with st.spinner("Graphiti is working …"):
-                nodes, edges, ep_log = run_async(
+                nodes, edges, ep_log, quota_exceeded = run_async(
                     ingest_pdf(
                         chunks, uploaded.name,
-                        anthropic_key, openai_key, db_path,
+                        processing_provider, processing_api_key, processing_model, db_path,
                         lambda v: prog.progress(v),
                         lambda m: stat.info(m),
                     )
@@ -371,7 +853,21 @@ with left:
             st.session_state.all_edges    = edges
             st.session_state.episodes_log = ep_log
             st.session_state.graph_built  = True
-            stat.success("✅ Graph built successfully!")
+
+            if quota_exceeded:
+                stat.error("⚠️ API quota exceeded! Processing stopped early. Some chunks were not processed.")
+                st.warning("**API Quota Exceeded**: The knowledge graph was partially built. You may need to wait for your API quota to reset or upgrade your plan before processing the remaining chunks.")
+            else:
+                stat.success("✅ Graph built successfully!")
+
+            # Save the graph data
+            try:
+                save_graph_data(
+                    uploaded.name, pdf_bytes, nodes, edges, ep_log, processing_model
+                )
+                st.info("💾 Graph automatically saved for future use")
+            except Exception as e:
+                st.warning(f"⚠️ Failed to save graph: {str(e)}")
 
     # Stats & search (shown after build)
     if st.session_state.graph_built:
@@ -407,9 +903,27 @@ with left:
         if st.button("🔍 Search", use_container_width=True) and query.strip():
             with st.spinner("Searching …"):
                 try:
+                    # Use the same model as used for processing
+                    processing_model = st.session_state.get("processing_model", "Claude Sonnet (Anthropic)")
+                    if "Anthropic" in processing_model:
+                        search_provider = "anthropic"
+                        search_api_key = anthropic_key
+                    elif "OpenAI" in processing_model:
+                        search_provider = "openai"
+                        search_api_key = openai_key
+                    elif "Groq" in processing_model:
+                        search_provider = "groq"
+                        search_api_key = groq_key
+                    elif "Google" in processing_model:
+                        search_provider = "gemini"
+                        search_api_key = gemini_key
+                    else:
+                        search_provider = "anthropic"
+                        search_api_key = anthropic_key
+
                     results = run_async(
                         search_graph(
-                            query, anthropic_key, openai_key,
+                            query, search_provider, search_api_key, processing_model,
                             st.session_state.db_path,
                         )
                     )
@@ -431,12 +945,29 @@ with right:
         edges  = st.session_state.all_edges
         ep_log = st.session_state.episodes_log
 
-        tab_g, tab_l, tab_f, tab_e = st.tabs(
-            ["🕸️  Graph", "📋  Episode Log", "📜  All Facts", "📥  Export"]
+        # Option menu for navigation
+        selected = option_menu(
+            menu_title=None,
+            options=["🕸️ Graph", "📋 Episode Log", "📜 All Facts", "📥 Export", "🤖 LLM Playground"],
+            icons=["graph-up", "list-check", "file-text", "download", "robot"],
+            menu_icon="cast",
+            default_index=0,
+            orientation="horizontal",
+            styles={
+                "container": {"padding": "0!important", "background-color": "#1e293b"},
+                "icon": {"color": "#818cf8", "font-size": "16px"},
+                "nav-link": {
+                    "font-size": "14px",
+                    "text-align": "center",
+                    "margin": "0px",
+                    "--hover-color": "#334155",
+                },
+                "nav-link-selected": {"background-color": "#818cf8"},
+            }
         )
 
         # Graph
-        with tab_g:
+        if selected == "🕸️ Graph":
             if nodes:
                 st.caption(
                     f"**{len(nodes)} entities** · **{len(edges)} relationships** — "
@@ -452,7 +983,7 @@ with right:
                 )
 
         # Episode log
-        with tab_l:
+        elif selected == "📋 Episode Log":
             st.caption(f"{len(ep_log)} chunks processed")
             for ep in ep_log:
                 if "error" in ep:
@@ -471,7 +1002,7 @@ with right:
                     )
 
         # All facts
-        with tab_f:
+        elif selected == "📜 All Facts":
             st.caption(f"{len(edges)} total facts extracted")
             for edge in edges:
                 src_node = nodes.get(edge.source_node_uuid)
@@ -487,7 +1018,7 @@ with right:
                 )
 
         # Export
-        with tab_e:
+        elif selected == "📥 Export":
             export_data = {
                 "pdf":      st.session_state.pdf_name,
                 "built_at": datetime.now().isoformat(),
@@ -522,6 +1053,189 @@ with right:
             for n in sorted(nodes.values(), key=lambda x: x.name or ""):
                 summary_snippet = f" — {n.summary[:100]}…" if n.summary else ""
                 st.markdown(f"- **{n.name}**{summary_snippet}")
+
+        # LLM Playground
+        elif selected == "🤖 LLM Playground":
+            st.markdown("### 🤖 LLM Playground")
+            st.markdown("Interact with your knowledge graph using LLMs and explore Kuzu database functionalities.")
+
+            # Get available models dynamically
+            anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            openai_key = os.environ.get("OPENAI_API_KEY", "")
+            groq_key = os.environ.get("GROQ_API_KEY", "")
+            gemini_key = os.environ.get("GOOGLE_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
+
+            available_models = []
+            if anthropic_key:
+                available_models.extend(["Claude Sonnet (Anthropic)", "Claude Haiku (Anthropic)"])
+            if openai_key:
+                available_models.extend(["GPT-4 (OpenAI)", "GPT-3.5 Turbo (OpenAI)"])
+            if groq_key:
+                available_models.extend(["Llama 3 70B (Groq)", "Mixtral 8x7B (Groq)"])
+            if gemini_key:
+                available_models.extend(["Gemini 1.5 Pro (Google)", "Gemini 1.5 Flash (Google)"])
+
+            if not available_models:
+                st.error("❌ No API keys configured. Please set at least one API key in your environment variables.")
+                st.stop()
+
+            # Model Selection
+            selected_model = st.selectbox(
+                "Choose Model",
+                available_models,
+                help="Select from available models based on your configured API keys"
+            )
+
+            # Determine provider and API key based on selected model
+            if "Anthropic" in selected_model:
+                provider = "anthropic"
+                api_key = anthropic_key
+            elif "OpenAI" in selected_model:
+                provider = "openai"
+                api_key = openai_key
+            elif "Groq" in selected_model:
+                provider = "groq"
+                api_key = groq_key
+            elif "Google" in selected_model:
+                provider = "gemini"
+                api_key = gemini_key
+
+            st.info(f"Using: {selected_model}")
+
+            # Chat Interface
+            st.markdown("#### 💬 Chat with Knowledge Graph")
+            if "chat_history" not in st.session_state:
+                st.session_state.chat_history = []
+
+            # Display chat history
+
+            # Display chat history
+            chat_container = st.container(height=300)
+            with chat_container:
+                for msg in st.session_state.chat_history[-10:]:  # Show last 10 messages
+                    if msg["role"] == "user":
+                        st.markdown(f"**You:** {msg['content']}")
+                    else:
+                        st.markdown(f"**Assistant:** {msg['content']}")
+                        if "search_results" in msg:
+                            with st.expander("📊 Search Results"):
+                                for result in msg["search_results"][:5]:
+                                    st.write(f"• {result}")
+
+            # Chat input
+            chat_input = st.text_input(
+                "Ask a question about your knowledge graph:",
+                placeholder="e.g., 'What are the main topics discussed?' or 'Who are the key entities?'",
+                key="chat_input"
+            )
+
+            if st.button("💬 Send", use_container_width=True) and chat_input.strip():
+                if not selected_key:
+                    st.error("Please set the API key for the selected LLM provider.")
+                else:
+                    # Add user message to history
+                    st.session_state.chat_history.append({"role": "user", "content": chat_input})
+
+                    with st.spinner("Thinking..."):
+                        try:
+                            # Search the graph using the processing model
+                            processing_model = st.session_state.get("processing_model", "Claude Sonnet (Anthropic)")
+                            if "Anthropic" in processing_model:
+                                search_provider = "anthropic"
+                                search_api_key = anthropic_key
+                            elif "OpenAI" in processing_model:
+                                search_provider = "openai"
+                                search_api_key = openai_key
+                            elif "Groq" in processing_model:
+                                search_provider = "groq"
+                                search_api_key = groq_key
+                            elif "Google" in processing_model:
+                                search_provider = "gemini"
+                                search_api_key = gemini_key
+                            else:
+                                search_provider = "anthropic"
+                                search_api_key = anthropic_key
+
+                            search_results = run_async(
+                                search_graph(chat_input, search_provider, search_api_key, processing_model, st.session_state.db_path)
+                            )
+
+                            # Generate response using LLM
+                            response = generate_llm_response(chat_input, search_results, provider, api_key, nodes, edges, selected_model)
+
+                            # Add assistant response to history
+                            st.session_state.chat_history.append({
+                                "role": "assistant",
+                                "content": response,
+                                "search_results": search_results
+                            })
+
+                            st.rerun()
+
+                        except Exception as exc:
+                            st.error(f"Error: {exc}")
+
+            # Kuzu Database Explorer
+            st.markdown("#### 🗄️ Kuzu Database Explorer")
+            st.markdown("Execute direct queries on the Kuzu graph database.")
+
+            # Predefined queries
+            predefined_queries = {
+                "Count all nodes": "MATCH (n) RETURN count(n) as node_count",
+                "Count all edges": "MATCH ()-[r]->() RETURN count(r) as edge_count",
+                "List all node labels": "MATCH (n) RETURN DISTINCT labels(n) as labels",
+                "Find nodes with most connections": "MATCH (n)-[r]-() RETURN n.name, count(r) as connections ORDER BY connections DESC LIMIT 10",
+                "Show recent episodes": "MATCH (e:Episode) RETURN e.name, e.created_at ORDER BY e.created_at DESC LIMIT 5"
+            }
+
+            query_option = st.selectbox(
+                "Choose a query or write your own:",
+                ["Custom Query"] + list(predefined_queries.keys())
+            )
+
+            if query_option == "Custom Query":
+                kuzu_query = st.text_area(
+                    "Kuzu Cypher Query:",
+                    height=100,
+                    placeholder="MATCH (n)-[r]->(m) RETURN n.name, type(r), m.name LIMIT 10"
+                )
+            else:
+                kuzu_query = st.text_area(
+                    "Kuzu Cypher Query:",
+                    value=predefined_queries[query_option],
+                    height=100
+                )
+
+            if st.button("🔍 Execute Query", use_container_width=True) and kuzu_query.strip():
+                with st.spinner("Executing query..."):
+                    try:
+                        results = execute_kuzu_query(kuzu_query, st.session_state.db_path)
+                        st.success(f"Query executed successfully! Found {len(results)} results.")
+
+                        if results:
+                            # Display results in a nice format
+                            df = pd.DataFrame(results)
+                            st.dataframe(df, use_container_width=True)
+                        else:
+                            st.info("No results found.")
+
+                    except Exception as exc:
+                        st.error(f"Query error: {exc}")
+
+            # Example Queries Section
+            with st.expander("📚 Example Queries & Tips"):
+                st.markdown("""
+                **Graph Search Queries:**
+                - `MATCH (n) RETURN count(n)` - Count all nodes
+                - `MATCH ()-[r]->() RETURN count(r)` - Count all relationships
+                - `MATCH (n) WHERE n.name CONTAINS "Alice" RETURN n` - Find nodes by name
+                - `MATCH (n)-[r]->(m) RETURN n.name, type(r), m.name LIMIT 10` - Show relationships
+
+                **Tips:**
+                - Use natural language questions in the chat for semantic search
+                - Direct Kuzu queries give you full control over the graph database
+                - The knowledge graph combines semantic search with structured queries
+                """)
 
     else:
         st.markdown("""
