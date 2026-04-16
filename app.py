@@ -843,6 +843,9 @@ with left:
                 st.error(f"Unsupported processing model: {processing_model}")
                 st.stop()
 
+            # Debug: Show which provider is being used
+            st.info(f"🔧 Using {processing_provider.upper()} for graph processing with model: {processing_model}")
+
             with st.spinner("Graphiti is working …"):
                 nodes, edges, ep_log, quota_exceeded = run_async(
                     ingest_pdf(
@@ -1104,7 +1107,7 @@ with right:
                 provider = "gemini"
                 api_key = gemini_key
 
-            st.info(f"Using: {selected_model}")
+            st.info(f"🤖 Using {provider.upper()} for LLM playground with model: {selected_model}")
 
             # Chat Interface
             st.markdown("#### 💬 Chat with Knowledge Graph")
@@ -1165,7 +1168,9 @@ with right:
                             )
 
                             # Generate response using LLM
-                            response = generate_llm_response(chat_input, search_results, provider, api_key, nodes, edges, selected_model)
+                            response = run_async(
+                                generate_llm_response(chat_input, search_results, provider, api_key, nodes, edges, selected_model)
+                            )
 
                             # Add assistant response to history
                             st.session_state.chat_history.append({
