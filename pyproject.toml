@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "graphiti-core[anthropic,google-genai,groq,kuzu]>=0.8.0",
     "pymupdf>=1.24.0",
+    "python-dotenv>=1.0.0",
     "pyvis>=0.3.2",
     "streamlit>=1.35.0",
     "streamlit-option-menu>=0.3.0",

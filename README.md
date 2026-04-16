@@ -27,7 +27,37 @@ streamlit run app.py
 | `ANTHROPIC_API_KEY` | Entity & relationship extraction (Claude Sonnet) |
 | `OPENAI_API_KEY` | Text embeddings (`text-embedding-3-small`) |
 
-You can set these as env vars or enter them in the sidebar at runtime.
+Set these as environment variables or place them in `.env`.
+
+Optional custom OpenAI-compatible endpoint settings can be placed in `.env`:
+
+```bash
+CUSTOM_OPENAI_BASE_URL=https://my-server/v1
+CUSTOM_OPENAI_API_KEY=your-key
+CUSTOM_OPENAI_EMBED_MODEL=text-embedding-3-small
+CUSTOM_OPENAI_EMBED_DIM=1536
+```
+
+`CUSTOM_OPENAI_ENDPOINT` is also accepted as an alias for `CUSTOM_OPENAI_BASE_URL`.
+
+For fully local Ollama graph processing, pull the models:
+
+```bash
+ollama pull llama3.2:3b
+ollama pull nomic-embed-text
+```
+
+Optional Ollama overrides:
+
+```bash
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_LLM_MODEL=llama3.2:3b
+OLLAMA_EMBED_MODEL=nomic-embed-text
+OLLAMA_EMBED_DIM=768
+```
+
+`OLLAMA_BASE_URL` may be either `http://localhost:11434` or `http://localhost:11434/v1`.
+Embeddings use Ollama when it is reachable, otherwise `OPENAI_API_KEY` is used. If neither is available, graph processing is disabled.
 
 ## Tips
 

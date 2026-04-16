@@ -13,7 +13,6 @@ import tempfile
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
-import re
 import requests
 
 import fitz  # PyMuPDF
@@ -22,7 +21,9 @@ import streamlit.components.v1 as components
 from pyvis.network import Network
 import pandas as pd
 import openai
+import kuzu
 from streamlit_option_menu import option_menu
+from dotenv import load_dotenv
 try:
     import google.generativeai as genai
 except ImportError:
@@ -30,9 +31,12 @@ except ImportError:
 
 # ── Graphiti ──────────────────────────────────────────────────────────────────
 from graphiti_core import Graphiti
+from graphiti_core.cross_encoder.openai_reranker_client import OpenAIRerankerClient
+from graphiti_core.driver.driver import GraphProvider
 from graphiti_core.driver.kuzu_driver import KuzuDriver
 from graphiti_core.edges import EntityEdge
 from graphiti_core.embedder.openai import OpenAIEmbedder, OpenAIEmbedderConfig
+from graphiti_core.graph_queries import get_fulltext_indices
 from graphiti_core.llm_client.anthropic_client import AnthropicClient
 from graphiti_core.llm_client.config import LLMConfig
 from graphiti_core.llm_client.openai_client import OpenAIClient
@@ -43,6 +47,8 @@ from graphiti_core.nodes import EntityNode, EpisodeType
 # ═══════════════════════════════════════════════════════════════════════════════
 # Constants
 # ═══════════════════════════════════════════════════════════════════════════════
+load_dotenv()
+
 SAVED_GRAPHS_DIR = ".saved_graphs"
 os.makedirs(SAVED_GRAPHS_DIR, exist_ok=True)
 
@@ -259,6 +265,136 @@ def get_gemini_models(api_key: str) -> list[str]:
         print(f"Error fetching Gemini models: {e}")
         return []
 
+def get_ollama_models(base_url: str) -> list[str]:
+    """Fetch models from a running Ollama instance via its OpenAI-compatible endpoint."""
+    if not base_url:
+        return []
+    try:
+        url = get_openai_compatible_base_url(base_url) + "/models"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            return [m["id"] for m in response.json().get("data", [])]
+        return []
+    except Exception:
+        return []
+
+
+def get_custom_models(base_url: str, api_key: str) -> list[str]:
+    """Fetch models from any OpenAI-compatible endpoint."""
+    if not base_url:
+        return []
+    try:
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        url = base_url.rstrip("/") + "/models"
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            return [m["id"] for m in response.json().get("data", [])]
+        return []
+    except Exception:
+        return []
+
+
+def get_custom_openai_config() -> dict:
+    """Read custom OpenAI-compatible endpoint settings from the environment."""
+    embed_dim = _get_env_int("CUSTOM_OPENAI_EMBED_DIM", 1536)
+
+    return {
+        "base_url": (
+            os.environ.get("CUSTOM_OPENAI_BASE_URL", "")
+            or os.environ.get("CUSTOM_OPENAI_ENDPOINT", "")
+        ).rstrip("/"),
+        "api_key": os.environ.get("CUSTOM_OPENAI_API_KEY", ""),
+        "embed_model": os.environ.get("CUSTOM_OPENAI_EMBED_MODEL", "text-embedding-3-small"),
+        "embed_dim": embed_dim,
+    }
+
+
+def _get_env_int(name: str, default: int) -> int:
+    raw_value = os.environ.get(name, "")
+    if raw_value:
+        try:
+            return int(raw_value)
+        except ValueError:
+            pass
+    return default
+
+
+def get_openai_compatible_base_url(base_url: str) -> str:
+    """Return a base URL ending at the OpenAI-compatible /v1 path."""
+    normalized = base_url.rstrip("/")
+    if normalized.endswith("/v1"):
+        return normalized
+    return normalized + "/v1"
+
+
+def get_ollama_config() -> dict:
+    """Read Ollama defaults from env/session state."""
+    base_url = (
+        os.environ.get("OLLAMA_BASE_URL", "")
+        or st.session_state.get("ollama_base_url", "http://localhost:11434")
+    ).rstrip("/")
+    embed_dim = _get_env_int(
+        "OLLAMA_EMBED_DIM",
+        st.session_state.get("ollama_embed_dim", 768),
+    )
+    return {
+        "base_url": base_url,
+        "llm_model": os.environ.get("OLLAMA_LLM_MODEL", "llama3.2:3b"),
+        "embed_model": os.environ.get(
+            "OLLAMA_EMBED_MODEL",
+            st.session_state.get("ollama_embed_model", "nomic-embed-text"),
+        ),
+        "embed_dim": embed_dim,
+    }
+
+
+def get_preferred_model_index(available_models: list[str]) -> int:
+    """Prefer the local Ollama model when it is available."""
+    ollama_config = get_ollama_config()
+    preferred_model = f"ollama:{ollama_config['llm_model']}"
+    if preferred_model in available_models:
+        return available_models.index(preferred_model)
+    for idx, model in enumerate(available_models):
+        if model.startswith("ollama:"):
+            return idx
+    return 0
+
+
+def is_ollama_embedding_model(model: str, embed_model: str) -> bool:
+    return model == embed_model or model.split(":", 1)[0] == embed_model.split(":", 1)[0]
+
+
+def get_default_embed_config(ollama_models: list[str], openai_key: str) -> dict:
+    """Prefer Ollama embeddings when available, then OpenAI embeddings."""
+    ollama_config = get_ollama_config()
+    if ollama_models:
+        return {
+            "available": True,
+            "provider": "ollama",
+            "embed_model": ollama_config["embed_model"],
+            "embed_base_url": get_openai_compatible_base_url(ollama_config["base_url"]),
+            "embed_api_key": "ollama",
+            "embed_dim": ollama_config["embed_dim"],
+        }
+    if openai_key:
+        return {
+            "available": True,
+            "provider": "openai",
+            "embed_model": "text-embedding-3-small",
+            "embed_base_url": "",
+            "embed_api_key": openai_key,
+            "embed_dim": 1536,
+        }
+    return {
+        "available": False,
+        "provider": "",
+        "embed_model": "",
+        "embed_base_url": "",
+        "embed_api_key": "",
+        "embed_dim": 0,
+    }
+
+
 @st.cache_data(ttl=300)
 def get_available_models() -> dict[str, list[str]]:
     """Get available models for all providers."""
@@ -418,11 +554,74 @@ for _k, _v in _defaults.items():
     if _k not in st.session_state:
         st.session_state[_k] = _v
 
+
+class KognitaKuzuDriver(KuzuDriver):
+    """Kuzu driver that also creates Graphiti's full-text indexes."""
+
+    def setup_schema(self):
+        super().setup_schema()
+        conn = kuzu.Connection(self.db)
+        try:
+            for query in get_fulltext_indices(GraphProvider.KUZU):
+                try:
+                    conn.execute(query)
+                except RuntimeError as exc:
+                    if "already exists" not in str(exc):
+                        raise
+        finally:
+            conn.close()
+
+
+def _resolve_provider(provider: str, cloud_keys: dict, embed_config: dict) -> dict:
+    """Return the full config dict needed to call make_graphiti / ingest_pdf / search_graph.
+
+    cloud_keys = {"anthropic": ..., "openai": ..., "groq": ..., "gemini": ...}
+    """
+    if provider == "ollama":
+        ollama_config = get_ollama_config()
+        base = get_openai_compatible_base_url(ollama_config["base_url"])
+        return dict(
+            api_key="ollama",
+            base_url=base,
+            embed_model=embed_config["embed_model"],
+            embed_base_url=embed_config["embed_base_url"],
+            embed_api_key=embed_config["embed_api_key"],
+            embed_dim=embed_config["embed_dim"],
+        )
+    if provider == "custom":
+        custom_config = get_custom_openai_config()
+        return dict(
+            api_key=custom_config["api_key"],
+            base_url=custom_config["base_url"],
+            embed_model=embed_config["embed_model"],
+            embed_base_url=embed_config["embed_base_url"],
+            embed_api_key=embed_config["embed_api_key"],
+            embed_dim=embed_config["embed_dim"],
+        )
+    # Cloud providers: LLM key from cloud_keys, embeddings from preferred embed config.
+    return dict(
+        api_key=cloud_keys.get(provider, ""),
+        base_url="",
+        embed_model=embed_config["embed_model"],
+        embed_base_url=embed_config["embed_base_url"],
+        embed_api_key=embed_config["embed_api_key"],
+        embed_dim=embed_config["embed_dim"],
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Sidebar
 # ═══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown("## ⚙️ Health Check")
+    ollama_config = get_ollama_config()
+    ollama_models = get_ollama_models(ollama_config["base_url"])
+    ollama_embed_model = ollama_config["embed_model"]
+    ollama_llm_models = [
+        model for model in ollama_models
+        if not is_ollama_embedding_model(model, ollama_embed_model)
+    ]
+
     anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
     st.write(f"Anthropic API Key: {'✅' if anthropic_key else '❌'}")
     openai_key = os.environ.get("OPENAI_API_KEY", "")
@@ -431,47 +630,42 @@ with st.sidebar:
     st.write(f"Groq API Key: {'✅' if groq_key else '❌'}")
     gemini_key = os.environ.get("GOOGLE_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
     st.write(f"Gemini API Key: {'✅' if gemini_key else '❌'}")
+    if ollama_models:
+        st.write(f"Ollama: ✅ connected · {len(ollama_llm_models)} LLMs")
+    else:
+        st.write("Ollama: ❌ not reachable")
+    custom_config = get_custom_openai_config()
+    if custom_config["base_url"] or custom_config["api_key"]:
+        custom_endpoint_status = f"✅ {custom_config['base_url']}" if custom_config["base_url"] else "❌"
+        st.write(f"Custom OpenAI Endpoint: {custom_endpoint_status}")
+        st.write(f"Custom OpenAI API Key: {'✅' if custom_config['api_key'] else '❌'}")
+    embed_config = get_default_embed_config(ollama_models, openai_key)
+    if embed_config["available"]:
+        st.write(f"Embeddings: ✅ {embed_config['provider']} · {embed_config['embed_model']}")
+    else:
+        st.error("Embeddings: ❌ Start Ollama or set OPENAI_API_KEY")
 
-    # Available models based on API keys
+    custom_models = (
+        get_custom_models(custom_config["base_url"], custom_config["api_key"])
+        if custom_config["base_url"]
+        else []
+    )
+
+    # ── Available models based on all configured providers ────────────────────
+    st.divider()
     available_models_dict = get_available_models()
-    available_models = []
-    
-    # Create user-friendly model names
-    for provider, models in available_models_dict.items():
-        for model in models:
-            if provider == "anthropic":
-                if "sonnet" in model.lower():
-                    available_models.append(f"Claude Sonnet ({model})")
-                elif "haiku" in model.lower():
-                    available_models.append(f"Claude Haiku ({model})")
-                else:
-                    available_models.append(f"Anthropic {model}")
-            elif provider == "openai":
-                if "gpt-4" in model:
-                    available_models.append(f"GPT-4 ({model})")
-                elif "gpt-3.5" in model:
-                    available_models.append(f"GPT-3.5 Turbo ({model})")
-                else:
-                    available_models.append(f"OpenAI {model}")
-            elif provider == "groq":
-                if "llama" in model.lower():
-                    available_models.append(f"Llama ({model})")
-                elif "mixtral" in model.lower():
-                    available_models.append(f"Mixtral ({model})")
-                else:
-                    available_models.append(f"Groq {model}")
-            elif provider == "gemini":
-                if "pro" in model.lower():
-                    available_models.append(f"Gemini Pro ({model})")
-                elif "flash" in model.lower():
-                    available_models.append(f"Gemini Flash ({model})")
-                else:
-                    available_models.append(f"Gemini {model}")
+    available_models = [
+        f"{prov}:{m}"
+        for prov, ms in available_models_dict.items()
+        for m in ms
+    ]
+    available_models += [f"ollama:{m}" for m in ollama_llm_models]
+    available_models += [f"custom:{m}" for m in custom_models]
 
     if available_models:
         st.success(f"✅ {len(available_models)} models available")
     else:
-        st.error("❌ No API keys configured or failed to fetch models")
+        st.error("❌ No providers configured")
 
     st.divider()
     st.markdown("## 🤖 Graph Processing Model")
@@ -481,16 +675,15 @@ with st.sidebar:
         processing_model = st.selectbox(
             "Model for Knowledge Graph Building",
             available_models,
-            index=0,  # Default to first available model
+            index=get_preferred_model_index(available_models),
             help="Choose which LLM to use for extracting entities and relationships from PDF chunks"
         )
 
         # Store the selected processing model in session state
         st.session_state.processing_model = processing_model
         
-        # Extract actual model name from display name
-        actual_model_name = re.search(r'\(([^)]+)\)', processing_model)
-        actual_model_name = actual_model_name.group(1) if actual_model_name else processing_model
+        # Extract actual model ID from "provider:model-id"
+        actual_model_name = processing_model.split(":", 1)[1] if ":" in processing_model else processing_model
         
         # Display pricing for selected model
         pricing_info = get_model_pricing(actual_model_name)
@@ -503,7 +696,7 @@ with st.sidebar:
         # Add button to show pricing modal
         col1, col2 = st.columns([3, 1])
         with col2:
-            if st.button("📊 See All Pricing", help="View pricing for all available models"):
+            if st.button("📊", help="View pricing for all available models"):
                 st.session_state.show_pricing_modal = True
     else:
         st.error("No models available for processing")
@@ -598,90 +791,136 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
 
 
 def extract_model_name(display_name: str) -> str:
-    """Extract the actual model name from display name.
-    
-    Handles two formats:
-    - With parentheses: "Claude Sonnet (claude-3-5-sonnet-20241022)" → "claude-3-5-sonnet-20241022"
-    - Without parentheses: "Anthropic claude-opus-4-7" → "claude-opus-4-7"
+    """Extract the model ID from a display name.
+
+    Handles the canonical format: "provider:model-id" → "model-id"
     """
-    # Try to extract from parentheses first
-    match = re.search(r'\(([^)]+)\)', display_name)
-    if match:
-        return match.group(1)
-    
-    # If no parentheses, strip off provider prefix
-    # Providers: "Anthropic ", "Claude ", "GPT-4 ", "GPT-3.5 Turbo ", "Llama ", "Mixtral ", "Gemini Pro ", "Gemini Flash ", etc.
-    prefixes = [
-        "Anthropic ", "Claude Sonnet ", "Claude Haiku ", 
-        "GPT-4 ", "GPT-3.5 Turbo ", 
-        "Llama ", "Mixtral ", 
-        "Gemini Pro ", "Gemini Flash ", "Gemini ", "OpenAI ", "Groq "
-    ]
-    for prefix in prefixes:
-        if display_name.startswith(prefix):
-            return display_name[len(prefix):].strip()
-    
-    # If no known prefix, return as-is
+    if ":" in display_name:
+        return display_name.split(":", 1)[1]
     return display_name
 
-def make_graphiti(provider: str, api_key: str, db_path: str, model: str) -> Graphiti:
-    """Create a Graphiti instance with the specified LLM provider and model."""
+def make_graphiti(
+    provider: str,
+    api_key: str,
+    db_path: str,
+    model: str,
+    base_url: str = "",
+    embed_model: str = "text-embedding-3-small",
+    embed_base_url: str = "",
+    embed_api_key: str = "",
+    embed_dim: int = 1536,
+) -> Graphiti:
+    """Create a Graphiti instance with the specified LLM provider and model.
 
-    # Extract actual model name from display name
+    For cloud providers (anthropic, openai, groq, gemini) leave base_url empty.
+    For ollama/custom pass the full base URL (e.g. http://localhost:11434/v1).
+    embed_* params configure the embedding model independently of the LLM provider.
+    """
     actual_model = extract_model_name(model)
 
-    # Determine embedder (always use OpenAI for embeddings for now, as Graphiti expects it)
     embedder = OpenAIEmbedder(
         config=OpenAIEmbedderConfig(
-            api_key=os.environ.get("OPENAI_API_KEY", ""),  # Use OpenAI for embeddings
-            embedding_model="text-embedding-3-small",
-            embedding_dim=1536,
+            api_key=embed_api_key or os.environ.get("OPENAI_API_KEY", ""),
+            embedding_model=embed_model,
+            embedding_dim=embed_dim,
+            base_url=embed_base_url or None,
         )
     )
 
-    # Create LLM client based on provider
     if provider == "anthropic":
-        llm_client = AnthropicClient(
-            config=LLMConfig(
-                api_key=api_key,
-                model=actual_model,
-            )
-        )
+        llm_client = AnthropicClient(config=LLMConfig(api_key=api_key, model=actual_model))
+        cross_encoder = None
     elif provider == "openai":
-        # For OpenAI, we need to use a compatible client
-        from graphiti_core.llm_client.openai_client import OpenAIClient
-        llm_client = OpenAIClient(
-            config=LLMConfig(
-                api_key=api_key,
-                model=actual_model,
-            )
-        )
+        llm_client = OpenAIClient(config=LLMConfig(api_key=api_key, model=actual_model))
+        cross_encoder = None
     elif provider == "groq":
-        # Groq uses OpenAI-compatible API
-        from graphiti_core.llm_client.openai_generic_client import OpenAIGenericClient
-        llm_client = OpenAIGenericClient(
-            config=LLMConfig(
-                api_key=api_key,
-                model=actual_model,
-                base_url="https://api.groq.com/openai/v1",
-            )
+        llm_config = LLMConfig(
+            api_key=api_key,
+            model=actual_model,
+            small_model=actual_model,
+            base_url="https://api.groq.com/openai/v1",
         )
+        llm_client = OpenAIGenericClient(config=llm_config)
+        cross_encoder = OpenAIRerankerClient(client=llm_client.client, config=llm_config)
     elif provider == "gemini":
-        from graphiti_core.llm_client.gemini_client import GeminiClient
-        llm_client = GeminiClient(
-            config=LLMConfig(
-                api_key=api_key,
-                model=actual_model,
-            )
+        llm_client = GeminiClient(config=LLMConfig(api_key=api_key, model=actual_model))
+        cross_encoder = None
+    elif provider in ("ollama", "custom"):
+        llm_config = LLMConfig(
+            api_key=api_key or "ollama",
+            model=actual_model,
+            small_model=actual_model,
+            base_url=base_url,
         )
+        llm_client = OpenAIGenericClient(
+            config=llm_config
+        )
+        cross_encoder = OpenAIRerankerClient(client=llm_client.client, config=llm_config)
     else:
         raise ValueError(f"Unsupported provider: {provider}")
 
+    graphiti_kwargs = {}
+    if cross_encoder is not None:
+        graphiti_kwargs["cross_encoder"] = cross_encoder
+
     return Graphiti(
-        graph_driver=KuzuDriver(db=db_path),
+        graph_driver=KognitaKuzuDriver(db=db_path),
         llm_client=llm_client,
         embedder=embedder,
+        **graphiti_kwargs,
     )
+
+
+def _extract_api_error(exc: Exception) -> str:
+    """Return a human-readable error from a provider API exception.
+
+    Handles OpenAI / Groq (openai.APIStatusError), Anthropic (anthropic.APIStatusError),
+    and Google Gemini (google.api_core.exceptions.GoogleAPICallError), as well as any
+    generic exception that carries a status_code attribute.
+    """
+    status_code = getattr(exc, "status_code", None)  # OpenAI, Anthropic
+    if status_code is None:
+        status_code = getattr(exc, "code", None)      # Gemini / gRPC style
+
+    # Prefer the structured body/message over str(exc) which may include noisy traceback
+    body = getattr(exc, "body", None)
+    if body:
+        detail = str(body)
+    else:
+        detail = getattr(exc, "message", None) or str(exc)
+
+    if status_code:
+        return f"HTTP {status_code}: {detail}"
+    return f"{type(exc).__name__}: {detail}"
+
+
+def _node_log_line(node: EntityNode) -> str:
+    name = getattr(node, "name", None) or getattr(node, "uuid", "")[:10] or "(unnamed)"
+    labels = getattr(node, "labels", None) or []
+    labels_text = f" [{', '.join(str(label) for label in labels)}]" if labels else ""
+    summary = (getattr(node, "summary", None) or "").replace("\n", " ").strip()
+    summary_text = f" - {summary[:140]}" if summary else ""
+    return f"Node added: {name}{labels_text}{summary_text}"
+
+
+def _edge_log_line(edge: EntityEdge, nodes: dict[str, EntityNode]) -> str:
+    source_node = nodes.get(getattr(edge, "source_node_uuid", ""))
+    target_node = nodes.get(getattr(edge, "target_node_uuid", ""))
+    source = getattr(source_node, "name", None) or getattr(edge, "source_node_uuid", "")[:10]
+    target = getattr(target_node, "name", None) or getattr(edge, "target_node_uuid", "")[:10]
+    fact = (getattr(edge, "fact", None) or getattr(edge, "name", None) or "").replace("\n", " ").strip()
+    fact_text = f" - {fact[:180]}" if fact else ""
+    return f"Edge added: {source} -> {target}{fact_text}"
+
+
+def get_next_chunk_index(episodes_log: list[dict]) -> int:
+    """Return the zero-based chunk index to resume from."""
+    processed_chunks = [
+        int(ep.get("chunk", 0))
+        for ep in episodes_log
+        if str(ep.get("chunk", "")).isdigit()
+    ]
+    return max(processed_chunks, default=0)
 
 
 async def ingest_pdf(
@@ -693,18 +932,37 @@ async def ingest_pdf(
     db_path: str,
     progress_cb,
     status_cb,
-) -> tuple[dict[str, EntityNode], list[EntityEdge], list[dict], bool]:
-    graphiti = make_graphiti(provider, api_key, db_path, model)
+    log_cb=None,
+    base_url: str = "",
+    embed_model: str = "text-embedding-3-small",
+    embed_base_url: str = "",
+    embed_api_key: str = "",
+    embed_dim: int = 1536,
+    start_index: int = 0,
+    initial_nodes: dict[str, EntityNode] | None = None,
+    initial_edges: list[EntityEdge] | None = None,
+    initial_episodes_log: list[dict] | None = None,
+) -> tuple[dict[str, EntityNode], list[EntityEdge], list[dict], str | None]:
+    """Process PDF chunks into a knowledge graph.
+
+    Returns (nodes, edges, episodes_log, fatal_error).
+    fatal_error is None on success; a non-empty string on any provider API error.
+    Processing stops immediately on the first error.
+    """
+    graphiti = make_graphiti(provider, api_key, db_path, model,
+                             base_url, embed_model, embed_base_url, embed_api_key, embed_dim)
     await graphiti.build_indices_and_constraints()
 
-    all_nodes: dict[str, EntityNode] = {}
-    all_edges: list[EntityEdge] = []
-    episodes_log: list[dict] = []
-
+    all_nodes: dict[str, EntityNode] = dict(initial_nodes or {})
+    all_edges: list[EntityEdge] = list(initial_edges or [])
+    episodes_log: list[dict] = list(initial_episodes_log or [])
     n = len(chunks)
-    quota_exceeded = False
-    for idx, chunk in enumerate(chunks):
-        status_cb(f"⚙️  Processing chunk {idx + 1} / {n} …")
+
+    for idx, chunk in enumerate(chunks[start_index:], start=start_index):
+        chunk_label = f"Chunk {idx + 1}/{n}"
+        status_cb(f"⚙️  Processing {chunk_label} …")
+        if log_cb:
+            log_cb(f"{chunk_label}: sending text to Graphiti")
         try:
             result = await graphiti.add_episode(
                 name=f"{pdf_name}__chunk_{idx + 1:04d}",
@@ -713,54 +971,59 @@ async def ingest_pdf(
                 source_description=f"PDF: {pdf_name}",
                 reference_time=datetime.now(),
             )
+            if log_cb:
+                log_cb(
+                    f"{chunk_label}: Graphiti returned "
+                    f"{len(result.nodes)} nodes and {len(result.edges)} edges"
+                )
             for node in result.nodes:
                 all_nodes[node.uuid] = node
+                if log_cb:
+                    log_cb(_node_log_line(node))
             all_edges.extend(result.edges)
+            for edge in result.edges:
+                if log_cb:
+                    log_cb(_edge_log_line(edge, all_nodes))
             episodes_log.append({
                 "chunk":   idx + 1,
                 "preview": chunk[:130].replace("\n", " ") + "…",
                 "nodes":   len(result.nodes),
                 "edges":   len(result.edges),
+                "node_log": [_node_log_line(node) for node in result.nodes],
+                "edge_log": [_edge_log_line(edge, all_nodes) for edge in result.edges],
             })
         except Exception as exc:
-            error_str = str(exc).lower()
-            # Check for quota/rate limit errors from various providers
-            quota_keywords = [
-                'quota', 'rate limit', '429', 'exceeded', 'limit exceeded',
-                'insufficient_quota', 'billing_hard_limit_reached',
-                'quota_exceeded', 'usage limit', 'rate limit exceeded',
-                '404', 'not_found', 'model not found', 'model: '
-            ]
-            if any(keyword in error_str for keyword in quota_keywords):
-                quota_exceeded = True
-                episodes_log.append({
-                    "chunk":   idx + 1,
-                    "preview": chunk[:130].replace("\n", " ") + "…",
-                    "error":   f"API quota exceeded: {str(exc)}",
-                    "nodes":   0,
-                    "edges":   0,
-                })
-                status_cb(f"❌ API quota exceeded. Stopping processing at chunk {idx + 1}.")
-                break  # Stop processing further chunks
-            else:
-                episodes_log.append({
-                    "chunk":   idx + 1,
-                    "preview": chunk[:130].replace("\n", " ") + "…",
-                    "error":   str(exc),
-                    "nodes":   0,
-                    "edges":   0,
-                })
+            error_msg = _extract_api_error(exc)
+            episodes_log.append({
+                "chunk":   idx + 1,
+                "preview": chunk[:130].replace("\n", " ") + "…",
+                "error":   error_msg,
+                "nodes":   0,
+                "edges":   0,
+            })
+            if log_cb:
+                log_cb(f"{chunk_label}: stopped with error - {error_msg}")
+            status_cb(f"❌ Stopped at chunk {idx + 1} of {n}: {error_msg}")
+            await graphiti.close()
+            return all_nodes, all_edges, episodes_log, error_msg
         progress_cb((idx + 1) / n)
 
     await graphiti.close()
-    return all_nodes, all_edges, episodes_log, quota_exceeded
+    return all_nodes, all_edges, episodes_log, None
 
 
 async def search_graph(
-    query: str, provider: str, api_key: str, model: str, db_path: str
+    query: str, provider: str, api_key: str, model: str, db_path: str,
+    base_url: str = "", embed_model: str = "text-embedding-3-small",
+    embed_base_url: str = "", embed_api_key: str = "", embed_dim: int = 1536,
 ) -> list:
-    graphiti = make_graphiti(provider, api_key, db_path, model)
-    results = await graphiti.search(query)
+    graphiti = make_graphiti(provider, api_key, db_path, model,
+                             base_url, embed_model, embed_base_url, embed_api_key, embed_dim)
+    try:
+        results = await graphiti.search(query)
+    except Exception as exc:
+        await graphiti.close()
+        raise RuntimeError(_extract_api_error(exc)) from exc
     await graphiti.close()
     return results
 
@@ -854,7 +1117,8 @@ async def generate_llm_response(
     api_key: str,
     nodes: dict,
     edges: list,
-    selected_model: str
+    selected_model: str,
+    base_url: str = "",
 ) -> str:
     """Generate a response using LLM based on search results and graph context."""
 
@@ -929,11 +1193,24 @@ Answer:"""
             response = await gemini_model.generate_content_async(prompt)
             return response.text if response.text else "No response generated."
 
+        elif provider in ("ollama", "custom"):
+            actual_model = extract_model_name(selected_model)
+            client = openai.AsyncOpenAI(
+                api_key=api_key or "ollama",
+                base_url=base_url,
+            )
+            response = await client.chat.completions.create(
+                model=actual_model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1000,
+            )
+            return response.choices[0].message.content if response.choices else "No response generated."
+
         else:
             return f"Unsupported provider: {provider}"
 
-    except Exception as e:
-        return f"Error generating response: {str(e)}"
+    except Exception as exc:
+        return f"Error generating response: {_extract_api_error(exc)}"
 
 
 def execute_kuzu_query(query: str, db_path: str) -> list:
@@ -1022,9 +1299,11 @@ with left:
                    f"{chunk_overlap} word overlap")
 
         st.markdown("### 2 · Build")
-        keys_ok = bool(anthropic_key and openai_key)
-        if not keys_ok:
-            st.warning("⚠️ Enter both API keys in the sidebar first.")
+        keys_ok = bool(available_models and embed_config["available"])
+        if not available_models:
+            st.warning("⚠️ Configure at least one provider in the sidebar first.")
+        elif not embed_config["available"]:
+            st.error("❌ Start Ollama or set OPENAI_API_KEY before building the graph.")
 
         if st.button(
             "🚀 Build Knowledge Graph",
@@ -1047,6 +1326,20 @@ with left:
 
             prog = st.progress(0.0)
             stat = st.empty()
+            live_log = st.empty()
+            processing_log: list[str] = []
+
+            def append_processing_log(message: str):
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                processing_log.append(f"[{timestamp}] {message}")
+                visible_log = "\n".join(processing_log[-160:])
+                live_log.text_area(
+                    "Live processing log",
+                    value=visible_log,
+                    height=320,
+                    disabled=True,
+                    help="Updates after each Graphiti step, node, and edge.",
+                )
 
             # Get processing model details
             processing_model = st.session_state.get("processing_model")
@@ -1054,38 +1347,24 @@ with left:
                 st.error("No processing model selected")
                 st.stop()
 
-            # Determine provider and API key for processing
-            if "Anthropic" in processing_model or "Claude" in processing_model:
-                processing_provider = "anthropic"
-                processing_api_key = anthropic_key
-            elif "OpenAI" in processing_model or "GPT" in processing_model:
-                processing_provider = "openai"
-                processing_api_key = openai_key
-            elif "Groq" in processing_model or "Llama" in processing_model or "Mixtral" in processing_model:
-                processing_provider = "groq"
-                processing_api_key = groq_key
-            elif "Google" in processing_model or "Gemini" in processing_model:
-                processing_provider = "gemini"
-                processing_api_key = gemini_key
-            else:
-                st.error(f"Unsupported processing model: {processing_model}")
-                st.stop()
-
-            # Debug: Show which provider is being used
-            st.info(f"🔧 Using {processing_provider.upper()} for graph processing with model: {processing_model}")
-            st.info("ℹ️ Note: Embeddings always use OpenAI API, but LLM processing uses the selected provider")
-            if processing_api_key:
-                st.info(f"🔑 API key is set for {processing_provider.upper()}")
-            else:
-                st.error(f"❌ API key is NOT set for {processing_provider.upper()}")
+            processing_provider = processing_model.split(":", 1)[0]
+            cloud_keys = {"anthropic": anthropic_key, "openai": openai_key,
+                          "groq": groq_key, "gemini": gemini_key}
+            pconf = _resolve_provider(processing_provider, cloud_keys, embed_config)
 
             with st.spinner("Graphiti is working …"):
-                nodes, edges, ep_log, quota_exceeded = run_async(
+                nodes, edges, ep_log, fatal_error = run_async(
                     ingest_pdf(
                         chunks, uploaded.name,
-                        processing_provider, processing_api_key, processing_model, db_path,
+                        processing_provider, pconf["api_key"], processing_model, db_path,
                         lambda v: prog.progress(v),
                         lambda m: stat.info(m),
+                        append_processing_log,
+                        base_url=pconf["base_url"],
+                        embed_model=pconf["embed_model"],
+                        embed_base_url=pconf["embed_base_url"],
+                        embed_api_key=pconf["embed_api_key"],
+                        embed_dim=pconf["embed_dim"],
                     )
                 )
 
@@ -1094,20 +1373,91 @@ with left:
             st.session_state.episodes_log = ep_log
             st.session_state.graph_built  = True
 
-            if quota_exceeded:
-                stat.error("⚠️ API quota exceeded! Processing stopped early. Some chunks were not processed.")
-                st.warning("**API Quota Exceeded**: The knowledge graph was partially built. You may need to wait for your API quota to reset or upgrade your plan before processing the remaining chunks.")
+            if fatal_error:
+                stat.error(f"❌ Processing stopped — provider returned an error:")
+                st.error(fatal_error)
             else:
                 stat.success("✅ Graph built successfully!")
+                try:
+                    save_graph_data(
+                        uploaded.name, pdf_bytes, nodes, edges, ep_log, processing_model
+                    )
+                    st.info("💾 Graph automatically saved for future use")
+                except Exception as e:
+                    st.warning(f"⚠️ Failed to save graph: {str(e)}")
 
-            # Save the graph data
-            try:
-                save_graph_data(
-                    uploaded.name, pdf_bytes, nodes, edges, ep_log, processing_model
+        if st.session_state.graph_built and st.session_state.db_path:
+            next_chunk_index = get_next_chunk_index(st.session_state.episodes_log)
+            can_continue = next_chunk_index < len(chunks)
+            if can_continue:
+                st.info(
+                    f"Processing can continue from chunk {next_chunk_index + 1} "
+                    f"of {len(chunks)}. The failed chunk stays in the log."
                 )
-                st.info("💾 Graph automatically saved for future use")
-            except Exception as e:
-                st.warning(f"⚠️ Failed to save graph: {str(e)}")
+            if can_continue and st.button(
+                f"▶️ Continue from chunk {next_chunk_index + 1}",
+                disabled=not keys_ok,
+                use_container_width=True,
+            ):
+                prog = st.progress(next_chunk_index / max(1, len(chunks)))
+                stat = st.empty()
+                live_log = st.empty()
+                processing_log: list[str] = []
+
+                def append_processing_log(message: str):
+                    timestamp = datetime.now().strftime("%H:%M:%S")
+                    processing_log.append(f"[{timestamp}] {message}")
+                    live_log.text_area(
+                        "Live processing log",
+                        value="\n".join(processing_log[-160:]),
+                        height=320,
+                        disabled=True,
+                        help="Updates after each Graphiti step, node, and edge.",
+                    )
+
+                processing_model = st.session_state.get("processing_model")
+                processing_provider = processing_model.split(":", 1)[0]
+                cloud_keys = {"anthropic": anthropic_key, "openai": openai_key,
+                              "groq": groq_key, "gemini": gemini_key}
+                pconf = _resolve_provider(processing_provider, cloud_keys, embed_config)
+
+                with st.spinner("Graphiti is continuing …"):
+                    nodes, edges, ep_log, fatal_error = run_async(
+                        ingest_pdf(
+                            chunks, uploaded.name,
+                            processing_provider, pconf["api_key"], processing_model,
+                            st.session_state.db_path,
+                            lambda v: prog.progress(v),
+                            lambda m: stat.info(m),
+                            append_processing_log,
+                            base_url=pconf["base_url"],
+                            embed_model=pconf["embed_model"],
+                            embed_base_url=pconf["embed_base_url"],
+                            embed_api_key=pconf["embed_api_key"],
+                            embed_dim=pconf["embed_dim"],
+                            start_index=next_chunk_index,
+                            initial_nodes=st.session_state.all_nodes,
+                            initial_edges=st.session_state.all_edges,
+                            initial_episodes_log=st.session_state.episodes_log,
+                        )
+                    )
+
+                st.session_state.all_nodes = nodes
+                st.session_state.all_edges = edges
+                st.session_state.episodes_log = ep_log
+
+                if fatal_error:
+                    stat.error("❌ Processing stopped again — provider returned an error:")
+                    st.error(fatal_error)
+                else:
+                    stat.success("✅ Remaining chunks processed successfully!")
+                    try:
+                        save_graph_data(
+                            uploaded.name, pdf_bytes, nodes, edges, ep_log, processing_model
+                        )
+                        st.info("💾 Graph automatically saved for future use")
+                    except Exception as e:
+                        st.warning(f"⚠️ Failed to save graph: {str(e)}")
 
     # Stats & search (shown after build)
     if st.session_state.graph_built:
@@ -1140,31 +1490,30 @@ with left:
             "Natural language query",
             placeholder="e.g. Who are the key people?",
         )
-        if st.button("🔍 Search", use_container_width=True) and query.strip():
+        if not embed_config["available"]:
+            st.error("❌ Search needs embeddings. Start Ollama or set OPENAI_API_KEY.")
+        if st.button(
+            "🔍 Search",
+            use_container_width=True,
+            disabled=not embed_config["available"],
+        ) and query.strip():
             with st.spinner("Searching …"):
                 try:
-                    # Use the same model as used for processing
-                    processing_model = st.session_state.get("processing_model", "Claude Sonnet (Anthropic)")
-                    if "Anthropic" in processing_model or "Claude" in processing_model:
-                        search_provider = "anthropic"
-                        search_api_key = anthropic_key
-                    elif "OpenAI" in processing_model or "GPT" in processing_model:
-                        search_provider = "openai"
-                        search_api_key = openai_key
-                    elif "Groq" in processing_model or "Llama" in processing_model or "Mixtral" in processing_model:
-                        search_provider = "groq"
-                        search_api_key = groq_key
-                    elif "Google" in processing_model or "Gemini" in processing_model:
-                        search_provider = "gemini"
-                        search_api_key = gemini_key
-                    else:
-                        search_provider = "anthropic"
-                        search_api_key = anthropic_key
+                    processing_model = st.session_state.get("processing_model", "")
+                    search_provider = processing_model.split(":", 1)[0] if ":" in processing_model else "anthropic"
+                    cloud_keys = {"anthropic": anthropic_key, "openai": openai_key,
+                                  "groq": groq_key, "gemini": gemini_key}
+                    sconf = _resolve_provider(search_provider, cloud_keys, embed_config)
 
                     results = run_async(
                         search_graph(
-                            query, search_provider, search_api_key, processing_model,
+                            query, search_provider, sconf["api_key"], processing_model,
                             st.session_state.db_path,
+                            base_url=sconf["base_url"],
+                            embed_model=sconf["embed_model"],
+                            embed_base_url=sconf["embed_base_url"],
+                            embed_api_key=sconf["embed_api_key"],
+                            embed_dim=sconf["embed_dim"],
                         )
                     )
                     st.session_state.search_results = results
@@ -1240,6 +1589,14 @@ with right:
                         f'<span style="opacity:.7">{ep["preview"]}</span></div>',
                         unsafe_allow_html=True,
                     )
+                    node_log = ep.get("node_log", [])
+                    edge_log = ep.get("edge_log", [])
+                    if node_log or edge_log:
+                        with st.expander(f"Chunk {ep['chunk']} node and edge log"):
+                            for line in node_log:
+                                st.markdown(f"- `{line}`")
+                            for line in edge_log:
+                                st.markdown(f"- `{line}`")
 
         # All facts
         elif selected == "📜 All Facts":
@@ -1299,41 +1656,8 @@ with right:
             st.markdown("### 🤖 LLM Playground")
             st.markdown("Interact with your knowledge graph using LLMs and explore Kuzu database functionalities.")
 
-            # Get available models dynamically
-            available_models_dict = get_available_models()
-            available_models = []
-            
-            # Create user-friendly model names
-            for provider, models in available_models_dict.items():
-                for model in models:
-                    if provider == "anthropic":
-                        if "sonnet" in model.lower():
-                            available_models.append(f"Claude Sonnet ({model})")
-                        elif "haiku" in model.lower():
-                            available_models.append(f"Claude Haiku ({model})")
-                        else:
-                            available_models.append(f"Anthropic {model}")
-                    elif provider == "openai":
-                        if "gpt-4" in model:
-                            available_models.append(f"GPT-4 ({model})")
-                        elif "gpt-3.5" in model:
-                            available_models.append(f"GPT-3.5 Turbo ({model})")
-                        else:
-                            available_models.append(f"OpenAI {model}")
-                    elif provider == "groq":
-                        if "llama" in model.lower():
-                            available_models.append(f"Llama ({model})")
-                        elif "mixtral" in model.lower():
-                            available_models.append(f"Mixtral ({model})")
-                        else:
-                            available_models.append(f"Groq {model}")
-                    elif provider == "gemini":
-                        if "pro" in model.lower():
-                            available_models.append(f"Gemini Pro ({model})")
-                        elif "flash" in model.lower():
-                            available_models.append(f"Gemini Flash ({model})")
-                        else:
-                            available_models.append(f"Gemini {model}")
+            # Reuse the same available_models list built in the sidebar
+            # (already includes cloud + ollama + custom)
 
             if not available_models:
                 st.error("❌ No API keys configured or failed to fetch models.")
@@ -1346,24 +1670,11 @@ with right:
                 help="Select from available models based on your configured API keys"
             )
 
-            # Determine provider and API key based on selected model
-            if "Anthropic" in selected_model or "Claude" in selected_model:
-                provider = "anthropic"
-                api_key = anthropic_key
-            elif "OpenAI" in selected_model or "GPT" in selected_model:
-                provider = "openai"
-                api_key = openai_key
-            elif "Groq" in selected_model or "Llama" in selected_model or "Mixtral" in selected_model:
-                provider = "groq"
-                api_key = groq_key
-            elif "Google" in selected_model or "Gemini" in selected_model:
-                provider = "gemini"
-                api_key = gemini_key
-            else:
-                provider = ""
-                api_key = ""
-
-            st.info(f"🤖 Using {provider.upper()} for LLM playground with model: {selected_model}")
+            provider = selected_model.split(":", 1)[0]
+            cloud_keys = {"anthropic": anthropic_key, "openai": openai_key,
+                          "groq": groq_key, "gemini": gemini_key}
+            pconf = _resolve_provider(provider, cloud_keys, embed_config)
+            api_key = pconf["api_key"]
 
             # Chat Interface
             st.markdown("#### 💬 Chat with Knowledge Graph")
@@ -1393,39 +1704,38 @@ with right:
             )
 
             if st.button("💬 Send", use_container_width=True) and chat_input.strip():
-                if not api_key:
+                if provider not in ("ollama", "custom") and not api_key:
                     st.error("Please set the API key for the selected LLM provider.")
+                elif not embed_config["available"]:
+                    st.error("Please start Ollama or set OPENAI_API_KEY before searching the graph.")
                 else:
                     # Add user message to history
                     st.session_state.chat_history.append({"role": "user", "content": chat_input})
 
                     with st.spinner("Thinking..."):
                         try:
-                            # Search the graph using the processing model
-                            processing_model = st.session_state.get("processing_model", "Claude Sonnet (Anthropic)")
-                            if "Anthropic" in processing_model or "Claude" in processing_model:
-                                search_provider = "anthropic"
-                                search_api_key = anthropic_key
-                            elif "OpenAI" in processing_model or "GPT" in processing_model:
-                                search_provider = "openai"
-                                search_api_key = openai_key
-                            elif "Groq" in processing_model or "Llama" in processing_model or "Mixtral" in processing_model:
-                                search_provider = "groq"
-                                search_api_key = groq_key
-                            elif "Google" in processing_model or "Gemini" in processing_model:
-                                search_provider = "gemini"
-                                search_api_key = gemini_key
-                            else:
-                                search_provider = "anthropic"
-                                search_api_key = anthropic_key
-
+                            processing_model = st.session_state.get("processing_model", "")
+                            search_provider = processing_model.split(":", 1)[0] if ":" in processing_model else provider
+                            sconf = _resolve_provider(search_provider, cloud_keys, embed_config)
                             search_results = run_async(
-                                search_graph(chat_input, search_provider, search_api_key, processing_model, st.session_state.db_path)
+                                search_graph(
+                                    chat_input, search_provider, sconf["api_key"],
+                                    processing_model, st.session_state.db_path,
+                                    base_url=sconf["base_url"],
+                                    embed_model=sconf["embed_model"],
+                                    embed_base_url=sconf["embed_base_url"],
+                                    embed_api_key=sconf["embed_api_key"],
+                                    embed_dim=sconf["embed_dim"],
+                                )
                             )
 
                             # Generate response using LLM
                             response = run_async(
-                                generate_llm_response(chat_input, search_results, provider, api_key, nodes, edges, selected_model)
+                                generate_llm_response(
+                                    chat_input, search_results, provider, api_key,
+                                    nodes, edges, selected_model,
+                                    base_url=pconf["base_url"],
+                                )
                             )
 
                             # Add assistant response to history

@@ -691,6 +691,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "graphiti-core", extra = ["anthropic", "google-genai", "groq", "kuzu"] },
     { name = "pymupdf" },
+    { name = "python-dotenv" },
     { name = "pyvis" },
     { name = "streamlit" },
     { name = "streamlit-option-menu" },
@@ -700,6 +701,7 @@ dependencies = [
 requires-dist = [
     { name = "graphiti-core", extras = ["anthropic", "google-genai", "groq", "kuzu"], specifier = ">=0.8.0" },
     { name = "pymupdf", specifier = ">=1.24.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "pyvis", specifier = ">=0.3.2" },
     { name = "streamlit", specifier = ">=1.35.0" },
     { name = "streamlit-option-menu", specifier = ">=0.3.0" },
