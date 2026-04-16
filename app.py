@@ -147,7 +147,7 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
 
 def make_graphiti(ant_key: str, oai_key: str, db_path: str) -> Graphiti:
     return Graphiti(
-        driver=KuzuDriver(db=db_path),
+        graph_driver=KuzuDriver(db=db_path),
         llm_client=AnthropicClient(
             config=LLMConfig(
                 api_key=ant_key,
