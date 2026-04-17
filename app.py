@@ -309,6 +309,29 @@ def get_custom_openai_config() -> dict:
     }
 
 
+def get_local_embedding_config() -> dict:
+    """Read local CPU embedding service settings from the environment."""
+    base_url = os.environ.get("LOCAL_EMBEDDINGS_BASE_URL", "http://localhost:8000/v1").rstrip("/")
+    model_name = os.environ.get("LOCAL_EMBEDDINGS_MODEL", "bge-small-en-v1.5")
+    embed_dim = _get_env_int("LOCAL_EMBEDDINGS_DIM", 384)
+    return {
+        "base_url": base_url,
+        "api_key": os.environ.get("LOCAL_EMBEDDINGS_API_KEY", "dummy"),
+        "embed_model": model_name,
+        "embed_dim": embed_dim,
+    }
+
+
+def is_local_embedder_available(base_url: str) -> bool:
+    if not base_url:
+        return False
+    try:
+        response = requests.get(base_url.rstrip("/") + "/models", timeout=2)
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
 def _get_env_int(name: str, default: int) -> int:
     raw_value = os.environ.get(name, "")
     if raw_value:
@@ -379,7 +402,11 @@ def is_ollama_embedding_model(model: str, embed_model: str) -> bool:
     return model == embed_model or model.split(":", 1)[0] == embed_model.split(":", 1)[0]
 
 
-def get_available_embed_configs(ollama_models: list[str], openai_key: str) -> dict[str, dict]:
+def get_available_embed_configs(
+    ollama_models: list[str],
+    openai_key: str,
+    local_embedder_available: bool,
+) -> dict[str, dict]:
     """Return available embedding backends keyed by display label."""
     embed_configs = {}
     ollama_config = get_ollama_config()
@@ -402,6 +429,17 @@ def get_available_embed_configs(ollama_models: list[str], openai_key: str) -> di
             "embed_base_url": "",
             "embed_api_key": openai_key,
             "embed_dim": 1536,
+        }
+    if local_embedder_available:
+        local_config = get_local_embedding_config()
+        label = f"local:{local_config['embed_model']}"
+        embed_configs[label] = {
+            "available": True,
+            "provider": "local",
+            "embed_model": local_config["embed_model"],
+            "embed_base_url": local_config["base_url"],
+            "embed_api_key": local_config["api_key"],
+            "embed_dim": local_config["embed_dim"],
         }
     return embed_configs
 
@@ -659,6 +697,8 @@ with st.sidebar:
         model for model in ollama_models
         if not is_ollama_embedding_model(model, ollama_embed_model)
     ]
+    local_embedder_config = get_local_embedding_config()
+    local_embedder_available = is_local_embedder_available(local_embedder_config["base_url"])
 
     anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
     st.write(f"Anthropic API Key: {'✅' if anthropic_key else '❌'}")
@@ -672,17 +712,25 @@ with st.sidebar:
         st.write(f"Ollama: ✅ connected · {len(ollama_llm_models)} LLMs")
     else:
         st.write("Ollama: ❌ not reachable")
+    st.write(
+        f"Local CPU Embedder: "
+        f"{'✅ ' + local_embedder_config['base_url'] if local_embedder_available else '❌ not reachable'}"
+    )
     custom_config = get_custom_openai_config()
     if custom_config["base_url"] or custom_config["api_key"]:
         custom_endpoint_status = f"✅ {custom_config['base_url']}" if custom_config["base_url"] else "❌"
         st.write(f"Custom OpenAI Endpoint: {custom_endpoint_status}")
         st.write(f"Custom OpenAI API Key: {'✅' if custom_config['api_key'] else '❌'}")
-    embed_configs = get_available_embed_configs(ollama_models, openai_key)
+    embed_configs = get_available_embed_configs(
+        ollama_models,
+        openai_key,
+        local_embedder_available,
+    )
     embedder_options = list(embed_configs.keys())
     if embedder_options:
         st.write(f"Embeddings: ✅ {len(embedder_options)} available")
     else:
-        st.error("Embeddings: ❌ Start Ollama or set OPENAI_API_KEY")
+        st.error("Embeddings: ❌ Start Ollama, start the local embedder, or set OPENAI_API_KEY")
 
     custom_models = (
         get_custom_models(custom_config["base_url"], custom_config["api_key"])
@@ -1381,7 +1429,7 @@ with left:
         if not available_models:
             st.warning("⚠️ Configure at least one provider in the sidebar first.")
         elif not embed_config["available"]:
-            st.error("❌ Start Ollama or set OPENAI_API_KEY before building the graph.")
+            st.error("❌ Start Ollama, start the local embedder, or set OPENAI_API_KEY before building the graph.")
 
         if st.button(
             "🚀 Build Knowledge Graph",
@@ -1569,7 +1617,7 @@ with left:
             placeholder="e.g. Who are the key people?",
         )
         if not embed_config["available"]:
-            st.error("❌ Search needs embeddings. Start Ollama or set OPENAI_API_KEY.")
+            st.error("❌ Search needs embeddings. Start Ollama, start the local embedder, or set OPENAI_API_KEY.")
         if st.button(
             "🔍 Search",
             use_container_width=True,
@@ -1785,7 +1833,7 @@ with right:
                 if provider not in ("ollama", "custom") and not api_key:
                     st.error("Please set the API key for the selected LLM provider.")
                 elif not embed_config["available"]:
-                    st.error("Please start Ollama or set OPENAI_API_KEY before searching the graph.")
+                    st.error("Please start Ollama, start the local embedder, or set OPENAI_API_KEY before searching the graph.")
                 else:
                     # Add user message to history
                     st.session_state.chat_history.append({"role": "user", "content": chat_input})

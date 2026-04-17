@@ -59,6 +59,24 @@ OLLAMA_EMBED_DIM=768
 `OLLAMA_BASE_URL` may be either `http://localhost:11434` or `http://localhost:11434/v1`.
 Embeddings use Ollama when it is reachable, otherwise `OPENAI_API_KEY` is used. If neither is available, graph processing is disabled.
 
+You can also run CPU embeddings locally without Ollama:
+
+```bash
+uvicorn local_embedding_server:app --host 127.0.0.1 --port 8000
+```
+
+Optional local embedding service overrides:
+
+```bash
+LOCAL_EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+LOCAL_EMBEDDING_NAME=bge-small-en-v1.5
+LOCAL_EMBEDDINGS_BASE_URL=http://localhost:8000/v1
+LOCAL_EMBEDDINGS_MODEL=bge-small-en-v1.5
+LOCAL_EMBEDDINGS_DIM=384
+```
+
+When the service is reachable, `local:bge-small-en-v1.5` appears in the embedder dropdown.
+
 ## Tips
 
 - **Chunk size**: 200–300 words works well for most documents
