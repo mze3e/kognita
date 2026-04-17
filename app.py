@@ -77,10 +77,20 @@ def get_saved_graphs() -> list[dict]:
                         continue
     return sorted(saved_graphs, key=lambda x: x.get('processed_at', ''), reverse=True)
 
-def save_graph_data(pdf_name: str, pdf_bytes: bytes, nodes: dict, edges: list, episodes: list, processing_model: str):
+def save_graph_data(
+    pdf_name: str,
+    pdf_bytes: bytes,
+    nodes: dict,
+    edges: list,
+    episodes: list,
+    processing_model: str,
+    db_path: str = "",
+    graph_dir: str = "",
+):
     """Save graph data to disk."""
     pdf_hash = get_pdf_hash(pdf_bytes)
-    graph_dir = os.path.join(SAVED_GRAPHS_DIR, f"{pdf_hash}_{int(datetime.now().timestamp())}")
+    if not graph_dir:
+        graph_dir = os.path.join(SAVED_GRAPHS_DIR, f"{pdf_hash}_{int(datetime.now().timestamp())}")
 
     os.makedirs(graph_dir, exist_ok=True)
 
@@ -126,12 +136,27 @@ def save_graph_data(pdf_name: str, pdf_bytes: bytes, nodes: dict, edges: list, e
         "edge_count": len(edges),
         "episode_count": len(episodes),
         "graph_dir": graph_dir,
+        "kuzu_db_saved": False,
     }
+
+    if db_path and os.path.exists(db_path):
+        saved_db_path = os.path.join(graph_dir, "kuzu_db")
+        if os.path.abspath(db_path) != os.path.abspath(saved_db_path):
+            if os.path.isdir(db_path):
+                shutil.copytree(db_path, saved_db_path, dirs_exist_ok=True)
+            else:
+                shutil.copy2(db_path, saved_db_path)
+        metadata["kuzu_db_saved"] = True
 
     with open(os.path.join(graph_dir, "metadata.json"), 'w') as f:
         json.dump(metadata, f, indent=2)
 
     return graph_dir
+
+
+def get_saved_kuzu_db_path(graph_dir: str) -> str:
+    db_path = os.path.join(graph_dir, "kuzu_db")
+    return db_path if os.path.exists(db_path) else ""
 
 def load_graph_data(graph_dir: str) -> tuple[dict, list, list, bytes, str]:
     """Load graph data from disk."""
@@ -622,6 +647,7 @@ _defaults = {
     "episodes_log":   [],
     "pdf_name":       "",
     "db_path":        "",
+    "graph_dir":      "",
     "search_results": [],
     "processing_model": None,
     "embedder_provider": None,
@@ -837,11 +863,14 @@ with st.sidebar:
                         nodes, edges, episodes, pdf_bytes, pdf_name = load_graph_data(selected_metadata["graph_dir"])
 
                         # Update session state
-                        st.session_state.nodes = nodes
-                        st.session_state.edges = edges
+                        st.session_state.all_nodes = nodes
+                        st.session_state.all_edges = edges
                         st.session_state.episodes_log = episodes
                         st.session_state.pdf_bytes = pdf_bytes
                         st.session_state.pdf_name = pdf_name
+                        st.session_state.search_results = []
+                        st.session_state.db_path = get_saved_kuzu_db_path(selected_metadata["graph_dir"])
+                        st.session_state.graph_dir = selected_metadata["graph_dir"]
                         st.session_state.graph_built = True
                         st.session_state.processing_model = selected_metadata.get("processing_model", "Unknown")
 
@@ -1435,12 +1464,17 @@ with left:
             if st.button("🔄 Load Existing Graph", type="secondary"):
                 with st.spinner("Loading saved graph..."):
                     try:
-                        nodes, edges, episodes, _, _ = load_graph_data(existing_graph_dir)
+                        nodes, edges, episodes, saved_pdf_bytes, saved_pdf_name = load_graph_data(existing_graph_dir)
 
                         # Update session state
                         st.session_state.all_nodes = nodes
                         st.session_state.all_edges = edges
                         st.session_state.episodes_log = episodes
+                        st.session_state.pdf_bytes = saved_pdf_bytes
+                        st.session_state.pdf_name = saved_pdf_name
+                        st.session_state.search_results = []
+                        st.session_state.db_path = get_saved_kuzu_db_path(existing_graph_dir)
+                        st.session_state.graph_dir = existing_graph_dir
                         st.session_state.graph_built = True
 
                         # Load metadata to get processing model
@@ -1488,9 +1522,14 @@ with left:
                 st.session_state.get("embedder_provider")
                 or st.session_state.get("embedder_provider_select")
             )
-            db_dir  = tempfile.mkdtemp()
-            db_path = os.path.join(db_dir, "kg")
+            graph_dir = os.path.join(
+                SAVED_GRAPHS_DIR,
+                f"{get_pdf_hash(pdf_bytes)}_{int(datetime.now().timestamp())}",
+            )
+            os.makedirs(graph_dir, exist_ok=True)
+            db_path = os.path.join(graph_dir, "kuzu_db")
             st.session_state.db_path  = db_path
+            st.session_state.graph_dir = graph_dir
             st.session_state.pdf_name = uploaded.name
             st.session_state.pdf_bytes = pdf_bytes  # Store PDF bytes for saving
 
@@ -1498,6 +1537,7 @@ with left:
             for _k, _v in _defaults.items():
                 st.session_state[_k] = _v
             st.session_state.db_path  = db_path
+            st.session_state.graph_dir = graph_dir
             st.session_state.pdf_name = uploaded.name
             st.session_state.pdf_bytes = pdf_bytes
             st.session_state.processing_model = selected_processing_model
@@ -1559,7 +1599,8 @@ with left:
                 stat.success("✅ Graph built successfully!")
                 try:
                     save_graph_data(
-                        uploaded.name, pdf_bytes, nodes, edges, ep_log, processing_model
+                        uploaded.name, pdf_bytes, nodes, edges, ep_log, processing_model,
+                        db_path, st.session_state.graph_dir
                     )
                     st.info("💾 Graph automatically saved for future use")
                 except Exception as e:
@@ -1632,7 +1673,8 @@ with left:
                     stat.success("✅ Remaining chunks processed successfully!")
                     try:
                         save_graph_data(
-                            uploaded.name, pdf_bytes, nodes, edges, ep_log, processing_model
+                            uploaded.name, pdf_bytes, nodes, edges, ep_log, processing_model,
+                            st.session_state.db_path, st.session_state.graph_dir
                         )
                         st.info("💾 Graph automatically saved for future use")
                     except Exception as e:
@@ -1669,12 +1711,15 @@ with left:
             "Natural language query",
             placeholder="e.g. Who are the key people?",
         )
+        has_kuzu_db = bool(st.session_state.db_path)
+        if not has_kuzu_db:
+            st.warning("Semantic search is unavailable for this loaded graph because its Kuzu DB was not saved.")
         if not embed_config["available"]:
             st.error("❌ Search needs embeddings. Start Ollama, start the local embedder, or set OPENAI_API_KEY.")
         if st.button(
             "🔍 Search",
             use_container_width=True,
-            disabled=not embed_config["available"],
+            disabled=not (embed_config["available"] and has_kuzu_db),
         ) and query.strip():
             with st.spinner("Searching …"):
                 try:
@@ -1860,58 +1905,53 @@ with right:
             if "chat_history" not in st.session_state:
                 st.session_state.chat_history = []
 
-            # Display chat history
+            for msg in st.session_state.chat_history[-20:]:
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
+                    if msg.get("used_graph_snapshot"):
+                        st.caption("Semantic search found no direct matches, so this answer used a compact whole-graph snapshot.")
+                    if msg["role"] == "assistant" and "search_results" in msg:
+                        with st.expander("📊 Search Results"):
+                            if msg["search_results"]:
+                                for result in msg["search_results"][:5]:
+                                    st.write(f"• {result}")
+                            else:
+                                st.write("No direct semantic matches.")
 
-            # Display chat history
-            chat_container = st.container(height=300)
-            with chat_container:
-                for msg in st.session_state.chat_history[-10:]:  # Show last 10 messages
-                    if msg["role"] == "user":
-                        st.markdown(f"**You:** {msg['content']}")
-                    else:
-                        st.markdown(f"**Assistant:** {msg['content']}")
-                        if msg.get("used_graph_snapshot"):
-                            st.caption("Semantic search found no direct matches, so this answer used a compact whole-graph snapshot.")
-                        if "search_results" in msg:
-                            with st.expander("📊 Search Results"):
-                                if msg["search_results"]:
-                                    for result in msg["search_results"][:5]:
-                                        st.write(f"• {result}")
-                                else:
-                                    st.write("No direct semantic matches.")
-
-            # Chat input
-            chat_input = st.text_input(
-                "Ask a question about your knowledge graph:",
-                placeholder="e.g., 'What are the main topics discussed?' or 'Who are the key entities?'",
-                key="chat_input"
+            chat_input = st.chat_input(
+                "Ask a question about your knowledge graph..."
             )
 
-            if st.button("💬 Send", use_container_width=True) and chat_input.strip():
+            if chat_input and chat_input.strip():
                 if provider not in ("ollama", "custom") and not api_key:
                     st.error("Please set the API key for the selected LLM provider.")
-                elif not embed_config["available"]:
+                elif not embed_config["available"] and st.session_state.db_path:
                     st.error("Please start Ollama, start the local embedder, or set OPENAI_API_KEY before searching the graph.")
                 else:
-                    # Add user message to history
                     st.session_state.chat_history.append({"role": "user", "content": chat_input})
+                    with st.chat_message("user"):
+                        st.markdown(chat_input)
 
-                    with st.spinner("Thinking..."):
+                    with st.chat_message("assistant"):
+                        response_placeholder = st.empty()
+                        response_placeholder.markdown("Thinking...")
                         try:
-                            processing_model = st.session_state.get("processing_model", "")
-                            search_provider = processing_model.split(":", 1)[0] if ":" in processing_model else provider
-                            sconf = _resolve_provider(search_provider, cloud_keys, embed_config)
-                            search_results = run_async(
-                                search_graph(
-                                    chat_input, search_provider, sconf["api_key"],
-                                    processing_model, st.session_state.db_path,
-                                    base_url=sconf["base_url"],
-                                    embed_model=sconf["embed_model"],
-                                    embed_base_url=sconf["embed_base_url"],
-                                    embed_api_key=sconf["embed_api_key"],
-                                    embed_dim=sconf["embed_dim"],
+                            search_results = []
+                            if st.session_state.db_path and embed_config["available"]:
+                                processing_model = st.session_state.get("processing_model", "")
+                                search_provider = processing_model.split(":", 1)[0] if ":" in processing_model else provider
+                                sconf = _resolve_provider(search_provider, cloud_keys, embed_config)
+                                search_results = run_async(
+                                    search_graph(
+                                        chat_input, search_provider, sconf["api_key"],
+                                        processing_model, st.session_state.db_path,
+                                        base_url=sconf["base_url"],
+                                        embed_model=sconf["embed_model"],
+                                        embed_base_url=sconf["embed_base_url"],
+                                        embed_api_key=sconf["embed_api_key"],
+                                        embed_dim=sconf["embed_dim"],
+                                    )
                                 )
-                            )
                             used_graph_snapshot = not bool(search_results)
 
                             # Generate response using LLM
@@ -1922,8 +1962,16 @@ with right:
                                     base_url=pconf["base_url"],
                                 )
                             )
+                            response_placeholder.markdown(response)
+                            if used_graph_snapshot:
+                                st.caption("Semantic search found no direct matches, so this answer used a compact whole-graph snapshot.")
+                            with st.expander("📊 Search Results"):
+                                if search_results:
+                                    for result in search_results[:5]:
+                                        st.write(f"• {result}")
+                                else:
+                                    st.write("No direct semantic matches.")
 
-                            # Add assistant response to history
                             st.session_state.chat_history.append({
                                 "role": "assistant",
                                 "content": response,
@@ -1934,7 +1982,7 @@ with right:
                             st.rerun()
 
                         except Exception as exc:
-                            st.error(f"Error: {exc}")
+                            response_placeholder.error(f"Error: {exc}")
 
             # Kuzu Database Explorer
             st.markdown("#### 🗄️ Kuzu Database Explorer")
@@ -1968,7 +2016,13 @@ with right:
                     height=100
                 )
 
-            if st.button("🔍 Execute Query", use_container_width=True) and kuzu_query.strip():
+            if not st.session_state.db_path:
+                st.warning("Direct Kuzu queries are unavailable for this loaded graph because its Kuzu DB was not saved.")
+            if st.button(
+                "🔍 Execute Query",
+                use_container_width=True,
+                disabled=not st.session_state.db_path,
+            ) and kuzu_query.strip():
                 try:
                     results = execute_kuzu_query(kuzu_query, st.session_state.db_path)
                     if results:
