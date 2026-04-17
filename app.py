@@ -899,8 +899,8 @@ with st.sidebar:
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown('<div class="main-title">🧠 PDF → Knowledge Graph</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="subtitle">Powered by Graphiti · KuzuDB · Claude Sonnet · '
-    'text-embedding-3-small</div>',
+    '<div class="subtitle">Powered by Graphiti · KuzuDB · Streamlit · '
+    'Your Favourite LLM</div>',
     unsafe_allow_html=True,
 )
 
