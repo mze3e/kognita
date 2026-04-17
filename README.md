@@ -1,5 +1,7 @@
 # Kognita — PDF → Knowledge Graph
 
+![Kognita](static/images/kognita.png)
+
 Turn any PDF into an interactive, queryable knowledge graph. Kognita uses **Graphiti** (by Zep) as the graph engine, **KuzuDB** as the embedded graph database, and **Streamlit** for the UI. Entity and relationship extraction is powered by your choice of LLM — cloud or fully local.
 
 ---
