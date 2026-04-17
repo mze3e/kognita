@@ -715,6 +715,8 @@ def _resolve_provider(provider: str, cloud_keys: dict, embed_config: dict) -> di
 # Sidebar
 # ═══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
+    st.image("static/images/kognita.png", use_container_width=True)
+    st.divider()
     st.markdown("## ⚙️ Health Check")
     ollama_config = get_ollama_config()
     ollama_models = get_ollama_models(ollama_config["base_url"])
