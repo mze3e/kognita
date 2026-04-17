@@ -360,6 +360,21 @@ def get_preferred_model_index(available_models: list[str]) -> int:
     return 0
 
 
+def get_processing_model_index(available_models: list[str]) -> int:
+    """Return the selectbox index for the session's chosen graph model."""
+    current_model = st.session_state.get("processing_model")
+    widget_model = st.session_state.get("processing_model_select")
+    if current_model in available_models:
+        return available_models.index(current_model)
+    if widget_model in available_models:
+        return available_models.index(widget_model)
+    return get_preferred_model_index(available_models)
+
+
+def sync_processing_model():
+    st.session_state.processing_model = st.session_state.processing_model_select
+
+
 def is_ollama_embedding_model(model: str, embed_model: str) -> bool:
     return model == embed_model or model.split(":", 1)[0] == embed_model.split(":", 1)[0]
 
@@ -549,6 +564,7 @@ _defaults = {
     "pdf_name":       "",
     "db_path":        "",
     "search_results": [],
+    "processing_model": None,
 }
 for _k, _v in _defaults.items():
     if _k not in st.session_state:
@@ -672,15 +688,18 @@ with st.sidebar:
 
     # Model selection for graph processing
     if available_models:
+        processing_model_index = get_processing_model_index(available_models)
+        st.session_state.processing_model_select = available_models[processing_model_index]
         processing_model = st.selectbox(
             "Model for Knowledge Graph Building",
             available_models,
-            index=get_preferred_model_index(available_models),
-            help="Choose which LLM to use for extracting entities and relationships from PDF chunks"
+            index=processing_model_index,
+            help="Choose which LLM to use for extracting entities and relationships from PDF chunks",
+            key="processing_model_select",
+            on_change=sync_processing_model,
         )
-
-        # Store the selected processing model in session state
-        st.session_state.processing_model = processing_model
+        if st.session_state.processing_model != processing_model:
+            st.session_state.processing_model = processing_model
         
         # Extract actual model ID from "provider:model-id"
         actual_model_name = processing_model.split(":", 1)[1] if ":" in processing_model else processing_model
@@ -1151,11 +1170,17 @@ Answer:"""
                     model=actual_model,
                 )
             )
-            response = await llm_client.generate(
+            response = await llm_client.client.messages.create(
+                model=actual_model,
+                max_tokens=1000,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=1000
             )
-            return response.content[0].text if response.content else "No response generated."
+            text_parts = [
+                content.text
+                for content in response.content
+                if getattr(content, "type", None) == "text"
+            ]
+            return "\n".join(text_parts).strip() or "No response generated."
 
         elif provider == "openai":
             actual_model = extract_model_name(selected_model) or "gpt-4"
@@ -1214,15 +1239,25 @@ Answer:"""
 
 
 def execute_kuzu_query(query: str, db_path: str) -> list:
-    """Execute a direct Kuzu query and return results.
+    """Execute a direct read-only Kuzu query and return rows as dictionaries."""
+    if not db_path:
+        raise ValueError("No Kuzu database is loaded for this graph.")
 
-    NOTE: Direct Kuzu query execution is not yet implemented.
-    Use the semantic search in the Search Graph section instead.
-    """
-    raise NotImplementedError(
-        f"Direct Kuzu query execution is not yet implemented (query: {query!r}). "
-        "Use the 'Search Graph' section for semantic queries against the knowledge graph."
-    )
+    normalized_query = query.strip().rstrip(";")
+    if not normalized_query:
+        return []
+    if not normalized_query.lower().startswith(("match", "call")):
+        raise ValueError("Only read-only MATCH or CALL queries are allowed from the UI.")
+
+    db = kuzu.Database(db_path)
+    conn = kuzu.Connection(db)
+    try:
+        result = conn.execute(normalized_query)
+        if result is None:
+            return []
+        return list(result.rows_as_dict())
+    finally:
+        conn.close()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1758,9 +1793,10 @@ with right:
             predefined_queries = {
                 "Count all nodes": "MATCH (n) RETURN count(n) as node_count",
                 "Count all edges": "MATCH ()-[r]->() RETURN count(r) as edge_count",
-                "List all node labels": "MATCH (n) RETURN DISTINCT labels(n) as labels",
-                "Find nodes with most connections": "MATCH (n)-[r]-() RETURN n.name, count(r) as connections ORDER BY connections DESC LIMIT 10",
-                "Show recent episodes": "MATCH (e:Episode) RETURN e.name, e.created_at ORDER BY e.created_at DESC LIMIT 5"
+                "Count entities": "MATCH (n:Entity) RETURN count(n) as entity_count",
+                "Find entities with most facts": "MATCH (n:Entity)-[:RELATES_TO]->(e:RelatesToNode_) RETURN n.name as entity, count(e) as facts ORDER BY facts DESC LIMIT 10",
+                "Show recent episodes": "MATCH (e:Episodic) RETURN e.name as name, e.created_at as created_at ORDER BY e.created_at DESC LIMIT 5",
+                "Show facts": "MATCH (n:Entity)-[:RELATES_TO]->(e:RelatesToNode_)-[:RELATES_TO]->(m:Entity) RETURN n.name as source, e.fact as fact, m.name as target LIMIT 25",
             }
 
             query_option = st.selectbox(
@@ -1772,7 +1808,7 @@ with right:
                 kuzu_query = st.text_area(
                     "Kuzu Cypher Query:",
                     height=100,
-                    placeholder="MATCH (n)-[r]->(m) RETURN n.name, type(r), m.name LIMIT 10"
+                    placeholder="MATCH (n:Entity)-[:RELATES_TO]->(e:RelatesToNode_)-[:RELATES_TO]->(m:Entity) RETURN n.name, e.fact, m.name LIMIT 10"
                 )
             else:
                 kuzu_query = st.text_area(
@@ -1784,10 +1820,11 @@ with right:
             if st.button("🔍 Execute Query", use_container_width=True) and kuzu_query.strip():
                 try:
                     results = execute_kuzu_query(kuzu_query, st.session_state.db_path)
-                    df = pd.DataFrame(results)
-                    st.dataframe(df, use_container_width=True)
-                except NotImplementedError as exc:
-                    st.warning(f"⚠️ {exc}")
+                    if results:
+                        df = pd.DataFrame(results)
+                        st.dataframe(df, use_container_width=True)
+                    else:
+                        st.info("Query returned no rows.")
                 except Exception as exc:
                     st.error(f"Query error: {exc}")
 
@@ -1797,8 +1834,8 @@ with right:
                 **Graph Search Queries:**
                 - `MATCH (n) RETURN count(n)` - Count all nodes
                 - `MATCH ()-[r]->() RETURN count(r)` - Count all relationships
-                - `MATCH (n) WHERE n.name CONTAINS "Alice" RETURN n` - Find nodes by name
-                - `MATCH (n)-[r]->(m) RETURN n.name, type(r), m.name LIMIT 10` - Show relationships
+                - `MATCH (n:Entity) WHERE n.name CONTAINS "Alice" RETURN n.name, n.summary` - Find entities by name
+                - `MATCH (n:Entity)-[:RELATES_TO]->(e:RelatesToNode_)-[:RELATES_TO]->(m:Entity) RETURN n.name, e.fact, m.name LIMIT 10` - Show facts
 
                 **Tips:**
                 - Use natural language questions in the chat for semantic search
