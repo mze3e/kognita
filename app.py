@@ -1138,6 +1138,40 @@ async def search_graph(
     return results
 
 
+def build_graph_context_snapshot(nodes: dict, edges: list, max_nodes: int = 40, max_edges: int = 80) -> str:
+    """Build a compact graph snapshot for LLM fallback context."""
+    lines = []
+    if nodes:
+        lines.append("Entities:")
+        sorted_nodes = sorted(
+            nodes.values(),
+            key=lambda node: (getattr(node, "name", "") or "").lower(),
+        )
+        for node in sorted_nodes[:max_nodes]:
+            name = getattr(node, "name", None) or getattr(node, "uuid", "")[:10]
+            labels = getattr(node, "labels", None) or []
+            labels_text = f" [{', '.join(str(label) for label in labels)}]" if labels else ""
+            summary = (getattr(node, "summary", None) or "").replace("\n", " ").strip()
+            summary_text = f": {summary[:220]}" if summary else ""
+            lines.append(f"- {name}{labels_text}{summary_text}")
+        if len(nodes) > max_nodes:
+            lines.append(f"- ... {len(nodes) - max_nodes} more entities omitted")
+
+    if edges:
+        lines.append("\nFacts:")
+        for edge in edges[:max_edges]:
+            source_node = nodes.get(getattr(edge, "source_node_uuid", ""))
+            target_node = nodes.get(getattr(edge, "target_node_uuid", ""))
+            source = getattr(source_node, "name", None) or getattr(edge, "source_node_uuid", "")[:10]
+            target = getattr(target_node, "name", None) or getattr(edge, "target_node_uuid", "")[:10]
+            fact = (getattr(edge, "fact", None) or getattr(edge, "name", None) or "").replace("\n", " ").strip()
+            lines.append(f"- {source} -> {target}: {fact[:260]}")
+        if len(edges) > max_edges:
+            lines.append(f"- ... {len(edges) - max_edges} more facts omitted")
+
+    return "\n".join(lines)
+
+
 def run_async(coro):
     return asyncio.run(coro)
 
@@ -1241,13 +1275,22 @@ async def generate_llm_response(
         for i, result in enumerate(search_results[:5]):
             context += f"{i+1}. {str(result)}\n"
         context += "\n"
+    else:
+        graph_snapshot = build_graph_context_snapshot(nodes, edges)
+        if graph_snapshot:
+            context += (
+                "Semantic search returned no direct matches. Use this compact graph snapshot instead:\n"
+                f"{graph_snapshot}\n\n"
+            )
+        else:
+            context += "The knowledge graph has no available entities or facts.\n\n"
 
     # Create a prompt for the LLM
     prompt = f"""You are a helpful assistant that answers questions about a knowledge graph.
 
 {context}
 
-Please provide a comprehensive and accurate answer to the user's question based on the information available in the knowledge graph. If the information is insufficient, acknowledge this and suggest what might be needed.
+Please provide a comprehensive and accurate answer to the user's question based only on the information available in the knowledge graph context above. If the graph context is insufficient, say so clearly instead of guessing.
 
 Answer:"""
 
@@ -1437,6 +1480,14 @@ with left:
             use_container_width=True,
             type="primary",
         ):
+            selected_processing_model = (
+                st.session_state.get("processing_model")
+                or st.session_state.get("processing_model_select")
+            )
+            selected_embedder_provider = (
+                st.session_state.get("embedder_provider")
+                or st.session_state.get("embedder_provider_select")
+            )
             db_dir  = tempfile.mkdtemp()
             db_path = os.path.join(db_dir, "kg")
             st.session_state.db_path  = db_path
@@ -1449,6 +1500,8 @@ with left:
             st.session_state.db_path  = db_path
             st.session_state.pdf_name = uploaded.name
             st.session_state.pdf_bytes = pdf_bytes
+            st.session_state.processing_model = selected_processing_model
+            st.session_state.embedder_provider = selected_embedder_provider
 
             prog = st.progress(0.0)
             stat = st.empty()
@@ -1817,10 +1870,15 @@ with right:
                         st.markdown(f"**You:** {msg['content']}")
                     else:
                         st.markdown(f"**Assistant:** {msg['content']}")
+                        if msg.get("used_graph_snapshot"):
+                            st.caption("Semantic search found no direct matches, so this answer used a compact whole-graph snapshot.")
                         if "search_results" in msg:
                             with st.expander("📊 Search Results"):
-                                for result in msg["search_results"][:5]:
-                                    st.write(f"• {result}")
+                                if msg["search_results"]:
+                                    for result in msg["search_results"][:5]:
+                                        st.write(f"• {result}")
+                                else:
+                                    st.write("No direct semantic matches.")
 
             # Chat input
             chat_input = st.text_input(
@@ -1854,6 +1912,7 @@ with right:
                                     embed_dim=sconf["embed_dim"],
                                 )
                             )
+                            used_graph_snapshot = not bool(search_results)
 
                             # Generate response using LLM
                             response = run_async(
@@ -1868,7 +1927,8 @@ with right:
                             st.session_state.chat_history.append({
                                 "role": "assistant",
                                 "content": response,
-                                "search_results": search_results
+                                "search_results": search_results,
+                                "used_graph_snapshot": used_graph_snapshot,
                             })
 
                             st.rerun()
