@@ -602,38 +602,35 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-  [data-testid="stAppViewContainer"] { background: #0f172a; }
-  [data-testid="stSidebar"]          { background: #1e293b; }
   .main-title {
     font-size: 2.1rem; font-weight: 800;
     background: linear-gradient(135deg, #818cf8, #c084fc);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     margin-bottom: 0.1rem;
   }
-  .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .subtitle { font-size: 0.9rem; margin-bottom: 1.5rem; }
   .stat-box {
-    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+    border: 1px solid #334155; border-radius: 10px;
     padding: 1rem; text-align: center; margin-bottom: 0.5rem;
   }
   .stat-number { font-size: 1.9rem; font-weight: 700; color: #818cf8; }
-  .stat-label  { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+  .stat-label  { font-size: 0.75rem; margin-top: 2px; }
   .chunk-ok {
-    background: #0f2a1a; border-left: 3px solid #22c55e; border-radius: 4px;
-    padding: 0.55rem 0.9rem; margin-bottom: 0.4rem; font-size: 0.8rem; color: #86efac;
+    border-left: 3px solid #22c55e; border-radius: 4px;
+    padding: 0.55rem 0.9rem; margin-bottom: 0.4rem; font-size: 0.8rem;
   }
   .chunk-err {
-    background: #2a0f0f; border-left: 3px solid #ef4444; border-radius: 4px;
-    padding: 0.55rem 0.9rem; margin-bottom: 0.4rem; font-size: 0.8rem; color: #fca5a5;
+    border-left: 3px solid #ef4444; border-radius: 4px;
+    padding: 0.55rem 0.9rem; margin-bottom: 0.4rem; font-size: 0.8rem;
   }
   .fact-card {
-    background: #1a0f2a; border-left: 3px solid #a855f7; border-radius: 4px;
-    padding: 0.5rem 0.8rem; margin-bottom: 0.35rem; font-size: 0.82rem; color: #d8b4fe;
+    border-left: 3px solid #a855f7; border-radius: 4px;
+    padding: 0.5rem 0.8rem; margin-bottom: 0.35rem; font-size: 0.82rem;
   }
   .search-result {
-    background: #0f1f2a; border-left: 3px solid #38bdf8; border-radius: 4px;
-    padding: 0.55rem 0.9rem; margin-bottom: 0.4rem; font-size: 0.82rem; color: #7dd3fc;
+    border-left: 3px solid #38bdf8; border-radius: 4px;
+    padding: 0.55rem 0.9rem; margin-bottom: 0.4rem; font-size: 0.82rem;
   }
-  h3 { color: #e2e8f0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1217,7 +1214,6 @@ def build_pyvis_html(
 ) -> str:
     net = Network(
         height="650px", width="100%",
-        bgcolor="#0f172a", font_color="#e2e8f0",
         directed=True,
     )
     if physics:
@@ -1250,7 +1246,7 @@ def build_pyvis_html(
                 "highlight": {"background": "#c084fc", "border": "#e879f9"},
             },
             size=size,
-            font={"size": 11, "color": "#f1f5f9"},
+            font={"size": 11},
             borderWidth=2,
         )
 
@@ -1272,7 +1268,7 @@ def build_pyvis_html(
             color={"color": e_color, "opacity": 0.75, "highlight": "#e879f9"},
             arrows={"to": {"enabled": True, "scaleFactor": 0.6}},
             smooth={"type": "curvedCW", "roundness": 0.15},
-            font={"size": 9, "color": "#c4b5fd", "strokeWidth": 0},
+            font={"size": 9},
             width=1.5,
         )
 
@@ -1763,19 +1759,18 @@ with right:
         # Option menu for navigation
         selected = option_menu(
             menu_title=None,
-            options=["🕸️ Graph", "📋 Episode Log", "📜 All Facts", "📥 Export", "🤖 LLM Playground"],
+            options=["🕸️ Graph", "📋 Episodes", "📜 All Facts", "📥 Export", "🤖 Playground"],
             icons=["graph-up", "list-check", "file-text", "download", "robot"],
             menu_icon="cast",
             default_index=0,
             orientation="horizontal",
             styles={
-                "container": {"padding": "0!important", "background-color": "#1e293b"},
-                "icon": {"color": "#818cf8", "font-size": "16px"},
+                "container": {"padding": "0!important"},
+                "icon": {"font-size": "16px"},
                 "nav-link": {
                     "font-size": "14px",
                     "text-align": "center",
                     "margin": "0px",
-                    "--hover-color": "#334155",
                 },
                 "nav-link-selected": {"background-color": "#818cf8"},
             }
@@ -1798,7 +1793,7 @@ with right:
                 )
 
         # Episode log
-        elif selected == "📋 Episode Log":
+        elif selected == "📋 Episodes":
             st.caption(f"{len(ep_log)} chunks processed")
             for ep in ep_log:
                 if "error" in ep:
@@ -1878,7 +1873,7 @@ with right:
                 st.markdown(f"- **{n.name}**{summary_snippet}")
 
         # LLM Playground
-        elif selected == "🤖 LLM Playground":
+        elif selected == "🤖 Playground":
             st.markdown("### 🤖 LLM Playground")
             st.markdown("Interact with your knowledge graph using LLMs and explore Kuzu database functionalities.")
 
