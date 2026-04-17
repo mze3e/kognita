@@ -379,11 +379,13 @@ def is_ollama_embedding_model(model: str, embed_model: str) -> bool:
     return model == embed_model or model.split(":", 1)[0] == embed_model.split(":", 1)[0]
 
 
-def get_default_embed_config(ollama_models: list[str], openai_key: str) -> dict:
-    """Prefer Ollama embeddings when available, then OpenAI embeddings."""
+def get_available_embed_configs(ollama_models: list[str], openai_key: str) -> dict[str, dict]:
+    """Return available embedding backends keyed by display label."""
+    embed_configs = {}
     ollama_config = get_ollama_config()
     if ollama_models:
-        return {
+        label = f"ollama:{ollama_config['embed_model']}"
+        embed_configs[label] = {
             "available": True,
             "provider": "ollama",
             "embed_model": ollama_config["embed_model"],
@@ -392,7 +394,8 @@ def get_default_embed_config(ollama_models: list[str], openai_key: str) -> dict:
             "embed_dim": ollama_config["embed_dim"],
         }
     if openai_key:
-        return {
+        label = "openai:text-embedding-3-small"
+        embed_configs[label] = {
             "available": True,
             "provider": "openai",
             "embed_model": "text-embedding-3-small",
@@ -400,6 +403,24 @@ def get_default_embed_config(ollama_models: list[str], openai_key: str) -> dict:
             "embed_api_key": openai_key,
             "embed_dim": 1536,
         }
+    return embed_configs
+
+
+def get_embedder_index(embedder_options: list[str]) -> int:
+    current_embedder = st.session_state.get("embedder_provider")
+    widget_embedder = st.session_state.get("embedder_provider_select")
+    if current_embedder in embedder_options:
+        return embedder_options.index(current_embedder)
+    if widget_embedder in embedder_options:
+        return embedder_options.index(widget_embedder)
+    return 0
+
+
+def sync_embedder_provider():
+    st.session_state.embedder_provider = st.session_state.embedder_provider_select
+
+
+def get_unavailable_embed_config() -> dict:
     return {
         "available": False,
         "provider": "",
@@ -565,6 +586,7 @@ _defaults = {
     "db_path":        "",
     "search_results": [],
     "processing_model": None,
+    "embedder_provider": None,
 }
 for _k, _v in _defaults.items():
     if _k not in st.session_state:
@@ -655,9 +677,10 @@ with st.sidebar:
         custom_endpoint_status = f"✅ {custom_config['base_url']}" if custom_config["base_url"] else "❌"
         st.write(f"Custom OpenAI Endpoint: {custom_endpoint_status}")
         st.write(f"Custom OpenAI API Key: {'✅' if custom_config['api_key'] else '❌'}")
-    embed_config = get_default_embed_config(ollama_models, openai_key)
-    if embed_config["available"]:
-        st.write(f"Embeddings: ✅ {embed_config['provider']} · {embed_config['embed_model']}")
+    embed_configs = get_available_embed_configs(ollama_models, openai_key)
+    embedder_options = list(embed_configs.keys())
+    if embedder_options:
+        st.write(f"Embeddings: ✅ {len(embedder_options)} available")
     else:
         st.error("Embeddings: ❌ Start Ollama or set OPENAI_API_KEY")
 
@@ -682,6 +705,26 @@ with st.sidebar:
         st.success(f"✅ {len(available_models)} models available")
     else:
         st.error("❌ No providers configured")
+
+    st.divider()
+    st.markdown("## 🧬 Embeddings")
+    if embedder_options:
+        embedder_index = get_embedder_index(embedder_options)
+        st.session_state.embedder_provider_select = embedder_options[embedder_index]
+        selected_embedder = st.selectbox(
+            "Embedder for Knowledge Graph Search",
+            embedder_options,
+            index=embedder_index,
+            key="embedder_provider_select",
+            on_change=sync_embedder_provider,
+            help="Choose which embedding backend Graphiti should use.",
+        )
+        if st.session_state.embedder_provider != selected_embedder:
+            st.session_state.embedder_provider = selected_embedder
+        embed_config = embed_configs[selected_embedder]
+        st.caption(f"Using {embed_config['embed_model']} · {embed_config['embed_dim']} dimensions")
+    else:
+        embed_config = get_unavailable_embed_config()
 
     st.divider()
     st.markdown("## 🤖 Graph Processing Model")
