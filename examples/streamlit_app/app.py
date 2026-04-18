@@ -52,6 +52,9 @@ load_dotenv()
 SAVED_GRAPHS_DIR = ".saved_graphs"
 os.makedirs(SAVED_GRAPHS_DIR, exist_ok=True)
 
+_HERE = Path(__file__).parent
+LOGO_PATH = str(_HERE / "static" / "images" / "kognita.png")
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Utility functions for saving/loading graphs
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -712,7 +715,7 @@ def _resolve_provider(provider: str, cloud_keys: dict, embed_config: dict) -> di
 # Sidebar
 # ═══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.image("static/images/kognita.png", use_container_width=True)
+    st.image(LOGO_PATH, use_container_width=True)
     st.divider()
     st.markdown("## ⚙️ Health Check")
     ollama_config = get_ollama_config()

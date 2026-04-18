@@ -1,17 +1,75 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
 [project]
 name = "kognita"
 version = "0.1.0"
-description = "Upload a PDF. Extract entities and relationships. Explore the graph. Powered by Graphiti + Your Favourite LLM."
+description = "Turn text blobs into queryable knowledge graphs. Graphiti + Kuzu, with a pluggable LLM + embedder surface."
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ahmed Muzammil" }]
+keywords = [
+    "knowledge-graph",
+    "graphiti",
+    "kuzu",
+    "llm",
+    "rag",
+    "entity-extraction",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+# Library-only runtime dependencies. No streamlit / pyvis / pymupdf / pandas.
 dependencies = [
     "graphiti-core[anthropic,google-genai,groq,kuzu]>=0.8.0",
-    "fastapi>=0.115.0",
-    "pymupdf>=1.24.0",
+    "kuzu>=0.6.0",
+    "openai>=1.40.0",
     "python-dotenv>=1.0.0",
-    "pyvis>=0.3.2",
+    "requests>=2.32.0",
+]
+
+[project.optional-dependencies]
+local-embeddings = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
     "sentence-transformers>=3.0.0",
+]
+demo = [
     "streamlit>=1.35.0",
     "streamlit-option-menu>=0.3.0",
-    "uvicorn>=0.30.0",
+    "pyvis>=0.3.2",
+    "pandas>=2.2.0",
+    "pymupdf>=1.24.0",
+]
+all = [
+    "kognita[local-embeddings,demo]",
+]
+
+[project.urls]
+Homepage = "https://github.com/mze3e/kognita"
+Repository = "https://github.com/mze3e/kognita"
+Issues = "https://github.com/mze3e/kognita/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kognita"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/kognita/**",
+    "examples/**",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
 ]

@@ -1,8 +1,13 @@
 # Kognita — PDF → Knowledge Graph
 
-![Kognita](static/images/kognita.png)
+![Kognita](examples/streamlit_app/static/images/kognita.png)
 
-Turn any PDF into an interactive, queryable knowledge graph. Kognita uses **Graphiti** (by Zep) as the graph engine, **KuzuDB** as the embedded graph database, and **Streamlit** for the UI. Entity and relationship extraction is powered by your choice of LLM — cloud or fully local.
+**`kognita`** is a Python library that turns text blobs into queryable knowledge graphs. It wraps **Graphiti** (by Zep) as the graph engine and **KuzuDB** as the embedded graph database, with a pluggable LLM + embedder surface (Anthropic, OpenAI, Groq, Gemini, Ollama, or any OpenAI-compatible endpoint).
+
+This repository ships two examples on top of the library:
+
+- **`examples/streamlit_app/`** — the full PDF-to-knowledge-graph Streamlit UI documented below.
+- **`examples/local_embedding_server/`** — an OpenAI-compatible embedding server so you can run everything offline.
 
 ---
 
@@ -46,7 +51,7 @@ Embeddings are used by Graphiti for semantic search. The embedder is chosen inde
 |---|---|
 | **OpenAI** | `text-embedding-3-small` (1536 dims). Requires `OPENAI_API_KEY`. |
 | **Ollama** | `nomic-embed-text` or any model pulled locally (configurable). |
-| **Local CPU server** | Run `local_embedding_server.py` on your machine. Uses `BAAI/bge-small-en-v1.5` by default. |
+| **Local CPU server** | Run `examples/local_embedding_server/server.py` on your machine. Uses `BAAI/bge-small-en-v1.5` by default. |
 
 ### Saved Graphs & Deduplication
 
@@ -124,11 +129,44 @@ The sidebar shows live status for every configured provider:
 
 ---
 
-## Setup
+## Install
+
+### As a library
 
 ```bash
-pip install -r requirements.txt
-streamlit run app.py
+pip install kognita
+```
+
+```python
+import asyncio
+from kognita import Kognita, KognitaConfig, LLMConfig, EmbedderConfig
+
+async def main():
+    cfg = KognitaConfig(
+        llm=LLMConfig(provider="anthropic", api_key="…", model="claude-3-5-sonnet-20241022"),
+        embedder=EmbedderConfig(provider="openai", api_key="…", model="text-embedding-3-small", dimension=1536),
+        db_path="./my_graph.kuzu",
+    )
+    async with Kognita(cfg) as kg:
+        await kg.ingest_text("Einstein published relativity in 1905…", source="einstein")
+        hits = await kg.search("What did Einstein discover?")
+        snapshot = kg.export()
+
+asyncio.run(main())
+```
+
+### Run the Streamlit demo
+
+```bash
+pip install -e ".[demo]"
+streamlit run examples/streamlit_app/app.py
+```
+
+### Run the local embedding server
+
+```bash
+pip install -e ".[local-embeddings]"
+uvicorn examples.local_embedding_server.server:app --host 127.0.0.1 --port 8000
 ```
 
 ---
@@ -171,7 +209,8 @@ OLLAMA_EMBED_DIM=768
 Run a small FastAPI embedding server on your CPU (no GPU required):
 
 ```bash
-uvicorn local_embedding_server:app --host 127.0.0.1 --port 8000
+pip install -e ".[local-embeddings]"
+uvicorn examples.local_embedding_server.server:app --host 127.0.0.1 --port 8000
 ```
 
 Optional env overrides:
