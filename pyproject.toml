@@ -56,11 +56,24 @@ demo = [
 all = [
     "kognita[local-embeddings,demo]",
 ]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=5.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/mze3e/kognita"
 Repository = "https://github.com/mze3e/kognita"
 Issues = "https://github.com/mze3e/kognita/issues"
+Changelog = "https://github.com/mze3e/kognita/blob/main/CHANGELOG.md"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/kognita"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kognita"]
