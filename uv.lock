@@ -860,31 +860,57 @@ wheels = [
 [[package]]
 name = "kognita"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
-    { name = "fastapi" },
     { name = "graphiti-core", extra = ["anthropic", "google-genai", "groq", "kuzu"] },
-    { name = "pymupdf" },
+    { name = "kuzu" },
+    { name = "openai" },
     { name = "python-dotenv" },
+    { name = "requests" },
+]
+
+[package.optional-dependencies]
+all = [
+    { name = "fastapi" },
+    { name = "pandas" },
+    { name = "pymupdf" },
     { name = "pyvis" },
     { name = "sentence-transformers" },
     { name = "streamlit" },
     { name = "streamlit-option-menu" },
     { name = "uvicorn" },
 ]
+demo = [
+    { name = "pandas" },
+    { name = "pymupdf" },
+    { name = "pyvis" },
+    { name = "streamlit" },
+    { name = "streamlit-option-menu" },
+]
+local-embeddings = [
+    { name = "fastapi" },
+    { name = "sentence-transformers" },
+    { name = "uvicorn" },
+]
 
 [package.metadata]
 requires-dist = [
-    { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "fastapi", marker = "extra == 'local-embeddings'", specifier = ">=0.115.0" },
     { name = "graphiti-core", extras = ["anthropic", "google-genai", "groq", "kuzu"], specifier = ">=0.8.0" },
-    { name = "pymupdf", specifier = ">=1.24.0" },
+    { name = "kognita", extras = ["local-embeddings", "demo"], marker = "extra == 'all'" },
+    { name = "kuzu", specifier = ">=0.6.0" },
+    { name = "openai", specifier = ">=1.40.0" },
+    { name = "pandas", marker = "extra == 'demo'", specifier = ">=2.2.0" },
+    { name = "pymupdf", marker = "extra == 'demo'", specifier = ">=1.24.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "pyvis", specifier = ">=0.3.2" },
-    { name = "sentence-transformers", specifier = ">=3.0.0" },
-    { name = "streamlit", specifier = ">=1.35.0" },
-    { name = "streamlit-option-menu", specifier = ">=0.3.0" },
-    { name = "uvicorn", specifier = ">=0.30.0" },
+    { name = "pyvis", marker = "extra == 'demo'", specifier = ">=0.3.2" },
+    { name = "requests", specifier = ">=2.32.0" },
+    { name = "sentence-transformers", marker = "extra == 'local-embeddings'", specifier = ">=3.0.0" },
+    { name = "streamlit", marker = "extra == 'demo'", specifier = ">=1.35.0" },
+    { name = "streamlit-option-menu", marker = "extra == 'demo'", specifier = ">=0.3.0" },
+    { name = "uvicorn", marker = "extra == 'local-embeddings'", specifier = ">=0.30.0" },
 ]
+provides-extras = ["local-embeddings", "demo", "all"]
 
 [[package]]
 name = "kuzu"
