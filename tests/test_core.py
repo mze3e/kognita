@@ -547,3 +547,49 @@ def test_unregistered_tool_is_rejected(harness):
     with harness.session() as session:
         with pytest.raises(ToolNotRegistered):
             harness.run_tool(envelope, session)
+
+
+def test_a_forked_sequence_is_rejected_by_the_database(harness):
+    """A second writer that computed the same sequence must fail loudly.
+
+    The writer assigns sequence numbers by reading the current maximum, which is
+    only fork-safe under a single writer. The UNIQUE constraint turns a silently
+    forked chain — which verify_chain would only notice much later — into an
+    immediate error.
+    """
+    import sqlalchemy
+
+    from kognita.core.models import EvidenceEvent
+
+    with harness.session() as session:
+        harness.evidence.emit(
+            session,
+            correlation_id="first",
+            event_type=EventType.TOOL_CALL,
+            payload={},
+        )
+        session.commit()
+
+    with harness.session() as session:
+        session.add(
+            EvidenceEvent(
+                sequence=1,
+                correlation_id="forged",
+                event_type=EventType.TOOL_CALL,
+            )
+        )
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
+            session.commit()
+
+
+def test_writers_over_one_engine_share_a_lock(harness):
+    """A redacting writer and a plain one are ordinary; they must not interleave."""
+    plain = EvidenceWriter(harness.engine)
+    redacting = EvidenceWriter(harness.engine, redact_payload=hashes_only)
+    assert plain._lock is redacting._lock
+
+    with harness.session() as session:
+        plain.emit(session, correlation_id="a", event_type=EventType.TOOL_CALL, payload={"v": 1})
+        redacting.emit(session, correlation_id="b", event_type=EventType.TOOL_CALL, payload={"v": 2})
+        session.commit()
+        assert verify_chain(session) == 2

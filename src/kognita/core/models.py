@@ -14,7 +14,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Column, Index, TypeDecorator, UniqueConstraint
+from sqlalchemy import Column, TypeDecorator, UniqueConstraint
 from sqlalchemy.types import JSON, DateTime
 from sqlmodel import Field, SQLModel
 
@@ -200,7 +200,11 @@ class EvidenceEvent(SQLModel, table=True):
     """
 
     __tablename__ = "evidence_events"
-    __table_args__ = (Index("ix_evidence_seq", "sequence"),)
+    # UNIQUE, not merely indexed. The writer assigns the sequence by reading the
+    # current maximum, which is only fork-safe under a single writer. Two writers
+    # that computed the same number are rejected here rather than producing a
+    # forked chain that verify_chain would only notice later.
+    __table_args__ = (UniqueConstraint("sequence", name="uq_evidence_sequence"),)
 
     id: int | None = Field(default=None, primary_key=True)
     #: Monotonic position in the chain, assigned by the writer under a lock.

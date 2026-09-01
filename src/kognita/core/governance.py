@@ -23,7 +23,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Callable, Sequence
 
-from sqlalchemy.engine import Engine
 from sqlmodel import Session, select
 
 from kognita.core.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
@@ -33,7 +32,6 @@ from kognita.core.models import (
     Approval,
     GovernanceDecision,
     Policy,
-    as_utc,
     utcnow,
 )
 from kognita.core.rules import Evaluator, build_registry

@@ -14,7 +14,7 @@ is a knowledge question.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any, Callable, Sequence
 
@@ -109,11 +109,7 @@ def ask(
     """Authorise a question, then answer it from entitled sources only."""
     resolver = route_resolver or default_route_resolver
     route = resolver(question, envelope)
-    routed = (
-        envelope
-        if envelope.tool
-        else Envelope(**{**envelope.__dict__, "tool": route.tool})
-    )
+    routed = envelope if envelope.tool else replace(envelope, tool=route.tool)
 
     subjects = pack.load_subjects(routed, session)
     attributes = pack.resolve_attributes(routed, subjects)

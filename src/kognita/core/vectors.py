@@ -92,7 +92,7 @@ class SqliteVecIndex:
             connection.enable_load_extension(True)
             sqlite_vec.load(connection)
             connection.enable_load_extension(False)
-        except (AttributeError, Exception) as exc:  # pragma: no cover
+        except Exception as exc:  # pragma: no cover - depends on the build
             raise RuntimeError(
                 "This Python's sqlite3 cannot load extensions, so sqlite-vec is "
                 "unavailable. Use NumpyVectorIndex (the default)."

@@ -11,6 +11,8 @@ inconvenient.
 """
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 from sqlmodel import select
 
@@ -131,9 +133,7 @@ class ConformanceCase:
         An unknown agent acting and being recorded afterwards is exactly what a
         registry exists to prevent.
         """
-        envelope = Envelope(
-            **{**self.allow_envelope.__dict__, "agent_name": "unregistered-rogue-agent"}
-        )
+        envelope = replace(self.allow_envelope, agent_name="unregistered-rogue-agent")
         with self.harness.session() as session:
             evaluation = self.harness.evaluate(envelope, session)
             assert evaluation.outcome is Outcome.DENY

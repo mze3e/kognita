@@ -22,10 +22,10 @@ this pack, so the invariants are checked without the domain being present.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from kognita.core.envelope import Envelope, RuleContext
 from kognita.core.models import Policy, utcnow

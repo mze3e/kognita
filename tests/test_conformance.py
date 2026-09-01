@@ -12,14 +12,11 @@ from sqlmodel import select
 
 from fixtures import demo_pack as dp
 
-from kognita.core.envelope import Envelope
-from kognita.core.evidence import verify_chain
-from kognita.core.models import Approval, EvidenceEvent
+from kognita.core.models import Approval, EvidenceEvent, KnowledgeItem
 from kognita.core.registry import register, set_kill_switch
 from kognita.core.vocabulary import (
     ApprovalStatus,
     CheckResult,
-    EventType,
     Outcome,
 )
 from kognita.testing.conformance import ConformanceCase
@@ -237,9 +234,7 @@ def test_entitlement_filtering_precedes_scoring(indexed):
     from kognita.core.vocabulary import Classification
 
     with indexed.session() as session:
-        all_items = len(session.exec(select(__import__(
-            "kognita.core.models", fromlist=["KnowledgeItem"]
-        ).KnowledgeItem)).all())
+        all_items = len(session.exec(select(KnowledgeItem)).all())
         entitled = entitled_items(session, zone="SG", ceiling=Classification.C2)
         assert len(entitled) < all_items
 

@@ -19,6 +19,7 @@ import threading
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
+from weakref import WeakKeyDictionary
 
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, desc, select
@@ -36,11 +37,32 @@ PayloadFilter = Callable[[EventType, dict[str, Any]], dict[str, Any]]
 GENESIS_HASH = "0" * 64
 
 
+#: One lock per engine, shared across writers. Two ``EvidenceWriter`` objects
+#: over the same store are ordinary — one with a redaction hook, one without —
+#: and a per-instance lock would let them interleave and fork the chain.
+_ENGINE_LOCKS: "WeakKeyDictionary[Engine, threading.Lock]" = WeakKeyDictionary()
+_LOCKS_GUARD = threading.Lock()
+
+
+def _lock_for(engine: Engine) -> threading.Lock:
+    with _LOCKS_GUARD:
+        lock = _ENGINE_LOCKS.get(engine)
+        if lock is None:
+            lock = threading.Lock()
+            _ENGINE_LOCKS[engine] = lock
+        return lock
+
+
 class EvidenceWriter:
     """Appends events to the chain for one database.
 
-    The sequence number and both hashes are assigned here under a lock, so two
-    concurrent writers cannot produce a forked chain.
+    The sequence number and both hashes are assigned under a lock shared by every
+    writer over the same engine, so concurrent writers cannot fork the chain.
+
+    That lock guards writers *in one process*. Across processes the store
+    assumes a single writer; if that assumption is broken, the UNIQUE constraint
+    on ``sequence`` rejects the second insert rather than letting the chain fork
+    silently, and ``verify_chain`` catches anything that slips past.
     """
 
     def __init__(
@@ -53,7 +75,7 @@ class EvidenceWriter:
         self.engine = engine
         self.redact_payload = redact_payload
         self.clock = clock
-        self._lock = threading.Lock()
+        self._lock = _lock_for(engine)
 
     def emit(
         self,
