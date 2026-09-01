@@ -1,12 +1,18 @@
-"""Configuration dataclasses and provider model-listing helpers."""
+"""Provider configuration dataclasses and model-listing helpers.
+
+Deliberately dependency-free: these types are shared by ``kognita.core`` (which
+must import on the four hard dependencies alone), ``kognita.graph`` and
+``kognita.adapters``. Model discovery uses :mod:`urllib.request` rather than
+``requests`` so that nothing here pulls a transitive dependency tree.
+"""
 from __future__ import annotations
 
-import os
-from dataclasses import dataclass, field
-from pathlib import Path
+import json
+import urllib.error
+import urllib.request
+from dataclasses import dataclass
 from typing import Literal
-
-import requests
+from urllib.parse import urlparse
 
 from kognita.exceptions import ConfigError
 
@@ -29,6 +35,15 @@ class LLMConfig:
             return self.use_reranker
         return self.provider in ("groq", "ollama", "custom")
 
+    def is_local(self) -> bool:
+        """True when this provider runs inside the trust boundary.
+
+        Used by :mod:`kognita.core.egress` to decide whether classified content
+        may be sent to it unredacted. Only providers reached over loopback (or an
+        explicitly declared local host) count; a cloud endpoint never does.
+        """
+        return _is_local_base_url(self.provider, self.base_url)
+
 
 @dataclass(frozen=True)
 class EmbedderConfig:
@@ -40,63 +55,46 @@ class EmbedderConfig:
     api_key: str = ""
     base_url: str | None = None
 
-
-@dataclass(frozen=True)
-class KognitaConfig:
-    """Top-level configuration for a Kognita instance."""
-
-    llm: LLMConfig
-    embedder: EmbedderConfig
-    db_path: str | Path = ".kognita_db"
-    chunk_size_words: int = 220
-    chunk_overlap_words: int = 25
-
-    @classmethod
-    def from_env(cls) -> "KognitaConfig":
-        """Best-effort construction from environment variables.
-
-        Picks the first LLM provider with a matching ``*_API_KEY`` env var and
-        pairs it with OpenAI embeddings when ``OPENAI_API_KEY`` is set.
-        """
-        providers: list[tuple[LLMProvider, str, str]] = [
-            ("anthropic", "ANTHROPIC_API_KEY", "claude-3-5-sonnet-20241022"),
-            ("openai", "OPENAI_API_KEY", "gpt-4o-mini"),
-            ("groq", "GROQ_API_KEY", "llama-3.1-70b-versatile"),
-            ("gemini", "GOOGLE_API_KEY", "gemini-1.5-flash"),
-        ]
-        llm: LLMConfig | None = None
-        for provider, env_var, default_model in providers:
-            key = os.environ.get(env_var, "")
-            if key:
-                llm = LLMConfig(provider=provider, api_key=key, model=default_model)
-                break
-        if llm is None:
-            raise ConfigError(
-                "No LLM provider API key found in env. Set one of "
-                "ANTHROPIC_API_KEY, OPENAI_API_KEY, GROQ_API_KEY, or GOOGLE_API_KEY."
-            )
-
-        openai_key = os.environ.get("OPENAI_API_KEY", "")
-        if not openai_key:
-            raise ConfigError(
-                "OPENAI_API_KEY is required for the default embedder; "
-                "either set it or construct EmbedderConfig manually."
-            )
-        embedder = EmbedderConfig(
-            provider="openai",
-            model="text-embedding-3-small",
-            dimension=1536,
-            api_key=openai_key,
-        )
-        return cls(llm=llm, embedder=embedder)
+    def is_local(self) -> bool:
+        """True when this embedder runs inside the trust boundary."""
+        return _is_local_base_url(self.provider, self.base_url)
 
 
-def _openai_compatible_base_url(base_url: str) -> str:
+_LOCAL_HOSTS = ("localhost", "127.0.0.1", "::1", "0.0.0.0", "host.docker.internal")
+
+
+def _is_local_base_url(provider: str, base_url: str | None) -> bool:
+    """Classify a provider endpoint as inside or outside the trust boundary.
+
+    ``local`` is local by definition. Everything else is judged by its host:
+    absent a base URL the provider is a hosted API, so it is *not* local. This
+    fails closed on purpose — a misconfigured endpoint must never be mistaken
+    for one that keeps data in-zone.
+    """
+    if provider == "local":
+        return True
+    if not base_url:
+        return False
+    return (urlparse(base_url).hostname or "").lower() in _LOCAL_HOSTS
+
+
+def openai_compatible_base_url(base_url: str) -> str:
     """Return a base URL ending at the OpenAI-compatible ``/v1`` path."""
     normalized = base_url.rstrip("/")
     if normalized.endswith("/v1"):
         return normalized
     return normalized + "/v1"
+
+
+def _get_json(url: str, headers: dict[str, str], timeout: float) -> dict | None:
+    request = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            if response.status != 200:
+                return None
+            return json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, OSError, ValueError, TimeoutError):
+        return None
 
 
 def list_models(
@@ -110,80 +108,67 @@ def list_models(
 
     Returns an empty list on network / auth errors — callers that need to
     distinguish missing credentials from real failures should call the
-    underlying HTTP client directly.
+    underlying HTTP endpoint directly.
     """
-    try:
-        if provider == "anthropic":
-            if not api_key:
-                return []
-            headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
-            r = requests.get("https://api.anthropic.com/v1/models", headers=headers, timeout=timeout)
-            if r.status_code != 200:
-                return []
-            return [m["id"] for m in r.json().get("data", [])]
+    if provider == "anthropic":
+        if not api_key:
+            return []
+        data = _get_json(
+            "https://api.anthropic.com/v1/models",
+            {"x-api-key": api_key, "anthropic-version": "2023-06-01"},
+            timeout,
+        )
+        return [m["id"] for m in (data or {}).get("data", [])]
 
-        if provider == "openai":
-            if not api_key:
-                return []
-            r = requests.get(
-                "https://api.openai.com/v1/models",
-                headers={"Authorization": f"Bearer {api_key}"},
-                timeout=timeout,
-            )
-            if r.status_code != 200:
-                return []
-            return sorted(
-                m["id"]
-                for m in r.json().get("data", [])
-                if m["id"].startswith(("gpt-", "chatgpt-"))
-            )
+    if provider == "openai":
+        if not api_key:
+            return []
+        data = _get_json(
+            "https://api.openai.com/v1/models",
+            {"Authorization": f"Bearer {api_key}"},
+            timeout,
+        )
+        return sorted(
+            m["id"]
+            for m in (data or {}).get("data", [])
+            if m["id"].startswith(("gpt-", "chatgpt-"))
+        )
 
-        if provider == "groq":
-            if not api_key:
-                return []
-            r = requests.get(
-                "https://api.groq.com/openai/v1/models",
-                headers={"Authorization": f"Bearer {api_key}"},
-                timeout=timeout,
-            )
-            if r.status_code != 200:
-                return []
-            return [m["id"] for m in r.json().get("data", [])]
+    if provider == "groq":
+        if not api_key:
+            return []
+        data = _get_json(
+            "https://api.groq.com/openai/v1/models",
+            {"Authorization": f"Bearer {api_key}"},
+            timeout,
+        )
+        return [m["id"] for m in (data or {}).get("data", [])]
 
-        if provider == "gemini":
-            if not api_key:
-                return []
-            r = requests.get(
-                "https://generativelanguage.googleapis.com/v1beta/models",
-                headers={"x-goog-api-key": api_key},
-                timeout=timeout,
-            )
-            if r.status_code != 200:
-                return []
-            return [
-                m["name"].replace("models/", "")
-                for m in r.json().get("models", [])
-                if "generateContent" in m.get("supportedGenerationMethods", [])
-            ]
+    if provider == "gemini":
+        if not api_key:
+            return []
+        data = _get_json(
+            "https://generativelanguage.googleapis.com/v1beta/models",
+            {"x-goog-api-key": api_key},
+            timeout,
+        )
+        return [
+            m["name"].replace("models/", "")
+            for m in (data or {}).get("models", [])
+            if "generateContent" in m.get("supportedGenerationMethods", [])
+        ]
 
-        if provider == "ollama":
-            if not base_url:
-                return []
-            url = _openai_compatible_base_url(base_url) + "/models"
-            r = requests.get(url, timeout=timeout)
-            if r.status_code != 200:
-                return []
-            return [m["id"] for m in r.json().get("data", [])]
+    if provider == "ollama":
+        if not base_url:
+            return []
+        data = _get_json(openai_compatible_base_url(base_url) + "/models", {}, timeout)
+        return [m["id"] for m in (data or {}).get("data", [])]
 
-        if provider == "custom":
-            if not base_url:
-                return []
-            headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-            r = requests.get(base_url.rstrip("/") + "/models", headers=headers, timeout=timeout)
-            if r.status_code != 200:
-                return []
-            return [m["id"] for m in r.json().get("data", [])]
+    if provider == "custom":
+        if not base_url:
+            return []
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        data = _get_json(base_url.rstrip("/") + "/models", headers, timeout)
+        return [m["id"] for m in (data or {}).get("data", [])]
 
-        raise ConfigError(f"Unsupported provider: {provider}")
-    except requests.RequestException:
-        return []
+    raise ConfigError(f"Unsupported provider: {provider}")

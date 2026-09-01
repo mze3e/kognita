@@ -4,58 +4,73 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kognita"
-version = "0.1.0"
-description = "Turn text blobs into queryable knowledge graphs. Graphiti + Kuzu, with a pluggable LLM + embedder surface."
+version = "0.2.0"
+description = "Prove an AI answer was permitted — and evidence it. A governed decision, retrieval and knowledge-graph library."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Ahmed Muzammil" }]
 keywords = [
+    "governance",
+    "policy-decision-point",
+    "audit",
+    "compliance",
     "knowledge-graph",
     "graphiti",
     "kuzu",
-    "llm",
     "rag",
-    "entity-extraction",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Intended Audience :: Science/Research",
+    "Intended Audience :: Legal Industry",
+    "Intended Audience :: Financial and Insurance Industry",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Security",
 ]
 
-# Library-only runtime dependencies. No streamlit / pyvis / pymupdf / pandas.
+# The core must install and run on these four alone. Anything that reaches an
+# external system — a graph database, an LLM, a vector extension — is an extra.
 dependencies = [
-    "graphiti-core[anthropic,google-genai,groq,kuzu]>=0.8.0",
-    "kuzu>=0.6.0",
-    "openai>=1.40.0",
+    "pydantic>=2.7.0",
+    "sqlmodel>=0.0.22",
+    "numpy>=1.26.0",
     "python-dotenv>=1.0.0",
-    "requests>=2.32.0",
 ]
 
 [project.optional-dependencies]
+graph = [
+    "graphiti-core[kuzu]==0.28.2",
+    "kuzu==0.11.3",
+    # graphiti-core 0.28.2 imports `httpx`; openai 3.x moved to `httpx2`, so the
+    # pair breaks at import time. Cap until graphiti-core catches up.
+    "openai>=1.91.0,<2",
+]
+openai = ["openai>=1.91.0,<2"]
+anthropic = ["graphiti-core[anthropic]==0.28.2"]
+groq = ["graphiti-core[groq]==0.28.2"]
+gemini = ["graphiti-core[google-genai]==0.28.2"]
+vec = ["sqlite-vec>=0.1.6"]
 local-embeddings = [
     "fastapi>=0.115.0",
     "uvicorn>=0.30.0",
     "sentence-transformers>=3.0.0",
 ]
-demo = [
-    "streamlit>=1.35.0",
-    "streamlit-option-menu>=0.3.0",
-    "pyvis>=0.3.2",
-    "pandas>=2.2.0",
-    "pymupdf>=1.24.0",
-]
 all = [
-    "kognita[local-embeddings,demo]",
+    "kognita[graph,openai,anthropic,groq,gemini,vec,local-embeddings]",
 ]
+dev = [
+    "pytest>=8.0.0",
+    "import-linter>=2.0",
+]
+
+[project.scripts]
+kognita = "kognita.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/mze3e/kognita"
@@ -68,8 +83,58 @@ packages = ["src/kognita"]
 [tool.hatch.build.targets.sdist]
 include = [
     "src/kognita/**",
+    "tests/**",
     "examples/**",
     "README.md",
     "LICENSE",
     "pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+# ── Layering contracts ───────────────────────────────────────────────────────
+# kognita.core is the product: it must stay installable on the four hard
+# dependencies. These contracts are what stop that from quietly regressing.
+[tool.importlinter]
+root_packages = ["kognita"]
+
+[[tool.importlinter.contracts]]
+name = "core depends on nothing above it"
+type = "forbidden"
+source_modules = ["kognita.core"]
+forbidden_modules = [
+    "kognita.graph",
+    "kognita.adapters",
+    "graphiti_core",
+    "kuzu",
+    "openai",
+    "anthropic",
+    "streamlit",
+]
+
+[[tool.importlinter.contracts]]
+name = "layers"
+type = "layers"
+layers = [
+    "kognita.cli",
+    "kognita.graph | kognita.adapters",
+    "kognita.core",
+    "kognita.config",
+    "kognita.exceptions",
+]
+
+[[tool.importlinter.contracts]]
+name = "config and exceptions stay dependency-free"
+type = "forbidden"
+source_modules = ["kognita.config", "kognita.exceptions"]
+forbidden_modules = [
+    "kognita.core",
+    "kognita.graph",
+    "kognita.adapters",
+    "pydantic",
+    "sqlmodel",
+    "numpy",
+    "requests",
 ]
