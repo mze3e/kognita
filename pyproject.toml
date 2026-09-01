@@ -99,6 +99,8 @@ filterwarnings = ["ignore::DeprecationWarning"]
 # dependencies. These contracts are what stop that from quietly regressing.
 [tool.importlinter]
 root_packages = ["kognita"]
+# Required so the forbidden contracts can name third-party packages.
+include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "core depends on nothing above it"

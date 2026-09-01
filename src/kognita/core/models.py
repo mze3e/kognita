@@ -14,7 +14,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Column, Index, UniqueConstraint
+from sqlalchemy import Column, Index, TypeDecorator, UniqueConstraint
 from sqlalchemy.types import JSON, DateTime
 from sqlmodel import Field, SQLModel
 
@@ -32,17 +32,45 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _utc_column() -> Column:
-    """A timestamp column that preserves timezone on every backend.
+class UtcDateTime(TypeDecorator):
+    """A timestamp that is always timezone-aware UTC in Python.
 
-    SQLite has no native timestamp type and will hand back naive datetimes unless
-    told otherwise, which silently breaks effective-dating comparisons.
+    ``DateTime(timezone=True)`` is not enough. SQLite has no native timestamp
+    type and hands back naive datetimes regardless, so a value written as UTC
+    returns without its tzinfo and the next comparison raises — or worse, is
+    made against a naive "now" and silently answers the wrong way. Since
+    effective-dating and approval expiry are both such comparisons, the
+    conversion belongs here rather than at every call site.
     """
-    return Column(DateTime(timezone=True), nullable=False)
+
+    impl = DateTime
+    cache_ok = True
+
+    def __init__(self, *args, **kwargs) -> None:
+        kwargs.setdefault("timezone", True)
+        super().__init__(*args, **kwargs)
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+
+
+def _utc_column() -> Column:
+    return Column(UtcDateTime(), nullable=False)
 
 
 def _nullable_utc_column() -> Column:
-    return Column(DateTime(timezone=True), nullable=True)
+    return Column(UtcDateTime(), nullable=True)
 
 
 def as_utc(value: datetime | None) -> datetime | None:
