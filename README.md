@@ -188,8 +188,13 @@ import traceback.
 
 ## Status
 
-Alpha. The decision engine, evidence plane, retrieval, egress guard, tool runner
-and broker are implemented and tested. The deterministic graph mirror and
-governed document ingestion are next.
+**Alpha. Phases 0–5 complete:** core packaging, governance, evidence chain,
+retrieval, egress guard, tool runner, broker, conformance kit, and adapters.
+
+**Phase 6 in progress:** deterministic graph mirror (SoR_* tables), governed
+document ingestion with evidence logging, and cross-plane Cypher (REFERENCES
+edges linking knowledge graph to system of record).
+
+**Phase 7 pending:** final release, performance benchmarks, docs rewrite, v0.2.0.
 
 MIT licensed.
