@@ -126,23 +126,32 @@ believes is in force.
 
 ### Conformance
 
-A pack asserts the invariants against itself, following the `langchain-tests`
-pattern:
+Kognita ships a conformance kit: a set of assertions that every domain pack must
+satisfy. The kit proves that whatever a pack's regimes say, they are decided
+fail-closed, cited, and evidenced.
+
+Run the kit over the bundled fixture pack (proves the kit itself works):
+
+```bash
+pytest --pyargs kognita.testing.conformance
+```
+
+Or subclass it in your own pack's test suite:
 
 ```python
-from kognita.testing import Harness
-from kognita.testing.conformance import ConformanceCase
+from kognita.testing import ConformanceCase, Harness
 
 class TestMyPack(ConformanceCase):
     @pytest.fixture(autouse=True)
     def _bind(self):
         self.harness = Harness(pack=MyPack(), purposes=PURPOSES, seed=seed)
-        self.allow_envelope = ...
-        self.deny_envelope = ...
-        self.human_envelope = ...
+        self.allow_envelope = Envelope(...)
+        self.deny_envelope = Envelope(...)
+        self.human_envelope = Envelope(...)  # optional
 ```
 
-`pytest --pyargs kognita.testing` runs the kit over a bundled fixture pack.
+The pattern follows `langchain-tests`: invariants are importable and reusable by
+external packs running in their own repositories.
 
 ## The knowledge graph
 

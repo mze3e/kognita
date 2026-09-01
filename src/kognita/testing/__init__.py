@@ -8,16 +8,18 @@ everything.
 Run the kit against a pack::
 
     # conftest.py in the pack's repository
-    from kognita.testing import ConformanceCase
+    from kognita.testing import ConformanceCase, Harness
 
     class TestMyPack(ConformanceCase):
-        pack = MyPack()
-        ...
+        harness = Harness(pack=MyPack(), purposes=(...), seed=...)
+        allow_envelope = Envelope(...)
+        deny_envelope = Envelope(...)
 
 or as a suite over the bundled fixture pack::
 
     pytest --pyargs kognita.testing.conformance
 """
+from kognita.testing.conformance import ConformanceCase
 from kognita.testing.harness import Harness, PackUnderTest
 
-__all__ = ["Harness", "PackUnderTest"]
+__all__ = ["ConformanceCase", "Harness", "PackUnderTest"]
