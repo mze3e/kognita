@@ -244,6 +244,12 @@ def envelope(
     if document is not None:
         subjects["document"] = document
 
+    arguments: dict[str, Any] = {}
+    if criterion is not None:
+        arguments["criterion_id"] = criterion
+    if document is not None:
+        arguments["document_id"] = document
+
     return Envelope(
         principal=principal,
         purpose=purpose,
@@ -253,5 +259,6 @@ def envelope(
         subject_type="user" if user is not None else None,
         subject_id=user,
         subjects=subjects,
+        arguments=arguments,
         is_admin=False,
     )

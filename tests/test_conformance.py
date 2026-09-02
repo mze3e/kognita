@@ -391,6 +391,39 @@ def test_subject_context_route_reports_graph_anchoring(indexed):
     assert answer.graph["nodes"] > 0
 
 
+def test_tool_arguments_are_hashed_and_evidenced(harness):
+    """Argument changes invalidate the envelope hash (ADR 0004).
+
+    Tool arguments are tamper-evident: approvals issued for one argument set
+    cannot be replayed with different arguments. This prevents proposal/argument
+    substitution after approval.
+    """
+    from kognita.envelope import envelope_hash
+
+    # Two envelopes with different arguments
+    e1 = dp.envelope(
+        "propose_edit",
+        arguments={"title": "Old Title", "content": "Old content"},
+    )
+    e2 = dp.envelope(
+        "propose_edit",
+        arguments={"title": "New Title", "content": "Old content"},
+    )
+    e3 = dp.envelope(
+        "propose_edit",
+        arguments={"title": "Old Title", "content": "Old content"},
+    )
+
+    h1 = envelope_hash(e1, {}, ())
+    h2 = envelope_hash(e2, {}, ())
+    h3 = envelope_hash(e3, {}, ())
+
+    # Different arguments produce different hashes
+    assert h1 != h2, "Argument changes must invalidate envelope_hash"
+    # Same arguments produce same hash
+    assert h1 == h3, "Same arguments must produce same hash"
+
+
 # ── The kit, run against this pack ───────────────────────────────────────────
 
 

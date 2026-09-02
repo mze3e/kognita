@@ -30,6 +30,8 @@ class Envelope:
     subject_id: str | None = None
     #: Additional referenced objects a pack needs, e.g. {"instrument": "3"}.
     subjects: dict[str, str] = field(default_factory=dict)
+    #: Tool arguments, hashed and evidenced. Enables argument binding for approvals.
+    arguments: dict[str, Any] = field(default_factory=dict)
     #: True when the principal holds an elevated entitlement ceiling.
     is_admin: bool = False
     #: Free-form request context. Never trusted for authorisation decisions.
@@ -45,6 +47,7 @@ class Envelope:
             "subject_type": self.subject_type,
             "subject_id": self.subject_id,
             "subjects": dict(self.subjects),
+            "arguments": dict(self.arguments),
             "is_admin": self.is_admin,
         }
 

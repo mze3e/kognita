@@ -103,7 +103,6 @@ def test_owner_cannot_mark(harness):
 
 # ── Test shape: tool arguments (Tier 1.1) ───────────────────────────────────
 
-@pytest.mark.xfail(strict=True, reason="Tool arguments not yet implemented (Tier 1.1)")
 def test_mark_criterion_arguments_hashed(harness):
     """Tool arguments travel on the envelope and are included in the hash.
 
