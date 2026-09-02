@@ -169,7 +169,7 @@ class Approval(SQLModel, table=True):
     __tablename__ = "approvals"
 
     id: int | None = Field(default=None, primary_key=True)
-    decision_id: int = Field(index=True)
+    decision_id: int = Field(index=True, foreign_key="governance_decisions.id")
     envelope_hash: str = Field(index=True)
     approver_name: str = "Unassigned (duty desk)"
     status: ApprovalStatus = Field(default=ApprovalStatus.PENDING, index=True)
@@ -270,8 +270,8 @@ class EntityEdge(SQLModel, table=True):
     __tablename__ = "entity_edges"
 
     id: int | None = Field(default=None, primary_key=True)
-    from_entity_id: int = Field(index=True)
-    to_entity_id: int = Field(index=True)
+    from_entity_id: int = Field(index=True, foreign_key="entities.id")
+    to_entity_id: int = Field(index=True, foreign_key="entities.id")
     type: str = Field(index=True)
     created_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
 

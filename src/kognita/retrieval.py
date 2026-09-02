@@ -69,12 +69,16 @@ def entitled_items(
     zone: str,
     ceiling: Classification,
 ) -> list[KnowledgeItem]:
-    """Items this caller may see at all — the candidate set, before any scoring."""
+    """Items this caller may see at all — the candidate set, before any scoring.
+
+    Fail-closed: an item with empty zones is not visible in any zone. An item
+    with zones=['SG', 'HK'] is visible only in those zones.
+    """
     items = session.exec(select(KnowledgeItem)).all()
     return [
         item
         for item in items
-        if (not item.zones or zone in item.zones)
+        if item.zones and zone in item.zones
         and at_or_below(item.classification, ceiling)
     ]
 

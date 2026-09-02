@@ -66,7 +66,8 @@ class DomainPack(Protocol):
 
     The core never imports a pack; an application composes them. A pack supplies
     the two things the core cannot know — what the request's *attributes* are,
-    and how to load the *subjects* it refers to.
+    and how to load the *subjects* it refers to. Optionally, it can declare which
+    policies apply to which requests via ``engages``.
     """
 
     name: str
@@ -81,6 +82,10 @@ class DomainPack(Protocol):
 
     def rules(self) -> dict[str, RuleEvaluator]:
         """Rule evaluators by ``rule_type``, merged over the core primitives."""
+        ...
+
+    def engages(self, policy: Any, context: Any) -> bool:
+        """Whether a policy applies to this request. Optional; defaults to True."""
         ...
 
 

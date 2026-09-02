@@ -154,7 +154,16 @@ def run_governed(
     if not evaluation.allowed:
         # Fail closed. The denial is already evidenced by record(); no tool body
         # has run, so there is nothing to leak.
-        return ToolRun(evaluation=evaluation, data=None, approval_required=False)
+        return ToolRun(
+            evaluation=evaluation,
+            data=None,
+            approval_required=evaluation.approval_required,
+        )
+
+    if evaluation.approval_required:
+        # HUMAN_APPROVAL: the work may be prepared, but data must not leave the
+        # boundary until the approval is granted. Hold the tool execution.
+        return ToolRun(evaluation=evaluation, data=None, approval_required=True)
 
     data = spec.fn(envelope, evaluation, session)
 

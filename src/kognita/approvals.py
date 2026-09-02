@@ -154,8 +154,16 @@ def reject(
     )
 
 
-def expire_stale(session: Session, *, now: datetime | None = None) -> int:
-    """Mark every lapsed pending approval as expired. Returns how many."""
+def expire_stale(
+    session: Session,
+    *,
+    now: datetime | None = None,
+    evidence: EvidenceWriter | None = None,
+) -> int:
+    """Mark every lapsed pending approval as expired. Returns how many.
+
+    When evidence is supplied, each expiry is recorded in the chain.
+    """
     at = now or utcnow()
     stale = [
         a
@@ -168,6 +176,20 @@ def expire_stale(session: Session, *, now: datetime | None = None) -> int:
         approval.status = ApprovalStatus.EXPIRED
         approval.decided_at = at
         session.add(approval)
+        if evidence:
+            evidence.emit(
+                session,
+                correlation_id="",
+                event_type=EventType.APPROVAL,
+                actor_type=ActorType.SYSTEM,
+                actor_id="governance-pdp",
+                payload={
+                    "action": "EXPIRED",
+                    "approval_id": approval.id,
+                    "envelope_hash": approval.envelope_hash,
+                    "reason": "automatic expiry by ttl",
+                },
+            )
     session.flush()
     return len(stale)
 

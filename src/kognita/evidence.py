@@ -105,6 +105,7 @@ class EvidenceWriter:
             sequence = (previous.sequence + 1) if previous else 1
             prev_hash = previous.event_hash if previous else GENESIS_HASH
 
+            recorded_at = self.clock()
             payload_hash = canonical_hash(body)
             header = {
                 "sequence": sequence,
@@ -115,6 +116,7 @@ class EvidenceWriter:
                 "classification": classification.value,
                 "payload_hash": payload_hash,
                 "prev_hash": prev_hash,
+                "recorded_at": recorded_at.isoformat(),
             }
             event = EvidenceEvent(
                 sequence=sequence,
@@ -127,7 +129,7 @@ class EvidenceWriter:
                 payload_hash=payload_hash,
                 prev_hash=prev_hash,
                 event_hash=canonical_hash(header),
-                recorded_at=self.clock(),
+                recorded_at=recorded_at,
             )
             session.add(event)
             session.flush()
@@ -135,7 +137,12 @@ class EvidenceWriter:
 
 
 def recompute_event_hash(event: EvidenceEvent) -> str:
-    """Recompute an event's hash from its stored fields."""
+    """Recompute an event's hash from its stored fields.
+
+    Timestamps are included in the hash so they are tamper-evident:
+    altering recorded_at breaks the hash and is caught by verify_chain.
+    """
+    recorded_at = as_utc(event.recorded_at)
     return canonical_hash(
         {
             "sequence": event.sequence,
@@ -146,6 +153,7 @@ def recompute_event_hash(event: EvidenceEvent) -> str:
             "classification": Classification(event.classification).value,
             "payload_hash": event.payload_hash,
             "prev_hash": event.prev_hash,
+            "recorded_at": recorded_at.isoformat() if recorded_at else None,
         }
     )
 

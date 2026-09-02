@@ -111,7 +111,7 @@ class SqliteVecIndex:
         # KNN runs over ids the caller is permitted to see and nothing else.
         import struct
 
-        by_id = {id(item): item for item, _ in candidates}
+        by_id = {item.id: item for item, _ in candidates if hasattr(item, "id")}
         if not by_id:
             return []
         packed = struct.pack(f"{len(query_vector)}f", *query_vector)
