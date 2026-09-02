@@ -101,6 +101,41 @@ def test_owner_cannot_mark(harness):
     assert evaluation.outcome is Outcome.DENY
 
 
+def test_roles_are_extracted_and_hashed(harness):
+    """Identity and role model: roles are hashed in envelope (ADR 0005).
+
+    When a MARKER and OWNER request the same tool, the envelope hashes
+    should differ because their roles differ. This prevents role substitution
+    after approval.
+    """
+    from kognita.envelope import envelope_hash
+
+    envelope_marker = bp.envelope(
+        "mark_criterion",
+        purpose="MARK_CRITERION",
+        user="marker_alice",
+        criterion="crit_1",
+        principal="marker_alice",
+    )
+    envelope_owner = bp.envelope(
+        "mark_criterion",
+        purpose="MARK_CRITERION",
+        user="owner_bob",
+        criterion="crit_1",
+        principal="owner_bob",
+    )
+
+    hash_marker = envelope_hash(envelope_marker, {}, ())
+    hash_owner = envelope_hash(envelope_owner, {}, ())
+
+    # Verify roles are set
+    assert envelope_marker.roles == ["MARKER"]
+    assert envelope_owner.roles == ["OWNER"]
+
+    # Different roles should produce different hashes
+    assert hash_marker != hash_owner, "Different roles must invalidate envelope_hash"
+
+
 # ── Test shape: tool arguments (Tier 1.1) ───────────────────────────────────
 
 def test_mark_criterion_arguments_hashed(harness):

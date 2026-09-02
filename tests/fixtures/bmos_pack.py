@@ -250,6 +250,16 @@ def envelope(
     if document is not None:
         arguments["document_id"] = document
 
+    # Extract roles from user or principal name (e.g., "marker_alice" → ["MARKER"])
+    roles_set: set[str] = set()
+    for identity in (user, principal):
+        if identity:
+            if identity.startswith("marker_"):
+                roles_set.add("MARKER")
+            elif identity.startswith("owner_"):
+                roles_set.add("OWNER")
+    roles = sorted(list(roles_set))
+
     return Envelope(
         principal=principal,
         purpose=purpose,
@@ -260,5 +270,6 @@ def envelope(
         subject_id=user,
         subjects=subjects,
         arguments=arguments,
+        roles=roles,
         is_admin=False,
     )

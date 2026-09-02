@@ -32,6 +32,10 @@ class Envelope:
     subjects: dict[str, str] = field(default_factory=dict)
     #: Tool arguments, hashed and evidenced. Enables argument binding for approvals.
     arguments: dict[str, Any] = field(default_factory=dict)
+    #: Claimed roles (e.g., ["OWNER", "MARKER"]). Must be verified by pack.
+    roles: list[str] = field(default_factory=list)
+    #: Scope context (e.g., {"org": "acme", "dept": "finance"}).
+    scopes: dict[str, str] = field(default_factory=dict)
     #: True when the principal holds an elevated entitlement ceiling.
     is_admin: bool = False
     #: Free-form request context. Never trusted for authorisation decisions.
@@ -48,6 +52,8 @@ class Envelope:
             "subject_id": self.subject_id,
             "subjects": dict(self.subjects),
             "arguments": dict(self.arguments),
+            "roles": list(self.roles),
+            "scopes": dict(self.scopes),
             "is_admin": self.is_admin,
         }
 
