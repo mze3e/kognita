@@ -18,7 +18,7 @@ from sqlalchemy import Column, TypeDecorator, UniqueConstraint
 from sqlalchemy.types import JSON, DateTime
 from sqlmodel import Field, SQLModel
 
-from kognita.core.vocabulary import (
+from kognita.vocabulary import (
     ActorType,
     ApprovalStatus,
     Classification,

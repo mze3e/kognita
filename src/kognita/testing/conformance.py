@@ -16,11 +16,11 @@ from dataclasses import replace
 import pytest
 from sqlmodel import select
 
-from kognita.core.envelope import Envelope
-from kognita.core.evidence import verify_chain
-from kognita.core.governance import resolve_outcome
-from kognita.core.models import Approval, EvidenceEvent, GovernanceDecision
-from kognita.core.vocabulary import ApprovalStatus, CheckResult, EventType, Outcome
+from kognita.envelope import Envelope
+from kognita.evidence import verify_chain
+from kognita.governance import resolve_outcome
+from kognita.models import Approval, EvidenceEvent, GovernanceDecision
+from kognita.vocabulary import ApprovalStatus, CheckResult, EventType, Outcome
 
 
 class ConformanceCase:
@@ -47,7 +47,7 @@ class ConformanceCase:
         If precedence were most-common or last-wins, a policy set could be
         widened simply by adding permissive rules.
         """
-        from kognita.core.envelope import Check
+        from kognita.envelope import Check
 
         def check(result):
             return Check("c", "R", result, "citation")
@@ -217,9 +217,9 @@ class ConformanceCase:
 # ── Bundled fixture pack and suite (for pytest --pyargs kognita.testing.conformance)
 from datetime import timedelta
 
-from kognita.core.models import Policy
-from kognita.core.registry import register
-from kognita.core.rules import build_registry
+from kognita.models import Policy
+from kognita.registry import register
+from kognita.rules import build_registry
 from kognita.testing.harness import FROZEN_NOW, Harness
 
 _START = FROZEN_NOW - timedelta(days=365)

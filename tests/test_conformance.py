@@ -12,9 +12,9 @@ from sqlmodel import select
 
 from fixtures import demo_pack as dp
 
-from kognita.core.models import Approval, EvidenceEvent, KnowledgeItem
-from kognita.core.registry import register, set_kill_switch
-from kognita.core.vocabulary import (
+from kognita.models import Approval, EvidenceEvent, KnowledgeItem
+from kognita.registry import register, set_kill_switch
+from kognita.vocabulary import (
     ApprovalStatus,
     CheckResult,
     Outcome,
@@ -160,8 +160,8 @@ def test_attributes_recorded_on_every_decision(harness):
 
 @pytest.fixture
 def indexed(harness):
-    from kognita.core.retrieval import index_item
-    from kognita.core.vocabulary import Classification
+    from kognita.retrieval import index_item
+    from kognita.vocabulary import Classification
 
     with harness.session() as session:
         for item in dp.KNOWLEDGE:
@@ -181,7 +181,7 @@ def indexed(harness):
 
 def test_restricted_items_never_reach_a_non_admin(indexed):
     """Whatever the query, C3 must not surface below the ceiling."""
-    from kognita.core.retrieval import retrieve
+    from kognita.retrieval import retrieve
 
     with indexed.session() as session:
         results = retrieve(
@@ -196,7 +196,7 @@ def test_restricted_items_never_reach_a_non_admin(indexed):
 
 def test_the_same_item_reaches_an_admin(indexed):
     """The ceiling is the only thing excluding it — not relevance."""
-    from kognita.core.retrieval import retrieve
+    from kognita.retrieval import retrieve
 
     with indexed.session() as session:
         results = retrieve(
@@ -211,7 +211,7 @@ def test_the_same_item_reaches_an_admin(indexed):
 
 def test_zone_partition_is_enforced(indexed):
     """An AE-scoped document is invisible from SG even to an admin."""
-    from kognita.core.retrieval import retrieve
+    from kognita.retrieval import retrieve
 
     with indexed.session() as session:
         results = retrieve(
@@ -230,8 +230,8 @@ def test_entitlement_filtering_precedes_scoring(indexed):
     Filtering after ranking would mean the ranking had seen the item, and a
     top-k that silently drops entries leaks the fact that they exist.
     """
-    from kognita.core.retrieval import entitled_items, retrieve
-    from kognita.core.vocabulary import Classification
+    from kognita.retrieval import entitled_items, retrieve
+    from kognita.vocabulary import Classification
 
     with indexed.session() as session:
         all_items = len(session.exec(select(KnowledgeItem)).all())
@@ -258,7 +258,7 @@ def test_embedding_sanity(harness):
     """Identical text scores ~1, unrelated text well below, vectors normalised."""
     import numpy as np
 
-    from kognita.core.embedding import cosine
+    from kognita.embedding import cosine
 
     a = harness.embedder.embed("cross-site eligibility for restricted datasets")
     b = harness.embedder.embed("cross-site eligibility for restricted datasets")
@@ -271,7 +271,7 @@ def test_embedding_sanity(harness):
 
 
 def test_lexical_overlap_rewards_shared_terms():
-    from kognita.core.embedding import lexical_overlap
+    from kognita.embedding import lexical_overlap
 
     high = lexical_overlap("genomic linkage set", "genomic linkage set keys registry")
     low = lexical_overlap("genomic linkage set", "ledger reconciliation fee")
@@ -288,7 +288,7 @@ def test_question_mentioning_subjects_stays_on_the_knowledge_route(indexed):
     says "subjects" authorise subject-profile access — the exact confusion the
     envelope exists to prevent.
     """
-    from kognita.core.broker import KNOWLEDGE, ask
+    from kognita.broker import KNOWLEDGE, ask
 
     envelope = dp.envelope("get_house_guidance", purpose="PUBLICATION", site="SG")
     with indexed.session() as session:
@@ -310,7 +310,7 @@ def test_question_mentioning_subjects_stays_on_the_knowledge_route(indexed):
 
 
 def test_subject_and_dataset_in_scope_routes_to_eligibility(indexed):
-    from kognita.core.broker import ELIGIBILITY, ask
+    from kognita.broker import ELIGIBILITY, ask
 
     envelope = dp.envelope(
         "check_dataset_eligibility",
@@ -336,7 +336,7 @@ def test_subject_and_dataset_in_scope_routes_to_eligibility(indexed):
 
 def test_denial_is_fail_closed_with_its_basis(indexed):
     """Zero results, and an explanation. Both halves matter."""
-    from kognita.core.broker import ask
+    from kognita.broker import ask
 
     envelope = dp.envelope(
         "check_dataset_eligibility",
@@ -365,7 +365,7 @@ def test_denial_is_fail_closed_with_its_basis(indexed):
 
 
 def test_subject_context_route_reports_graph_anchoring(indexed):
-    from kognita.core.broker import SUBJECT_CONTEXT, ask
+    from kognita.broker import SUBJECT_CONTEXT, ask
 
     envelope = dp.envelope("get_subject_profile", purpose="DOSSIER_PREP", site="SG", subject="2")
 

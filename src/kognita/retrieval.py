@@ -18,12 +18,12 @@ from typing import Any, Sequence
 
 from sqlmodel import Session, select
 
-from kognita.core.embedding import lexical_overlap
-from kognita.core.evidence import EvidenceWriter
-from kognita.core.models import KnowledgeItem, as_utc
-from kognita.core.protocols import Embedder
-from kognita.core.vectors import NumpyVectorIndex
-from kognita.core.vocabulary import (
+from kognita.embedding import lexical_overlap
+from kognita.evidence import EvidenceWriter
+from kognita.models import KnowledgeItem, as_utc
+from kognita.protocols import Embedder
+from kognita.vectors import NumpyVectorIndex
+from kognita.vocabulary import (
     ActorType,
     Classification,
     EventType,
@@ -176,8 +176,8 @@ def index_item(
     published_at: datetime | None = None,
 ) -> KnowledgeItem:
     """Embed and store one item with the attributes entitlement is decided on."""
-    from kognita.core.embedding import to_bytes
-    from kognita.core.models import utcnow
+    from kognita.embedding import to_bytes
+    from kognita.models import utcnow
 
     vector = embedder.embed(f"{title} {body}")
     item = KnowledgeItem(
@@ -199,7 +199,7 @@ def index_item(
 
 def reindex(session: Session, embedder: Embedder) -> int:
     """Re-embed every item, e.g. after switching embedder. Returns how many."""
-    from kognita.core.embedding import to_bytes
+    from kognita.embedding import to_bytes
 
     items = session.exec(select(KnowledgeItem)).all()
     for item in items:

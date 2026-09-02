@@ -13,9 +13,9 @@ from typing import Sequence
 
 from sqlmodel import Session, select
 
-from kognita.core.evidence import EvidenceWriter
-from kognita.core.models import Approval, as_utc, utcnow
-from kognita.core.vocabulary import ActorType, ApprovalStatus, Classification, EventType
+from kognita.evidence import EvidenceWriter
+from kognita.models import Approval, as_utc, utcnow
+from kognita.vocabulary import ActorType, ApprovalStatus, Classification, EventType
 
 
 class ApprovalError(Exception):

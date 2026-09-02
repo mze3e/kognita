@@ -14,7 +14,7 @@ Content guardrails filter *what a model says*. Kognita decides *whether the
 request was allowed — before any data is retrieved* — and writes the record.
 
 ```python
-from kognita.core import Envelope, decide, load_snapshot
+from kognita import Envelope, decide, load_snapshot
 
 evaluation = decide(
     Envelope(principal="rm@bank.example", purpose="ELIGIBILITY_CHECK",
@@ -159,9 +159,9 @@ external packs running in their own repositories.
 auto-deduplicated knowledge graph.
 
 ```python
-from kognita import Kognita, KognitaConfig
+from kognita.graph import GraphEngine, GraphConfig
 
-async with Kognita(config) as kg:
+async with GraphEngine(config) as kg:
     await kg.ingest_text(document, source="policy-handbook")
     hits = await kg.search("cross-border disclosure")
 ```
@@ -175,16 +175,24 @@ they diverge. See [docs/decisions/0001-kuzu-cotenancy.md](docs/decisions/0001-ku
 ## Layout
 
 ```
-kognita.core       decisions, evidence, retrieval, egress, tools — 4 dependencies
+kognita            the decision engine — decisions, evidence, retrieval,
+                   egress, tools. Four dependencies, no network.
 kognita.graph      Graphiti + Kuzu knowledge engine          [graph]
-kognita.adapters   provider adapters                         [openai] …
+kognita.adapters   provider-backed embedders and clients     [openai] …
 kognita.testing    the conformance kit
-kognita.config     provider dataclasses — no dependencies at all
 ```
 
-`from kognita import Kognita` still works; graph names are bound lazily and,
-without the extra, raise a `ConfigError` naming what to install rather than an
-import traceback.
+`kognita` **is** the decision engine, not a namespace that points at one. No
+graph name is reachable from it: the graph is imported from `kognita.graph`, so
+reading an import tells you whether a graph database is about to be loaded.
+`import kognita` never loads one, and `tests/test_packaging.py` asserts it.
+
+> **Moved in 0.2.** `kognita.Kognita` → `kognita.graph.GraphEngine`,
+> `kognita.KognitaConfig` → `kognita.graph.GraphConfig`,
+> `kognita.KognitaKuzuDriver` → `kognita.graph.KuzuDriver`, and
+> `kognita.core.*` → `kognita.*`. Touching a retired name raises an
+> `AttributeError` naming the module that now owns it. Reasoning and the full
+> migration table: [docs/decisions/0003-the-top-level-namespace.md](docs/decisions/0003-the-top-level-namespace.md).
 
 ## Status
 

@@ -3,7 +3,7 @@
 Two functions, deliberately separated:
 
 :func:`decide` is **pure**. Given a policy snapshot it returns an
-:class:`~kognita.core.envelope.Evaluation` and touches nothing — no database, no
+:class:`~kognita.envelope.Evaluation` and touches nothing — no database, no
 clock, no randomness beyond an injected request id. That is what makes a decision
 replayable: the same envelope against the same snapshot always yields the same
 outcome and the same envelope hash, so "what would this have decided last March?"
@@ -25,17 +25,17 @@ from typing import Any, Callable, Sequence
 
 from sqlmodel import Session, select
 
-from kognita.core.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
-from kognita.core.evidence import EvidenceWriter
-from kognita.core.models import (
+from kognita.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
+from kognita.evidence import EvidenceWriter
+from kognita.models import (
     Agent,
     Approval,
     GovernanceDecision,
     Policy,
     utcnow,
 )
-from kognita.core.rules import Evaluator, build_registry
-from kognita.core.vocabulary import (
+from kognita.rules import Evaluator, build_registry
+from kognita.vocabulary import (
     ActorType,
     Classification,
     CheckResult,

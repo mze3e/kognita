@@ -11,9 +11,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from fixtures import demo_pack  # noqa: E402
 
-from kognita.core.db import create_all, make_engine  # noqa: E402
-from kognita.core.evidence import EvidenceWriter  # noqa: E402
-from kognita.core.registry import register  # noqa: E402
+from kognita.db import create_all, make_engine  # noqa: E402
+from kognita.evidence import EvidenceWriter  # noqa: E402
+from kognita.registry import register  # noqa: E402
 from sqlmodel import Session  # noqa: E402
 
 #: Every test decides against this instant, so effective-dating is deterministic.

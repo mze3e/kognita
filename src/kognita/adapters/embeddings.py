@@ -4,8 +4,8 @@ Every supported backend — OpenAI, Ollama, a local server, anything
 OpenAI-shaped — speaks the same ``/v1/embeddings`` contract, so one adapter
 covers all of them and switching is a base URL rather than a code change.
 
-This satisfies the same :class:`kognita.core.protocols.Embedder` protocol as
-:class:`~kognita.core.embedding.HashingEmbedder`, so retrieval, the vector index
+This satisfies the same :class:`kognita.protocols.Embedder` protocol as
+:class:`~kognita.embedding.HashingEmbedder`, so retrieval, the vector index
 and the conformance suite are unaware of which is in use.
 """
 from __future__ import annotations

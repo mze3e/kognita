@@ -12,12 +12,12 @@ from typing import Any, Callable, Protocol, Sequence
 
 from sqlmodel import Session
 
-from kognita.core.db import create_all, make_engine
-from kognita.core.embedding import HashingEmbedder
-from kognita.core.envelope import Envelope, Evaluation
-from kognita.core.evidence import EvidenceWriter
-from kognita.core.governance import decide, load_snapshot, record
-from kognita.core.tools import ToolRegistry, ToolRun, run_governed
+from kognita.db import create_all, make_engine
+from kognita.embedding import HashingEmbedder
+from kognita.envelope import Envelope, Evaluation
+from kognita.evidence import EvidenceWriter
+from kognita.governance import decide, load_snapshot, record
+from kognita.tools import ToolRegistry, ToolRun, run_governed
 
 #: A fixed instant every conformance run decides against.
 FROZEN_NOW = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)

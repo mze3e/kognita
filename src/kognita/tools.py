@@ -20,11 +20,11 @@ from typing import Any, Callable, Sequence
 
 from sqlmodel import Session
 
-from kognita.core.canonical import canonical_json
-from kognita.core.envelope import Envelope, Evaluation
-from kognita.core.evidence import EvidenceWriter
-from kognita.core.governance import PolicySnapshot, decide, load_snapshot, record
-from kognita.core.vocabulary import ActorType, Classification, EventType, Outcome
+from kognita.canonical import canonical_json
+from kognita.envelope import Envelope, Evaluation
+from kognita.evidence import EvidenceWriter
+from kognita.governance import PolicySnapshot, decide, load_snapshot, record
+from kognita.vocabulary import ActorType, Classification, EventType, Outcome
 
 ToolFn = Callable[[Envelope, Evaluation, Session], Any]
 

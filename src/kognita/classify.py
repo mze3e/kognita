@@ -17,7 +17,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Iterable, Sequence
 
-from kognita.core.vocabulary import Classification, classification_rank
+from kognita.vocabulary import Classification, classification_rank
 
 #: Explicit handling markings, checked first — an author's own label wins.
 DEFAULT_MARKINGS: tuple[tuple[str, Classification], ...] = (

@@ -11,8 +11,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from kognita.core.canonical import canonical_hash
-from kognita.core.vocabulary import CheckResult, Outcome
+from kognita.canonical import canonical_hash
+from kognita.vocabulary import CheckResult, Outcome
 
 
 @dataclass(frozen=True)
@@ -98,10 +98,10 @@ class RuleContext:
 
 @dataclass(frozen=True)
 class Evaluation:
-    """The result of :func:`kognita.core.governance.decide` — pure, unrecorded.
+    """The result of :func:`kognita.governance.decide` — pure, unrecorded.
 
     Holds no database identity: ``decision_id`` is filled in only once
-    :func:`kognita.core.governance.record` has persisted it.
+    :func:`kognita.governance.record` has persisted it.
     """
 
     request_id: str

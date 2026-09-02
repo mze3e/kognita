@@ -24,9 +24,9 @@ from weakref import WeakKeyDictionary
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, desc, select
 
-from kognita.core.canonical import canonical_hash, canonical_json
-from kognita.core.models import EvidenceEvent, as_utc, utcnow
-from kognita.core.vocabulary import ActorType, Classification, EventType
+from kognita.canonical import canonical_hash, canonical_json
+from kognita.models import EvidenceEvent, as_utc, utcnow
+from kognita.vocabulary import ActorType, Classification, EventType
 
 #: Hook applied to every payload before it is hashed and stored. Return the
 #: payload to keep, or a reduced version. The default keeps payloads as given —

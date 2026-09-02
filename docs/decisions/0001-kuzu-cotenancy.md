@@ -32,7 +32,7 @@ owns its schema in that database and re-runs `build_indices_and_constraints()` /
 
 `kognita.graph.session.KuzuSession` owns the only `kuzu.Database` for a path and lends
 connections to Graphiti, the mirror, and ad-hoc Cypher.
-`KognitaKuzuDriver(database=session.database)` binds Graphiti to that handle by
+`KuzuDriver(database=session.database)` binds Graphiti to that handle by
 intercepting `kuzu.Database(...)` for the duration of the parent constructor — the
 narrowest available hook, depending only on the constructor calling
 `kuzu.Database(path)` rather than on its body, which shifts between releases.

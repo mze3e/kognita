@@ -1,6 +1,6 @@
 """Provider configuration dataclasses and model-listing helpers.
 
-Deliberately dependency-free: these types are shared by ``kognita.core`` (which
+Deliberately dependency-free: these types are shared by ``kognita`` (which
 must import on the four hard dependencies alone), ``kognita.graph`` and
 ``kognita.adapters``. Model discovery uses :mod:`urllib.request` rather than
 ``requests`` so that nothing here pulls a transitive dependency tree.
@@ -38,7 +38,7 @@ class LLMConfig:
     def is_local(self) -> bool:
         """True when this provider runs inside the trust boundary.
 
-        Used by :mod:`kognita.core.egress` to decide whether classified content
+        Used by :mod:`kognita.egress` to decide whether classified content
         may be sent to it unredacted. Only providers reached over loopback (or an
         explicitly declared local host) count; a cloud endpoint never does.
         """

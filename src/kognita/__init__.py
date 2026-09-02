@@ -1,29 +1,49 @@
 """Kognita — prove an AI answer was permitted, and evidence it.
 
-Two layers ship in one distribution:
+``kognita`` **is** the governed decision engine. Everything exported here —
+envelopes, a deterministic policy decision point, entitlement-filtered
+retrieval, an egress guard, a hash-chained evidence plane — installs and runs on
+four dependencies, with no LLM, no graph database and no network::
 
-``kognita.core``
-    The governed decision engine: envelopes, a deterministic policy decision
-    point, entitlement-filtered retrieval, an egress guard, and a hash-chained
-    evidence plane. Installs and runs on four dependencies, no LLM required::
+    from kognita import Envelope, decide, load_snapshot
 
-        from kognita.core import Envelope, decide
+    evaluation = decide(envelope, load_snapshot(session))
+    evaluation.outcome        # ALLOW / DENY / ESCALATE / HUMAN_APPROVAL
+    evaluation.basis()        # the checks that decided it, each with a citation
+
+Deciding whether a request is permitted, and proving afterwards that it was,
+should not require the machinery that answers it. That is the whole claim, and
+this namespace is where it is kept: nothing reachable from ``import kognita``
+touches a provider or a database engine.
+
+Optional subpackages sit alongside, reached by their own names so that reading
+an import tells you what a call will actually load:
 
 ``kognita.graph``
-    The Graphiti + Kuzu knowledge engine — documents to a bi-temporal graph.
-    Requires the graph extra::
+    The Graphiti + Kuzu knowledge engine — ``pip install kognita[graph]``::
 
-        pip install kognita[graph]
+        from kognita.graph import GraphEngine, GraphConfig
 
-Names from the graph layer are re-exported here for backwards compatibility and
-bound lazily, so importing :mod:`kognita` never drags in a graph database.
-Touching one without the extra installed raises :class:`ConfigError` naming the
-extra to install, rather than an ``ImportError`` traceback.
+``kognita.adapters``
+    Provider-backed embedders and clients — ``pip install kognita[openai]``.
+
+``kognita.testing``
+    The conformance kit a domain pack runs against itself.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+from kognita.approvals import (
+    ApprovalError,
+    expire_stale,
+    find_granted,
+    grant,
+    reject,
+)
+from kognita.broker import BrokerAnswer, ask, default_route_resolver
+from kognita.canonical import canonical_hash, canonical_json
+from kognita.classify import FixedClassifier, PatternClassifier, most_sensitive
 from kognita.config import (
     EmbedderConfig,
     EmbedderProvider,
@@ -31,102 +51,199 @@ from kognita.config import (
     LLMProvider,
     list_models,
 )
+from kognita.db import create_all, make_engine, session_scope
+from kognita.egress import (
+    EgressDenied,
+    EgressGuard,
+    EgressPolicy,
+    EgressResult,
+    NullRedactor,
+    PatternRedactor,
+)
+from kognita.embedding import HashingEmbedder, cosine, lexical_overlap
+from kognita.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
+from kognita.evidence import (
+    ChainBreak,
+    EvidenceWriter,
+    export_chain,
+    hashes_only,
+    verify_chain,
+    verify_export,
+)
 from kognita.exceptions import ConfigError, KognitaError, ProviderError
+from kognita.governance import (
+    PolicySnapshot,
+    decide,
+    load_snapshot,
+    record,
+    resolve_outcome,
+)
+from kognita.models import (
+    Agent,
+    Approval,
+    Entity,
+    EntityEdge,
+    EvidenceEvent,
+    GovernanceDecision,
+    KnowledgeItem,
+    Policy,
+    utcnow,
+)
+from kognita.retrieval import Retrieved, index_item, reindex, retrieve
+from kognita.rules import CORE_RULES, build_registry, rule
+from kognita.tools import ToolRegistry, ToolRun, run_governed
+from kognita.vectors import NumpyVectorIndex, SqliteVecIndex, default_index
+from kognita.vocabulary import (
+    ActorType,
+    ApprovalStatus,
+    CheckResult,
+    Classification,
+    EgressDecision,
+    EventType,
+    Outcome,
+)
 
 __version__ = "0.2.0"
 
-# Attribute name -> the module it lives in and the extra that provides it.
-_LAZY: dict[str, tuple[str, str]] = {
-    "Kognita": ("kognita.graph.core", "graph"),
-    "KognitaConfig": ("kognita.graph.config", "graph"),
-    "KognitaKuzuDriver": ("kognita.graph.engine", "graph"),
-    "KuzuSession": ("kognita.graph.session", "graph"),
-    "make_graphiti": ("kognita.graph.engine", "graph"),
-    "execute_cypher": ("kognita.graph.query", "graph"),
-    "chunk_text": ("kognita.graph.chunking", "graph"),
-    "GraphSnapshot": ("kognita.graph.storage", "graph"),
-    "load_snapshot": ("kognita.graph.storage", "graph"),
-    "save_snapshot": ("kognita.graph.storage", "graph"),
-    "content_hash": ("kognita.graph.storage", "graph"),
-    "Node": ("kognita.graph.types", "graph"),
-    "Edge": ("kognita.graph.types", "graph"),
-    "SearchResult": ("kognita.graph.types", "graph"),
-    "EpisodeResult": ("kognita.graph.types", "graph"),
+#: Names 0.1.x exposed here that 0.2 does not. The graph engine is one optional
+#: backend behind a protocol, so it is reached at ``kognita.graph`` rather than
+#: advertised in the namespace that has to stay dependency-light.
+_MOVED: dict[str, str] = {
+    "Kognita": "kognita.graph.GraphEngine",
+    "KognitaConfig": "kognita.graph.GraphConfig",
+    "KognitaKuzuDriver": "kognita.graph.KuzuDriver",
+    "KuzuSession": "kognita.graph.KuzuSession",
+    "make_graphiti": "kognita.graph.make_graphiti",
+    "execute_cypher": "kognita.graph.execute_cypher",
+    "chunk_text": "kognita.graph.chunk_text",
+    "GraphSnapshot": "kognita.graph.GraphSnapshot",
+    "save_snapshot": "kognita.graph.save_snapshot",
+    "content_hash": "kognita.graph.content_hash",
+    "Node": "kognita.graph.Node",
+    "Edge": "kognita.graph.Edge",
+    "SearchResult": "kognita.graph.SearchResult",
+    "EpisodeResult": "kognita.graph.EpisodeResult",
 }
 
 
 def __getattr__(name: str) -> Any:
-    """Resolve a graph-layer export on first use.
+    """Explain the retired 0.1.x graph names rather than resolving them.
 
-    PEP 562 module ``__getattr__``: only called for names not already bound, so
-    a resolved attribute costs nothing on subsequent access.
+    These are not lazily bound aliases. The graph engine deliberately no longer
+    reaches into this namespace, so the error names the module that owns it.
+
+    ``load_snapshot`` is absent from ``_MOVED`` on purpose: it still lives here
+    and means the *policy* snapshot. :func:`kognita.graph.load_snapshot` is a
+    different function that rehydrates a saved graph.
     """
-    try:
-        module_path, extra = _LAZY[name]
-    except KeyError:
-        raise AttributeError(f"module 'kognita' has no attribute {name!r}") from None
-
-    import importlib
-
-    try:
-        module = importlib.import_module(module_path)
-    except ImportError as exc:
-        raise ConfigError(
-            f"'{name}' needs Kognita's graph engine, which is not installed. "
-            f"Install it with:  pip install kognita[{extra}]\n"
-            f"(the core decision engine in kognita.core does not require it)"
-        ) from exc
-
-    value = getattr(module, name)
-    globals()[name] = value
-    return value
+    destination = _MOVED.get(name)
+    if destination is None:
+        raise AttributeError(f"module 'kognita' has no attribute {name!r}")
+    module, _, attribute = destination.rpartition(".")
+    raise AttributeError(
+        f"'{name}' is no longer exported from 'kognita'. The graph engine is an "
+        f"optional backend rather than the top-level namespace, so import it "
+        f"from the module that owns it:\n"
+        f"    from {module} import {attribute}\n"
+        f"which needs the graph extra:  pip install kognita[graph]"
+    )
 
 
 def __dir__() -> list[str]:
-    return sorted(set(globals()) | set(_LAZY))
+    return sorted(__all__)
 
-
-if TYPE_CHECKING:  # pragma: no cover - import-time cost is the whole point
-    from kognita.graph.chunking import chunk_text
-    from kognita.graph.config import KognitaConfig
-    from kognita.graph.core import Kognita
-    from kognita.graph.engine import KognitaKuzuDriver, make_graphiti
-    from kognita.graph.query import execute_cypher
-    from kognita.graph.session import KuzuSession
-    from kognita.graph.storage import (
-        GraphSnapshot,
-        content_hash,
-        load_snapshot,
-        save_snapshot,
-    )
-    from kognita.graph.types import Edge, EpisodeResult, Node, SearchResult
 
 __all__ = [
-    # provider configuration (always available)
+    # decisions
+    "Envelope",
+    "Check",
+    "Evaluation",
+    "RuleContext",
+    "envelope_hash",
+    "decide",
+    "record",
+    "resolve_outcome",
+    "PolicySnapshot",
+    "load_snapshot",
+    # rules
+    "rule",
+    "build_registry",
+    "CORE_RULES",
+    # evidence
+    "EvidenceWriter",
+    "verify_chain",
+    "export_chain",
+    "verify_export",
+    "hashes_only",
+    "ChainBreak",
+    # approvals
+    "grant",
+    "reject",
+    "expire_stale",
+    "find_granted",
+    "ApprovalError",
+    # retrieval
+    "retrieve",
+    "index_item",
+    "reindex",
+    "Retrieved",
+    "HashingEmbedder",
+    "cosine",
+    "lexical_overlap",
+    "NumpyVectorIndex",
+    "SqliteVecIndex",
+    "default_index",
+    # egress
+    "EgressGuard",
+    "EgressPolicy",
+    "EgressResult",
+    "EgressDenied",
+    "PatternRedactor",
+    "NullRedactor",
+    # classification
+    "PatternClassifier",
+    "FixedClassifier",
+    "most_sensitive",
+    # tools and broker
+    "ToolRegistry",
+    "ToolRun",
+    "run_governed",
+    "ask",
+    "BrokerAnswer",
+    "default_route_resolver",
+    # storage
+    "make_engine",
+    "create_all",
+    "session_scope",
+    "Agent",
+    "Policy",
+    "Approval",
+    "GovernanceDecision",
+    "EvidenceEvent",
+    "KnowledgeItem",
+    "Entity",
+    "EntityEdge",
+    "utcnow",
+    # vocabulary
+    "Outcome",
+    "CheckResult",
+    "Classification",
+    "ActorType",
+    "EventType",
+    "ApprovalStatus",
+    "EgressDecision",
+    # hashing
+    "canonical_hash",
+    "canonical_json",
+    # provider configuration (no dependencies of its own)
     "LLMConfig",
     "EmbedderConfig",
     "LLMProvider",
     "EmbedderProvider",
     "list_models",
-    # errors (always available)
+    # errors
     "KognitaError",
     "ConfigError",
     "ProviderError",
-    # graph engine (lazy; requires kognita[graph])
-    "Kognita",
-    "KognitaConfig",
-    "KognitaKuzuDriver",
-    "KuzuSession",
-    "make_graphiti",
-    "execute_cypher",
-    "chunk_text",
-    "GraphSnapshot",
-    "load_snapshot",
-    "save_snapshot",
-    "content_hash",
-    "Node",
-    "Edge",
-    "SearchResult",
-    "EpisodeResult",
     "__version__",
 ]

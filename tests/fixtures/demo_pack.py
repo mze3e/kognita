@@ -27,10 +27,10 @@ from typing import Any
 
 from sqlmodel import Session
 
-from kognita.core.envelope import Envelope, RuleContext
-from kognita.core.models import Policy, utcnow
-from kognita.core.rules import build_registry
-from kognita.core.vocabulary import Classification
+from kognita.envelope import Envelope, RuleContext
+from kognita.models import Policy, utcnow
+from kognita.rules import build_registry
+from kognita.vocabulary import Classification
 
 # ── Domain vocabulary ────────────────────────────────────────────────────────
 

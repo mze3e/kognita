@@ -21,7 +21,7 @@ be checked rather than asserted.
    unstructured identifiers, names in prose, and anything the pattern set does
    not anticipate. A redactor trusted beyond its accuracy is worse than none, so
    deployments handling real personal data should supply a proper NER-based
-   :class:`~kognita.core.protocols.Redactor`. The conformance suite tests the
+   :class:`~kognita.protocols.Redactor`. The conformance suite tests the
    *plumbing* — that nothing unredacted escapes the guard — never detection
    recall.
 """
@@ -31,9 +31,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable
 
-from kognita.core.canonical import canonical_hash
-from kognita.core.evidence import EvidenceWriter
-from kognita.core.vocabulary import (
+from kognita.canonical import canonical_hash
+from kognita.evidence import EvidenceWriter
+from kognita.vocabulary import (
     ActorType,
     Classification,
     EgressDecision,

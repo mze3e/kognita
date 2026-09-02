@@ -5,7 +5,7 @@ deterministic, needs no model, no network and no API key, and produces the same
 vector on every machine — which makes it the right fixture for a conformance
 suite and a reasonable offline default for small corpora. A real embedder is a
 configuration swap, not a rewrite: both satisfy
-:class:`kognita.core.protocols.Embedder`.
+:class:`kognita.protocols.Embedder`.
 
 Vectors are L2-normalised, so cosine similarity is a dot product.
 """

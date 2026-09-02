@@ -9,8 +9,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 
-from kognita.core.envelope import Check, Envelope, RuleContext
-from kognita.core.vocabulary import Classification
+from kognita.envelope import Check, Envelope, RuleContext
+from kognita.vocabulary import Classification
 
 
 @runtime_checkable

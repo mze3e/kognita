@@ -14,8 +14,8 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from kognita.core.envelope import Check, RuleContext
-from kognita.core.vocabulary import CheckResult
+from kognita.envelope import Check, RuleContext
+from kognita.vocabulary import CheckResult
 
 Evaluator = Callable[[Any, RuleContext], list[Check]]
 

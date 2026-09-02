@@ -15,8 +15,8 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
-from kognita.core.db import make_engine, session_scope
-from kognita.core.evidence import ChainBreak, export_chain, verify_chain
+from kognita.db import make_engine, session_scope
+from kognita.evidence import ChainBreak, export_chain, verify_chain
 
 
 def _probe(module: str) -> str:
@@ -97,7 +97,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 def cmd_evidence_verify(args: argparse.Namespace) -> int:
     """Verify a store's evidence chain, or a previously exported artifact."""
     if args.file:
-        from kognita.core.evidence import verify_export
+        from kognita.evidence import verify_export
 
         payload = json.loads(Path(args.file).read_text())
         try:

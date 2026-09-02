@@ -18,7 +18,7 @@ from typing import Any, Sequence
 
 import numpy as np
 
-from kognita.core.embedding import from_bytes
+from kognita.embedding import from_bytes
 
 
 class NumpyVectorIndex:

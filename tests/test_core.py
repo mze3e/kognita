@@ -14,17 +14,17 @@ from sqlmodel import select
 
 from fixtures import demo_pack as dp
 
-from kognita.core.approvals import ApprovalError, expire_stale, find_granted, grant, reject
-from kognita.core.canonical import canonical_hash, canonical_json
-from kognita.core.classify import PatternClassifier
-from kognita.core.egress import (
+from kognita.approvals import ApprovalError, expire_stale, find_granted, grant, reject
+from kognita.canonical import canonical_hash, canonical_json
+from kognita.classify import PatternClassifier
+from kognita.egress import (
     EgressDenied,
     EgressGuard,
     EgressPolicy,
     NullRedactor,
     PatternRedactor,
 )
-from kognita.core.evidence import (
+from kognita.evidence import (
     ChainBreak,
     EvidenceWriter,
     export_chain,
@@ -32,10 +32,10 @@ from kognita.core.evidence import (
     verify_chain,
     verify_export,
 )
-from kognita.core.models import Approval, EvidenceEvent
-from kognita.core.registry import register
-from kognita.core.tools import ToolNotRegistered, ToolRegistry
-from kognita.core.vocabulary import (
+from kognita.models import Approval, EvidenceEvent
+from kognita.registry import register
+from kognita.tools import ToolNotRegistered, ToolRegistry
+from kognita.vocabulary import (
     ApprovalStatus,
     Classification,
     EgressDecision,
@@ -112,7 +112,7 @@ def test_as_of_replays_a_superseded_policy(harness):
 
 
 def test_as_of_is_recorded_alongside_the_decision(harness):
-    from kognita.core.models import GovernanceDecision
+    from kognita.models import GovernanceDecision
 
     envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
     at = FROZEN_NOW - timedelta(days=5)
@@ -134,7 +134,7 @@ def test_unevaluable_policy_escalates_rather_than_being_ignored(harness):
     Silently skipping it would let a policy be neutralised by deleting its
     evaluator, which is the sort of change nobody reviews.
     """
-    from kognita.core.models import Policy
+    from kognita.models import Policy
 
     envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
     with harness.session() as session:
@@ -559,7 +559,7 @@ def test_a_forked_sequence_is_rejected_by_the_database(harness):
     """
     import sqlalchemy
 
-    from kognita.core.models import EvidenceEvent
+    from kognita.models import EvidenceEvent
 
     with harness.session() as session:
         harness.evidence.emit(

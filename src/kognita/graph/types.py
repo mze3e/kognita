@@ -47,7 +47,7 @@ class Edge:
 
 @dataclass(frozen=True)
 class SearchResult:
-    """A single hit returned by Kognita.search()."""
+    """A single hit returned by GraphEngine.search()."""
 
     fact: str
     source_node: Node | None = None

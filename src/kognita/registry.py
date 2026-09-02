@@ -1,7 +1,7 @@
 """The agent registry and its kill switch.
 
 The registry is an allowlist, not an inventory kept for reporting: an agent that
-is not registered is denied by :func:`kognita.core.governance.registry_checks`.
+is not registered is denied by :func:`kognita.governance.registry_checks`.
 Every agent carries a named accountable human, because "who is answerable for
 this system's actions" is the first question asked after an incident.
 """
@@ -12,9 +12,9 @@ from typing import Sequence
 
 from sqlmodel import Session, select
 
-from kognita.core.evidence import EvidenceWriter
-from kognita.core.models import Agent, utcnow
-from kognita.core.vocabulary import ActorType, EventType
+from kognita.evidence import EvidenceWriter
+from kognita.models import Agent, utcnow
+from kognita.vocabulary import ActorType, EventType
 
 
 def register(

@@ -95,20 +95,47 @@ testpaths = ["tests"]
 filterwarnings = ["ignore::DeprecationWarning"]
 
 # ── Layering contracts ───────────────────────────────────────────────────────
-# kognita.core is the product: it must stay installable on the four hard
-# dependencies. These contracts are what stop that from quietly regressing.
+# The decision engine lives directly in `kognita`, and must stay installable on
+# the four hard dependencies. These contracts are what stop that from quietly
+# regressing.
+#
+# Because the engine is a flat set of modules rather than a subpackage, the
+# first contract has to name them. `tests/test_packaging.py` asserts that list
+# covers every module actually present, so adding a module without listing it
+# fails loudly instead of silently escaping the contract.
 [tool.importlinter]
 root_packages = ["kognita"]
 # Required so the forbidden contracts can name third-party packages.
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "core depends on nothing above it"
+name = "the decision engine reaches nothing optional"
 type = "forbidden"
-source_modules = ["kognita.core"]
+source_modules = [
+    "kognita.approvals",
+    "kognita.broker",
+    "kognita.canonical",
+    "kognita.classify",
+    "kognita.db",
+    "kognita.egress",
+    "kognita.embedding",
+    "kognita.envelope",
+    "kognita.evidence",
+    "kognita.governance",
+    "kognita.models",
+    "kognita.protocols",
+    "kognita.registry",
+    "kognita.retrieval",
+    "kognita.rules",
+    "kognita.tools",
+    "kognita.vectors",
+    "kognita.vocabulary",
+]
 forbidden_modules = [
     "kognita.graph",
     "kognita.adapters",
+    "kognita.testing",
+    "kognita.cli",
     "graphiti_core",
     "kuzu",
     "openai",
@@ -117,24 +144,24 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "layers"
-type = "layers"
-layers = [
-    "kognita.cli",
-    "kognita.graph | kognita.adapters",
-    "kognita.core",
-    "kognita.config",
-    "kognita.exceptions",
-]
+name = "the graph engine and the adapters stay independent"
+type = "independence"
+modules = ["kognita.graph", "kognita.adapters"]
 
 [[tool.importlinter.contracts]]
 name = "config and exceptions stay dependency-free"
 type = "forbidden"
 source_modules = ["kognita.config", "kognita.exceptions"]
 forbidden_modules = [
-    "kognita.core",
+    "kognita.governance",
+    "kognita.models",
+    "kognita.evidence",
+    "kognita.retrieval",
+    "kognita.egress",
     "kognita.graph",
     "kognita.adapters",
+    "kognita.testing",
+    "kognita.cli",
     "pydantic",
     "sqlmodel",
     "numpy",

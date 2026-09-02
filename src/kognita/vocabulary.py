@@ -35,7 +35,7 @@ class CheckResult(str, Enum):
 
 
 #: Which outcome each failing check result forces. Order matters: see
-#: :func:`kognita.core.governance.resolve_outcome`.
+#: :func:`kognita.governance.resolve_outcome`.
 _RESULT_TO_OUTCOME: dict[CheckResult, Outcome] = {
     CheckResult.FAIL: Outcome.DENY,
     CheckResult.ESCALATE: Outcome.ESCALATE,

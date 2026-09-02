@@ -10,8 +10,8 @@ from kognita.exceptions import ConfigError
 
 
 @dataclass(frozen=True)
-class KognitaConfig:
-    """Top-level configuration for a :class:`~kognita.graph.core.Kognita` instance."""
+class GraphConfig:
+    """Top-level configuration for a :class:`~kognita.graph.engine.GraphEngine` instance."""
 
     llm: LLMConfig
     embedder: EmbedderConfig
@@ -20,7 +20,7 @@ class KognitaConfig:
     chunk_overlap_words: int = 25
 
     @classmethod
-    def from_env(cls) -> "KognitaConfig":
+    def from_env(cls) -> "GraphConfig":
         """Best-effort construction from environment variables.
 
         Picks the first LLM provider with a matching ``*_API_KEY`` env var and

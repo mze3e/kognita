@@ -20,12 +20,12 @@ from typing import Any, Callable, Sequence
 
 from sqlmodel import Session
 
-from kognita.core.envelope import Envelope, Evaluation
-from kognita.core.evidence import EvidenceWriter
-from kognita.core.governance import PolicySnapshot, decide, load_snapshot, record
-from kognita.core.protocols import Embedder
-from kognita.core.retrieval import Retrieved, retrieve
-from kognita.core.vocabulary import ActorType, Classification, Outcome
+from kognita.envelope import Envelope, Evaluation
+from kognita.evidence import EvidenceWriter
+from kognita.governance import PolicySnapshot, decide, load_snapshot, record
+from kognita.protocols import Embedder
+from kognita.retrieval import Retrieved, retrieve
+from kognita.vocabulary import ActorType, Classification, Outcome
 
 
 @dataclass(frozen=True)
