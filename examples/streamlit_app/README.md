@@ -4,7 +4,7 @@ Interactive PDF → knowledge graph UI built on top of the `kognita` library.
 
 This example is the original Kognita UI, relocated here unchanged. It still
 bundles its own graph-building logic; a follow-up change will refactor it to
-call `kognita.Kognita(...)` directly.
+call `kognita.graph.GraphEngine(...)` directly.
 
 ## Run
 

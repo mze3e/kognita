@@ -21,6 +21,13 @@ def execute_cypher(
     Defaults to read-only: statements must begin with ``MATCH``, ``CALL``,
     ``RETURN`` or ``WITH``. Pass ``allow_writes=True`` to bypass the check for
     admin / migration scripts. Trailing semicolons are tolerated.
+
+    .. warning::
+       This opens its own ``kuzu.Database`` handle. Two handles on one path do
+       **not** share a consistent view — reads may silently miss writes made
+       through another handle (docs/decisions/0001-kuzu-cotenancy.md). Use it
+       only for standalone access to a database nothing else holds; inside a
+       session call :meth:`kognita.graph.session.KuzuSession.cypher` instead.
     """
     if not db_path:
         raise ConfigError("db_path is required.")

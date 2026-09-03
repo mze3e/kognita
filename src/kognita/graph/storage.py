@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from kognita.types import Edge, Node
+from kognita.graph.types import Edge, Node
 
 
 @dataclass

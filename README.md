@@ -1,249 +1,208 @@
-# Kognita — PDF → Knowledge Graph
+# Kognita
 
-![Kognita](examples/streamlit_app/static/images/kognita.png)
+**Prove an AI answer was permitted — and evidence it.**
 
-**`kognita`** is a Python library that turns text blobs into queryable knowledge graphs. It wraps **Graphiti** (by Zep) as the graph engine and **KuzuDB** as the embedded graph database, with a pluggable LLM + embedder surface (Anthropic, OpenAI, Groq, Gemini, Ollama, or any OpenAI-compatible endpoint).
-
-This repository ships two examples on top of the library:
-
-- **`examples/streamlit_app/`** — the full PDF-to-knowledge-graph Streamlit UI documented below.
-- **`examples/local_embedding_server/`** — an OpenAI-compatible embedding server so you can run everything offline.
-
----
-
-## Features
-
-### PDF Ingestion & Text Extraction
-
-- Upload any PDF and Kognita extracts its full text using **PyMuPDF (fitz)**.
-- Text is split into overlapping word-window chunks before being sent to the graph engine.
-- Chunk size (words per chunk) and overlap are configurable in the sidebar.
-- A preview of the extracted text is shown before processing begins.
-
-### Knowledge Graph Building
-
-- Each text chunk is fed to **Graphiti** as a text episode.
-- Graphiti calls your chosen LLM to extract **entities** (nodes) and **relationships** (edges) from each chunk.
-- Entities are deduplicated and merged automatically by Graphiti across chunks.
-- The resulting graph is stored in a **KuzuDB** embedded database — no Docker or external services required.
-- A live processing log shows each step: chunk sent, nodes and edges returned, errors if any.
-- Processing automatically stops on the first provider API error and shows a clear message.
-- **Resumable processing**: if processing is interrupted, a "Continue from chunk N" button resumes from where it stopped without losing progress.
-
-### Multi-Provider LLM Support
-
-The graph processing model is selected per-session. Available providers are detected automatically from configured API keys and running local services.
-
-| Provider | Notes |
+| You want to… | Reach for |
 |---|---|
-| **Anthropic (Claude)** | Requires `ANTHROPIC_API_KEY`. Models fetched live from the API. |
-| **OpenAI (GPT)** | Requires `OPENAI_API_KEY`. Chat models fetched live. |
-| **Groq** | Requires `GROQ_API_KEY`. Very fast and cheap. |
-| **Google Gemini** | Requires `GOOGLE_API_KEY` or `GEMINI_API_KEY`. |
-| **Ollama (local)** | Connect to a running Ollama instance. No API key needed. |
-| **Custom OpenAI-compatible** | Point at any endpoint (vLLM, LM Studio, etc.) via env vars. |
+| Connect fragmented files and databases quickly | LlamaIndex |
+| Build complex, customised LLM workflows | LangChain |
+| Create a team of specialised agents | CrewAI |
+| Map complex relationships across data | GraphRAG |
+| **Prove an answer was permitted, and evidence it** | **Kognita** |
 
-### Multi-Provider Embedding Support
+Content guardrails filter *what a model says*. Kognita decides *whether the
+request was allowed — before any data is retrieved* — and writes the record.
 
-Embeddings are used by Graphiti for semantic search. The embedder is chosen independently of the LLM.
+```python
+from kognita import Envelope, decide, load_snapshot
 
-| Embedder | Notes |
-|---|---|
-| **OpenAI** | `text-embedding-3-small` (1536 dims). Requires `OPENAI_API_KEY`. |
-| **Ollama** | `nomic-embed-text` or any model pulled locally (configurable). |
-| **Local CPU server** | Run `examples/local_embedding_server/server.py` on your machine. Uses `BAAI/bge-small-en-v1.5` by default. |
+evaluation = decide(
+    Envelope(principal="rm@bank.example", purpose="ELIGIBILITY_CHECK",
+             tool="check_eligibility", actor_location="AE",
+             subject_type="client", subject_id="1",
+             subjects={"instrument": "1"}),
+    load_snapshot(session),
+    attributes=pack.resolve_attributes(...),
+    rules=pack.rules(),
+)
 
-### Saved Graphs & Deduplication
+evaluation.outcome        # DENY
+for check in evaluation.basis():
+    print(check.regime, check.citation)
+# HK_SFC        SFC Code of Conduct para 5.5
+# DIFC_DFSA     DFSA COB 3; GEN 2
+```
 
-- Every successfully processed graph is **automatically saved to disk** (`.saved_graphs/`).
-- Each saved graph stores: the original PDF, `graph_data.json` (nodes, edges, episodes), `metadata.json`, and the full KuzuDB directory.
-- **PDF deduplication by hash**: uploading the same PDF again shows a prompt to load the existing graph instead of re-processing.
-- Previously saved graphs can be reloaded from the sidebar dropdown at any time, restoring the full session (nodes, edges, episode log, KuzuDB for search).
-
-### Interactive Graph Visualisation
-
-- The graph is rendered with **Pyvis** using the vis.js engine directly in the browser.
-- Node size scales with degree (highly connected entities appear larger).
-- Hover over any node to see its name, summary, and labels.
-- Hover over any edge to see the full extracted fact.
-- Sidebar controls:
-  - **Node colour** and **edge colour** pickers.
-  - **Physics simulation** toggle (Barnes-Hut layout with tuned gravity/spring parameters).
-  - **Edge label** toggle.
-  - Drag, zoom, and pan the graph freely.
-
-### Natural Language Search
-
-- Enter a free-text query and Kognita runs a **semantic search** over the graph via Graphiti.
-- Results are ranked and displayed as fact cards in the UI.
-- Search requires an available embedding backend (Ollama, OpenAI, or the local server).
-
-### LLM Playground
-
-A full chat interface backed by the knowledge graph, accessible via the **LLM Playground** tab.
-
-- **Chat with the knowledge graph**: ask questions in natural language. The assistant first runs a semantic graph search, injects the top results as context, then generates a response using the chosen LLM.
-- **Graph snapshot fallback**: if semantic search returns no results, the LLM is given a compact structured snapshot of all entities and facts as context instead.
-- Search results used for each answer are expandable inline.
-- Chat history is preserved for the session (last 20 messages shown).
-- Any available model (cloud or local) can be selected independently for playground queries.
-
-### Kuzu Database Explorer
-
-Directly query the underlying KuzuDB graph database with **Cypher** from inside the UI.
-
-- A set of **predefined queries** covers common operations: count nodes/edges, find entities by name, list recent episodes, show extracted facts.
-- A **custom query editor** lets you write any read-only `MATCH` or `CALL` Cypher query.
-- Results are displayed as an interactive dataframe.
-
-### Episode Log
-
-The **Episode Log** tab shows the processing result for every chunk:
-
-- Successful chunks show entity and edge counts and a text preview.
-- Failed chunks show the error message.
-- Each chunk has an expandable section listing every node and edge that was added, with names and fact text.
-
-### All Facts View
-
-The **All Facts** tab lists every extracted relationship as `Source → Target: fact`, making it easy to browse the full knowledge base.
-
-### Export
-
-Download the complete graph as a JSON file (`knowledge_graph.json`) containing all nodes (uuid, name, summary, labels) and edges (uuid, source, target, fact, name).
-
-### Cost Estimation & Pricing
-
-- The sidebar shows **real-time input/output pricing** for the selected processing model.
-- A **pricing modal** compares all supported models side-by-side across Anthropic, OpenAI, Groq, and Google.
-
-### Health Check Sidebar
-
-The sidebar shows live status for every configured provider:
-
-- Anthropic / OpenAI / Groq / Gemini API key present
-- Ollama reachable + number of LLMs available
-- Local CPU embedder reachable
-- Custom OpenAI endpoint configured
-- Total models and embedding backends available
-
----
+Two independent regimes refused; neither masked the other; each names the rule
+it came from. Nothing was retrieved.
 
 ## Install
 
-### As a library
-
 ```bash
-pip install kognita
+pip install kognita                 # the decision engine — 4 dependencies
+pip install kognita[graph]          # + Graphiti/Kuzu knowledge graph
+pip install kognita[openai]         # + a real embedder
+pip install kognita[all]
 ```
+
+The core installs on `pydantic`, `sqlmodel`, `numpy` and `python-dotenv`, and
+runs with no network and no API key. Deciding whether a request is permitted
+should not require the machinery that answers it — and that constraint is
+enforced by `import-linter` contracts plus a test that installs with no extras
+and asserts `decide()` still runs.
+
+## What it does
+
+**Authorise before discovery.** An envelope describes an intent and is evaluated
+before anything is fetched. A denial returns no data, not filtered data.
+
+**Fail closed.** `DENY > ESCALATE > HUMAN_APPROVAL > ALLOW`. One failing check
+among a hundred passes still denies, so a policy set cannot be widened by adding
+permissive rules.
+
+**Every decision cites its rule.** A check without a citation is an assertion,
+not a decision; the conformance kit enforces it.
+
+**Decisions are pure and replayable.** `decide()` writes nothing and takes the
+instant as a parameter, so *"what would this have decided in March?"* has an
+answer:
 
 ```python
-import asyncio
-from kognita import Kognita, KognitaConfig, LLMConfig, EmbedderConfig
-
-async def main():
-    cfg = KognitaConfig(
-        llm=LLMConfig(provider="anthropic", api_key="…", model="claude-3-5-sonnet-20241022"),
-        embedder=EmbedderConfig(provider="openai", api_key="…", model="text-embedding-3-small", dimension=1536),
-        db_path="./my_graph.kuzu",
-    )
-    async with Kognita(cfg) as kg:
-        await kg.ingest_text("Einstein published relativity in 1905…", source="einstein")
-        hits = await kg.search("What did Einstein discover?")
-        snapshot = kg.export()
-
-asyncio.run(main())
+decide(envelope, snapshot, as_of=datetime(2026, 3, 1, tzinfo=timezone.utc))
 ```
 
-### Run the Streamlit demo
+**Evidence is tamper-evident.** Each event carries the previous event's hash.
+Altering any payload breaks every hash after it:
+
+```console
+$ kognita evidence verify --db store.db
+BROKEN: evidence chain broken at sequence 2: payload does not match its hash
+
+$ kognita evidence export --db store.db -o audit.json   # portable, self-verifying
+```
+
+Payloads hold hashes and references by default — an append-only log full of
+personal data collides with erasure rights — and `hashes_only` strips content
+entirely while keeping the log provable.
+
+**Egress is guarded, not merely refused.** A binary local-or-refuse rule confines
+a governed system to whatever model runs on the box. The guard adds redaction:
+
+```python
+result = guard.send(text, call_the_model,
+                    classification=Classification.C2,
+                    destination="api.openai.com", destination_is_local=False)
+
+result.decision          # REDACT
+# the provider saw:  [TERM_1] ([EMAIL_1]) holds account [ACCOUNT_1]
+# the caller got the real values back, and MODEL_CALL + EGRESS
+# record the manifest hash — never the content.
+```
+
+> `PatternRedactor` is a floor, not a guarantee. Regexes miss names in prose and
+> anything the patterns do not anticipate. Deployments handling real personal
+> data should supply an NER-based `Redactor`; the tests cover the plumbing —
+> that nothing unredacted escapes the guard — never detection recall.
+
+## Domain packs
+
+The core is domain-blind. A pack supplies the two things it cannot know: what a
+request's *attributes* are, and how to load the *subjects* it refers to.
+
+```python
+class MyPack:
+    name = "my-domain"
+    def load_subjects(self, envelope, session): ...
+    def resolve_attributes(self, envelope, subjects): ...
+    def rules(self): return build_registry(MY_EVALUATORS)
+```
+
+Policies are data — effective-dated rows with a JSON payload interpreted by the
+evaluator registered for their `rule_type`. The core ships five primitives
+(allowlist, denylist, required flag, required human review, prohibited); a pack
+registers whatever its regimes need beyond them. A policy whose `rule_type` has
+no evaluator **escalates** rather than being skipped: it is a rule someone
+believes is in force.
+
+### Conformance
+
+Kognita ships a conformance kit: a set of assertions that every domain pack must
+satisfy. The kit proves that whatever a pack's regimes say, they are decided
+fail-closed, cited, and evidenced.
+
+Run the kit over the bundled fixture pack (proves the kit itself works):
 
 ```bash
-pip install -e ".[demo]"
-streamlit run examples/streamlit_app/app.py
+pytest --pyargs kognita.testing.conformance
 ```
 
-### Run the local embedding server
+Or subclass it in your own pack's test suite:
 
-```bash
-pip install -e ".[local-embeddings]"
-uvicorn examples.local_embedding_server.server:app --host 127.0.0.1 --port 8000
+```python
+from kognita.testing import ConformanceCase, Harness
+
+class TestMyPack(ConformanceCase):
+    @pytest.fixture(autouse=True)
+    def _bind(self):
+        self.harness = Harness(pack=MyPack(), purposes=PURPOSES, seed=seed)
+        self.allow_envelope = Envelope(...)
+        self.deny_envelope = Envelope(...)
+        self.human_envelope = Envelope(...)  # optional
 ```
 
----
+The pattern follows `langchain-tests`: invariants are importable and reusable by
+external packs running in their own repositories.
 
-## API Keys
+## The knowledge graph
 
-| Variable | Used for |
-|---|---|
-| `ANTHROPIC_API_KEY` | Claude models (entity extraction, chat) |
-| `OPENAI_API_KEY` | GPT models + `text-embedding-3-small` embeddings |
-| `GROQ_API_KEY` | Groq-hosted LLMs |
-| `GOOGLE_API_KEY` or `GEMINI_API_KEY` | Google Gemini models |
+`kognita[graph]` adds the Graphiti + Kuzu engine: documents become a bi-temporal,
+auto-deduplicated knowledge graph.
 
-Set these as environment variables or place them in a `.env` file.
+```python
+from kognita.graph import GraphEngine, GraphConfig
 
----
-
-## Local & Custom Endpoints
-
-### Ollama (fully local)
-
-```bash
-ollama pull llama3.2:3b
-ollama pull nomic-embed-text
+async with GraphEngine(config) as kg:
+    await kg.ingest_text(document, source="policy-handbook")
+    hits = await kg.search("cross-border disclosure")
 ```
 
-Optional env overrides:
+Two graphs share one Kuzu database: Graphiti's LLM-extracted knowledge, and a
+deterministic `SoR_*` mirror of a system of record, so one traversal crosses both
+planes. All access goes through a single `KuzuSession` — two `kuzu.Database`
+handles on one path do **not** share a consistent view and raise nothing when
+they diverge. See [docs/decisions/0001-kuzu-cotenancy.md](docs/decisions/0001-kuzu-cotenancy.md).
 
-```bash
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_LLM_MODEL=llama3.2:3b
-OLLAMA_EMBED_MODEL=nomic-embed-text
-OLLAMA_EMBED_DIM=768
+## Layout
+
+```
+kognita            the decision engine — decisions, evidence, retrieval,
+                   egress, tools. Four dependencies, no network.
+kognita.graph      Graphiti + Kuzu knowledge engine          [graph]
+kognita.adapters   provider-backed embedders and clients     [openai] …
+kognita.testing    the conformance kit
 ```
 
-`OLLAMA_BASE_URL` accepts both `http://localhost:11434` and `http://localhost:11434/v1`.
+`kognita` **is** the decision engine, not a namespace that points at one. No
+graph name is reachable from it: the graph is imported from `kognita.graph`, so
+reading an import tells you whether a graph database is about to be loaded.
+`import kognita` never loads one, and `tests/test_packaging.py` asserts it.
 
-### Local CPU embedding server
+> **Moved in 0.2.** `kognita.Kognita` → `kognita.graph.GraphEngine`,
+> `kognita.KognitaConfig` → `kognita.graph.GraphConfig`,
+> `kognita.KognitaKuzuDriver` → `kognita.graph.KuzuDriver`, and
+> `kognita.core.*` → `kognita.*`. Touching a retired name raises an
+> `AttributeError` naming the module that now owns it. Reasoning and the full
+> migration table: [docs/decisions/0003-the-top-level-namespace.md](docs/decisions/0003-the-top-level-namespace.md).
 
-Run a small FastAPI embedding server on your CPU (no GPU required):
+## Status
 
-```bash
-pip install -e ".[local-embeddings]"
-uvicorn examples.local_embedding_server.server:app --host 127.0.0.1 --port 8000
-```
+**Alpha. Phases 0–5 complete:** core packaging, governance, evidence chain,
+retrieval, egress guard, tool runner, broker, conformance kit, and adapters.
 
-Optional env overrides:
+**Phase 6 in progress:** deterministic graph mirror (SoR_* tables), governed
+document ingestion with evidence logging, and cross-plane Cypher (REFERENCES
+edges linking knowledge graph to system of record).
 
-```bash
-LOCAL_EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
-LOCAL_EMBEDDINGS_BASE_URL=http://localhost:8000/v1
-LOCAL_EMBEDDINGS_MODEL=bge-small-en-v1.5
-LOCAL_EMBEDDINGS_DIM=384
-```
+**Phase 7 pending:** final release, performance benchmarks, docs rewrite, v0.2.0.
 
-When reachable, `local:bge-small-en-v1.5` appears in the embedder dropdown.
-
-### Custom OpenAI-compatible endpoint
-
-```bash
-CUSTOM_OPENAI_BASE_URL=https://my-server/v1
-CUSTOM_OPENAI_API_KEY=your-key
-CUSTOM_OPENAI_EMBED_MODEL=text-embedding-3-small
-CUSTOM_OPENAI_EMBED_DIM=1536
-```
-
-`CUSTOM_OPENAI_ENDPOINT` is accepted as an alias for `CUSTOM_OPENAI_BASE_URL`.
-
----
-
-## Tips
-
-- **Chunk size**: 200–300 words works well for most documents. Smaller chunks extract more fine-grained facts; larger chunks give more context per episode.
-- **Overlap**: 25–30 words helps preserve context at chunk boundaries.
-- Each episode costs ~2–5 LLM calls (extraction + entity resolution + deduplication).
-- For large PDFs (50+ pages), expect 2–5 min processing time with a cloud model.
-- Use Groq models for the cheapest cloud option.
-- Use Ollama or the local CPU embedder for fully offline, zero-cost processing.
-- Use the **Export** button to download the graph as JSON for further analysis or to load into another tool.
-- Saved graphs persist between sessions — you only pay to process each PDF once.
+MIT licensed.

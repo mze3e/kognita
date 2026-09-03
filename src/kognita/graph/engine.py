@@ -1,4 +1,4 @@
-"""The main :class:`Kognita` class — ingest text, search, export, persist."""
+"""The main :class:`GraphEngine` class — ingest text, search, export, persist."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -7,38 +7,39 @@ from typing import Any, Callable
 
 from graphiti_core.nodes import EpisodeType
 
-from kognita.chunking import chunk_text
-from kognita.config import KognitaConfig
+from kognita.graph.chunking import chunk_text
+from kognita.graph.config import GraphConfig
 from kognita.exceptions import ProviderError, extract_api_error
-from kognita.graph import make_graphiti
-from kognita.query import execute_cypher
-from kognita.storage import GraphSnapshot, load_snapshot, save_snapshot
-from kognita.types import Edge, EpisodeResult, Node, SearchResult
+from kognita.graph.driver import make_graphiti
+from kognita.graph.storage import GraphSnapshot, load_snapshot, save_snapshot
+from kognita.graph.types import Edge, EpisodeResult, Node, SearchResult
 
 ProgressCallback = Callable[[int, int], None]
 StatusCallback = Callable[[str], None]
 
 
-class Kognita:
+class GraphEngine:
     """High-level API for turning text into a queryable knowledge graph.
 
-    A :class:`Kognita` wraps a single Graphiti instance backed by a Kuzu
+    A :class:`GraphEngine` wraps a single Graphiti instance backed by a Kuzu
     database. Use it as an async context manager so the underlying driver is
     always closed::
 
-        async with Kognita(config) as kg:
+        async with GraphEngine(config) as kg:
             await kg.ingest_text("...", source="doc1")
             hits = await kg.search("...")
     """
 
-    def __init__(self, config: KognitaConfig) -> None:
+    def __init__(self, config: GraphConfig, *, session: Any = None) -> None:
         self.config = config
+        self._session = session
+        self._owns_session = False
         self._graphiti: Any = None
         self._nodes: dict[str, Node] = {}
         self._edges: list[Edge] = []
         self._episodes: list[dict[str, Any]] = []
 
-    async def __aenter__(self) -> "Kognita":
+    async def __aenter__(self) -> "GraphEngine":
         await self._ensure_graphiti()
         return self
 
@@ -47,23 +48,47 @@ class Kognita:
 
     # -- lifecycle ----------------------------------------------------------
 
+    def _ensure_session(self) -> Any:
+        """Return the shared Kuzu handle, opening one if the caller supplied none.
+
+        Two ``kuzu.Database`` handles on one path do not share a consistent view
+        (see docs/decisions/0001-kuzu-cotenancy.md), so every path into the
+        database goes through one session.
+        """
+        if self._session is None:
+            from kognita.graph.session import KuzuSession
+
+            self._session = KuzuSession(self.config.db_path)
+            self._owns_session = True
+        return self._session.open()
+
+    @property
+    def session(self) -> Any:
+        """The :class:`~kognita.graph.session.KuzuSession` backing this instance."""
+        return self._ensure_session()
+
     async def _ensure_graphiti(self) -> Any:
         if self._graphiti is None:
             self._graphiti = make_graphiti(
                 self.config.llm,
                 self.config.embedder,
                 str(self.config.db_path),
+                session=self._ensure_session(),
             )
             await self._graphiti.build_indices_and_constraints()
         return self._graphiti
 
     async def close(self) -> None:
-        """Close the underlying Graphiti / Kuzu driver."""
-        if self._graphiti is not None:
-            try:
+        """Close the underlying Graphiti driver and any session we opened."""
+        try:
+            if self._graphiti is not None:
                 await self._graphiti.close()
-            finally:
-                self._graphiti = None
+        finally:
+            self._graphiti = None
+            if self._owns_session and self._session is not None:
+                self._session.close()
+                self._session = None
+                self._owns_session = False
 
     # -- ingestion ----------------------------------------------------------
 
@@ -210,11 +235,11 @@ class Kognita:
     def query_cypher(self, cypher: str, *, allow_writes: bool = False) -> list[dict]:
         """Read-only Cypher passthrough against the Kuzu database.
 
-        Synchronous because Kuzu's Python driver is synchronous.
+        Runs on this instance's shared handle rather than opening its own, so the
+        rows returned reflect what Graphiti has actually written. Synchronous
+        because Kuzu's Python driver is synchronous.
         """
-        return execute_cypher(
-            self.config.db_path, cypher, allow_writes=allow_writes
-        )
+        return self._ensure_session().cypher(cypher, allow_writes=allow_writes)
 
     # -- export / persist ---------------------------------------------------
 
@@ -254,9 +279,9 @@ class Kognita:
 
     @classmethod
     def from_snapshot(
-        cls, snapshot: GraphSnapshot, config: KognitaConfig
-    ) -> "Kognita":
-        """Re-hydrate a :class:`Kognita` from an in-memory snapshot.
+        cls, snapshot: GraphSnapshot, config: GraphConfig
+    ) -> "GraphEngine":
+        """Re-hydrate a :class:`GraphEngine` from an in-memory snapshot.
 
         Only nodes/edges/episodes are restored — the underlying Kuzu store is
         determined by ``config.db_path`` and will be loaded lazily on the next
@@ -269,8 +294,8 @@ class Kognita:
         return kg
 
     @classmethod
-    def load(cls, path: str | Path, config: KognitaConfig) -> "Kognita":
-        """Load a saved graph from ``path`` and return a configured Kognita.
+    def load(cls, path: str | Path, config: GraphConfig) -> "GraphEngine":
+        """Load a saved graph from ``path`` and return a configured GraphEngine.
 
         The returned instance shares no state with the original; it's your
         responsibility to point ``config.db_path`` at the copied Kuzu folder if
