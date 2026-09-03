@@ -164,6 +164,10 @@ class Approval(SQLModel, table=True):
     Binding to ``envelope_hash`` is the point: an approval granted for one request
     cannot be replayed against a different one, because any change to the
     envelope, the resolved attributes or the checks changes the hash.
+
+    Supports both single-signature and two-signature approvals (ADR 0006):
+    - Single: requester asks, approver grants → status=APPROVED
+    - Two-signature: requester asks, approver marks, second approver confirms
     """
 
     __tablename__ = "approvals"
@@ -171,13 +175,27 @@ class Approval(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     decision_id: int = Field(index=True, foreign_key="governance_decisions.id")
     envelope_hash: str = Field(index=True)
-    approver_name: str = "Unassigned (duty desk)"
+    #: Proposal this approval grants (optional; single-sig approvals have none)
+    proposal_id: int | None = Field(index=True, foreign_key="proposals.id")
+    #: Who requested the approval (the requester)
+    requester_id: str = ""
+    #: Who will approve/confirm (may differ from requester)
+    approver_id: str | None = None
+    #: First signature state (PENDING, MARKED, APPROVED, REJECTED, EXPIRED)
     status: ApprovalStatus = Field(default=ApprovalStatus.PENDING, index=True)
+    #: Second signature state for two-signature gates (None for single-sig)
+    confirmation_status: ApprovalStatus | None = None
     scope: str = ""
     reason: str | None = None
+    #: When first signature was granted (status=APPROVED)
+    approved_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    #: When second signature was granted (confirmation_status=APPROVED)
+    confirmed_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
     created_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
     expires_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
     decided_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    #: Deprecated: use requester_id and approver_id instead
+    approver_name: str = "Unassigned (duty desk)"
 
     def is_live(self, at: datetime) -> bool:
         """Pending and not yet expired at ``at``."""
@@ -185,6 +203,34 @@ class Approval(SQLModel, table=True):
         return self.status == ApprovalStatus.PENDING and (
             expiry is None or expiry > at
         )
+
+
+class Proposal(SQLModel, table=True):
+    """A proposed change awaiting human review and approval (ADR 0007).
+
+    Captures the before-state, the kind of change, rationale and proposer.
+    Approvals reference this so the human's signature binds to the exact change.
+    Once approved, the proposal applies atomically with no diff substitution.
+    """
+
+    __tablename__ = "proposals"
+
+    id: int | None = Field(default=None, primary_key=True)
+    #: Kind of change: "document_edit", "policy_update", "criterion_mark", etc.
+    kind: str = Field(index=True)
+    #: Before-state snapshot (JSON)
+    before_snapshot: dict[str, Any] = Field(sa_column=Column(JSON, nullable=False))
+    #: Proposed change data (what the proposer is asking for)
+    change: dict[str, Any] = Field(sa_column=Column(JSON, nullable=False))
+    #: Change description (rationale)
+    rationale: str = ""
+    #: Subject being changed (optional type)
+    subject_type: str | None = None
+    #: Subject being changed (optional id)
+    subject_id: str | None = None
+    #: Proposer's identity
+    proposer_id: str = ""
+    created_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
 
 
 class EvidenceEvent(SQLModel, table=True):

@@ -103,6 +103,7 @@ class ApprovalStatus(str, Enum):
     """Lifecycle of a regulated approval."""
 
     PENDING = "PENDING"
+    MARKED = "MARKED"  # First signature in two-signature approvals
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     EXPIRED = "EXPIRED"
