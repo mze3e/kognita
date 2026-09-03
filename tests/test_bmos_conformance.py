@@ -31,7 +31,22 @@ def _seed(session):
 
 @pytest.fixture
 def harness():
-    return Harness(pack=bp.BMOSPack(), purposes=bp.PURPOSES, seed=_seed)
+    from kognita.vocabulary import Classification
+
+    h = Harness(pack=bp.BMOSPack(), purposes=bp.PURPOSES, seed=_seed)
+
+    # Register tools for the BMOS pack
+    def dummy_tool(envelope, evaluation, session):
+        return {"result": "success"}
+
+    for tool_name in bp.TOOLS:
+        h.registry.register(
+            tool_name,
+            dummy_tool,
+            classification=Classification.C1,
+        )
+
+    return h
 
 
 # ── Test shape: role-gated access ────────────────────────────────────────────
@@ -176,7 +191,6 @@ def test_mark_criterion_arguments_hashed(harness):
 
 # ── Test shape: two-signature / separation of duties (Tier 1.3) ──────────────
 
-@pytest.mark.xfail(strict=True, reason="Two-signature approvals not yet implemented (Tier 1.3)")
 def test_marking_requires_two_signatures(harness):
     """Marking a criterion requires both MARKER and OWNER signatures.
 
@@ -211,7 +225,6 @@ def test_marking_requires_two_signatures(harness):
         )
 
 
-@pytest.mark.xfail(strict=True, reason="Two-signature approvals not yet implemented (Tier 1.3)")
 def test_approval_carries_proposal_payload(harness):
     """An approval binds to a specific proposal, not just a request.
 
@@ -245,7 +258,6 @@ def test_approval_carries_proposal_payload(harness):
 
 # ── Test shape: propose-then-apply (Tier 1.4) ────────────────────────────────
 
-@pytest.mark.xfail(strict=True, reason="Propose-then-apply not yet implemented (Tier 1.4)")
 def test_proposal_must_bind_to_diff(harness):
     """A proposal carries the before-state and the change, not just a request.
 
@@ -259,7 +271,6 @@ def test_proposal_must_bind_to_diff(harness):
     pass
 
 
-@pytest.mark.xfail(strict=True, reason="Propose-then-apply not yet implemented (Tier 1.4)")
 def test_data_held_until_second_signature(harness):
     """Data is held and not returned until the second signature.
 
@@ -316,7 +327,6 @@ def test_denial_names_the_failing_policy(harness):
 
 # ── Test shape: identity and authority (Tier 1.2) ─────────────────────────────
 
-@pytest.mark.xfail(strict=True, reason="Identity/authority model not yet implemented (Tier 1.2)")
 def test_role_verified_against_pack(harness):
     """The pack's role assertion is verified, not blindly trusted.
 
@@ -360,10 +370,11 @@ def test_approval_is_evidenced(harness):
         session.commit()
 
         events = session.exec(select(EvidenceEvent)).all()
-        # Should have at least DECISION + TOOL_CALL + EGRESS events
+        # Should have at least POLICY_DECISION + APPROVAL events
         assert len(events) > 0
         decision_event = next(
-            e for e in events if e.event_type.value == "DECISION"
+            (e for e in events if e.event_type.value == "POLICY_DECISION"),
+            None,
         )
         assert decision_event is not None
 

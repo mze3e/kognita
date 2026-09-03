@@ -27,6 +27,7 @@ from sqlmodel import Session, select
 
 from kognita.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
 from kognita.evidence import EvidenceWriter
+from kognita.approvals import open_approval
 from kognita.models import (
     Agent,
     Approval,
@@ -265,29 +266,29 @@ def record(
         scope = f"{envelope.tool} · " + (
             ", ".join(f"{k}={v}" for k, v in sorted(subjects.items())) or "no subject"
         )
-        approval = Approval(
+
+        # Check if this is a two-signature approval
+        confirmation_required = False
+        for check in evaluation.checks:
+            if check.policy_id is not None:
+                policy = session.exec(
+                    select(Policy).where(Policy.id == check.policy_id)
+                ).first()
+                if policy and policy.rule_type == "TWO_SIGNATURE_APPROVAL":
+                    confirmation_required = True
+                    break
+
+        approval = open_approval(
+            session,
             decision_id=decision.id or 0,
             envelope_hash=evaluation.envelope_hash,
             scope=scope,
-            created_at=at,
-            expires_at=at + approval_ttl,
-        )
-        session.add(approval)
-        session.flush()
-        evidence.emit(
-            session,
+            evidence=evidence,
             correlation_id=evaluation.request_id,
-            event_type=EventType.APPROVAL,
-            actor_type=ActorType.SYSTEM,
-            actor_id="governance-pdp",
-            classification=classification,
-            payload={
-                "action": "OPENED",
-                "approval_id": approval.id,
-                "envelope_hash": evaluation.envelope_hash,
-                "scope": scope,
-                "expires_at": approval.expires_at.isoformat(),
-            },
+            ttl=approval_ttl,
+            requester_id=envelope.principal,
+            confirmation_required=confirmation_required,
+            now=at,
         )
 
     return Evaluation(

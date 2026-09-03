@@ -528,8 +528,8 @@ def test_allowed_tool_emits_tool_call_then_egress(harness):
     assert "should never" not in canonical_json(egress.payload)
 
 
-def test_human_approval_still_produces_a_draft(harness):
-    """Review gates release, not preparation — the work is done, marked, and held."""
+def test_human_approval_holds_data_until_approval(harness):
+    """HUMAN_APPROVAL holds data: the tool body does not run until approved."""
     harness.registry = _registry()
     envelope = dp.envelope("draft_publication", purpose="DOSSIER_PREP", site="SG", subject="1")
     with harness.session() as session:
@@ -538,7 +538,7 @@ def test_human_approval_still_produces_a_draft(harness):
 
     assert run.outcome is Outcome.HUMAN_APPROVAL
     assert run.approval_required
-    assert run.data["status"].startswith("DRAFT")
+    assert run.data is None, "Tool data must be withheld until approval is granted"
 
 
 def test_unregistered_tool_is_rejected(harness):
