@@ -1,5 +1,11 @@
 # Kognita
 
+[![PyPI version](https://img.shields.io/pypi/v/kognita.svg)](https://pypi.org/project/kognita/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/kognita.svg)](https://pypi.org/project/kognita/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/mze3e/kognita/actions/workflows/ci.yml/badge.svg)](https://github.com/mze3e/kognita/actions/workflows/ci.yml)
+[![Downloads](https://static.pepy.tech/badge/kognita)](https://pepy.tech/project/kognita)
+
 **Prove an AI answer was permitted — and evidence it.**
 
 | You want to… | Reach for |

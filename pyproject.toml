@@ -76,6 +76,7 @@ kognita = "kognita.cli:main"
 Homepage = "https://github.com/mze3e/kognita"
 Repository = "https://github.com/mze3e/kognita"
 Issues = "https://github.com/mze3e/kognita/issues"
+Changelog = "https://github.com/mze3e/kognita/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kognita"]
