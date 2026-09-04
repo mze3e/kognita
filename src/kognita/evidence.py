@@ -264,6 +264,7 @@ def verify_export(export: dict[str, Any]) -> int:
             "classification": row["classification"],
             "payload_hash": row["payload_hash"],
             "prev_hash": row["prev_hash"],
+            "recorded_at": row.get("recorded_at"),
         }
         if canonical_hash(header) != row["event_hash"]:
             raise ChainBreak(row["sequence"], "event hash does not match its contents")

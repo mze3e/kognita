@@ -108,5 +108,11 @@ class Harness:
             as_of=as_of or self.now,
         )
 
+    def run_governed(
+        self, envelope: Envelope, session: Session, *, as_of: datetime | None = None
+    ) -> ToolRun:
+        """Alias for run_tool — authorise and execute the tool."""
+        return self.run_tool(envelope, session, as_of=as_of)
+
 
 __all__ = ["Harness", "PackUnderTest", "FROZEN_NOW"]

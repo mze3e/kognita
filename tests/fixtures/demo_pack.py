@@ -370,6 +370,7 @@ def envelope(
     agent: str | None = None,
     principal: str = "test-principal",
     is_admin: bool = False,
+    arguments: dict | None = None,
 ) -> Envelope:
     """Build an envelope for this pack — keeps the tests readable."""
     subjects: dict[str, str] = {}
@@ -385,4 +386,5 @@ def envelope(
         subject_id=subject,
         subjects=subjects,
         is_admin=is_admin,
+        arguments=arguments or {},
     )

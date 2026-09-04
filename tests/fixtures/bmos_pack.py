@@ -68,6 +68,12 @@ CRITERIA: dict[str, dict[str, Any]] = {
         "gate": "CRITERION_GATE",
         "status": "PENDING",  # PENDING, MARKED, CONFIRMED
     },
+    "crit_2": {
+        "id": "crit_2",
+        "description": "Criterion 2: Additional validation required",
+        "gate": "CRITERION_GATE",
+        "status": "PENDING",
+    },
 }
 
 DOCUMENTS: dict[str, dict[str, Any]] = {
@@ -196,10 +202,10 @@ def seed_policies(session: Session, *, now: datetime | None = None) -> list[Poli
             citation="BMOS Governance Model s2: Owner-role gate",
             effective_from=start,
         ),
-        # Criterion confirmation gate: MARKER marks, OWNER confirms
+        # Criterion confirmation gate: MARKER marks, OWNER confirms (two-signature)
         Policy(
             regime="CRITERION_GATE",
-            rule_type="REQUIRES_HUMAN_APPROVAL",
+            rule_type="TWO_SIGNATURE_APPROVAL",
             applies_to="MARKER_ONLY",
             rule={
                 "tools": ["mark_criterion"],
@@ -208,10 +214,10 @@ def seed_policies(session: Session, *, now: datetime | None = None) -> list[Poli
             citation="BMOS Governance Model s3: Two-signature criterion",
             effective_from=start,
         ),
-        # Proposal application gate: AGENT proposes, OWNER applies
+        # Proposal application gate: AGENT proposes, OWNER applies (two-signature)
         Policy(
             regime="PROPOSAL_GATE",
-            rule_type="REQUIRES_HUMAN_APPROVAL",
+            rule_type="TWO_SIGNATURE_APPROVAL",
             applies_to="MARKER_ONLY",
             rule={
                 "tools": ["propose_document"],

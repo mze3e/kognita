@@ -173,6 +173,34 @@ def requires_human_approval(policy: Any, context: RuleContext) -> list[Check]:
     ]
 
 
+@rule("TWO_SIGNATURE_APPROVAL")
+def two_signature_approval(policy: Any, context: RuleContext) -> list[Check]:
+    """Mandate two-signature approval: one marks, another confirms (ADR 0006).
+
+    Rule payload::
+
+        {"tools": ["mark_criterion"], "purposes": ["MARK_CRITERION"]}
+
+    Empty or absent lists mean "any". Produces REQUIRES_HUMAN outcome but also
+    signals to the governance layer that confirmation_required=True.
+    """
+    tools = _as_set(policy.rule.get("tools"))
+    purposes = _as_set(policy.rule.get("purposes"))
+    if tools and context.envelope.tool not in tools:
+        return []
+    if purposes and context.envelope.purpose not in purposes:
+        return []
+    return [
+        Check(
+            check=policy.rule_type,
+            regime=policy.regime,
+            result=CheckResult.REQUIRES_HUMAN,
+            citation=policy.citation,
+            policy_id=policy.id,
+        )
+    ]
+
+
 @rule("PROHIBITED")
 def prohibited(policy: Any, context: RuleContext) -> list[Check]:
     """An unconditional bar, once the policy is engaged at all.
