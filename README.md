@@ -6,6 +6,8 @@
 [![CI](https://github.com/mze3e/kognita/actions/workflows/ci.yml/badge.svg)](https://github.com/mze3e/kognita/actions/workflows/ci.yml)
 [![Downloads](https://static.pepy.tech/badge/kognita)](https://pepy.tech/project/kognita)
 
+![Kognita Logo](docs/kognita-logo.png)
+
 **Prove an AI answer was permitted — and evidence it.**
 
 | You want to… | Reach for |
