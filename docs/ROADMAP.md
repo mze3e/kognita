@@ -1,8 +1,10 @@
 # Kognita Roadmap: From Governance Engine to Agent Harness
 
-**Vision:** Transform Kognita from a policy decision engine into a complete agent harness—a framework anyone can adopt to build governed AI agents with proof of permission and tamper-evident audit logs.
+**Vision:** Transform Kognita from a policy decision engine into a complete agent harness: a framework anyone can adopt to build governed AI agents with proof of permission and tamper-evident audit logs.
 
 **Current Status:** v0.2.0 (core governance engine complete). Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
+
+**Last revised:** September 2026. See [Decision Log](#decision-log) for what changed and why.
 
 ---
 
@@ -11,603 +13,512 @@
 Kognita's core strength is **gating**: authorization before execution, with every decision citable to policy and every decision chain tamper-evident. Current gaps prevent adoption as a harness:
 
 - No **Run context** to group and budget tool calls across agent steps
-- No **model wrapper** to govern LLM calls themselves—only tool egress
+- No **gateway** in front of model providers; the egress guard exists but callers must remember to use it, and any code importing a provider SDK directly bypasses it
+- No way to govern **free text**: `decide()` needs a typed `Envelope`, but traffic through a proxy arrives as raw prompts
 - No **MCP integration** for agent-agnostic governance (Claude, OpenAI, Cursor, Claude Desktop agents all speak MCP)
 - No **adapters** for existing frameworks (Claude Agent SDK, LangGraph, Pydantic AI, LangChain)
 - No **policy language** or CLI for declaring and versioning rules without Python code
+- **Weak citations for retrieved content**: `KnowledgeItem` carries provenance as a flat `source_label` string, the returned snippet is the document's first 280 characters rather than the passage that matched, and classification is one value per document
+- **Not yet examinable**: a regulator cannot select one AI-assisted client interaction and reconstruct it end to end (see [Supervisory Examinability](#supervisory-examinability))
 
-The wedge to viral adoption: an MCP proxy. One command (`kognita serve`) fronts any existing MCP server—governance with zero code changes, no framework lock-in, works with every agent at once.
+The wedge to adoption: explicit proxies. `kognita serve` fronts an MCP server or a model provider, and every call is authorized and evidenced with zero changes to agent code.
+
+### Target state
+
+**Governable → Explainable → Controllable → Replayable → Resilient.**
+
+The direction of travel in supervision is from AI governance *documentation* toward supervisory *examinability*: not "do you have a policy" but "show me this interaction, and prove it". Every release below is measured against these five properties.
+
+| Property | Meaning | Where it is delivered |
+|---|---|---|
+| Governable | Every AI use case is registered, and every action is authorized before it happens | Core today; use-case register (0.4) |
+| Explainable | Why this client, why this product, which controls ran, which rule decided | Citations today; origination evidence (0.4) |
+| Controllable | Budgets, approvals, delegation limits, a human decision point | Run and approvals (0.3); fleets (0.5) |
+| Replayable | The bank can reproduce the evidence later, exactly | Pinned evidence and reconstruction (0.3) |
+| Resilient | Governance survives outages, key compromise and supplier failure | Gateway failure mode (0.3); resilience track (0.6) |
+
+### Scope boundary
+
+Kognita governs **AI and agent traffic**: agent-to-tool calls, agent-to-model calls, and agent-to-agent messages. It is **not** a general enterprise integration platform. Protocol mediation, data transformation, and connector catalogs (the MuleSoft, Kong, Apigee space) are out of scope. In that market the differentiator is connector count; in ours it is fail-closed decisions with citations and a tamper-evident chain.
+
+---
+
+## Supervisory Examinability
+
+The first regulated use case is relationship-manager (RM) facing AI in wealth and private banking. The requirements below apply to any regulated deployment.
+
+### The record chain
+
+For every RM AI use case, Kognita must record:
+
+**use case → affected clients → investor impact → data used → model → agent authority → recommendation or action → human decision point → evidence retained**
+
+### The reconstruction test
+
+A regulator selects one AI-assisted client interaction. Kognita must answer each question from evidence alone, and verify the chain while doing so.
+
+| Question | Status at v0.2 | Delivered by |
+|---|---|---|
+| Why this client? | Gap: the subject is recorded, not why it was selected | Origination evidence (0.4) |
+| Why this insight or product? | Partial: eligibility checks say why it was *permitted*, not why it was *recommended* | Origination evidence (0.4) |
+| What information did the AI use? | Partial: retrieved item IDs are logged, content is neither hashed nor immutable | Pinned evidence (0.3); structured ingestion (0.4) |
+| What model or agent produced it? | Gap: agent name only; no model name or version | Pinned evidence (0.3) |
+| What was the agent authorized to do? | Covered: roles, scopes, cited checks | Manifests and grants (0.5) extend it |
+| What suitability or policy controls ran? | Covered: regime, citation and policy ID per check; policy content not pinned | Pinned evidence (0.3) |
+| What did the RM see and change? | Partial: a proposal model with before-state exists; RM edits are not captured | RM review capture (0.4) |
+| Who made the final decision? | Partial: recorded only when policy forced an approval | RM review capture (0.4) |
+| What was communicated to the client? | Gap: client communication is not a governed event | Governed client communication (0.4) |
+| Can the bank reproduce that evidence later? | Partial: chain integrity and point-in-time policy replay exist; policies, sources and model I/O are not pinned | Pinned evidence and reconstruction (0.3) |
+
+The acceptance test for 1.0 is this table with every row covered, demonstrated by `kognita evidence reconstruct` on a real interaction.
 
 ---
 
 ## Release Timeline
 
 ```
-Q4 2025     Q1 2026     Q2 2026     Q3 2026     Q4 2026     2027
-│           │           │           │           │           │
-├─ 0.3 ─────┤           ├─ 0.4 ─────┤           ├─ 0.5 ─────┤─ 0.6 ────────► 1.0
-  Critical    (readiness)  Adapters    (readiness)  Fleets    Trust  (polish)
-  Launch                   & CLI                    & Attn
-  "The Run &              "Flight                 "Govern
-  MCP Proxy"              Recorder"               Multiple"
+Q4 2026     Q1 2027     Q2 2027     Q3 2027     Q4 2027
+│           │           │           │           │
+├─ 0.3 ─────┼─ 0.4 ─────┼─ 0.5 ─────┼─ 0.6 ─────┼─► 1.0
+  Gateways,   Ingestion,  Fleets      Trust &     Production
+  the Run &   Policy &                Resilience  ready and
+  Replay      Client                              examinable
+              Lifecycle
 ```
 
 ---
 
-## 0.3 "The Run and the MCP Proxy" — Critical Launch Release
+## 0.3 "Gateways, the Run and Replay" (Critical Launch Release)
 
-**Timeline:** Q4 2025  
-**Goal:** Make Kognita the default harness for agentic governance. Ship the two features every prospect asks for.
+**Timeline:** Q4 2026
+**Goal:** Make Kognita the default harness for agentic governance. Every call an agent makes, to a tool or to a model, passes through a Kognita gateway first, and every decision can be reproduced exactly later.
 
-### Core Features
+### 1. Run Context and Budgets
 
-#### 1. Run Context and Tool Budgets
-- `Run` dataclass grouping tool calls across agent steps with:
-  - `max_calls`: deny beyond this count (prevent infinite loops)
-  - `max_tokens`: track LLM token spend (cost control)
+- `Run` dataclass grouping calls across agent steps, with:
+  - `max_calls`: deny beyond this count (prevents runaway loops)
+  - `max_tokens`: LLM token spend
   - `max_cost_usd`: hard stop on spend
   - `wall_clock_seconds`: timeout for the whole run
-  - `classification_ceiling`: tools can only access data up to this sensitivity level
-  - `approvals_pending`: list of open HUMAN_APPROVAL decisions awaiting action
-- `run_governed(run=…)` overload accepting Run context
-- Budget consumed tracked in evidence chain
-- Remaining budget passed to tool as context
+  - `classification_ceiling`: calls may only touch data up to this sensitivity
+  - `approvals_pending`: open HUMAN_APPROVAL decisions awaiting action
+- `run_governed(run=…)` accepts a Run; budget consumption is written to the evidence chain
+- Exceeding any budget is a DENY citing the budget, not a warning
 
-**Rationale:** Agents make multiple calls; budgets prevent runaway spend and recursive loops. Organizations require cost limits before deployment.
+**Rationale:** Agents make many calls; budgets prevent runaway spend and recursive loops. Organizations require cost limits before deployment.
 
-#### 2. Durable Suspend/Resume for HUMAN_APPROVAL
-- HUMAN_APPROVAL decisions write a continuation token to evidence database
+### 2. Durable Suspend/Resume for HUMAN_APPROVAL
+
+- A HUMAN_APPROVAL decision checkpoints the run and persists a continuation
+- **Checkpoints happen synchronously at policy evaluation boundaries**, not continuously. The points where a run must be able to pause are exactly the points where `decide()` runs, so those are the only persistence points. (Pattern observed in cavemem's lifecycle-hook capture; idea only, no code taken.)
+- **The continuation is stored as a content-hash handle into a local store, not inlined** in the run record. The run stays small and diffable, and rehydration is an explicit, evidenced fetch. This extends the existing evidence principle that payloads hold hashes and references rather than content.
 - Caller resumes with `continue_run(run_id, approvals_resolved={approval_id: True/False})`
-- Resumed run picks up where it left off—context replayed from evidence
-- Evidence shows decision requested, approved/denied, then resumed
-- Prevents approval loop silence (Tier 0 defect closure)
+- Evidence shows: decision requested → approved or denied → resumed
+- Closes the Tier 0 defect "HUMAN_APPROVAL withholds nothing" and "approval loop unclosed"
 
-**Rationale:** The approval flow is currently broken. Fixing it unblocks regulated use cases (e.g., cross-border disclosure must have explicit human sign-off).
+**Rationale:** The approval flow is currently open-loop. Fixing it unblocks regulated use cases where an action must have explicit human sign-off.
 
-#### 3. Governed Model Wrapper
-- `GovernedModel` wrapping `Anthropic`, `OpenAI`, or `LiteLLM` clients
-- Every call goes through:
-  1. Classification of the prompt (is this PII-leaking code generation?)
-  2. Entitlement check (does this user have permission to call Claude on this data?)
-  3. Redaction (if destination is remote API, apply egress guard)
-  4. LLM call
-  5. Evidence log (prompt redacted, tokens consumed, latency)
-- Token consumption feeds into Run budget
-- Prompt/response classification inferred from call context
+### 3. AI Gateway: Explicit Proxy in Front of Model Providers
 
-**Rationale:** Current gap: tool outputs are guarded, but LLM prompts are not. An agent that sends unredacted PII to Claude API violates governance. This is a Tier 1 blocker.
+Replaces the previously planned in-process "governed model wrapper." One component, same shape as the MCP proxy.
 
-#### 4. MCP Proxy Server
-- `kognita serve --port 3001` launches an MCP server
-- Takes a `--root-config` JSON file specifying:
-  - Backend MCP server URL(s)
-  - Policy pack class (which domain rules apply?)
-  - Database path for evidence
-  - Default session/actor context
-- Every MCP call:
-  1. Translates resource path to Envelope (e.g., `file:///etc/passwd` → `Envelope(tool="read_file", subject_id="passwd", …)`)
-  2. Authorizes via `run_governed()`
-  3. Proxies to backend if allowed
-  4. Returns result or DENY + citations
-  5. Logs to evidence chain
+- `kognita serve --provider openai-compatible --upstream https://api.openai.com`
+- Agents set `base_url=http://localhost:PORT/v1` instead of the provider URL. **Explicit, not transparent:** no TLS interception, no certificates to distribute. It governs everything configured to use it.
+- **OpenAI-compatible wire format first.** OpenAI, Groq, Ollama, vLLM and LiteLLM-fronted models all speak it, so one adapter covers most deployments. A native Anthropic Messages adapter follows when a deployment needs it.
+- Request path, reusing existing machinery:
+  1. Parse the request body just enough to build an `Envelope`: principal and purpose from authenticated headers or a bound session, `tool="model_call"`, subject is the model name
+  2. Derive remaining attributes from the prompt text (see item 4)
+  3. `decide()` against the caller's policy pack; a denial returns before any bytes leave the gateway
+  4. On allow, redact through the existing egress guard
+  5. Forward to the real provider; restore redacted spans in the response via `Redactor.restore()`
+  6. Classify the **response** too before returning it; answers are governed, not only questions
+  7. Emit `MODEL_CALL` and `EGRESS` evidence by hash and reference, never content
+- Token usage feeds the Run budget
 
-**Demo scenario:**
-```bash
-# Backend: Gmail MCP server (reads user's email)
-# Governance: policy pack that restricts read to own mailbox only
+**Rationale:** The egress guard and redaction already exist but are opt-in per call site. A gateway makes governance the path of least resistance and removes the "forgot to wrap it" bypass. The only genuinely new code is the wire-format adapter.
 
-kognita serve \
-  --root-config gmail-config.json \
-  --backend-url stdio:../node_modules/.bin/gmail-mcp
-```
+**Landscape:** LiteLLM proxy, Portkey, Cloudflare AI Gateway and Kong AI Gateway occupy the "gateway in front of model providers" category. They compete on routing, caching and observability. None make fail-closed decisions with citations and a tamper-evident chain; that is the opening.
 
-Agent requests: `resource://get_message?id=alice@corp/important_bids`  
-Governance sees: subject_id=alice, tool=get_message, actor=agent_name  
-Policy decides: denied (actor lacks authority on cross-corp message)  
-Response: `{outcome: DENY, basis: [{regime: "RBAC", citation: "Role policy 2.1"}]}`
+### 4. Classifier-Derived Envelopes
 
-**Rationale:** MCP is the lingua franca for agent integrations. An MCP proxy makes governance transparent to every agent (Claude, OpenAI, Cursor, Claude Desktop, LangGraph, etc.) without framework lock-in.
+Traffic through a gateway arrives as free text, with no typed purpose, subject or classification. A fast calibrated text classifier fills those in so policy applies dynamically to questions and answers, without callers constructing typed requests.
 
-#### 5. Demo: Flagship Scenario
-- CLI: `kognita scaffold --template governed-agent`
-- Scaffold creates:
-  - Flask app with one agent endpoint
-  - SQLite database with governance policies and evidence
-  - Three demo scenarios:
-    1. ✓ Allowed query (agent asks for own data, allowed, evidence logged)
-    2. ✗ Denied query (agent asks for other user's data, denied with citations)
-    3. ✗ Tampering test (user manually modifies a row in the evidence DB)
-- `kognita evidence verify --db evidence.db` shows tampering detected
-- Visual walkthrough in the README under "Getting Started"
+**The classifier builds the envelope. It never makes the decision.** Rules that must hold:
 
-**Rationale:** Everyone learns by example. A working demo in 5 minutes sells better than architecture docs.
+- **Typed envelopes stay authoritative.** When a caller supplies typed attributes, they win. Classification fills gaps only.
+- **Classifier output is evidence.** Record model identifier and version, label, calibrated confidence, and input hash. `decide()` runs deterministically on the recorded attributes, and replay re-uses the recorded label rather than re-running the model. This keeps decisions pure and replayable.
+- **Low confidence escalates.** Confidence thresholds are policy. Below threshold, the outcome is ESCALATE, never ALLOW. This is the existing fail-closed rule applied to uncertainty.
+- **Classifier attributes may only narrow permission, never widen it.** Text can be written to fool a classifier (prompt injection). Anything tied to identity comes from authentication and cannot be overridden by what the text says.
+- **Citations have two parts:** the policy rule, and the classifier label it acted on. "Denied under rule X because the prompt was classified as client PII at 0.94" is auditable; "denied because the model said so" is not.
+
+**Implementation:** behind the existing `Classifier` protocol, as an optional extra, never in the core. Candidate backends:
+
+| Backend | Where it runs | Concern |
+|---|---|---|
+| Rule and pattern classifier (ships in core) | In process | Low recall; a floor, not a guarantee |
+| Laya (Apache 2.0, local BERT-family model) | In process | Requires torch, transformers and a model download; days old at time of writing |
+| Jev (TypeSafe AI, hosted API) | Third-party service | Sends the content being governed to a third party *before* deciding whether it may leave; circular for most regulated deployments |
+
+### 5. MCP Proxy Server
+
+- `kognita serve --mcp --root-config config.json` fronts one or more MCP servers
+- Config names backend server(s), policy pack, evidence database, and default actor context
+- Every MCP call is translated to an `Envelope`, authorized via `run_governed()`, proxied if allowed, and evidenced; denials return the outcome and citations
+- MCP tool arguments are free text too, so item 4 applies here as well
+
+**Rationale:** MCP is the lingua franca for agent integrations. A proxy makes governance transparent to every MCP-speaking agent without framework lock-in. Note that many popular agent tools now ship MCP servers themselves, which makes them governance *targets* rather than dependencies.
+
+### 6. Flagship Demo
+
+- `kognita scaffold --template governed-agent` creates a small app, a SQLite policy and evidence store, and three scenarios:
+  1. Allowed query: agent reads permitted data, evidence logged
+  2. Denied query: agent asks for another client's data, denied with citations, nothing retrieved
+  3. Tampering: user edits a row in the evidence database; `kognita evidence verify` reports the break
+- A fourth scenario through the AI gateway: a prompt containing client PII is redacted before reaching the provider, and the evidence shows the manifest hash, not the content
+
+### 7. Pinned Evidence for Replay
+
+Today the chain proves that records were not altered, but three inputs to a decision can change underneath it. Each gets pinned:
+
+- **Policy content hash on every decision.** A check records `policy_id` but not the content of the rule that ran. Policy rows can be edited in place, so replay can silently diverge. Every check will carry a hash of the policy row as evaluated, and replay fails loudly on a mismatch. In-place edits to an effective policy become an error; changes must be new effective-dated rows.
+- **Content hash on every retrieved item.** `RETRIEVAL` evidence records returned item IDs. It will also record a hash of each item's content and its embedding model, so a later edit or re-index is detectable.
+- **Model identity and I/O hashes on every model call.** `MODEL_CALL` evidence records the destination only. It will record provider, model name and version as reported by the provider, and hashes of the prompt as sent and the response as received. The AI gateway (item 3) sees all of these.
+
+**Content retention store.** The evidence chain deliberately holds hashes, not content, so erasure rights can be honored. Reproduction needs the content too. A separate content-addressed store, keyed by the same hashes, holds prompts, responses and source snapshots under a retention policy set per use case. Erasure removes content from the store; the chain keeps the hash and records the erasure as an event, so the record shows that content existed and was lawfully removed.
+
+### 8. Reconstruction Report
+
+- `kognita evidence reconstruct <interaction_id>` produces a regulator-readable report answering the ten questions in [Supervisory Examinability](#supervisory-examinability)
+- Verifies the chain and every pinned hash while building the report; any mismatch is reported as a finding, not skipped
+- Output as JSON (machine-verifiable) and as a readable document
+- In 0.3 it covers what 0.3 records: decisions, controls, data used, model, authority. Questions answered by 0.4 items are marked "not recorded" until then, never omitted
+
+### 9. Gateway Failure Mode
+
+A gateway that governs every call is also a single point of failure. 0.3 makes the behavior explicit and configurable per use case:
+- **Fail closed** (default): if the gateway or evidence store is unavailable, calls are refused
+- **Degraded**: only calls to local models, with no client data, may proceed, and are evidenced once the store recovers
+Silent pass-through when governance is unavailable is not an option.
 
 ### Tier 0 Defect Closure
 
-From `docs/gap-analysis-bmos.md`, fix:
-- [ ] **HUMAN_APPROVAL withholds nothing** → Implement durable suspend/resume
-- [ ] **Approval loop unclosed** → Resume logic + evidence proof
-- [ ] **Entitlements fail open** → Enforce deny-by-default in VectorIndex
-- [ ] **SqliteVecIndex silent failure** → Test with corrupt DB, assert explicit error
-- [ ] **Classifiers never invoked** → Invoke in GovernedModel; test coverage
-- [ ] **Engages missing from protocol** → Add to DomainPack; test in conformance kit
-- [ ] **No foreign keys on Evidence.policy_id** → Add DB migration; test referential integrity
+From `docs/gap-analysis-bmos.md`:
+- [ ] HUMAN_APPROVAL withholds nothing (item 2)
+- [ ] Approval loop unclosed (item 2)
+- [ ] Entitlements fail open
+- [ ] SqliteVecIndex silent failure
+- [ ] Classifiers never invoked (item 4 makes them load-bearing)
+- [ ] `engages` missing from protocol
+- [ ] No foreign keys on evidence references
+- [ ] Purpose check passes everything when no purpose list is configured; must fail closed (superseded by the use-case register in 0.4)
 
 ### Definition of Done
 
-- [ ] All tests pass: `pytest tests/` (existing + new 15 test cases for Run, resume, GovernedModel, MCP proxy)
-- [ ] Conformance kit passes: `pytest --pyargs kognita.testing.conformance`
-- [ ] Flagship scenario works end-to-end in < 3 minutes from scaffold
-- [ ] MCP proxy benchmarked: latency overhead < 50ms per call, throughput > 100 req/s
-- [ ] CLI commands tested: `kognita scaffold`, `kognita evidence verify`, `kognita serve`
-- [ ] README updated: "Getting Started" includes flagship scenario, screenshots
-- [ ] GitHub issues closed: all Tier 0 defects
-- [ ] Import contracts still pass: core still has no optional dependencies
-
-### Effort Estimate
-- Run context: 2–3 weeks (new models, plumbing, test harness)
-- Suspend/resume: 2–3 weeks (evidence integration, resume replay)
-- GovernedModel: 2–3 weeks (adapters for Anthropic/OpenAI, test)
-- MCP proxy: 3–4 weeks (routing logic, benchmark, demo)
-- Tier 0 fixes: 1 week each (7–8 weeks total, can parallelize)
-- Flagship demo: 1 week
-- **Total: ~12–16 weeks (Q4 2025 + early Q1 2026)**
+- [ ] All tests pass, including new coverage for Run, suspend/resume, AI gateway, classifier-derived envelopes, MCP proxy
+- [ ] Replay test: a decision made from a classifier-derived envelope replays identically without calling the classifier
+- [ ] Injection test: text crafted to relabel itself cannot widen permission
+- [ ] Tamper tests: editing a policy row, a retrieved item, or a stored prompt after the fact is detected by replay and by `reconstruct`
+- [ ] Erasure test: erasing retained content leaves the chain verifiable and records the erasure
+- [ ] Outage test: with the evidence store down, the gateway refuses calls in fail-closed mode
+- [ ] Conformance kit passes
+- [ ] Gateway overhead benchmarked (target: under 50 ms per call, excluding classifier inference)
+- [ ] Flagship demo runs end-to-end in under 3 minutes from scaffold
+- [ ] Import contracts pass: the core still has no optional dependencies
+- [ ] All Tier 0 defects closed
 
 ---
 
-## 0.4 "Adapters and Flight Recorder" — Ecosystem Enablement
+## 0.4 "Ingestion, Policy Language and the Client Lifecycle"
 
-**Timeline:** Q1–Q2 2026  
-**Goal:** Make Kognita work in existing frameworks with <200 LOC adapters. Add operational visibility.
+**Timeline:** Q1 2027
+**Goal:** Make citations real down to the passage, let non-engineers author and review policy, record a client interaction from origination to communication, and meet developers in the frameworks they already use.
 
-### Core Features
+### 1. Structured Document Ingestion (Docling)
 
-#### 1. Framework Adapters (<200 LOC each)
-- **Claude Agent SDK** → `KognitaAgent` wrapper on `Agent`
-  - Intercepts `run()` calls; wraps in Kognita Run
-  - Surfaces approval_required flag to Flask app
-- **OpenAI Agents SDK** → `KognitaModel` wrapping model calls
-- **LangGraph** → `KognitaNode` for tool nodes
-- **Pydantic AI** → `KognitaTool` decorator
-- **LangChain** → `KognitaCallback` + Tool wrapper
+Fixes the weak-citation gap. Docling's `ProvenanceItem` carries `page_no`, `bbox` and `charspan` on every item, plus `parent`/`children` references and section heading levels. Provenance is derived by the parser, not guessed by an LLM, so it is verifiable against the source file.
 
-**Rationale:** Most teams use one of these frameworks. Adapters show "works with what you already use, zero refactor."
+- `KnowledgeItem` gains a structural locator (document reference, page, section path, character span) replacing the flat `source_label`
+- **Classification per section subtree**, not per document: a handbook's public chapters and restricted annex can be indexed with different ceilings
+- The returned snippet becomes the passage that matched, not `body[:280]`
+- A Kognita-owned chunker walks the parsed tree and splits on section boundaries (replaces the 26-line word-window chunker)
 
-#### 2. Flight Recorder: Observability Dashboard
-- Local Flask dashboard on `http://localhost:3002`
-- Live table: all runs in the last 24h, filtered by actor/tool/outcome
-- Drill-down: click a run → see all tool calls, decisions, evidence chain
-- Export: run_id → JSON export of decision trace (portable, self-verifying)
-- Alerts: runs exceeding budget, repeated denials from same actor, tampering detected
+**Dependency discipline:**
+- Depend on `docling-slim` with named format extras only (e.g. `format-docx`, `format-html`, `format-markdown`, `format-pdf`). Never the `docling` metapackage, which pulls torch.
+- Do **not** take `feat-chunking`; it pulls transformers and tree-sitter grammars. Chunking is ours.
+- Pin exactly. Docling releases very frequently and has shipped regressions that broke all conversions across several versions.
+- Verify licenses of `docling-parse` and its model packages before shipping the PDF extra.
 
-**Rationale:** Ops teams live in dashboards. A flight recorder makes governance visible without learning Kognita.
+### 2. The Graph Extra: Decide Its Fate
 
-#### 3. Policy Language: YAML + CLI
-- Declarative policy format (YAML, similar to Rego but Python-friendly):
-  ```yaml
-  rule: "client_email_access"
-  subjects:
-    - type: "client"
-  actions:
-    - "read_email"
-  conditions:
-    - actor_location == subject_location  # Same region
-    - subject.kyc_status == "approved"
-  effect: "ALLOW"
-  expires: "2026-12-31"
-  ```
-- Commands:
-  - `kognita policy load policy.yaml` → compile to Python, type-check, test
-  - `kognita policy diff old.yaml new.yaml` → show what changed
-  - `kognita policy lint` → validate syntax, catch dead rules
-  - `kognita policy explain --envelope "tool=read_email&subject=alice"` → which rules apply?
+`kognita.graph` (Graphiti + Kuzu) has no functional test coverage, its headline SoR mirror is unimplemented, and its only integration into a governed answer is a node and edge count in a summary string. It also hard-pins `graphiti-core==0.28.2` and forces `openai<2` on users' environments.
 
-**Rationale:** Policy is the language of governance. Python code is not. Policy teams, legal teams, and compliance officers need to *read* and *approve* rules without learning Python.
+This release decides between:
+- **Finish it:** functional tests, implement the SoR mirror, lift the pins; or
+- **Extract it** into a separate package so its pins stop travelling with Kognita, with structured ingestion (item 1) becoming the primary retrieval path.
 
-#### 4. Policy Test Format
-- Colocated with policy files: `policy.test.yaml`
-  ```yaml
-  - name: "client_can_read_own_email"
-    envelope:
-      principal: "alice@corp"
-      tool: "read_email"
-      subject_type: "client"
-      subject_id: "alice"
-    decision: "ALLOW"  # Assert outcome
-  
-  - name: "client_cannot_read_other_email"
-    envelope:
-      principal: "alice@corp"
-      tool: "read_email"
-      subject_type: "client"
-      subject_id: "bob"
-    decision: "DENY"
-    citation_regex: "isolation.policy.*"  # Assert which rule denied
-  ```
-- `kognita policy test policy.test.yaml` → run all, fail fast on mismatch
+The default, absent a concrete deployment needing cross-plane Cypher, is extraction.
 
-**Rationale:** Governance must be testable. Tests prove policy does what it claims.
+### 3. Policy Language: YAML and CLI
 
-#### 5. Starter Policy Packs
-- Templates for common scenarios:
-  - RBAC (role-based): actor roles ↔ resource zones
-  - Geo-fencing: actor_location == data_location
-  - Data classification: tool output C1/C2/C3 → who can see it
-  - Time-gated: approved only 9am–5pm GMT
-  - Approval chains: requires two approvals from different teams
-- Each starter includes policy file + test suite + fixture pack for testing
+`Policy` rows are already declarative data (`regime`, `rule_type`, `applies_to`, JSON `rule`, `citation`, `effective_from`). The YAML format is a **serialization of rows that already exist**, not a new rule engine.
 
-**Rationale:** New adopters shouldn't start from scratch. Starters accelerate time-to-value.
+Design borrowed from OpenSpec (ideas only):
 
-### Definition of Done
+- **Change files contain deltas, not whole policies.** A policy change is a document of `## ADDED`, `## MODIFIED` and `## REMOVED` rules. This is the primitive behind `kognita policy diff`, and two concurrent changes to one policy set do not conflict.
+- **Lifecycle:** propose → review → `validate --strict` → apply, which merges the delta into current policy and archives the change with its date
+- **Referential integrity:** a MODIFIED or REMOVED rule whose identifier matches nothing in the current policy set is a validation error. (OpenSpec's own validator misses this case.)
 
-- [ ] 5 adapters: Claude SDK, OpenAI SDK, LangGraph, Pydantic AI, LangChain (<200 LOC each)
-- [ ] Adapter tests: each framework can run a simple end-to-end flow through Kognita
-- [ ] Flight recorder: dashboard shows ≥20 runs, drill-down works, export is valid JSON
-- [ ] Policy language: parser, compiler, CLI, tests all working
-- [ ] 5 starter packs: RBAC, geo-fencing, data classification, time-gated, approval chain (1 pack = policy file + tests + fixture)
-- [ ] Examples: 2–3 worked examples per starter pack
-- [ ] Docs: "Adapters" guide, policy language reference, starter pack tour
-- [ ] GitHub issues for common use cases linked from starters
+Commands:
+- `kognita policy load` — parse, type-check, compile to rows
+- `kognita policy diff` — show the delta between two versions
+- `kognita policy validate [--strict]` — fails on uncited rules, untested rules, dangling references, and unresolved clarification markers
+- `kognita policy explain --envelope …` — which rules engage and why
 
-### Effort Estimate
-- 5 adapters: 2–3 weeks (can parallelize)
-- Flight recorder: 2–3 weeks
-- Policy language: 3–4 weeks (parsing, CLI, type-checking)
-- Starter packs: 2 weeks
-- Docs: 1 week
-- **Total: ~10–13 weeks (Q1–Q2 2026)**
+**Clarification markers** (from spec-kit): a rule may contain `[NEEDS CLARIFICATION: question]`. `validate --strict` refuses to pass while any remain, so an ambiguous rule cannot silently ship.
 
----
+**Rule expressions:** evaluate using the existing `rule_type` registry. A future `rule_type` may embed a restricted expression language such as Cedar (principal/action/resource shape, designed to be analyzable) for conditions; the surrounding outcome ordering, citation and evidence stay Kognita's. Replacing `decide()` with a general policy engine is not planned (see [Evaluated and Rejected](#evaluated-and-rejected)).
 
-## 0.5 "Fleets" — Multi-Agent Governance
+### 4. Policy Test Format
 
-**Timeline:** Q2–Q3 2026  
-**Goal:** Enable teams to deploy multiple governed agents with shared policies and inter-agent communication.
+Colocated with policy files, in a scenario shape under a named rule:
 
-### Core Features
+```yaml
+rule: client-email-isolation
+scenarios:
+  - name: client can read own email
+    given: { principal: "alice@corp", subject_type: client, subject_id: alice }
+    when:  { tool: read_email }
+    then:  { decision: ALLOW }
 
-#### 1. Delegation with Attenuation
-- One agent delegates to another: `Run.delegate_to(agent_name, attenuated_scope=…)`
-- Delegated scope narrows: if parent run has `max_calls=10`, child gets `max_calls=5`
-- Budget shared between agents: parent consumed 3 calls, child can only use 2 of remaining 7
-- Every delegation logged in evidence chain with authority transfer recorded
-- Child cannot escalate privilege (attenuation is monotonic)
-
-**Rationale:** Complex workflows need hand-offs (e.g., sales agent → compliance review agent → execution agent). Attenuation prevents child from exceeding parent's authority.
-
-#### 2. Capability Grants
-- Actor can grant temporary capability: `grant_to(grantee, capability, duration, subject_scope)`
-- Grant stored in evidence as immutable record
-- Grantee can use capability within scope and duration
-- Grant revocation is immediate (future checks see revoked state)
-
-**Example:**
-```python
-# Sales agent needs to read KYC data to close a deal, but normally can't
-grant_to(grantee="sales_agent_1", 
-         capability="read_kyc",
-         duration=timedelta(hours=2),
-         subject_scope={"customer_id": "acme_corp"})
+  - name: client cannot read another client's email
+    given: { principal: "alice@corp", subject_type: client, subject_id: bob }
+    when:  { tool: read_email }
+    then:  { decision: DENY, cites: client-email-isolation }
 ```
 
-**Rationale:** Not everything can be pre-baked into policy. Some decisions happen at runtime (e.g., "let this agent access this data for the next 2 hours"). Grants are policy mutations with audit trails.
+- `kognita policy test` runs all scenarios
+- A rule with no scenarios fails `validate --strict`
 
-#### 3. Agent Manifests
-- Declarative YAML describing an agent's capabilities, dependencies, identity:
-  ```yaml
-  name: "compliance_reviewer"
-  version: "1.0.0"
-  identity:
-    principal: "compliance_bot@corp"
-    is_admin: false
-    roles: ["compliance_reviewer"]
-  capabilities:
-    - tool: "read_email"
-      subjects: ["escalation"]
-    - tool: "approve_transaction"
-      subjects: ["all"]
-      requires_approval: true
-  dependencies:
-    - service: "email_mcp"
-      version: ">=1.0"
-    - service: "policy_store"
-  budget:
-    max_calls_per_run: 50
-    max_tokens_per_run: 50000
-    max_cost_per_run: 5.00
-  ```
-- Manifests are versioned and signed (Ed25519 in 0.6)
-- Deployed via: `kognita fleet deploy --manifest compliance_reviewer.yaml`
+### 5. Starter Policy Packs
 
-**Rationale:** Manifests are the contract. They tell operators what the agent can do, what it depends on, and what it costs. Deployment is declarative and auditable.
+Templates: role-based access, geo-fencing, data classification, time-gated access, two-signature approval chains. Each pack is policy files, scenarios, and a fixture pack.
 
-#### 4. Fleet Controls
-- Deployed agents register with fleet controller
-- Controller enforces:
-  - Quota per agent (e.g., compliance_reviewer can only use 1000 tokens/day)
-  - Isolation: agents cannot read other agents' runs
-  - Coordination: service-to-service calls must be authorized (agent A calling agent B's tool goes through governance)
-- Dashboard: see all agents, their quotas, their recent runs
+**Distribution** (pattern from Fabric; idea only):
+- One directory per pack; name-based lookup; no central registry
+- `kognita packs update` fetches from a configurable git repository
+- A user overlay directory shadows built-in packs on name collision and is never touched by updates, so private packs coexist with public ones
+- **Unlike Fabric, packs are versioned**: each carries a version, and `policy diff` works across pack versions
 
-**Rationale:** Fleets are heterogeneous. Controls prevent one rogue agent from consuming quota or accessing sensitive runs of peer agents.
+### 6. Framework Adapters (under 200 lines each)
 
-### Definition of Done
+- **hermes-agent first.** It is MIT licensed and already has an approvals mode, a dangerous-command list, and local security logs, but no rule citation, no escalation tier and no tamper-evident chain. Its approval hook is the natural injection point.
+- Claude Agent SDK, OpenAI Agents SDK, LangGraph, Pydantic AI, LangChain
 
-- [ ] Delegation implemented: Run.delegate_to(), attenuation logic, evidence integration
-- [ ] Grant lifecycle: issue, use, revoke, expiry logic, evidence
-- [ ] Manifest schema: YAML parser, validation, versioning
-- [ ] Fleet controller: registration, quota enforcement, isolation, dashboard
-- [ ] Inter-agent calls authorized: agent→agent tool calls go through governance
-- [ ] Tests: 20+ test cases covering delegation chains, grant edge cases, quota exhaustion
-- [ ] Examples: 2–3 scenarios (e.g., sales → compliance → execution handoff)
+### 7. Flight Recorder
 
-### Effort Estimate
-- Delegation: 2–3 weeks
-- Grants: 1–2 weeks
-- Manifests: 2 weeks
-- Fleet controller: 3–4 weeks
-- Docs: 1 week
-- **Total: ~10–13 weeks (Q2–Q3 2026)**
+- Local dashboard: recent runs filtered by actor, tool and outcome; drill-down into each decision, its citations and evidence
+- Export a run as self-verifying JSON
+- Alerts: budget exceeded, repeated denials from one actor, chain break detected, classifier confidence drift
 
----
+### Client Interaction Lifecycle
 
-## 0.6 "Trust" — Cryptographic Proof and Compliance
+Items 8 to 12 close the ends of the record chain: why an interaction started, and what happened after the AI produced something.
 
-**Timeline:** Q3–Q4 2026  
-**Goal:** Make evidence tamper-proof via Ed25519 signatures and exportable to compliance auditors.
+### 8. Use-Case Register
 
-### Core Features
+- Each AI use case is a registered, versioned entry: purpose, affected client segments, investor impact assessment, permitted data classes, approved models and versions, agent authority, required human decision points, retention period
+- Every decision must reference a registered use case; **an unregistered or retired use case is a DENY**. This replaces the free-string purpose check
+- Registry changes are `POLICY_CHANGE` events and go through the same delta, validate and apply lifecycle as policy
+- `kognita usecase list | show | validate` gives compliance a single inventory of AI use
 
-#### 1. Evidence Signing with Ed25519
-- Generate signing keypair on first run: `kognita init --generate-key`
-- Each evidence event includes: `{payload, signature, previous_hash, timestamp}`
-- Signature proves: "this payload was recorded by kognita on this server at this time"
-- Verification command: `kognita evidence verify --db evidence.db --public-key pub.pem`
-  - Walks the chain, verifies every signature
-  - Detects insertion, deletion, tampering
-  - Reports first break in chain
+### 9. Interaction Record
 
-**Rationale:** Hash-chaining is tamper-*evident* (detects tampering). Signing makes evidence tamper-*proof* (cryptographically binds to issuer). Required for regulated industries (finance, healthcare, legal).
+- One `interaction_id` spans a whole client journey: trigger, retrieval, model calls, recommendation, RM review, final decision, client communication
+- Runs (0.3) and correlation IDs attach to an interaction; `reconstruct` operates on interactions
 
-#### 2. Postgres Backend (Migration from SQLite)
-- Optional migration: `kognita migrate --from sqlite:evidence.db --to postgres://…`
-- Postgres backend:
-  - Better concurrency (multiple agents writing simultaneously)
-  - Built-in replication (for HA deployments)
-  - Native JSON query support (policy analysis queries)
-  - Row-level security: agents cannot query other agents' runs
+### 10. Origination Evidence
 
-**Rationale:** SQLite is great for prototypes. Postgres scales to production use cases.
+Answers "why this client?" and "why this product?", which today have no record.
+- The step that selects a client or a product emits an `ORIGINATION` event before anything is shown to the RM: the trigger (event, schedule, RM request), the selection criteria, the candidate set size, and the scores or rules that ranked this client or product first
+- Recommendation rationale is recorded as structured fields with citations to the sources used, not as free model text
+- Suitability and eligibility checks remain separate cited checks: origination says why it was *proposed*, suitability says why it was *permitted*
 
-#### 3. External Review API
-- Governors (compliance officers, auditors) can request a review of an agent's decisions:
-  ```python
-  kognita review request --agent compliance_bot --from 2026-01-01 --to 2026-02-01
-  ```
-- Request creates an immutable, signed record
-- Reviewer fetches paginated runs, annotates with findings
-- Submission is signed and stored in evidence chain
-- Report includes: decisions reviewed, findings, reviewer identity, timestamp
+### 11. RM Review Capture
 
-**Rationale:** Audit trails are useless if nobody reads them. External reviews formalize the governance assurance process.
+Builds on the existing proposal model (ADR 0007), which already stores before-state and rationale but is not yet on the roadmap.
+- **What the RM saw:** a hash of the exact recommendation as rendered to the RM, with its content in the retention store
+- **What the RM changed:** a structured diff between the AI recommendation and what the RM approved
+- **Who decided:** a `FINAL_DECISION` event on every path, including plain ALLOW paths where no approval was forced, naming the RM, the outcome (accepted, amended, rejected) and time
+- Two-signature approval (ADR 0006) applies where the use case requires it
 
-#### 4. TypeScript Evidence Verifier (External Tool)
-- Standalone verifier: `npm install @kognita/verify`
-- `verify_evidence.ts`: import + check evidence signatures without Python
-- Used by: auditors, regulators, external parties who need to verify evidence integrity
-- Output: JSON report with verification status, any breaks in chain
+### 12. Governed Client Communication
 
-**Rationale:** Evidence should be portable and verifiable by anyone. TypeScript verifier lets external parties audit without installing Python Kognita.
-
-#### 5. Schema Versioning
-- Evidence schema versioned: `{version: "2.0", payload: …, signature: …}`
-- Migrations maintain backward compatibility: v1 events readable by v2 code
-- CLI: `kognita evidence export --db evidence.db --output-version 1.0` → export in old format for legacy systems
-
-**Rationale:** Systems evolve. Evidence must survive schema changes without losing provenance.
+- Sending anything to a client is its own governed action: authorized against the use case, suitability and communication policy, then evidenced as a `CLIENT_COMMUNICATION` event
+- The event records channel, recipient reference, a hash of the content as sent, and a link back to the recommendation and final decision it came from
+- A communication that does not trace back to a final decision is a DENY
 
 ### Definition of Done
 
-- [ ] Ed25519 signing integrated: generate key, sign on write, verify on read
-- [ ] Verify command: detects tampering, reports first break, exit code on failure
-- [ ] Postgres migration: schema, row-level security, concurrency tests
-- [ ] External review API: request, fetch, annotate, submit, evidence integration
-- [ ] TypeScript verifier: can verify Kognita evidence without Python
-- [ ] Schema versioning: migrate v1 to v2, backward-compatible reads
-- [ ] Tests: 25+ test cases (signing, tampering, schema migration, verifier)
-- [ ] Docs: "Security Architecture", "Audit Trails for Regulators", verifier guide
-
-### Effort Estimate
-- Ed25519 signing: 2 weeks
-- Postgres migration: 2–3 weeks
-- External review API: 2 weeks
-- TypeScript verifier: 2 weeks
-- Schema versioning: 1 week
-- Docs: 1 week
-- **Total: ~11–13 weeks (Q3–Q4 2026)**
+- [ ] Docling-backed ingestion with per-section classification and passage-level citations
+- [ ] Use-case register enforced: unregistered use cases are denied
+- [ ] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
+- [ ] Graph extra either tested and unpinned, or extracted
+- [ ] Policy language: load, diff, validate, explain, test
+- [ ] Five starter packs with scenarios
+- [ ] hermes-agent adapter plus at least three others
+- [ ] Flight recorder with export
 
 ---
 
-## 1.0 "Ready for Production" — Finalization & Polish
+## 0.5 "Fleets" (Multi-Agent Governance)
 
-**Timeline:** Q4 2026–Q1 2027  
-**Goal:** Performance benchmarks, comprehensive docs rewrite, 10 single-file examples, and official v1.0.0 release.
+**Timeline:** Q2 2027
+**Goal:** Deploy multiple governed agents with shared policies and governed agent-to-agent communication.
 
-### Core Work
+### 1. Delegation with Attenuation
+- `Run.delegate_to(agent_name, attenuated_scope=…)`; the child's budget and scope are carved from the parent's and can only narrow
+- Every delegation is evidenced with the authority transferred
 
-#### 1. Performance Benchmarks
-- Baseline every component:
-  - Decision latency: p50, p99 (target: <10ms)
-  - Evidence write throughput (target: >1000 events/sec)
-  - MCP proxy overhead (target: <50ms)
-  - Run resume time (target: <100ms)
-- Public report: `docs/benchmarks/v1.0.md` with graphs, hardware specs
+### 2. Capability Grants
+- `grant_to(grantee, capability, duration, subject_scope)`; issue, use, revoke and expiry are all evidenced
+- Revocation takes effect on the next decision
 
-#### 2. Docs Rewrite
-- Current README is architecture-first. Rewrite to be:
-  - **Fear-first:** "You need to prove an AI request was allowed before any data moves"
-  - **Scenario-first:** 3–4 concrete stories (regulated financial services, healthcare, retail)
-  - **Glossary:** approve-then-apply, attenuation, citation, egress, etc. (for non-technical readers)
-  - **Comparison:** Kognita vs. content guardrails, LangChain, CrewAI, GraphRAG (in what scenarios you need each)
-- API docs auto-generated from docstrings (Sphinx + ReadTheDocs)
-- Migration guide: 0.5 → 1.0 (schema changes, adapter updates)
+### 3. Agent Manifests
+- Declarative YAML: identity, capabilities, dependencies, budgets
+- `kognita fleet deploy --manifest …`; signed once 0.6 lands
 
-#### 3. 10 Single-File Examples
-1. **Flask agent** (150 lines): simple chatbot with tool access, governance, evidence in SQLite
-2. **Claude SDK integration** (120 lines): agent using Kognita adapter
-3. **OpenAI Agents SDK** (120 lines): same, with OpenAI
-4. **MCP proxy** (80 lines): config file + invocation for gmail MCP
-5. **Policy-only governance** (100 lines): YAML policies, no Python
-6. **Multi-agent fleet** (200 lines): 3 agents, shared Run budget
-7. **Approval workflow** (150 lines): agent requests approval, waits, resumes
-8. **Egress guard** (120 lines): redacts PII before sending to OpenAI
-9. **Evidence audit** (80 lines): read evidence chain, export to JSON, verify
-10. **Custom domain pack** (180 lines): build a pack for domain-specific subjects/attributes
+### 4. Fleet Controls
+- Per-agent quotas, run isolation, and authorization of agent-to-agent calls through the same gateway path as agent-to-tool calls
+- Agent-to-agent message bodies are free text, so classifier-derived envelopes (0.3 item 4) apply
 
-Each example:
-- Runnable in <5 minutes (includes data setup)
-- Commented for clarity
-- Linked from README under "Examples"
-- Tested in CI
+### 5. Sandbox Constraints as Decision Output
+An ALLOW for code execution can carry constraints the executing sandbox must honor: network block-all, a network allow-list, an auto-stop interval, and CPU, memory and disk limits. The vocabulary is borrowed from existing sandbox APIs; Kognita emits constraints and evidences them, and does not ship a sandbox.
 
-#### 4. Marketing & Positioning
-- Blog post series:
-  1. "Why Governance Matters: The AI Risk You're Not Measuring"
-  2. "How We Built Tamper-Evident Audit Logs for Agents"
-  3. "Comparing Kognita to (Framework X)" (choose 3–4 frameworks)
-- Talk proposals for: QCon, PyCon, AI Systems & Safety conferences
-- Timing announcement: "Kognita 1.0: agent governance for regulated industries"
-- HN/Reddit: "Show HN: Kognita — prove your AI agent was authorized before it ran"
-
-#### 5. Graduation Checklist
-- [ ] All tests pass (coverage >85%)
-- [ ] Zero known bugs (Tier 0 closed in 0.3, ongoing triage)
-- [ ] Benchmarks published (all p99 latencies <100ms)
-- [ ] Docs complete (README rewrite, API docs, 10 examples, glossary)
-- [ ] GitHub: 1000+ stars, 30+ contributors, active discussions
-- [ ] Production deployment: ≥1 customer using in regulated domain
-- [ ] Security audit: external review completed
-- [ ] Semantic versioning: 1.0.0 released, changelog updated
-
-### Effort Estimate
-- Benchmarks: 1–2 weeks
-- Docs rewrite: 2–3 weeks
-- 10 examples: 2–3 weeks (can parallelize)
-- Blog/talks: 1 week (spread across release cycle)
-- Graduation checklist: ongoing throughout Q4 2026
-- **Total: ~6–10 weeks (Q4 2026–Q1 2027)**
+### Definition of Done
+- [ ] Delegation, grants, manifests, fleet controls
+- [ ] Agent-to-agent calls authorized and evidenced
+- [ ] Sandbox constraints emitted on ALLOW for execution tools
+- [ ] Scenarios covering delegation chains, grant expiry, quota exhaustion
 
 ---
 
-## Go-to-Market Strategy
+## 0.6 "Trust and Resilience"
 
-### Positioning: "Governance is a feature, not a burden."
+**Timeline:** Q3 2027
+**Goal:** Make evidence tamper-proof, verifiable by outside parties, and survivable. Governance is itself critical infrastructure once every AI call depends on it, so it falls under the same operational-resilience expectations as any other ICT system.
 
-**For developers:** "Drop in a decorator, get tamper-evident audit logs and policy enforcement. No framework swap."
+### Trust
 
-**For compliance teams:** "Every agent decision cites the rule it came from. No guessing, no re-auditing."
+- **Ed25519 signing:** each evidence event signed; `kognita evidence verify --public-key` walks the chain and verifies every signature
+- **Postgres backend:** concurrency for many writers, replication, row-level security so agents cannot read each other's runs
+- **External review API:** a reviewer requests a period, annotates decisions, and submits a signed review into the chain
+- **TypeScript evidence verifier:** `@kognita/verify`, so auditors can verify without installing Python
+- **Schema versioning:** evidence events carry a schema version; migrations rename, recreate, copy intersecting columns and drop inside one transaction, and old events stay readable
+- **External anchoring:** periodically publish the chain head hash to a store the bank does not control, so even a party with full database access cannot rewrite history undetected
 
-**For operators:** "Budget agent spend per user per day. One misconfigured agent can't drain your API budget."
+### Resilience
 
-**For startups:** "Governance is table stakes in regulated industries. Kognita makes it cheap to ship safely."
+- **Evidence backup and restore,** tested: restore to a point in time and verify the chain and retention store end to end; restore drills are part of CI
+- **Key management:** signing key rotation, revocation and escrow; verification works across rotations
+- **Model-provider register:** every model provider the gateway can reach is recorded as an ICT third party, with the use cases that depend on it, its data location and its exit plan; routing to an unregistered provider is a DENY
+- **Provider failover under policy:** switching to a fallback model is itself a governed decision, allowed only to models approved for that use case, and evidenced
+- **Incident evidence:** chain breaks, gateway outages, degraded-mode periods and provider failures are recorded as incidents with timelines, exportable for incident reporting
 
-### Adoption Funnel
+---
 
-**Phase 1: Awareness (0.3 release)**
-- Launch HN: MCP proxy demo (5 min end-to-end)
-- Tweet storm: 3 threads on governance patterns (attenuation, grants, quotas)
-- Blog: "Agents Gone Wrong" (3 case studies of what happens without governance)
-- Target: 500+ GitHub stars, 5K+ visitors to site
+## 1.0 "Production Ready"
 
-**Phase 2: Trial (0.4 release)**
-- Adapters: one per popular framework (Claude SDK, LangGraph, OpenAI SDK)
-- Starter packs: "I have a policy, I just need code" (RBAC, geo-fence, approval-chain)
-- Target: 10K+ PyPI downloads, 50+ GitHub issues (signal of traction)
+**Timeline:** Q4 2027
 
-**Phase 3: Adoption (0.5 release)**
-- Fleet controls: "now run 10 agents, safe"
-- Case study: 1 customer (ideally bank, healthcare, or legal tech) going prod
-- Target: 20+ production deployments, 1K+ stars added
+- **Benchmarks:** decision latency p50 and p99, evidence write throughput, gateway overhead, resume time; published with hardware specs
+- **Docs rewrite:** lead with the problem ("prove an AI request was allowed before any data moved"), scenarios by industry, glossary, honest comparison with content guardrails and AI gateways
+- **Ten single-file examples**, each runnable in under five minutes and tested in CI, including the AI gateway, the MCP proxy, a policy-only YAML deployment, an approval workflow, and an evidence audit
+- **Examinability acceptance:** every row of the reconstruction test in [Supervisory Examinability](#supervisory-examinability) answered from evidence for a real RM interaction, including after a backup restore and a signing key rotation
+- **Graduation checklist:** coverage above 85 percent, published benchmarks, external security review, at least one production deployment in a regulated domain
 
-**Phase 4: Trust (0.6 release)**
-- Signing + compliance audit report: "evidence is tamper-proof"
-- Postgres: "scales to 100M events/month"
-- Target: Adoption by regulated institution (FI or healthcare)
+---
 
-**Phase 5: Dominance (1.0 release)**
-- "The de facto harness for governed agents"
-- Target: 10K+ downloads/month, adoption across 3+ industries
+## Evaluated and Rejected
+
+Projects assessed in September 2026 and the reason each was not adopted. "Idea only" means a design was borrowed with no code or dependency taken.
+
+| Project | Considered for | Verdict |
+|---|---|---|
+| OpenViking | Replacing the knowledge graph | Rejected. A server-only agent context database, not a graph: no query language, no bi-temporal facts, AGPL-3.0. |
+| Laya | Replacing `decide()` | Rejected as an engine. It is a text classifier with no rule model, no citations, no evidence. Kept as a candidate `Classifier` backend (0.3 item 4). |
+| Jev (TypeSafe AI) | Replacing `decide()` | Rejected as an engine; hosted service. Candidate `Classifier` backend only where sending content to a third party is acceptable. |
+| Open Policy Agent, Cedar | Replacing `decide()` | Not planned. Both are permit/deny kernels without escalation tiers, citations or evidence. Cedar remains a candidate expression language inside a rule. |
+| PageIndex | Document structure | Rejected. Page indices are assigned by an LLM, so provenance is unverifiable; hard-pins `litellm`. |
+| mem0 | Run state and memory | Rejected. Telemetry and network clients in its core install; LLM round-trip on the write path. |
+| headroom | Context compression | Rejected. `litellm` in core; lossy compression before the model sees content conflicts with attestable evidence. Content-hash handle idea adopted (0.3 item 2). |
+| caveman / cavemem | Run state | Rejected as a dependency; engine is BSL-1.1. Lifecycle-boundary checkpoint idea adopted (0.3 item 2). |
+| Daytona | Sandboxes | Rejected. AGPL-3.0, and public development stopped in June 2026. Constraint vocabulary borrowed (0.5 item 5). |
+| Scrapling | Web data | Rejected. Anti-bot evasion tooling does not belong in a compliance product's dependency tree. |
+| OpenSpec, spec-kit, Fabric | Policy language and packs | Ideas only (0.4 items 3 to 5). |
+| TrendRadar, hyperframes, OpenMontage, AI Engineering Hub | — | Out of scope (news aggregation, video, tutorials). |
+
+---
+
+## Go-to-Market
+
+### Positioning
+
+**For developers:** point your agent's base URL at Kognita and get cited decisions and tamper-evident audit logs. No framework swap.
+
+**For compliance teams:** every decision cites the rule it came from, including when the input was free text.
+
+**For operators:** budget agent spend per run and per agent; one misconfigured agent cannot drain the API budget.
+
+### Adoption Sequence
+
+1. **0.3:** launch with the AI gateway and MCP proxy demo; five minutes end to end
+2. **0.4:** starter packs and adapters lower the cost of trying it
+3. **0.5:** fleets make multi-agent deployments safe
+4. **0.6:** signatures and external review satisfy regulated buyers
+5. **1.0:** production-ready, benchmarked, documented
 
 ### Why Kognita Wins
 
-1. **No framework lock-in.** Works with Claude, OpenAI, LangGraph, Pydantic AI, etc. via MCP proxy and adapters.
-2. **Fail-closed by design.** Not a content filter bolted on top. Governance is baked into execution.
-3. **Every decision is cited.** No black-box denials. Users know which rule said no, and can appeal.
-4. **Tamper-evident.** Audit trail can't be edited retroactively. Proof of legitimacy.
-5. **Minimal setup.** Flagship demo works in 5 minutes. Policy is YAML. No boilerplate frameworks.
+1. **No framework lock-in:** explicit proxies and small adapters
+2. **Fail-closed by design:** governance is the execution path, not a filter bolted on after
+3. **Every decision is cited:** including decisions on free text, with the classifier label named
+4. **Tamper-evident:** the audit trail cannot be edited retroactively
+5. **Minimal core:** four dependencies, no network; everything heavy is an extra
 
 ---
 
-## Risks & Mitigations
+## Risks and Mitigations
 
 | Risk | Mitigation |
-|------|-----------|
-| Framework fatigue: Kognita is yet another framework | MCP proxy removes lock-in; adapters are <200 LOC; policy is just YAML |
-| Adoption inertia: teams won't retro-fit governance | Start with MCP proxy (no code changes needed); position as cost control + compliance, not just policy |
-| Performance concerns: governance adds latency | Benchmark every release; keep decision latency <10ms |
-| Regulatory churn: rules change mid-year | Policy is version-controlled; diffs are readable; approval chains govern policy changes |
-| Competitor entry: LangChain/Anthropic build similar | Move fast (0.3 critical release Q4 2025); differentiate on MCP proxy + signatures |
+|---|---|
+| Framework fatigue | Explicit proxies need no code changes; adapters stay under 200 lines |
+| Classifier errors become policy errors | Classifier output only narrows permission; low confidence escalates; labels are evidenced and replayable |
+| Gateway adds latency | Benchmark every release; gateway overhead target excludes classifier inference, which is reported separately |
+| AI gateway incumbents add policy features | Move fast on 0.3; the citation and evidence model is the part that is hard to retrofit |
+| Heavy optional dependencies leak into core | Import-linter contracts and the no-extras install test stay mandatory in CI |
+| Reproducibility conflicts with erasure rights | Chain holds hashes only; content lives in a separate retention store with per-use-case retention; erasure is itself an evidenced event |
+| The gateway becomes a single point of failure | Explicit fail-closed or degraded mode per use case (0.3); tested backup, restore and failover (0.6) |
+| Model output cannot be regenerated identically | Reproduction means retrieving what was recorded, not re-running the model: prompts and responses are retained by hash, never regenerated |
 
 ---
 
-## Measuring Success
+## Decision Log
 
-- **GitHub:** 10K stars by 1.0
-- **PyPI:** 50K+ downloads/month by 1.0
-- **Adoption:** 100+ organizations, 5+ regulated deployments by 1.0
-- **Community:** 50+ contributors, active discussions/issues
-- **Benchmarks:** p99 decision latency <10ms, evidence throughput >1000 events/sec
-- **Security:** External audit passed, zero CVEs
+**28 September 2026: Supervisory examinability**
+- Target state set as **Governable → Explainable → Controllable → Replayable → Resilient**, reflecting supervisory focus moving from AI governance documentation to examinability, alongside operational-resilience priorities.
+- Audit against the RM record chain and the ten reconstruction questions found the roadmap strong on authority and controls, weak at both ends of the interaction, and weak on reproducibility.
+- Added to 0.3: pinned evidence (policy content hashes, retrieved content hashes, model identity and I/O hashes), a content retention store, `evidence reconstruct`, and an explicit gateway failure mode.
+- Added to 0.4: use-case register, interaction record, origination evidence, RM review capture, governed client communication.
+- 0.6 widened to Trust and Resilience: external anchoring, tested backup and restore, key management, model-provider register, governed failover, incident evidence.
+- 1.0 acceptance now includes a full reconstruction of a real RM interaction.
+- Purpose check found to pass everything when unconfigured; added to Tier 0.
 
----
-
-## Key Decisions & Trade-offs
-
-### Why MCP proxy first?
-
-Most vendors go "build a framework, convince people to adopt." We're going "MCP proxy, zero adoption friction, then framework adapters."
-
-**Trade-off:** MCP proxy is a larger engineering effort (3–4 weeks) than a simple SDK. But payoff is adoption across every agent platform at once. BMOS didn't have this; Kognita does.
-
-### Why YAML policies, not Python?
-
-Policy is governance, not code. Governance teams don't hire Python engineers. Operators and compliance folks need to *read* and *approve* policy without learning a language.
-
-**Trade-off:** Fewer expressive power than Python (no arbitrary computation in rules). Acceptable: policies are usually simple (role checks, data classifications, time gates). Complex logic goes in domain packs.
-
-### Why Postgres in 0.6, not earlier?
-
-SQLite is fine for small deployments. Moving to Postgres earlier dilutes 0.3–0.5 focus. Once you have product-market fit (0.5), then optimize for scale.
-
-**Trade-off:** Early adopters will hit SQLite concurrency limits. Mitigate with clear docs: "SQLite is for prototypes; move to Postgres before production."
-
-### Why external review API, not built-in dashboard?
-
-Dashboard is operational (see what happened). Review is governance (formal proof that someone audited it). They're different processes.
-
-**Trade-off:** Slightly more complex UX. Payoff: external parties (auditors, regulators) can verify evidence without full Kognita deployment.
-
----
-
-## Next Steps (Post 0.3)
-
-1. Create GitHub milestone for 0.3: assign all Tier 0 defects + Run context + MCP proxy
-2. Break 0.3 into 4-week sprints:
-   - Sprint 1: Run context infrastructure, evidence changes
-   - Sprint 2: suspend/resume logic, tests
-   - Sprint 3: GovernedModel adapters (Anthropic + OpenAI)
-   - Sprint 4: MCP proxy + flagship demo
-3. Kick off 0.4 planning: adapter contracts, policy language grammar
-4. Publish timeline on GitHub wiki
-5. Monthly public updates: "Kognita Status: [release], [highlights], [blockers]"
+**September 2026**
+- **AI gateway replaces the in-process governed model wrapper.** Explicit proxy (base URL), not transparent TLS interception. OpenAI-compatible format first.
+- **Classifier-derived envelopes** added to 0.3 so policy applies to free text. The classifier builds the envelope and never decides; its output is evidence; low confidence escalates; it may only narrow permission.
+- **Scope bounded** to AI and agent traffic; general enterprise integration is out of scope.
+- **Docling-backed structured ingestion** added to 0.4 to make citations passage-level and classification per section.
+- **Graph extra** to be finished or extracted in 0.4; extraction is the default.
+- **Policy language design** informed by OpenSpec (delta changes, strict validation), spec-kit (clarification markers) and Fabric (pack distribution).
+- **hermes-agent** chosen as the first adapter.
+- **Timeline corrected.** The first version of this document dated 0.3 at Q4 2025, which had already passed; releases now run Q4 2026 through Q4 2027.
