@@ -19,12 +19,58 @@ Kognita's core strength is **gating**: authorization before execution, with ever
 - No **adapters** for existing frameworks (Claude Agent SDK, LangGraph, Pydantic AI, LangChain)
 - No **policy language** or CLI for declaring and versioning rules without Python code
 - **Weak citations for retrieved content**: `KnowledgeItem` carries provenance as a flat `source_label` string, the returned snippet is the document's first 280 characters rather than the passage that matched, and classification is one value per document
+- **Not yet examinable**: a regulator cannot select one AI-assisted client interaction and reconstruct it end to end (see [Supervisory Examinability](#supervisory-examinability))
 
 The wedge to adoption: explicit proxies. `kognita serve` fronts an MCP server or a model provider, and every call is authorized and evidenced with zero changes to agent code.
+
+### Target state
+
+**Governable → Explainable → Controllable → Replayable → Resilient.**
+
+The direction of travel in supervision is from AI governance *documentation* toward supervisory *examinability*: not "do you have a policy" but "show me this interaction, and prove it". Every release below is measured against these five properties.
+
+| Property | Meaning | Where it is delivered |
+|---|---|---|
+| Governable | Every AI use case is registered, and every action is authorized before it happens | Core today; use-case register (0.4) |
+| Explainable | Why this client, why this product, which controls ran, which rule decided | Citations today; origination evidence (0.4) |
+| Controllable | Budgets, approvals, delegation limits, a human decision point | Run and approvals (0.3); fleets (0.5) |
+| Replayable | The bank can reproduce the evidence later, exactly | Pinned evidence and reconstruction (0.3) |
+| Resilient | Governance survives outages, key compromise and supplier failure | Gateway failure mode (0.3); resilience track (0.6) |
 
 ### Scope boundary
 
 Kognita governs **AI and agent traffic**: agent-to-tool calls, agent-to-model calls, and agent-to-agent messages. It is **not** a general enterprise integration platform. Protocol mediation, data transformation, and connector catalogs (the MuleSoft, Kong, Apigee space) are out of scope. In that market the differentiator is connector count; in ours it is fail-closed decisions with citations and a tamper-evident chain.
+
+---
+
+## Supervisory Examinability
+
+The first regulated use case is relationship-manager (RM) facing AI in wealth and private banking. The requirements below apply to any regulated deployment.
+
+### The record chain
+
+For every RM AI use case, Kognita must record:
+
+**use case → affected clients → investor impact → data used → model → agent authority → recommendation or action → human decision point → evidence retained**
+
+### The reconstruction test
+
+A regulator selects one AI-assisted client interaction. Kognita must answer each question from evidence alone, and verify the chain while doing so.
+
+| Question | Status at v0.2 | Delivered by |
+|---|---|---|
+| Why this client? | Gap: the subject is recorded, not why it was selected | Origination evidence (0.4) |
+| Why this insight or product? | Partial: eligibility checks say why it was *permitted*, not why it was *recommended* | Origination evidence (0.4) |
+| What information did the AI use? | Partial: retrieved item IDs are logged, content is neither hashed nor immutable | Pinned evidence (0.3); structured ingestion (0.4) |
+| What model or agent produced it? | Gap: agent name only; no model name or version | Pinned evidence (0.3) |
+| What was the agent authorized to do? | Covered: roles, scopes, cited checks | Manifests and grants (0.5) extend it |
+| What suitability or policy controls ran? | Covered: regime, citation and policy ID per check; policy content not pinned | Pinned evidence (0.3) |
+| What did the RM see and change? | Partial: a proposal model with before-state exists; RM edits are not captured | RM review capture (0.4) |
+| Who made the final decision? | Partial: recorded only when policy forced an approval | RM review capture (0.4) |
+| What was communicated to the client? | Gap: client communication is not a governed event | Governed client communication (0.4) |
+| Can the bank reproduce that evidence later? | Partial: chain integrity and point-in-time policy replay exist; policies, sources and model I/O are not pinned | Pinned evidence and reconstruction (0.3) |
+
+The acceptance test for 1.0 is this table with every row covered, demonstrated by `kognita evidence reconstruct` on a real interaction.
 
 ---
 
@@ -34,17 +80,18 @@ Kognita governs **AI and agent traffic**: agent-to-tool calls, agent-to-model ca
 Q4 2026     Q1 2027     Q2 2027     Q3 2027     Q4 2027
 │           │           │           │           │
 ├─ 0.3 ─────┼─ 0.4 ─────┼─ 0.5 ─────┼─ 0.6 ─────┼─► 1.0
-  Gateways    Ingestion   Fleets      Trust       Production
-  & the Run   & Policy                            ready
-              Language
+  Gateways,   Ingestion,  Fleets      Trust &     Production
+  the Run &   Policy &                Resilience  ready and
+  Replay      Client                              examinable
+              Lifecycle
 ```
 
 ---
 
-## 0.3 "Gateways and the Run" (Critical Launch Release)
+## 0.3 "Gateways, the Run and Replay" (Critical Launch Release)
 
 **Timeline:** Q4 2026
-**Goal:** Make Kognita the default harness for agentic governance. Every call an agent makes, to a tool or to a model, passes through a Kognita gateway first.
+**Goal:** Make Kognita the default harness for agentic governance. Every call an agent makes, to a tool or to a model, passes through a Kognita gateway first, and every decision can be reproduced exactly later.
 
 ### 1. Run Context and Budgets
 
@@ -129,6 +176,30 @@ Traffic through a gateway arrives as free text, with no typed purpose, subject o
   3. Tampering: user edits a row in the evidence database; `kognita evidence verify` reports the break
 - A fourth scenario through the AI gateway: a prompt containing client PII is redacted before reaching the provider, and the evidence shows the manifest hash, not the content
 
+### 7. Pinned Evidence for Replay
+
+Today the chain proves that records were not altered, but three inputs to a decision can change underneath it. Each gets pinned:
+
+- **Policy content hash on every decision.** A check records `policy_id` but not the content of the rule that ran. Policy rows can be edited in place, so replay can silently diverge. Every check will carry a hash of the policy row as evaluated, and replay fails loudly on a mismatch. In-place edits to an effective policy become an error; changes must be new effective-dated rows.
+- **Content hash on every retrieved item.** `RETRIEVAL` evidence records returned item IDs. It will also record a hash of each item's content and its embedding model, so a later edit or re-index is detectable.
+- **Model identity and I/O hashes on every model call.** `MODEL_CALL` evidence records the destination only. It will record provider, model name and version as reported by the provider, and hashes of the prompt as sent and the response as received. The AI gateway (item 3) sees all of these.
+
+**Content retention store.** The evidence chain deliberately holds hashes, not content, so erasure rights can be honored. Reproduction needs the content too. A separate content-addressed store, keyed by the same hashes, holds prompts, responses and source snapshots under a retention policy set per use case. Erasure removes content from the store; the chain keeps the hash and records the erasure as an event, so the record shows that content existed and was lawfully removed.
+
+### 8. Reconstruction Report
+
+- `kognita evidence reconstruct <interaction_id>` produces a regulator-readable report answering the ten questions in [Supervisory Examinability](#supervisory-examinability)
+- Verifies the chain and every pinned hash while building the report; any mismatch is reported as a finding, not skipped
+- Output as JSON (machine-verifiable) and as a readable document
+- In 0.3 it covers what 0.3 records: decisions, controls, data used, model, authority. Questions answered by 0.4 items are marked "not recorded" until then, never omitted
+
+### 9. Gateway Failure Mode
+
+A gateway that governs every call is also a single point of failure. 0.3 makes the behavior explicit and configurable per use case:
+- **Fail closed** (default): if the gateway or evidence store is unavailable, calls are refused
+- **Degraded**: only calls to local models, with no client data, may proceed, and are evidenced once the store recovers
+Silent pass-through when governance is unavailable is not an option.
+
 ### Tier 0 Defect Closure
 
 From `docs/gap-analysis-bmos.md`:
@@ -139,12 +210,16 @@ From `docs/gap-analysis-bmos.md`:
 - [ ] Classifiers never invoked (item 4 makes them load-bearing)
 - [ ] `engages` missing from protocol
 - [ ] No foreign keys on evidence references
+- [ ] Purpose check passes everything when no purpose list is configured; must fail closed (superseded by the use-case register in 0.4)
 
 ### Definition of Done
 
 - [ ] All tests pass, including new coverage for Run, suspend/resume, AI gateway, classifier-derived envelopes, MCP proxy
 - [ ] Replay test: a decision made from a classifier-derived envelope replays identically without calling the classifier
 - [ ] Injection test: text crafted to relabel itself cannot widen permission
+- [ ] Tamper tests: editing a policy row, a retrieved item, or a stored prompt after the fact is detected by replay and by `reconstruct`
+- [ ] Erasure test: erasing retained content leaves the chain verifiable and records the erasure
+- [ ] Outage test: with the evidence store down, the gateway refuses calls in fail-closed mode
 - [ ] Conformance kit passes
 - [ ] Gateway overhead benchmarked (target: under 50 ms per call, excluding classifier inference)
 - [ ] Flagship demo runs end-to-end in under 3 minutes from scaffold
@@ -153,10 +228,10 @@ From `docs/gap-analysis-bmos.md`:
 
 ---
 
-## 0.4 "Ingestion and Policy Language"
+## 0.4 "Ingestion, Policy Language and the Client Lifecycle"
 
 **Timeline:** Q1 2027
-**Goal:** Make citations real down to the passage, let non-engineers author and review policy, and meet developers in the frameworks they already use.
+**Goal:** Make citations real down to the passage, let non-engineers author and review policy, record a client interaction from origination to communication, and meet developers in the frameworks they already use.
 
 ### 1. Structured Document Ingestion (Docling)
 
@@ -245,9 +320,48 @@ Templates: role-based access, geo-fencing, data classification, time-gated acces
 - Export a run as self-verifying JSON
 - Alerts: budget exceeded, repeated denials from one actor, chain break detected, classifier confidence drift
 
+### Client Interaction Lifecycle
+
+Items 8 to 12 close the ends of the record chain: why an interaction started, and what happened after the AI produced something.
+
+### 8. Use-Case Register
+
+- Each AI use case is a registered, versioned entry: purpose, affected client segments, investor impact assessment, permitted data classes, approved models and versions, agent authority, required human decision points, retention period
+- Every decision must reference a registered use case; **an unregistered or retired use case is a DENY**. This replaces the free-string purpose check
+- Registry changes are `POLICY_CHANGE` events and go through the same delta, validate and apply lifecycle as policy
+- `kognita usecase list | show | validate` gives compliance a single inventory of AI use
+
+### 9. Interaction Record
+
+- One `interaction_id` spans a whole client journey: trigger, retrieval, model calls, recommendation, RM review, final decision, client communication
+- Runs (0.3) and correlation IDs attach to an interaction; `reconstruct` operates on interactions
+
+### 10. Origination Evidence
+
+Answers "why this client?" and "why this product?", which today have no record.
+- The step that selects a client or a product emits an `ORIGINATION` event before anything is shown to the RM: the trigger (event, schedule, RM request), the selection criteria, the candidate set size, and the scores or rules that ranked this client or product first
+- Recommendation rationale is recorded as structured fields with citations to the sources used, not as free model text
+- Suitability and eligibility checks remain separate cited checks: origination says why it was *proposed*, suitability says why it was *permitted*
+
+### 11. RM Review Capture
+
+Builds on the existing proposal model (ADR 0007), which already stores before-state and rationale but is not yet on the roadmap.
+- **What the RM saw:** a hash of the exact recommendation as rendered to the RM, with its content in the retention store
+- **What the RM changed:** a structured diff between the AI recommendation and what the RM approved
+- **Who decided:** a `FINAL_DECISION` event on every path, including plain ALLOW paths where no approval was forced, naming the RM, the outcome (accepted, amended, rejected) and time
+- Two-signature approval (ADR 0006) applies where the use case requires it
+
+### 12. Governed Client Communication
+
+- Sending anything to a client is its own governed action: authorized against the use case, suitability and communication policy, then evidenced as a `CLIENT_COMMUNICATION` event
+- The event records channel, recipient reference, a hash of the content as sent, and a link back to the recommendation and final decision it came from
+- A communication that does not trace back to a final decision is a DENY
+
 ### Definition of Done
 
 - [ ] Docling-backed ingestion with per-section classification and passage-level citations
+- [ ] Use-case register enforced: unregistered use cases are denied
+- [ ] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
 - [ ] Graph extra either tested and unpinned, or extracted
 - [ ] Policy language: load, diff, validate, explain, test
 - [ ] Five starter packs with scenarios
@@ -288,16 +402,27 @@ An ALLOW for code execution can carry constraints the executing sandbox must hon
 
 ---
 
-## 0.6 "Trust" (Cryptographic Proof)
+## 0.6 "Trust and Resilience"
 
 **Timeline:** Q3 2027
-**Goal:** Make evidence tamper-proof and verifiable by outside parties.
+**Goal:** Make evidence tamper-proof, verifiable by outside parties, and survivable. Governance is itself critical infrastructure once every AI call depends on it, so it falls under the same operational-resilience expectations as any other ICT system.
+
+### Trust
 
 - **Ed25519 signing:** each evidence event signed; `kognita evidence verify --public-key` walks the chain and verifies every signature
 - **Postgres backend:** concurrency for many writers, replication, row-level security so agents cannot read each other's runs
 - **External review API:** a reviewer requests a period, annotates decisions, and submits a signed review into the chain
 - **TypeScript evidence verifier:** `@kognita/verify`, so auditors can verify without installing Python
 - **Schema versioning:** evidence events carry a schema version; migrations rename, recreate, copy intersecting columns and drop inside one transaction, and old events stay readable
+- **External anchoring:** periodically publish the chain head hash to a store the bank does not control, so even a party with full database access cannot rewrite history undetected
+
+### Resilience
+
+- **Evidence backup and restore,** tested: restore to a point in time and verify the chain and retention store end to end; restore drills are part of CI
+- **Key management:** signing key rotation, revocation and escrow; verification works across rotations
+- **Model-provider register:** every model provider the gateway can reach is recorded as an ICT third party, with the use cases that depend on it, its data location and its exit plan; routing to an unregistered provider is a DENY
+- **Provider failover under policy:** switching to a fallback model is itself a governed decision, allowed only to models approved for that use case, and evidenced
+- **Incident evidence:** chain breaks, gateway outages, degraded-mode periods and provider failures are recorded as incidents with timelines, exportable for incident reporting
 
 ---
 
@@ -308,6 +433,7 @@ An ALLOW for code execution can carry constraints the executing sandbox must hon
 - **Benchmarks:** decision latency p50 and p99, evidence write throughput, gateway overhead, resume time; published with hardware specs
 - **Docs rewrite:** lead with the problem ("prove an AI request was allowed before any data moved"), scenarios by industry, glossary, honest comparison with content guardrails and AI gateways
 - **Ten single-file examples**, each runnable in under five minutes and tested in CI, including the AI gateway, the MCP proxy, a policy-only YAML deployment, an approval workflow, and an evidence audit
+- **Examinability acceptance:** every row of the reconstruction test in [Supervisory Examinability](#supervisory-examinability) answered from evidence for a real RM interaction, including after a backup restore and a signing key rotation
 - **Graduation checklist:** coverage above 85 percent, published benchmarks, external security review, at least one production deployment in a regulated domain
 
 ---
@@ -370,10 +496,22 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 | Gateway adds latency | Benchmark every release; gateway overhead target excludes classifier inference, which is reported separately |
 | AI gateway incumbents add policy features | Move fast on 0.3; the citation and evidence model is the part that is hard to retrofit |
 | Heavy optional dependencies leak into core | Import-linter contracts and the no-extras install test stay mandatory in CI |
+| Reproducibility conflicts with erasure rights | Chain holds hashes only; content lives in a separate retention store with per-use-case retention; erasure is itself an evidenced event |
+| The gateway becomes a single point of failure | Explicit fail-closed or degraded mode per use case (0.3); tested backup, restore and failover (0.6) |
+| Model output cannot be regenerated identically | Reproduction means retrieving what was recorded, not re-running the model: prompts and responses are retained by hash, never regenerated |
 
 ---
 
 ## Decision Log
+
+**28 September 2026: Supervisory examinability**
+- Target state set as **Governable → Explainable → Controllable → Replayable → Resilient**, reflecting supervisory focus moving from AI governance documentation to examinability, alongside operational-resilience priorities.
+- Audit against the RM record chain and the ten reconstruction questions found the roadmap strong on authority and controls, weak at both ends of the interaction, and weak on reproducibility.
+- Added to 0.3: pinned evidence (policy content hashes, retrieved content hashes, model identity and I/O hashes), a content retention store, `evidence reconstruct`, and an explicit gateway failure mode.
+- Added to 0.4: use-case register, interaction record, origination evidence, RM review capture, governed client communication.
+- 0.6 widened to Trust and Resilience: external anchoring, tested backup and restore, key management, model-provider register, governed failover, incident evidence.
+- 1.0 acceptance now includes a full reconstruction of a real RM interaction.
+- Purpose check found to pass everything when unconfigured; added to Tier 0.
 
 **September 2026**
 - **AI gateway replaces the in-process governed model wrapper.** Explicit proxy (base URL), not transparent TLS interception. OpenAI-compatible format first.
