@@ -33,7 +33,7 @@ The direction of travel in supervision is from AI governance *documentation* tow
 |---|---|---|
 | Governable | Every AI use case is registered, and every action is authorized before it happens | Core today; use-case register (0.4) |
 | Explainable | Why this client, why this product, which controls ran, which rule decided | Citations today; origination evidence (0.4) |
-| Controllable | Budgets, approvals, delegation limits, a human decision point | Run and approvals (0.3); fleets (0.5) |
+| Controllable | Budgets, approvals, delegation limits, a human decision point, automatic halts when harm spreads | Run and approvals (0.3); risk-based review and circuit breaker (0.4); fleets (0.5) |
 | Replayable | The bank can reproduce the evidence later, exactly | Pinned evidence and reconstruction (0.3) |
 | Resilient | Governance survives outages, key compromise and supplier failure | Gateway failure mode (0.3); resilience track (0.6) |
 
@@ -71,6 +71,20 @@ A regulator selects one AI-assisted client interaction. Kognita must answer each
 | Can the bank reproduce that evidence later? | Partial: chain integrity and point-in-time policy replay exist; policies, sources and model I/O are not pinned | Pinned evidence and reconstruction (0.3) |
 
 The acceptance test for 1.0 is this table with every row covered, demonstrated by `kognita evidence reconstruct` on a real interaction.
+
+### The five charges
+
+Five AI governance questions a supervisor such as the FCA could ask today. Each is mapped to what answers it.
+
+| Charge | Kognita's answer | Delivered by |
+|---|---|---|
+| **Unsupervised AI agents:** who is accountable when no one oversees what the AI does? | Every action is authorized before it runs, naming the agent and the principal it acts for; every use case names an accountable owner, cited on each decision; a final decision is recorded on every path | Core today; Run (0.3); accountable owner and RM review capture (0.4) |
+| **No retrievable audit trail:** can you show what the AI said and why? | "Why" is cited and tamper-evident today; "what it said" is retained by hash and reconstructable | Pinned evidence, retention store, reconstruction (0.3) |
+| **3% sampling treated as oversight:** are you reviewing enough to catch what matters? | 100% of governed actions are checked *before* they happen; every response is classified and every high-risk one goes to a human, replacing random sampling with risk-based review and reported coverage | Classifier-derived envelopes (0.3); risk-based review (0.4) |
+| **Poor guidance scaling unchecked:** when AI gets it wrong, how fast does harm spread? | A circuit breaker halts a use case or model version automatically when flags cross a threshold, and an affected-client query lists everyone who received its output | Pinned evidence (0.3); circuit breaker and affected-client query (0.4) |
+| **Models that cannot explain themselves:** can you trace where the AI came from and how it works? | Provenance and approval: which model and version produced each output, its model card, and that it was approved for this use case. Explaining a model's internal reasoning is out of scope, and Kognita does not claim it | Pinned evidence (0.3); model card in the use-case register (0.4); provider register (0.6) |
+
+Kognita checks *permission*, not *advice quality*. Charge 3 is answered by routing every high-risk interaction to a human reviewer, not by Kognita judging the advice itself.
 
 ---
 
@@ -322,11 +336,13 @@ Templates: role-based access, geo-fencing, data classification, time-gated acces
 
 ### Client Interaction Lifecycle
 
-Items 8 to 12 close the ends of the record chain: why an interaction started, and what happened after the AI produced something.
+Items 8 to 14 close the ends of the record chain (why an interaction started, and what happened after the AI produced something) and answer the [five charges](#the-five-charges).
 
 ### 8. Use-Case Register
 
 - Each AI use case is a registered, versioned entry: purpose, affected client segments, investor impact assessment, permitted data classes, approved models and versions, agent authority, required human decision points, retention period
+- **Accountable owner:** every use case names a responsible individual, mapped to the firm's senior-manager accountability regime where one applies. Every decision under that use case cites the owner, so "who is accountable" is answered per decision, not per policy document. A use case with no current owner is a DENY
+- **Model card per approved model:** provider, model name and version, intended use, known limitations, evaluation results the firm relied on to approve it, approval date and approver. Pinned model versions on each call (0.3) link back to the card
 - Every decision must reference a registered use case; **an unregistered or retired use case is a DENY**. This replaces the free-string purpose check
 - Registry changes are `POLICY_CHANGE` events and go through the same delta, validate and apply lifecycle as policy
 - `kognita usecase list | show | validate` gives compliance a single inventory of AI use
@@ -357,10 +373,30 @@ Builds on the existing proposal model (ADR 0007), which already stores before-st
 - The event records channel, recipient reference, a hash of the content as sent, and a link back to the recommendation and final decision it came from
 - A communication that does not trace back to a final decision is a DENY
 
+### 13. Risk-Based Review
+
+Replaces random sampling as oversight. Kognita does not judge advice quality; it makes sure the right interactions reach a human who does.
+- Every model response is classified (0.3 item 4) and scored against risk criteria defined per use case: product complexity, client vulnerability indicators, deviation from the client's profile, low classifier confidence
+- High-risk interactions go to a **review queue** before or after delivery, as the use case requires; a review outcome is an evidenced event linked to the interaction
+- Low-risk interactions are still sampled, at a rate set per use case, so reviewers keep seeing normal traffic
+- **Coverage reporting:** per use case and risk tier, the share of interactions screened, queued and reviewed, and the time to review. The answer to "are you reviewing enough" becomes a number with evidence behind it
+- Reviewer findings feed back: a confirmed problem raises a flag that counts toward the circuit breaker (item 14)
+
+### 14. Circuit Breaker and Affected-Client Query
+
+Stops poor guidance from scaling, and finds everyone it reached.
+- **Circuit breaker:** when flags for a use case, model version, prompt version or policy version cross a threshold in a time window, Kognita inserts a prohibiting policy itself, escalates to the accountable owner, and records the trip as an incident. The mechanism already exists: a prohibiting policy takes effect on the next decision for every client. This item makes it automatic
+- Resetting a tripped breaker is a governed action requiring the accountable owner's approval
+- **Affected-client query:** `kognita evidence affected --model <version> | --policy <id> | --usecase <id> --from --to` lists every client who received output under that version in that window, with links to each interaction for remediation
+- Depends on pinned evidence (0.3) and the interaction record (item 9)
+
 ### Definition of Done
 
 - [ ] Docling-backed ingestion with per-section classification and passage-level citations
-- [ ] Use-case register enforced: unregistered use cases are denied
+- [ ] Use-case register enforced: unregistered use cases are denied, and every decision cites an accountable owner
+- [ ] Every approved model has a model card linked from each call that used it
+- [ ] Risk-based review queue with coverage reporting per use case and risk tier
+- [ ] Circuit breaker trips automatically in a test scenario, and the affected-client query lists exactly the clients who received output in the window
 - [ ] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
 - [ ] Graph extra either tested and unpinned, or extracted
 - [ ] Policy language: load, diff, validate, explain, test
@@ -503,6 +539,13 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 ---
 
 ## Decision Log
+
+**3 October 2026: The five charges**
+- Mapped the roadmap against five AI governance questions a supervisor such as the FCA could ask. Charges 1 and 2 were largely covered; charges 3, 4 and 5 had gaps.
+- Added to the 0.4 use-case register: an accountable owner cited on every decision, and a model card per approved model.
+- Added 0.4 item 13, risk-based review, replacing random sampling with screening of every response, a review queue for high-risk interactions, and coverage reporting.
+- Added 0.4 item 14, an automatic circuit breaker and an affected-client query.
+- Recorded explicitly that Kognita checks permission, not advice quality, and that it provides model provenance, not interpretability.
 
 **28 September 2026: Supervisory examinability**
 - Target state set as **Governable → Explainable → Controllable → Replayable → Resilient**, reflecting supervisory focus moving from AI governance documentation to examinability, alongside operational-resilience priorities.
