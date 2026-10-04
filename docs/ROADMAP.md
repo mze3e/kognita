@@ -395,6 +395,12 @@ Templates: role-based access, geo-fencing, data classification, time-gated acces
 - Alerts: budget exceeded, repeated denials from one actor, chain break detected, classifier confidence drift
 - **OpenTelemetry export,** so decisions, denials, latency, token use, tool failures, injection attempts and entitlement blocks flow into the bank's existing monitoring rather than a separate console
 - **Effectiveness rates from evidence:** RM acceptance, edit, rejection and wrong-client rates per use case. Business KPIs such as conversations per RM or research-to-conversation conversion belong to the bank's analytics; Kognita supplies the underlying events
+- **Outcome metrics per use case,** computed from the interaction record (item 9) rather than self-reported:
+  - **Cycle time:** trigger to final decision, and RM effort, i.e. time spent in review
+  - **Decision quality:** edit, rejection and escalation rates, and outcome events (item 15) per interaction
+  - **Reliability:** share of runs completing without denial, exception, budget breach or human recovery
+  - Each use case names **one primary metric** with a baseline and a target, recorded in the use-case register (item 8). The metric definitions are versioned, so a trend is never computed across a silent change in what is measured
+  - These metrics are the inputs to autonomy gates (0.5 item 3)
 
 ### Client Interaction Lifecycle
 
@@ -404,8 +410,9 @@ Items 8 to 15 close the ends of the record chain (why an interaction started, an
 
 - Each AI use case is a registered, versioned entry: purpose, affected client segments, investor impact assessment, permitted data classes, approved models and versions, agent authority, required human decision points, retention period
 - **Accountable owner:** every use case names a responsible individual, mapped to the firm's senior-manager accountability regime where one applies. Every decision under that use case cites the owner, so "who is accountable" is answered per decision, not per policy document. A use case with no current owner is a DENY
-- **Owner roles:** business owner (the accountable owner), technology owner, risk owner for residual risk, and model owner. Accountability cannot be delegated to an agent: an agent can never be named in an owner role
-- **Accountability matrix:** beyond the four owner roles, each use case states who is accountable for data, the model, the agent, the business outcome, client communication, suitability and advice, and compliance. The institution stays accountable when a third-party model, a vendor or a sub-agent performs part of the work. Functions may be delegated; accountability may not
+- **Owner roles:** business owner (the accountable owner), technology owner, risk owner for residual risk, model owner, and **Knowledge Lead**. Accountability cannot be delegated to an agent: an agent can never be named in an owner role
+- **Knowledge Lead:** the named owner of the use case's quality standard. The Knowledge Lead defines the standard and the primary outcome metric (item 7), approves consequential outputs where the use case requires it, receives escalations of ambiguity and exceptions, and approves changes to the standard, including those proposed from institutional memory (0.6 item 8). A use case at tier 2 or above with no current Knowledge Lead is a DENY. The role may be held by the business owner, but must be named explicitly
+- **Accountability matrix:** beyond the five owner roles, each use case states who is accountable for data, the model, the agent, the business outcome, client communication, suitability and advice, and compliance. The institution stays accountable when a third-party model, a vendor or a sub-agent performs part of the work. Functions may be delegated; accountability may not
 - **Materiality classification on five axes:** business criticality (low to critical); **client-impact class** (internal productivity, RM assistance, client influence, client communication, advice, execution); autonomy; decision consequence (informational, operational, client communication, suitability, financial action); and data sensitivity (public to highly sensitive)
 - **Risk tier 1 to 4,** derived from the classification: research summarization, client intelligence and meeting preparation, KYC and suitability and recommendations, financial execution. The tier sets minimum required controls: approval gates, review sampling rate, maximum autonomy level (0.5), monitoring, explanation depth, and who must validate it. A use case configured below its tier's minimum fails validation
 - **AI risk appetite as top-level policy:** allowed and prohibited use-case categories, maximum permitted autonomy, permitted client impact, external communication and transaction authority. A use case outside the appetite cannot be registered. Changing the appetite is a governed change at senior-management level
@@ -504,6 +511,8 @@ Do not wait for client harm.
 - [ ] Five starter packs with scenarios
 - [ ] hermes-agent adapter plus at least three others
 - [ ] Flight recorder with export
+- [ ] Cycle time, decision quality and reliability reported per use case from evidence, against a registered baseline and target
+- [ ] A tier 2 use case with no named Knowledge Lead is denied
 
 ---
 
@@ -551,6 +560,9 @@ Autonomy is classified, not implied.
 - The use-case risk tier caps the level. Early private-banking deployments are expected at L1 to L4
 - Raising an agent's level is a governed change requiring the accountable owner and independent validation. Autonomy never increases silently: moving from "generate draft" to "queue draft" to "send automatically" is treated as a material change
 - **Action permissions are per verb.** Read, analyse, recommend, draft, queue, send and execute are separate permissions. **The ability to recommend never implies the ability to execute:** an agent may conclude "client X should be contacted" without being permitted to contact client X
+- **Evidence gates for promotion.** Each use case defines, per autonomy transition, thresholds on the outcome metrics (0.4 item 7) over a minimum sample and window: for example quality at or above 95 percent, exception rate below 5 percent, and every action in the window fully reconstructable. A promotion request below threshold cannot be approved. Approval by the accountable owner and independent validation is still required above it: the evidence is necessary, not sufficient
+- **Automatic step-down.** When the same metrics fall below a lower threshold over a rolling window, the agent's effective level drops one step on the next decision, the step-down is evidenced, and the accountable owner and Knowledge Lead are alerted. Restoring the level goes through the promotion gate again. Step-down is graduated; the circuit breaker (0.4 item 14) remains the hard stop
+- **Quality drift.** The metrics are tracked as trends per agent, model version and prompt version, not only against thresholds. A sustained decline is a drift finding that counts toward step-down and toward risk-based review, so gradual degradation after deployment is caught without waiting for a breach
 
 ### 4. Blast-Radius Limits
 
@@ -636,6 +648,8 @@ An ALLOW for code execution carries constraints the executing sandbox must honor
 - [ ] Authority lineage reconstructs the full chain for a delegated action
 - [ ] Recover runs compensating actions in reverse order
 - [ ] Adversarial suite passes; threat model published
+- [ ] A promotion request below its evidence thresholds cannot be approved
+- [ ] A sustained metric decline steps the agent down one level automatically, evidenced and alerted
 
 ---
 
@@ -699,6 +713,11 @@ Before material output reaches an RM, a registered verifier tries to prove it wr
 - **Relationship memory** is durable client information, governed like any other bank record
 - Writing to relationship memory is a governed action. An inference such as "client may be considering a sale" can be proposed, but becomes a record only after RM verification, through the proposal model (ADR 0007). Hallucinations cannot become institutional facts automatically
 - Memory is typed like claims (verified fact, inferred preference, AI hypothesis), scoped to one client, and carries a retention period, a correction path and an expiry. "The client probably prefers X" cannot accumulate as if it were a fact
+- **Institutional memory** is what the organisation learns across clients: corrected templates, refined instructions, updated quality standards, known exceptions. It is how one RM's correction improves the next RM's output, and it needs the same discipline as client memory:
+  - **Learning is proposed, never applied.** A pattern in RM corrections or outcomes (0.4 items 11 and 15) becomes a proposed change to a standard through the proposal model (ADR 0007), carrying the evidence behind it: which interactions, which corrections, which metric moved
+  - The use case's **Knowledge Lead** (0.4 item 8) approves or rejects it. An approved change produces a new deployment version (0.5 item 1), so it is versioned, effective-dated and re-approved like any behaviour change, never edited in place
+  - **Standards are effective-dated.** Every output records which version of the standard produced it, and an expired or superseded standard cannot be used, the same rule that already applies to policy
+  - Client data never crosses into institutional memory: a learned standard may reference the evidence that justified it, but not carry client content. Feedback-loop controls (item 9) apply to any learning that leaves Kognita for training or fine-tuning
 
 ### 9. Feedback-Loop Controls
 
@@ -721,6 +740,13 @@ Kognita is not an evaluation harness. It records evaluation results and enforces
 - **Bias and fairness reporting:** recommendation, contact and prioritisation rates computed from origination evidence across segments the bank defines, such as nationality, age group, language, portfolio size, channel and RM team. Disparities above a threshold are flagged to the risk owner. This matters most for client prioritisation, prospect scoring, product recommendations and vulnerability detection
 - **The continuous loop:** evaluate, deploy, observe, test, challenge, intervene, learn, re-authorise. Validation does not end at deployment
 
+### 12. Governed Business Definitions
+
+Without one definition, every agent invents its own version of the business: Finance's AUM, the advisory platform's AUM and the RM front end's AUM can all differ. Kognita is not a semantic layer, the same way it is not a calculation engine; the bank's semantic layer or data catalogue owns definitions. Kognita enforces that they are used.
+- The bank registers governed terms (AUM, net new money, concentration, risk capacity) with a reference to the authoritative definition, its owner and its version
+- A claim or figure that uses a governed term must cite the registered definition and version in its provenance envelope (item 1). A figure labelled with a governed term but citing no definition, or a superseded one, is blocked, as with calculation provenance (item 6)
+- When a definition changes, `kognita evidence affected --definition <id>` lists the claims, recommendations and communications produced under the previous version, as with house-view changes (item 4)
+
 ### Definition of Done
 - [ ] Claim provenance envelope on every material claim, reconstructable
 - [ ] Stale data refreshed, suppressed or flagged per policy; never silently used
@@ -735,6 +761,8 @@ Kognita is not an evaluation harness. It records evaluation results and enforces
 - [ ] Exporting interactions for learning without approval is denied; exclusions hold
 - [ ] A vulnerability flag cannot change treatment without RM review
 - [ ] Fairness report produced across bank-defined segments
+- [ ] A learned change to a standard cannot take effect without Knowledge Lead approval; outputs record the standard version that produced them
+- [ ] A figure using a governed term without citing the current registered definition is blocked
 
 ---
 
@@ -851,6 +879,14 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 ---
 
 ## Decision Log
+
+**4 October 2026: EVOLVE framework**
+- Reviewed the EVOLVE AI-native enterprise framework (five maturity stages, MAS FEAT, the Company Brain) against the roadmap. Temporal governance was already covered: policies are effective-dated in v0.2, and pinned policy hashes, freshness, research expiry, supersession and review dates are planned. Three gaps: institutional memory, a metric-driven learning loop, and governed business definitions.
+- 0.4: outcome metrics per use case (cycle time, decision quality, reliability) with one primary metric, baseline and target; the Knowledge Lead as a fifth owner role, owning the quality standard.
+- 0.5: evidence gates for autonomy promotion, automatic one-step demotion when metrics degrade, and quality-drift tracking per agent, model and prompt version.
+- 0.6: institutional memory, where learning is proposed, approved by the Knowledge Lead, versioned and effective-dated; new item 12, governed business definitions, enforced as a boundary like calculation provenance.
+- Not adopted: the maturity stages and the structured prompting standard (adoption guidance, not enforceable controls); the four-step autonomy staircase (it maps onto L0 to L6, and a second scale would collide); always / ask first / never wording (already ALLOW / HUMAN_APPROVAL / PROHIBITED); a MAS FEAT coverage document.
+- No release dates changed.
 
 **4 October 2026: Wealth management AI control framework**
 - Mapped the roadmap against a 70-control, 10-domain framework for RM-facing and agentic AI and its 15 non-negotiable controls. Full mapping in [wealth-ai-control-framework.md](wealth-ai-control-framework.md). Measured after the 40-domain audit, 7 non-negotiables were already planned or covered and 8 were partial; none were missing outright.
