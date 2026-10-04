@@ -93,6 +93,7 @@ from kognita.models import (
 from kognita.retrieval import Retrieved, index_item, reindex, retrieve
 from kognita.rules import CORE_RULES, build_registry, rule
 from kognita.gateway import ClientConfiguration, Gateway, GatewayResponse
+from kognita.mcp import McpProxy, McpResponse
 from kognita.tools import Run, ToolRegistry, ToolRun, continue_run, run_governed
 from kognita.vectors import NumpyVectorIndex, SqliteVecIndex, default_index
 from kognita.vocabulary import (
@@ -220,6 +221,8 @@ __all__ = [
     "ClientConfiguration",
     "Gateway",
     "GatewayResponse",
+    "McpProxy",
+    "McpResponse",
     # storage
     "make_engine",
     "create_all",

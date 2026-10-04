@@ -124,6 +124,7 @@ source_modules = [
     "kognita.evidence",
     "kognita.gateway",
     "kognita.governance",
+    "kognita.mcp",
     "kognita.models",
     "kognita.protocols",
     "kognita.registry",

@@ -286,7 +286,7 @@ From `docs/gap-analysis-bmos.md`:
 
 ### Definition of Done
 
-- [ ] All tests pass, including new coverage for Run, suspend/resume, AI gateway, classifier-derived envelopes, MCP proxy
+- [x] All tests pass, including new coverage for Run, suspend/resume, AI gateway, classifier-derived envelopes, MCP proxy
 - [ ] Replay test: a decision made from a classifier-derived envelope replays identically without calling the classifier
 - [ ] Injection test: text crafted to relabel itself cannot widen permission
 - [ ] Tamper tests: editing a policy row, a retrieved item, or a stored prompt after the fact is detected by replay and by `reconstruct`
@@ -295,7 +295,7 @@ From `docs/gap-analysis-bmos.md`:
 - [ ] Conformance kit passes
 - [ ] Gateway overhead benchmarked (target: under 50 ms per call, excluding classifier inference)
 - [ ] Flagship demo runs end-to-end in under 3 minutes from scaffold
-- [ ] Import contracts pass: the core still has no optional dependencies
+- [x] Import contracts pass: the core still has no optional dependencies
 - [ ] All Tier 0 defects closed
 
 ---

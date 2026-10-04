@@ -44,6 +44,7 @@ from kognita.governance import (
     decide,
     load_snapshot,
     record,
+    resolve_outcome,
 )
 from kognita.models import Approval, Continuation, RunRecord, as_utc, utcnow
 from kognita.vocabulary import (
@@ -483,6 +484,39 @@ def _load_continuation(session: Session, content_hash: str) -> dict[str, Any]:
     return dict(row.payload)
 
 
+def _with_checks(evaluation: Evaluation, extra: Sequence[Check]) -> Evaluation:
+    """Append checks and resolve the outcome again. An empty addition is a no-op."""
+    if not extra:
+        return evaluation
+    checks = evaluation.checks + tuple(extra)
+    return Evaluation(
+        request_id=evaluation.request_id,
+        outcome=resolve_outcome(checks),
+        checks=checks,
+        attributes=evaluation.attributes,
+        envelope=evaluation.envelope,
+        as_of=evaluation.as_of,
+        envelope_hash=envelope_hash(evaluation.envelope, evaluation.attributes, checks),
+    )
+
+
+def _call_actor(envelope: Envelope) -> tuple[ActorType, str]:
+    """Who the tool evidence names.
+
+    An agent name is an agent. An approved system trigger, carried on the
+    envelope context by a gateway after the identity check has passed, is a
+    system actor. Anything else stays the human principal the in-process
+    runner already records. Context is not an authorization input; the
+    decision has already been made.
+    """
+    if envelope.agent_name:
+        return ActorType.AGENT, envelope.agent_name
+    trigger = envelope.context.get("system_trigger")
+    if isinstance(trigger, str) and trigger:
+        return ActorType.SYSTEM, trigger
+    return ActorType.HUMAN, envelope.principal
+
+
 def _release_tool(
     session: Session,
     envelope: Envelope,
@@ -491,8 +525,7 @@ def _release_tool(
     evidence: EvidenceWriter,
 ) -> Any:
     data = spec.fn(envelope, evaluation, session)
-    actor_type = ActorType.AGENT if envelope.agent_name else ActorType.HUMAN
-    actor_id = envelope.agent_name or envelope.principal
+    actor_type, actor_id = _call_actor(envelope)
     evidence.emit(
         session,
         correlation_id=evaluation.request_id,
@@ -548,12 +581,20 @@ def run_governed(
     cost_usd: float | None = None,
     tokens: int | None = None,
     now: datetime | None = None,
+    classifier: Any | None = None,
+    extra_checks: Sequence[Check] = (),
 ) -> ToolRun:
     """Authorise, then execute. The only supported path to a governed tool.
 
     ``cost_usd`` and ``tokens`` are recorded against ``run`` when the call site
     already knows them. Exceeding a budget is a DENY that cites the budget, and
     the tool body does not run.
+
+    ``classifier`` is the text classifier for free-text arguments. A typed
+    classification already on the attributes wins, and this function does not
+    decide. ``extra_checks`` are identity checks a gateway already resolved;
+    they are part of the same decision, and a failure here means the tool body
+    does not run.
     """
     spec = registry.get(envelope.tool)
     at = now or utcnow()
@@ -571,6 +612,7 @@ def run_governed(
             argument_text,
             envelope,
             attributes=attributes,
+            classifier=classifier,
         )
 
     evaluation = decide(
@@ -583,6 +625,7 @@ def run_governed(
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
+    evaluation = _with_checks(evaluation, extra_checks)
     evaluation, _breaches = _admit(
         session,
         run,

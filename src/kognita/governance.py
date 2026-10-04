@@ -25,6 +25,7 @@ from typing import Any, Callable, Sequence
 
 from sqlmodel import Session, select
 
+from kognita.canonical import canonical_hash, canonical_json
 from kognita.classify import PatternClassifier, classifier_record
 from kognita.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
 from kognita.evidence import EvidenceWriter
@@ -250,6 +251,23 @@ def classifier_derived_envelope(
     return envelope, attrs
 
 
+def _evidence_envelope(envelope: Envelope) -> dict[str, Any]:
+    """The envelope for a POLICY_DECISION, without the governed argument text.
+
+    ``Envelope.to_dict`` still carries the arguments, and ``envelope_hash``
+    still binds them. The evidence payload keeps the hash and size from
+    ``hashes_only`` instead of the argument text, the same way MODEL_CALL
+    and EGRESS keep hashes and sizes instead of content.
+    """
+    body = envelope.to_dict()
+    arguments = body["arguments"]
+    body["arguments"] = {
+        "sha256": canonical_hash(arguments),
+        "bytes": len(canonical_json(arguments)),
+    }
+    return body
+
+
 def record(
     session: Session,
     evaluation: Evaluation,
@@ -290,9 +308,10 @@ def record(
 
     # Consumption is evidence of the call, not an input to the decision. Keeping
     # it out of the envelope hash means a budget counter cannot retarget an
-    # approval onto a different request.
+    # approval onto a different request. The hash still binds the arguments;
+    # the chain keeps that hash, not the text.
     payload: dict[str, Any] = {
-        "envelope": envelope.to_dict(),
+        "envelope": _evidence_envelope(envelope),
         "attributes": evaluation.attributes,
         "outcome": evaluation.outcome.value,
         "checks": [c.to_dict() for c in evaluation.checks],
