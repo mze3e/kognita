@@ -107,7 +107,12 @@ from kognita.rules import CORE_RULES, build_registry, rule
 from kognita.gateway import ClientConfiguration, Gateway, GatewayResponse
 from kognita.mcp import McpProxy, McpResponse
 from kognita.tools import Run, ToolRegistry, ToolRun, continue_run, run_governed
-from kognita.vectors import NumpyVectorIndex, SqliteVecIndex, default_index
+from kognita.vectors import (
+    NumpyVectorIndex,
+    SqliteVecIndex,
+    VectorSearchError,
+    default_index,
+)
 from kognita.vocabulary import (
     ActorType,
     ApprovalStatus,
@@ -214,6 +219,7 @@ __all__ = [
     "lexical_overlap",
     "NumpyVectorIndex",
     "SqliteVecIndex",
+    "VectorSearchError",
     "default_index",
     # egress
     "EgressGuard",

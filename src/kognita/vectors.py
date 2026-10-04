@@ -21,6 +21,13 @@ import numpy as np
 from kognita.embedding import from_bytes
 
 
+class VectorSearchError(RuntimeError):
+    """A vector search failed and must not be read as an empty hit list.
+
+    ``search`` returns ``[]`` only after the index has run and matched nothing.
+    """
+
+
 class NumpyVectorIndex:
     """Brute-force cosine search. Always available."""
 
@@ -77,6 +84,11 @@ class SqliteVecIndex:
     Constructing this raises if the extension cannot be loaded, so a deployment
     opts in explicitly rather than silently falling back and wondering later why
     a query is slow.
+
+    ``search`` returns ``[]`` when this index ran and matched nothing. Rows
+    that come back and join no candidate are a failed search:
+    :class:`VectorSearchError`, not an empty hit list. A candidate that does
+    join is still returned as ``(item, 1 - distance)``.
     """
 
     name = "sqlite-vec"
@@ -107,24 +119,44 @@ class SqliteVecIndex:
         *,
         top_k: int = 5,
     ) -> list[tuple[Any, float]]:
+        """Return joined hits, or ``[]`` when the index matched nothing.
+
+        An empty candidate list is an empty result. A candidate the caller
+        passed but that cannot be keyed by ``id`` never reaches the index, so
+        that raises rather than looking like a search that found nothing.
+        """
         # The entitlement filter has already reduced the candidate set, so the
         # KNN runs over ids the caller is permitted to see and nothing else.
         import struct
 
+        if not candidates:
+            return []
+
         by_id = {item.id: item for item, _ in candidates if hasattr(item, "id")}
         if not by_id:
-            return []
+            raise VectorSearchError(
+                "SqliteVecIndex could not key any candidate by id. "
+                "This search failed; it is not an empty result."
+            )
         packed = struct.pack(f"{len(query_vector)}f", *query_vector)
         rows = self.connection.execute(
             f"SELECT rowid, distance FROM {self.table} "
             "WHERE embedding MATCH ? ORDER BY distance LIMIT ?",
             (packed, top_k),
         ).fetchall()
+        # The index ran and named no neighbours. That empty result is real.
+        if not rows:
+            return []
         results: list[tuple[Any, float]] = []
         for rowid, distance in rows:
             item = by_id.get(rowid)
             if item is not None:
                 results.append((item, 1.0 - float(distance)))
+        if not results:
+            raise VectorSearchError(
+                "sqlite-vec returned rows whose rowids match no candidate id. "
+                "This search failed; it is not an empty result."
+            )
         return results
 
 
@@ -133,4 +165,4 @@ def default_index() -> NumpyVectorIndex:
     return NumpyVectorIndex()
 
 
-__all__ = ["NumpyVectorIndex", "SqliteVecIndex", "default_index"]
+__all__ = ["NumpyVectorIndex", "SqliteVecIndex", "VectorSearchError", "default_index"]
