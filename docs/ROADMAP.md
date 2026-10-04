@@ -90,7 +90,7 @@ Kognita checks *permission*, not *advice quality*. Charge 3 is answered by routi
 
 ### Bank-grade control framework
 
-A consolidated control framework for agentic AI in private banking, drawing on MAS and ABS material, NIST and OWASP concepts, and production patterns from large banks, defines 40 control domains and 12 non-negotiable controls. The full mapping of all 40 domains is in [control-framework.md](control-framework.md).
+A consolidated control framework for agentic AI in private banking, drawing on MAS and ABS material, NIST and OWASP concepts, and production patterns from large banks, defines 40 control domains and 12 non-negotiable controls. The full mapping is in [control-frameworks.md](control-frameworks.md).
 
 Its overarching rule is Kognita's founding premise:
 
@@ -115,7 +115,7 @@ Its overarching rule is Kognita's founding premise:
 
 ### Wealth management AI control framework
 
-A second consolidated framework, covering RM-facing, client-facing and agentic AI, defines 70 controls in 10 domains, drawing on MAS, PDPC, SFC, FCA, the Bank of England, APRA and ASIC, CSBS, BIS/FSI and ESMA. Not every control is mandated everywhere today; it is used as the target baseline. The full mapping is in [wealth-ai-control-framework.md](wealth-ai-control-framework.md).
+A second consolidated framework, covering RM-facing, client-facing and agentic AI, defines 70 controls in 10 domains, drawing on MAS, PDPC, SFC, FCA, the Bank of England, APRA and ASIC, CSBS, BIS/FSI and ESMA. The EVOLVE framework's learning loop and institutional memory are integrated into the roadmap. The full mapping is in [control-frameworks.md](control-frameworks.md).
 
 It sets one overarching test, which Kognita adopts as the measure for every release:
 
@@ -806,8 +806,8 @@ Without one definition, every agent invents its own version of the business: Fin
 - **Docs rewrite:** lead with the problem ("prove an AI request was allowed before any data moved"), scenarios by industry, glossary, honest comparison with content guardrails and AI gateways
 - **Ten single-file examples**, each runnable in under five minutes and tested in CI, including the AI gateway, the MCP proxy, a policy-only YAML deployment, an approval workflow, and an evidence audit
 - **Examinability acceptance:** every row of the reconstruction test in [Supervisory Examinability](#supervisory-examinability) answered from evidence for a real RM interaction, including after a backup restore and a signing key rotation
-- **Control framework acceptance:** all twelve non-negotiable controls demonstrated, and every one of the 40 domains in [control-framework.md](control-framework.md) either covered or explicitly marked boundary or out of scope
-- **Wealth AI framework acceptance:** all fifteen non-negotiable controls demonstrated, every one of the 70 controls in [wealth-ai-control-framework.md](wealth-ai-control-framework.md) covered or explicitly marked boundary or out of scope, and the overarching test passed on a real interaction: the bank can explain, control, stop and reconstruct it
+- **Control framework acceptance:** all twelve non-negotiable controls demonstrated, and every one of the 40 domains in [control-frameworks.md](control-frameworks.md) either covered or explicitly marked boundary or out of scope
+- **Wealth AI framework acceptance:** all fifteen non-negotiable controls demonstrated, every one of the 70 controls in [control-frameworks.md](control-frameworks.md) covered or explicitly marked boundary or out of scope, and the overarching test passed on a real interaction: the bank can explain, control, stop and reconstruct it
 - **Graduation checklist:** coverage above 85 percent, published benchmarks, external security review, at least one production deployment in a regulated domain
 
 ---
@@ -889,7 +889,7 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 - No release dates changed.
 
 **4 October 2026: Wealth management AI control framework**
-- Mapped the roadmap against a 70-control, 10-domain framework for RM-facing and agentic AI and its 15 non-negotiable controls. Full mapping in [wealth-ai-control-framework.md](wealth-ai-control-framework.md). Measured after the 40-domain audit, 7 non-negotiables were already planned or covered and 8 were partial; none were missing outright.
+- Mapped the roadmap against a 70-control, 10-domain framework for RM-facing and agentic AI and its 15 non-negotiable controls. Full mapping in [control-frameworks.md](control-frameworks.md). Measured after the 40-domain audit, 7 non-negotiables were already planned or covered and 8 were partial; none were missing outright.
 - Adopted its overarching test: can the bank explain, control, stop and reconstruct every material AI action that affects a client?
 - Found that agent names are self-asserted and unauthenticated. Added to Tier 0 (gateways bind names to authenticated clients) and to 0.5 (agents get their own credentials).
 - 0.4: accountability matrix, five-axis materiality classification with the tier derived from it, AI risk appetite, periodic review, links to business processes, training attestation; reasons instead of scores and a "do not contact" outcome; defined human boundaries, content provenance labels, edit and rejection rates; communication levels, approved-channel register, client AI-disclosure rules, a public lane; intervention controls; new item 15, outcomes and near misses.
@@ -900,7 +900,7 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 - No release dates changed.
 
 **4 October 2026: Bank-grade control framework**
-- Mapped the roadmap against a 40-domain control framework for agentic AI in private banking and its 12 non-negotiable controls. Full mapping in [control-framework.md](control-framework.md). Only one non-negotiable, runtime policy outside the LLM, was fully covered at v0.2.
+- Mapped the roadmap against a 40-domain control framework for agentic AI in private banking and its 12 non-negotiable controls. Full mapping in [control-frameworks.md](control-frameworks.md). Only one non-negotiable, runtime policy outside the LLM, was fully covered at v0.2.
 - Adopted the framework's rule, "governance by architecture, not by instruction", as a stated principle.
 - Found that an agent registry with per-agent kill switch already exists in code, and that requests without an agent name bypass it. Added the bypass to Tier 0.
 - 0.3: tool response hashes and prompt template versions added to pinned evidence.

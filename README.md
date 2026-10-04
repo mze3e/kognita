@@ -197,7 +197,7 @@ Planned, not yet built:
 - **0.6: Claims and institutional memory.** Typed, sourced, current claims checked before an RM relies on them; approved-source grounding; supervised memory that turns lessons into shared standards; governed business definitions.
 - **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
 
-The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-framework.md](docs/control-framework.md) (40 domains) and [docs/wealth-ai-control-framework.md](docs/wealth-ai-control-framework.md) (70 controls).
+The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop and institutional memory.
 
 The design rule behind all of it: **never rely on the LLM to enforce a control that can be enforced outside the LLM.**
 
