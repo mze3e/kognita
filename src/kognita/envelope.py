@@ -79,15 +79,20 @@ class Check:
     result: CheckResult
     citation: str
     policy_id: int | None = None
+    #: Hash of the policy row as evaluated. Empty when the check is not a policy.
+    policy_hash: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        body = {
             "check": self.check,
             "regime": self.regime,
             "result": self.result.value,
             "citation": self.citation,
             "policy_id": self.policy_id,
         }
+        if self.policy_hash is not None:
+            body["policy_hash"] = self.policy_hash
+        return body
 
 
 @dataclass(frozen=True)

@@ -18,9 +18,11 @@ from typing import Any, Sequence
 
 from sqlmodel import Session, select
 
+from kognita.canonical import canonical_hash
 from kognita.embedding import lexical_overlap
 from kognita.evidence import EvidenceWriter
 from kognita.models import KnowledgeItem, as_utc
+from kognita.retention import RetentionStore
 from kognita.protocols import Embedder
 from kognita.vectors import NumpyVectorIndex
 from kognita.vocabulary import (
@@ -36,6 +38,15 @@ LEXICAL_WEIGHT = 0.4
 #: Below this, a hit is noise rather than an answer.
 MIN_SCORE = 0.08
 TOP_K = 5
+
+
+def item_content_hash(item: KnowledgeItem) -> str:
+    """Hash of the item text a retrieval returned.
+
+    The embedding is not part of the hash. A later edit of the title or body
+    changes it; a re-index is caught by the embedding model recorded beside it.
+    """
+    return canonical_hash({"title": item.title, "body": item.body})
 
 
 @dataclass(frozen=True)
@@ -107,12 +118,14 @@ def retrieve(
     index: Any = None,
     top_k: int = TOP_K,
     min_score: float = MIN_SCORE,
+    use_case: str = "",
 ) -> list[Retrieved]:
     """Search the knowledge store within the caller's entitlement."""
     limit = ceiling if ceiling is not None else ceiling_for(is_admin)
     candidates = entitled_items(session, zone=zone, ceiling=limit)
 
     hits: list[Retrieved] = []
+    ranked: list[tuple[KnowledgeItem, float]] = []
     if candidates:
         vector_index = index or NumpyVectorIndex()
         query_vector = embedder.embed(query)
@@ -123,7 +136,6 @@ def retrieve(
         )
         semantic_by_id = {id(item): score for item, score in scored}
 
-        ranked: list[tuple[KnowledgeItem, float]] = []
         for item in candidates:
             semantic = semantic_by_id.get(id(item), 0.0)
             lexical = lexical_overlap(query, f"{item.title} {item.body}")
@@ -147,6 +159,25 @@ def retrieve(
         ]
 
     if evidence is not None:
+        returned = ranked[:top_k]
+        store = RetentionStore()
+        items = []
+        for item, _score in returned:
+            content_hash = item_content_hash(item)
+            store.retain_value(
+                session,
+                {"title": item.title, "body": item.body},
+                kind="source",
+                use_case=use_case,
+                correlation_id=correlation_id,
+            )
+            items.append(
+                {
+                    "id": item.id or 0,
+                    "content_hash": content_hash,
+                    "embedding_model": item.embedding_model,
+                }
+            )
         evidence.emit(
             session,
             correlation_id=correlation_id,
@@ -160,6 +191,7 @@ def retrieve(
                 "ceiling": Classification(limit).value,
                 "candidate_count": len(candidates),
                 "returned_ids": [h.id for h in hits],
+                "items": items,
                 "top_score": hits[0].score if hits else 0.0,
                 "embedder": embedder.model,
             },
@@ -222,6 +254,7 @@ __all__ = [
     "reindex",
     "entitled_items",
     "ceiling_for",
+    "item_content_hash",
     "MIN_SCORE",
     "TOP_K",
 ]

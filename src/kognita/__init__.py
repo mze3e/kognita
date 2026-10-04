@@ -70,7 +70,14 @@ from kognita.evidence import (
     verify_chain,
     verify_export,
 )
-from kognita.exceptions import ConfigError, KognitaError, ProviderError
+from kognita.exceptions import (
+    ConfigError,
+    KognitaError,
+    PolicyEditError,
+    ProviderError,
+    ReplayMismatch,
+    RetentionError,
+)
 from kognita.governance import (
     PolicySnapshot,
     classifier_derived_envelope,
@@ -78,6 +85,7 @@ from kognita.governance import (
     load_snapshot,
     record,
     resolve_outcome,
+    supersede_policy,
 )
 from kognita.models import (
     Agent,
@@ -88,8 +96,11 @@ from kognita.models import (
     GovernanceDecision,
     KnowledgeItem,
     Policy,
+    policy_content_hash,
     utcnow,
 )
+from kognita.replay import replay_decision
+from kognita.retention import RetentionStore
 from kognita.retrieval import Retrieved, index_item, reindex, retrieve
 from kognita.rules import CORE_RULES, build_registry, rule
 from kognita.gateway import ClientConfiguration, Gateway, GatewayResponse
@@ -169,6 +180,8 @@ __all__ = [
     "classifier_derived_envelope",
     "PolicySnapshot",
     "load_snapshot",
+    "supersede_policy",
+    "replay_decision",
     # rules
     "rule",
     "build_registry",
@@ -180,6 +193,7 @@ __all__ = [
     "verify_export",
     "hashes_only",
     "ChainBreak",
+    "RetentionStore",
     # approvals
     "grant",
     "reject",
@@ -229,6 +243,7 @@ __all__ = [
     "session_scope",
     "Agent",
     "Policy",
+    "policy_content_hash",
     "Approval",
     "GovernanceDecision",
     "EvidenceEvent",
@@ -256,6 +271,9 @@ __all__ = [
     # errors
     "KognitaError",
     "ConfigError",
+    "PolicyEditError",
+    "ReplayMismatch",
+    "RetentionError",
     "ProviderError",
     "__version__",
 ]

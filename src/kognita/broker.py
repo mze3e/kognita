@@ -212,6 +212,7 @@ def _retrieve_for(
         actor_type=ActorType.AGENT if envelope.agent_name else ActorType.HUMAN,
         is_admin=envelope.is_admin,
         top_k=top_k,
+        use_case=envelope.purpose,
     )
 
 

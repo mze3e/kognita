@@ -33,6 +33,7 @@ from typing import Any, Callable, Iterable
 
 from kognita.canonical import canonical_hash
 from kognita.evidence import EvidenceWriter
+from kognita.retention import RetentionStore
 from kognita.vocabulary import (
     ActorType,
     Classification,
@@ -216,6 +217,11 @@ class EgressGuard:
         actor_id: str = "",
         actor_type: ActorType = ActorType.SYSTEM,
         restore_response: bool = True,
+        provider: str | None = None,
+        model: str | None = None,
+        model_version: str | None = None,
+        prompt_template_version: str | None = None,
+        use_case: str = "",
     ) -> EgressResult:
         """Send ``text`` to ``call``, redacting or refusing as policy requires."""
         decision = self.evaluate(
@@ -229,7 +235,19 @@ class EgressGuard:
                 destination=destination,
                 destination_is_local=destination_is_local,
             )
-            self._evidence(session, result, correlation_id, actor_id, actor_type, sent=False)
+            self._evidence(
+                session,
+                result,
+                correlation_id,
+                actor_id,
+                actor_type,
+                sent=False,
+                provider=provider,
+                model=model,
+                model_version=model_version,
+                prompt_template_version=prompt_template_version,
+                use_case=use_case,
+            )
             raise EgressDenied(
                 f"{Classification(classification).value} content may not be sent to "
                 f"'{destination}': no redaction makes this destination permissible.",
@@ -243,6 +261,7 @@ class EgressGuard:
             sent_text, token_map = text, {}
 
         response = call(sent_text)
+        received = response
 
         if token_map and restore_response and isinstance(response, str):
             response = self.redactor.restore(response, token_map)
@@ -259,7 +278,20 @@ class EgressGuard:
             # the spans themselves.
             manifest_hash=canonical_hash(sorted(token_map)),
         )
-        self._evidence(session, result, correlation_id, actor_id, actor_type, sent=True)
+        self._evidence(
+            session,
+            result,
+            correlation_id,
+            actor_id,
+            actor_type,
+            sent=True,
+            received=received,
+            provider=provider,
+            model=model,
+            model_version=model_version,
+            prompt_template_version=prompt_template_version,
+            use_case=use_case,
+        )
         return result
 
     def _evidence(
@@ -271,9 +303,32 @@ class EgressGuard:
         actor_type: ActorType,
         *,
         sent: bool,
+        received: Any = None,
+        provider: str | None = None,
+        model: str | None = None,
+        model_version: str | None = None,
+        prompt_template_version: str | None = None,
+        use_case: str = "",
     ) -> None:
         if self.evidence is None or session is None:
             return
+        prompt_hash = ""
+        response_hash = ""
+        if sent and result.sent_text:
+            prompt_hash = RetentionStore().retain_text(
+                session,
+                result.sent_text,
+                kind="prompt",
+                use_case=use_case,
+                correlation_id=correlation_id,
+            )
+        if sent and received is not None:
+            response_hash = _retain_received(
+                session,
+                received,
+                use_case=use_case,
+                correlation_id=correlation_id,
+            )
         common = {
             "destination": result.destination,
             "destination_is_local": result.destination_is_local,
@@ -281,6 +336,7 @@ class EgressGuard:
             "decision": result.decision.value,
             "redacted_spans": result.redacted_span_count,
             "manifest_hash": result.manifest_hash,
+            "response_hash": response_hash,
         }
         self.evidence.emit(
             session,
@@ -289,7 +345,16 @@ class EgressGuard:
             actor_type=actor_type,
             actor_id=actor_id or "egress-guard",
             classification=result.classification,
-            payload={**common, "sent": sent, "sent_bytes": len(result.sent_text)},
+            payload={
+                **common,
+                "sent": sent,
+                "sent_bytes": len(result.sent_text),
+                "provider": provider or result.destination,
+                "model": model,
+                "model_version": model_version,
+                "prompt_template_version": prompt_template_version,
+                "prompt_hash": prompt_hash,
+            },
         )
         self.evidence.emit(
             session,
@@ -305,6 +370,31 @@ class EgressGuard:
                 "note": "Payload content is not copied to the evidence plane.",
             },
         )
+
+
+def _retain_received(
+    session: Any,
+    received: Any,
+    *,
+    use_case: str,
+    correlation_id: str,
+) -> str:
+    """Hash and retain the response as the provider returned it."""
+    if isinstance(received, str):
+        return RetentionStore().retain_text(
+            session,
+            received,
+            kind="response",
+            use_case=use_case,
+            correlation_id=correlation_id,
+        )
+    return RetentionStore().retain_value(
+        session,
+        received,
+        kind="response",
+        use_case=use_case,
+        correlation_id=correlation_id,
+    )
 
 
 __all__ = [
