@@ -122,6 +122,7 @@ source_modules = [
     "kognita.embedding",
     "kognita.envelope",
     "kognita.evidence",
+    "kognita.gateway",
     "kognita.governance",
     "kognita.models",
     "kognita.protocols",

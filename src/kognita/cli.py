@@ -15,8 +15,9 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
-from kognita.db import make_engine, session_scope
-from kognita.evidence import ChainBreak, export_chain, verify_chain
+from kognita.db import create_all, make_engine, session_scope
+from kognita.evidence import ChainBreak, EvidenceWriter, export_chain, verify_chain
+from kognita.gateway import ClientConfiguration, Gateway
 
 
 def _probe(module: str) -> str:
@@ -145,6 +146,31 @@ def cmd_evidence_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    """Run the OpenAI-compatible AI gateway.
+
+    The process binds one client configuration. Agent names outside that
+    configuration are denied. ``--provider`` accepts ``openai-compatible``
+    only; a native Anthropic adapter and ``--mcp`` are not this command.
+    """
+    engine = make_engine(args.db)
+    create_all(engine)
+    gateway = Gateway(
+        engine=engine,
+        evidence=EvidenceWriter(engine),
+        upstream=args.upstream,
+        client=ClientConfiguration(
+            principal=args.principal,
+            purpose=args.purpose,
+            agent_names=frozenset(args.agent or []),
+            system_triggers=frozenset(args.system_trigger or []),
+            actor_location=args.actor_location,
+        ),
+    )
+    gateway.serve(args.host, args.port)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
@@ -170,6 +196,34 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--correlation-id", help="mark only this request's events")
     export.add_argument("-o", "--output", help="write to a file instead of stdout")
     export.set_defaults(func=cmd_evidence_export)
+
+    serve = sub.add_parser("serve", help="run the OpenAI-compatible AI gateway")
+    serve.add_argument(
+        "--provider",
+        required=True,
+        choices=["openai-compatible"],
+        help="wire format. openai-compatible only",
+    )
+    serve.add_argument("--upstream", required=True, help="provider origin, not a base path")
+    serve.add_argument("--db", default="kognita.db", help="policy and evidence store")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8080)
+    serve.add_argument("--principal", default="", help="bound principal when the request has none")
+    serve.add_argument("--purpose", default="", help="bound purpose when the request has none")
+    serve.add_argument("--actor-location", default="")
+    serve.add_argument(
+        "--agent",
+        action="append",
+        default=None,
+        help="agent name this client configuration may present; repeatable",
+    )
+    serve.add_argument(
+        "--system-trigger",
+        action="append",
+        default=None,
+        help="approved system trigger this client may present; repeatable",
+    )
+    serve.set_defaults(func=cmd_serve)
 
     return parser
 

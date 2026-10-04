@@ -92,6 +92,7 @@ from kognita.models import (
 )
 from kognita.retrieval import Retrieved, index_item, reindex, retrieve
 from kognita.rules import CORE_RULES, build_registry, rule
+from kognita.gateway import ClientConfiguration, Gateway, GatewayResponse
 from kognita.tools import Run, ToolRegistry, ToolRun, continue_run, run_governed
 from kognita.vectors import NumpyVectorIndex, SqliteVecIndex, default_index
 from kognita.vocabulary import (
@@ -215,6 +216,10 @@ __all__ = [
     "ask",
     "BrokerAnswer",
     "default_route_resolver",
+    # gateway
+    "ClientConfiguration",
+    "Gateway",
+    "GatewayResponse",
     # storage
     "make_engine",
     "create_all",

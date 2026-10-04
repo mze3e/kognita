@@ -281,8 +281,8 @@ From `docs/gap-analysis-bmos.md`:
 - [ ] `engages` missing from protocol
 - [ ] No foreign keys on evidence references
 - [ ] Purpose check passes everything when no purpose list is configured; must fail closed (superseded by the use-case register in 0.4)
-- [ ] Anonymous agent path: when a request carries no agent name, the agent registry and kill-switch checks are skipped and the call is treated as a human. Through the gateways, every call must carry either a registered agent identity or an approved system trigger; neither is a DENY
-- [ ] Self-asserted agent identity: the agent name is a string the caller supplies, so any caller can claim to be any registered agent. Until agents authenticate with their own credentials (0.5), the gateways bind each agent name to the authenticated client configuration that may use it, and reject a mismatch
+- [x] Anonymous agent path: when a request carries no agent name, the agent registry and kill-switch checks are skipped and the call is treated as a human. Through the gateways, every call must carry either a registered agent identity or an approved system trigger; neither is a DENY
+- [x] Self-asserted agent identity: the agent name is a string the caller supplies, so any caller can claim to be any registered agent. Until agents authenticate with their own credentials (0.5), the gateways bind each agent name to the authenticated client configuration that may use it, and reject a mismatch
 
 ### Definition of Done
 
@@ -291,7 +291,7 @@ From `docs/gap-analysis-bmos.md`:
 - [ ] Injection test: text crafted to relabel itself cannot widen permission
 - [ ] Tamper tests: editing a policy row, a retrieved item, or a stored prompt after the fact is detected by replay and by `reconstruct`
 - [ ] Erasure test: erasing retained content leaves the chain verifiable and records the erasure
-- [ ] Outage test: with the evidence store down, the gateway refuses calls in fail-closed mode
+- [x] Outage test: with the evidence store down, the gateway refuses calls in fail-closed mode
 - [ ] Conformance kit passes
 - [ ] Gateway overhead benchmarked (target: under 50 ms per call, excluding classifier inference)
 - [ ] Flagship demo runs end-to-end in under 3 minutes from scaffold
