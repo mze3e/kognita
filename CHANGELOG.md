@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Text that relabels itself cannot widen permission. A classification written into the text, including every value from `C0` to `C3`, is not applied as a typed classification. The pattern classifier's hint may raise a classification and may not lower it, and `decide` on that label is not more permissive than the unhinted label under the same policy. A typed classification still replaces the label, including a lower one. The decision path was not changed.
+
 - `DomainPack.engages` is already on the protocol, and the gap note that it is missing is stale. `run_governed`, `ask`, and the test harness pass the pack's `engages` into `decide`. A policy the pack does not engage is skipped. A policy it engages is evaluated. A pack that omits the method fails `isinstance(pack, DomainPack)`. The call sites still use `getattr`, so a pack that never meets that check still evaluates every effective policy. The decision path was not changed.
 
 - Entitlement filtering already fails closed, and the gap note that describes an empty `zones` list as visible in every zone is stale. A missing or empty zone list is not visible in any zone. A caller with no zone does not match a listed zone. A classification or ceiling the filter cannot evaluate does not return the item. A zone the item lists, at or below the ceiling, is still returned, including the ceiling `retrieve` already grants when none is passed. The decision path is unchanged.
