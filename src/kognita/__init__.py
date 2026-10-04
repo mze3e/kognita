@@ -115,6 +115,7 @@ from kognita.vocabulary import (
     Classification,
     EgressDecision,
     EventType,
+    FailureMode,
     Outcome,
 )
 
@@ -262,6 +263,7 @@ __all__ = [
     "EventType",
     "ApprovalStatus",
     "EgressDecision",
+    "FailureMode",
     # hashing
     "canonical_hash",
     "canonical_json",
