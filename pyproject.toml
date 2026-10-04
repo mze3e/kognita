@@ -81,6 +81,9 @@ Changelog = "https://github.com/mze3e/kognita/blob/main/CHANGELOG.md"
 [tool.hatch.build.targets.wheel]
 packages = ["src/kognita"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"examples/governed-agent" = "kognita/_templates/governed-agent"
+
 [tool.hatch.build.targets.sdist]
 include = [
     "src/kognita/**",
