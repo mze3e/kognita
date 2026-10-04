@@ -288,7 +288,7 @@ From `docs/gap-analysis-bmos.md`:
 
 - [x] All tests pass, including new coverage for Run, suspend/resume, AI gateway, classifier-derived envelopes, MCP proxy
 - [x] Replay test: a decision made from a classifier-derived envelope replays identically without calling the classifier
-- [ ] Injection test: text crafted to relabel itself cannot widen permission
+- [x] Injection test: text crafted to relabel itself cannot widen permission
 - [x] Tamper tests: editing a policy row, a retrieved item, or a stored prompt after the fact is detected by replay and by `reconstruct`
 - [x] Erasure test: erasing retained content leaves the chain verifiable and records the erasure
 - [x] Outage test: with the evidence store down, the gateway refuses calls in fail-closed mode
