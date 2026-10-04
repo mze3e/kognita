@@ -8,79 +8,90 @@
 
 ![Kognita Logo](docs/kognita-logo.png)
 
-**Prove an AI answer was permitted — and evidence it.**
+**Prove an AI action was permitted, and evidence it.**
 
-| You want to… | Reach for |
-|---|---|
-| Connect fragmented files and databases quickly | LlamaIndex |
-| Build complex, customised LLM workflows | LangChain |
-| Create a team of specialised agents | CrewAI |
-| Map complex relationships across data | GraphRAG |
-| **Prove an answer was permitted, and evidence it** | **Kognita** |
+Content guardrails check what an AI *says*. Kognita decides whether the agent was *allowed to ask*, before any data is retrieved, and writes a tamper-evident record of the decision and the rule behind it.
 
-Content guardrails filter *what a model says*. Kognita decides *whether the
-request was allowed — before any data is retrieved* — and writes the record.
+Your agent pulls a client's portfolio, summarises it, and sends it to a model API. Was it allowed to? With Kognita, that question has an answer you can show a regulator: which rule permitted it, which rules would have stopped it, and proof that the record hasn't been edited since.
 
 ```python
-from kognita import Envelope, decide, load_snapshot
+from datetime import datetime, timezone
+from sqlmodel import Session
 
-evaluation = decide(
-    Envelope(principal="rm@bank.example", purpose="ELIGIBILITY_CHECK",
-             tool="check_eligibility", actor_location="AE",
-             subject_type="client", subject_id="1",
-             subjects={"instrument": "1"}),
-    load_snapshot(session),
-    attributes=pack.resolve_attributes(...),
-    rules=pack.rules(),
-)
+from kognita import Envelope, Policy, decide, load_snapshot
+from kognita.db import create_all, make_engine
 
-evaluation.outcome        # DENY
+engine = make_engine()
+create_all(engine)
+start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+with Session(engine) as session:
+    session.add_all([
+        Policy(regime="BOOKING_CENTRE", rule_type="ATTRIBUTE_ALLOWLIST",
+               rule={"allow": {"actor_location": ["SG"]}},
+               citation="Cross-border manual s3.2: SG-booked clients served from SG",
+               effective_from=start),
+        Policy(regime="INVESTOR_STATUS", rule_type="REQUIRES_FLAG",
+               rule={"flags": ["accredited_investor"]},
+               citation="Product governance policy s7: complex products",
+               effective_from=start),
+    ])
+    session.commit()
+
+    evaluation = decide(
+        Envelope(principal="rm@bank.example", purpose="PRODUCT_DISCUSSION",
+                 tool="discuss_product", actor_location="HK",
+                 subject_type="client", subject_id="123"),
+        load_snapshot(session),
+        attributes={"actor_location": "HK", "accredited_investor": False},
+        purposes=["PRODUCT_DISCUSSION"],
+    )
+
+print(evaluation.outcome.value)
 for check in evaluation.basis():
-    print(check.regime, check.citation)
-# HK_SFC        SFC Code of Conduct para 5.5
-# DIFC_DFSA     DFSA COB 3; GEN 2
+    print(f"{check.regime:16} {check.citation}")
 ```
 
-Two independent regimes refused; neither masked the other; each names the rule
-it came from. Nothing was retrieved.
+```console
+DENY
+BOOKING_CENTRE   Cross-border manual s3.2: SG-booked clients served from SG
+INVESTOR_STATUS  Product governance policy s7: complex products
+```
+
+Two independent rules refused. Neither masked the other, each names its source, and nothing was retrieved. The policy names and citations above are illustrative; in a real deployment they come from your own policy set.
 
 ## Install
 
 ```bash
-pip install kognita                 # the decision engine — 4 dependencies
-pip install kognita[graph]          # + Graphiti/Kuzu knowledge graph
-pip install kognita[openai]         # + a real embedder
-pip install kognita[all]
+pip install kognita
 ```
 
-The core installs on `pydantic`, `sqlmodel`, `numpy` and `python-dotenv`, and
-runs with no network and no API key. Deciding whether a request is permitted
-should not require the machinery that answers it — and that constraint is
-enforced by `import-linter` contracts plus a test that installs with no extras
-and asserts `decide()` still runs.
+The core depends on four packages (`pydantic`, `sqlmodel`, `numpy`, `python-dotenv`) and runs with no network and no API key. Deciding whether a request is permitted should not require the machinery that answers it. `import-linter` contracts and a no-extras install test keep it that way.
 
-## What it does
+Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vector index (`kognita[vec]`), local embeddings (`kognita[local-embeddings]`) and a knowledge-graph engine (`kognita[graph]`, see [below](#optional-knowledge-graph)).
 
-**Authorise before discovery.** An envelope describes an intent and is evaluated
-before anything is fetched. A denial returns no data, not filtered data.
+## What it does today
 
-**Fail closed.** `DENY > ESCALATE > HUMAN_APPROVAL > ALLOW`. One failing check
-among a hundred passes still denies, so a policy set cannot be widened by adding
-permissive rules.
+**Authorise before discovery.** An agent's intent is described as an envelope (who, for what purpose, with which tool, about which subject, from where) and evaluated before anything is fetched. A denial returns no data, not filtered data.
 
-**Every decision cites its rule.** A check without a citation is an assertion,
-not a decision; the conformance kit enforces it.
+**Fail closed.** Outcomes resolve as `DENY > ESCALATE > HUMAN_APPROVAL > ALLOW`. One failing check among a hundred passes still denies, so a policy set cannot be widened by adding permissive rules. A policy whose rule type has no evaluator escalates rather than being skipped.
 
-**Decisions are pure and replayable.** `decide()` writes nothing and takes the
-instant as a parameter, so *"what would this have decided in March?"* has an
-answer:
+**Every decision cites its rule.** Each check carries the regime and citation it came from. A check without a citation is an assertion, not a decision, and the conformance kit enforces it.
+
+**Agents are registered, and can be stopped.** An agent that is not in the registry is denied. Each registered agent carries a version, an accountable owner and a materiality tier, and has a kill switch that denies its next request:
+
+```console
+DENY  Kill switch engaged — accountable owner: Head of Wealth Advisory
+DENY  Agent inventory — 'AGENT-UNKNOWN' is not registered
+```
+
+**Decisions are pure and replayable.** `decide()` writes nothing and takes the instant as a parameter. Policies are effective-dated rows, so *"what would this have decided in March?"* has an answer:
 
 ```python
-decide(envelope, snapshot, as_of=datetime(2026, 3, 1, tzinfo=timezone.utc))
+decide(envelope, load_snapshot(session, as_of=march), as_of=march, ...)
 ```
 
-**Evidence is tamper-evident.** Each event carries the previous event's hash.
-Altering any payload breaks every hash after it:
+**Evidence is tamper-evident.** Each event carries the previous event's hash, so altering any payload breaks every hash after it:
 
 ```console
 $ kognita evidence verify --db store.db
@@ -89,33 +100,34 @@ BROKEN: evidence chain broken at sequence 2: payload does not match its hash
 $ kognita evidence export --db store.db -o audit.json   # portable, self-verifying
 ```
 
-Payloads hold hashes and references by default — an append-only log full of
-personal data collides with erasure rights — and `hashes_only` strips content
-entirely while keeping the log provable.
+Payloads hold hashes and references by default, because an append-only log full of personal data collides with erasure rights.
 
-**Egress is guarded, not merely refused.** A binary local-or-refuse rule confines
-a governed system to whatever model runs on the box. The guard adds redaction:
+**Humans approve what they actually reviewed.** Through `run_governed()`, a `HUMAN_APPROVAL` decision holds the tool until approval is granted. Approvals bind to a hash of the envelope, attributes and checks, so an approval for one request cannot be replayed for a different one. Two-signature approval, where one person marks and a different person confirms, is built in.
+
+**Egress is guarded, not merely refused.** The egress guard decides per classification and destination whether content may leave, must be redacted, or may not leave at all:
 
 ```python
-result = guard.send(text, call_the_model,
-                    classification=Classification.C2,
+from kognita import Classification
+from kognita.egress import EgressGuard, PatternRedactor
+
+guard = EgressGuard(redactor=PatternRedactor(extra_terms=["Jane Tan"]))
+result = guard.send("Jane Tan (jane.tan@example.com) holds account SG-PB-004417",
+                    call_the_model, classification=Classification.C2,
                     destination="api.openai.com", destination_is_local=False)
 
-result.decision          # REDACT
+result.decision   # REDACT
 # the provider saw:  [TERM_1] ([EMAIL_1]) holds account [ACCOUNT_1]
-# the caller got the real values back, and MODEL_CALL + EGRESS
-# record the manifest hash — never the content.
+# the caller got the real values back; evidence records the redaction
+# manifest hash, never the content
 ```
 
-> `PatternRedactor` is a floor, not a guarantee. Regexes miss names in prose and
-> anything the patterns do not anticipate. Deployments handling real personal
-> data should supply an NER-based `Redactor`; the tests cover the plumbing —
-> that nothing unredacted escapes the guard — never detection recall.
+> `PatternRedactor` is a floor, not a guarantee. It catches the patterns it knows (emails, IBANs, card numbers, phone numbers and similar) plus terms you list, and it misses names in prose that you didn't list. Deployments handling real personal data should supply an NER-based `Redactor`. The tests cover the plumbing, that nothing unredacted escapes the guard, not detection recall.
+
+**Governed tools and questions.** `run_governed()` is the only path to a registered tool: decide, record, and only then execute, with tool-call and egress evidence. `ask()` answers a question from entitled, cited sources only, and when it refuses, the basis for refusing is the answer.
 
 ## Domain packs
 
-The core is domain-blind. A pack supplies the two things it cannot know: what a
-request's *attributes* are, and how to load the *subjects* it refers to.
+The core is domain-blind. A pack supplies what it cannot know: what a request's *attributes* are, and how to load the *subjects* it refers to.
 
 ```python
 class MyPack:
@@ -125,26 +137,15 @@ class MyPack:
     def rules(self): return build_registry(MY_EVALUATORS)
 ```
 
-Policies are data — effective-dated rows with a JSON payload interpreted by the
-evaluator registered for their `rule_type`. The core ships five primitives
-(allowlist, denylist, required flag, required human review, prohibited); a pack
-registers whatever its regimes need beyond them. A policy whose `rule_type` has
-no evaluator **escalates** rather than being skipped: it is a rule someone
-believes is in force.
+Policies are data: effective-dated rows with a JSON payload, interpreted by the evaluator registered for their `rule_type`. The core ships six primitives (allowlist, denylist, required flag, required human approval, two-signature approval, prohibited); a pack registers whatever its regimes need beyond them.
 
 ### Conformance
 
-Kognita ships a conformance kit: a set of assertions that every domain pack must
-satisfy. The kit proves that whatever a pack's regimes say, they are decided
-fail-closed, cited, and evidenced.
-
-Run the kit over the bundled fixture pack (proves the kit itself works):
+The conformance kit is a set of assertions every domain pack must satisfy: whatever a pack's rules say, they are decided fail-closed, cited and evidenced.
 
 ```bash
-pytest --pyargs kognita.testing.conformance
+pytest --pyargs kognita.testing.conformance      # the kit against its bundled pack
 ```
-
-Or subclass it in your own pack's test suite:
 
 ```python
 from kognita.testing import ConformanceCase, Harness
@@ -155,16 +156,42 @@ class TestMyPack(ConformanceCase):
         self.harness = Harness(pack=MyPack(), purposes=PURPOSES, seed=seed)
         self.allow_envelope = Envelope(...)
         self.deny_envelope = Envelope(...)
-        self.human_envelope = Envelope(...)  # optional
 ```
 
-The pattern follows `langchain-tests`: invariants are importable and reusable by
-external packs running in their own repositories.
+The invariants are importable, so external packs run them in their own repositories.
 
-## The knowledge graph
+## Known limitations
 
-`kognita[graph]` adds the Graphiti + Kuzu engine: documents become a bi-temporal,
-auto-deduplicated knowledge graph.
+Kognita is alpha. These are known gaps in v0.2, each scheduled on the [roadmap](docs/ROADMAP.md):
+
+- **The purpose check fails open when no purpose list is configured.** Pass `purposes=` explicitly until it fails closed.
+- **Agent names are self-asserted.** The registry denies unknown names, but nothing yet authenticates that a caller is the agent it claims to be. A request with no agent name skips the registry and is treated as a human.
+- **Model calls are evidenced but not pinned.** Model-call evidence records the destination and redaction manifest, not the model version or hashes of the prompt and response, so model inputs and outputs cannot yet be reproduced later.
+- **Policy rows can be edited in place,** and retrieved items are not content-hashed, so replay can diverge silently if either changes after the fact.
+
+## Where it's heading
+
+The direction is **supervisory examinability**: a regulator should be able to pick one AI-assisted client interaction and reconstruct it from evidence alone. Why this client, why this product, what data the AI used, which model produced it, what the agent was authorised to do, which controls ran, what the human saw and changed, who decided, what the client was told, and whether all of that can be reproduced later.
+
+The test every release is measured against:
+
+> **Can the bank explain, control, stop and reconstruct every material AI action that affects a client?**
+
+Planned, not yet built:
+
+- **0.3: Gateways, the Run and replay.** An explicit proxy in front of model providers and MCP servers, so every agent call is authorised and evidenced with no agent code changes; run budgets; durable suspend and resume for approvals; pinned evidence and a reconstruction report.
+- **0.4: Ingestion, policy language and the client lifecycle.** Passage-level citations, a YAML policy language with diff and validation, a use-case register, risk-based review, a circuit breaker.
+- **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, autonomy levels, blast-radius limits, containment.
+- **0.6: Claims.** Typed, sourced, current claims checked before an RM relies on them.
+- **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
+
+The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-framework.md](docs/control-framework.md) (40 domains) and [docs/wealth-ai-control-framework.md](docs/wealth-ai-control-framework.md) (70 controls).
+
+The design rule behind all of it: **never rely on the LLM to enforce a control that can be enforced outside the LLM.**
+
+## Optional: knowledge graph
+
+`kognita[graph]` adds a Graphiti and Kuzu engine that turns documents into a bi-temporal knowledge graph:
 
 ```python
 from kognita.graph import GraphEngine, GraphConfig
@@ -174,43 +201,24 @@ async with GraphEngine(config) as kg:
     hits = await kg.search("cross-border disclosure")
 ```
 
-Two graphs share one Kuzu database: Graphiti's LLM-extracted knowledge, and a
-deterministic `SoR_*` mirror of a system of record, so one traversal crosses both
-planes. All access goes through a single `KuzuSession` — two `kuzu.Database`
-handles on one path do **not** share a consistent view and raise nothing when
-they diverge. See [docs/decisions/0001-kuzu-cotenancy.md](docs/decisions/0001-kuzu-cotenancy.md).
+Its future is under review. It currently pins `graphiti-core` and caps `openai` below version 2, and the roadmap favours moving it to a separate package with structured document ingestion as the primary retrieval path. See [docs/decisions/0001-kuzu-cotenancy.md](docs/decisions/0001-kuzu-cotenancy.md) for its design.
 
 ## Layout
 
 ```
-kognita            the decision engine — decisions, evidence, retrieval,
-                   egress, tools. Four dependencies, no network.
-kognita.graph      Graphiti + Kuzu knowledge engine          [graph]
-kognita.adapters   provider-backed embedders and clients     [openai] …
+kognita            the decision engine: decisions, evidence, approvals,
+                   retrieval, egress, tools. Four dependencies, no network.
 kognita.testing    the conformance kit
+kognita.adapters   provider-backed embedders and clients     [openai] …
+kognita.graph      Graphiti + Kuzu knowledge engine          [graph]
 ```
 
-`kognita` **is** the decision engine, not a namespace that points at one. No
-graph name is reachable from it: the graph is imported from `kognita.graph`, so
-reading an import tells you whether a graph database is about to be loaded.
-`import kognita` never loads one, and `tests/test_packaging.py` asserts it.
+`import kognita` never loads a graph database or a provider SDK, and `tests/test_packaging.py` asserts it.
 
-> **Moved in 0.2.** `kognita.Kognita` → `kognita.graph.GraphEngine`,
-> `kognita.KognitaConfig` → `kognita.graph.GraphConfig`,
-> `kognita.KognitaKuzuDriver` → `kognita.graph.KuzuDriver`, and
-> `kognita.core.*` → `kognita.*`. Touching a retired name raises an
-> `AttributeError` naming the module that now owns it. Reasoning and the full
-> migration table: [docs/decisions/0003-the-top-level-namespace.md](docs/decisions/0003-the-top-level-namespace.md).
+> **Moved in 0.2.** `kognita.Kognita` → `kognita.graph.GraphEngine`, `kognita.KognitaConfig` → `kognita.graph.GraphConfig`, `kognita.core.*` → `kognita.*`. Touching a retired name raises an `AttributeError` naming its new home. Details: [docs/decisions/0003-the-top-level-namespace.md](docs/decisions/0003-the-top-level-namespace.md).
 
 ## Status
 
-**Alpha. Phases 0–5 complete:** core packaging, governance, evidence chain,
-retrieval, egress guard, tool runner, broker, conformance kit, and adapters.
-
-**Phase 6 in progress:** deterministic graph mirror (SoR_* tables), governed
-document ingestion with evidence logging, and cross-plane Cypher (REFERENCES
-edges linking knowledge graph to system of record).
-
-**Phase 7 pending:** final release, performance benchmarks, docs rewrite, v0.2.0.
+**Alpha.** v0.2.0 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 MIT licensed.
