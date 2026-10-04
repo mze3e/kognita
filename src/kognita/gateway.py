@@ -37,8 +37,11 @@ envelope; the retention store already records that string as ``use_case``.
 The default is fail closed: if the evidence store cannot record the call, the
 gateway refuses it. Degraded mode may proceed only for a local model and
 content that is not client-identifying, and writes the decision and the model
-evidence once the store accepts them. A call is never forwarded without a
-decision. If the policy snapshot cannot be read, every mode refuses.
+evidence once the store accepts them. A caller classification can raise that
+label and cannot lower it: while the store is down the classifier still runs,
+on the body that would be forwarded and not only the extracted prompt. A call
+is never forwarded without a decision. If the policy snapshot cannot be read,
+every mode refuses.
 """
 from __future__ import annotations
 
@@ -58,7 +61,7 @@ from sqlmodel import Session
 
 from kognita.approvals import ApprovalError
 from kognita.canonical import canonical_hash
-from kognita.classify import PatternClassifier, classifier_record
+from kognita.classify import PatternClassifier, classifier_record, most_sensitive
 from kognita.db import session_scope
 from kognita.egress import EgressGuard
 from kognita.envelope import Check, Envelope, Evaluation, envelope_hash
@@ -487,6 +490,35 @@ def _degraded_may_proceed(upstream: str, classification: Classification) -> bool
     return _is_local(upstream) and not _client_data(classification)
 
 
+def _degraded_label(
+    classifier: Any,
+    body: str,
+    classification: Classification,
+    hint: Classification | None,
+) -> Classification:
+    """The label the degraded gate uses once the store has refused the write.
+
+    ``hint`` is the caller classification. It is a floor: the classifier can
+    raise it, and the caller cannot lower what the body supports. ``body`` is
+    the text that would be forwarded, so a field outside the extracted prompt
+    still counts.
+    """
+    return most_sensitive([classification, classifier.classify(body, hint=hint)])
+
+
+def _with_classification(evaluation: Evaluation, classification: Classification) -> Evaluation:
+    """The same decision, with the label the degraded gate actually used."""
+    if evaluation.attributes.get("classification") == classification.value:
+        return evaluation
+    attributes = dict(evaluation.attributes)
+    attributes["classification"] = classification.value
+    return replace(
+        evaluation,
+        attributes=attributes,
+        envelope_hash=envelope_hash(evaluation.envelope, attributes, evaluation.checks),
+    )
+
+
 def _refuse_degraded(
     evaluation: Evaluation, classification: Classification, upstream: str
 ) -> Evaluation:
@@ -836,6 +868,13 @@ class Gateway:
             if not self._is_degraded(purpose):
                 raise
             self._abandon(session)
+            classification = _degraded_label(
+                self.classifier,
+                body.decode("utf-8"),
+                classification,
+                typed,
+            )
+            evaluation = _with_classification(evaluation, classification)
             if not _degraded_may_proceed(self.upstream, classification):
                 refused = _refuse_degraded(evaluation, classification, self.upstream)
                 self._enqueue(

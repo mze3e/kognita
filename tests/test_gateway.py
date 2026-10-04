@@ -4,7 +4,9 @@ Covers roadmap 0.3 items 3 and 9, and the two gateway identity rules. A denial
 does not call the upstream. An allow redacts, forwards, restores, and classifies
 the response. Evidence holds hashes, not the prompt or the answer. Fail closed
 refuses when the store is down. Degraded proceeds only for a local model with
-no client data, and records that call once the store recovers.
+no client data, and records that call once the store recovers. A classification
+header cannot keep that label below C2, and client-identifying content outside
+the extracted prompt is client data too.
 """
 from __future__ import annotations
 
@@ -25,7 +27,7 @@ from kognita.classify import (
 )
 from kognita.cli import build_parser
 from kognita.evidence import EvidenceWriter, verify_chain
-from kognita.gateway import ClientConfiguration, Gateway
+from kognita.gateway import ClientConfiguration, Gateway, _prompt_text
 from kognita.models import EvidenceEvent, GovernanceDecision, Policy, RunRecord
 from kognita.registry import register, set_kill_switch
 from kognita.tools import Run
@@ -801,6 +803,107 @@ def test_degraded_refuses_a_remote_model_and_client_data_without_calling_the_pro
         for check in client_data.evaluation.checks
     )
     assert SECRET not in client_data.body.decode()
+
+
+@pytest.mark.parametrize("header", ["C0", "C1"])
+def test_degraded_header_cannot_keep_client_data_below_c2(session, engine, header):
+    """A classification header is a floor. It cannot keep an email below C2."""
+    _register(session)
+    session.commit()
+    upstream = _Upstream(b"{}")
+    spy = _Spy()
+    gateway = _degraded(
+        engine,
+        _Down(engine),
+        upstream,
+        upstream_url=LOCAL_UPSTREAM,
+        classifier=spy,
+    )
+    response = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent", "classification": header},
+        _body(f"Email {SECRET} about the notes"),
+        session=session,
+    )
+
+    assert upstream.calls == []
+    assert response.status == 403
+    assert response.evaluation is not None
+    assert response.evaluation.outcome is Outcome.DENY
+    assert response.evaluation.attributes["classification"] == "C2"
+    assert any(SECRET in text for text in spy.seen)
+    assert any(
+        check.check == "FAILURE_MODE"
+        and check.result is CheckResult.FAIL
+        and "client-identifying" in check.citation
+        for check in response.evaluation.checks
+    )
+    assert SECRET not in response.body.decode()
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"model": MODEL, "messages": [{"role": "user", "content": ""}], "user": SECRET},
+        {
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "", "name": SECRET}],
+        },
+        {
+            "model": MODEL,
+            "messages": [{"role": "user", "content": BENIGN}],
+            "user": SECRET,
+        },
+    ],
+)
+def test_degraded_refuses_client_data_outside_the_extracted_prompt(
+    session, engine, payload
+):
+    """The OpenAI user field is forwarded and is not part of the prompt text."""
+    _register(session)
+    session.commit()
+    assert SECRET not in _prompt_text(payload)
+    upstream = _Upstream(b"{}")
+    gateway = _degraded(engine, _Down(engine), upstream, upstream_url=LOCAL_UPSTREAM)
+    response = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        json.dumps(payload).encode(),
+        session=session,
+    )
+
+    assert upstream.calls == []
+    assert response.status == 403
+    assert response.evaluation is not None
+    assert response.evaluation.outcome is Outcome.DENY
+    assert response.evaluation.attributes["classification"] == "C2"
+    assert SECRET not in response.body.decode()
+
+
+def test_degraded_low_header_still_calls_a_local_model_without_client_data(
+    session, engine
+):
+    """A header below C2 does not refuse content the classifier leaves below C2."""
+    _register(session)
+    session.commit()
+    upstream = _Upstream(
+        json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+    )
+    gateway = _degraded(engine, _Down(engine), upstream, upstream_url=LOCAL_UPSTREAM)
+    response = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent", "classification": "C0"},
+        _body(BENIGN),
+        session=session,
+    )
+
+    assert response.status == 200
+    assert len(upstream.calls) == 1
+    assert response.evaluation is not None
+    assert response.evaluation.attributes["classification"] == "C1"
 
 
 def test_degraded_use_case_still_calls_a_remote_model_when_the_store_is_up(session, evidence):

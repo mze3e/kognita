@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Degraded mode, while the evidence store is down, no longer lets a classification header keep a call below C2. The header is a floor. The classifier runs on the body that would be forwarded, so client-identifying content outside the extracted prompt, including the OpenAI `user` field, is refused and the provider is not called.
+
 - `HUMAN_APPROVAL` no longer retrieves or returns data from `ask`. A held tool call or retrieval runs only after the approval is actually granted; a denied approval does not execute.
 
 ## [0.2.0] - 2026-09-04
