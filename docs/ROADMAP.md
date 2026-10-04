@@ -276,11 +276,11 @@ From `docs/gap-analysis-bmos.md`:
 - [x] HUMAN_APPROVAL withholds nothing (item 2)
 - [x] Approval loop unclosed (item 2)
 - [ ] Entitlements fail open
-- [x] SqliteVecIndex silent failure
+- [ ] SqliteVecIndex silent failure
 - [x] Classifiers never invoked (item 4 makes them load-bearing)
 - [ ] `engages` missing from protocol
 - [ ] No foreign keys on evidence references
-- [ ] Purpose check passes everything when no purpose list is configured; must fail closed (superseded by the use-case register in 0.4)
+- [x] Purpose check passes everything when no purpose list is configured; must fail closed (superseded by the use-case register in 0.4)
 - [x] Anonymous agent path: when a request carries no agent name, the agent registry and kill-switch checks are skipped and the call is treated as a human. Through the gateways, every call must carry either a registered agent identity or an approved system trigger; neither is a DENY
 - [x] Self-asserted agent identity: the agent name is a string the caller supplies, so any caller can claim to be any registered agent. Until agents authenticate with their own credentials (0.5), the gateways bind each agent name to the authenticated client configuration that may use it, and reject a mismatch
 

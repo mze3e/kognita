@@ -231,6 +231,7 @@ def test_model_call_pins_identity_and_a_stored_prompt_edit_fails_replay(session,
             agent_names=frozenset({"dossier-agent"}),
             actor_location="SG",
         ),
+        purposes=("COLLABORATION",),
         transport=upstream,
     )
     response = gateway.handle(

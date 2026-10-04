@@ -140,8 +140,12 @@ def registry_checks(envelope: Envelope, snapshot: PolicySnapshot) -> list[Check]
 
 
 def purpose_check(envelope: Envelope, purposes: Sequence[str]) -> Check:
-    """The purpose must come from the closed vocabulary the deployment declared."""
-    ok = not purposes or envelope.purpose in set(purposes)
+    """The purpose must come from the closed vocabulary the deployment declared.
+
+    A missing or empty list declares nothing. The check fails closed, the same
+    way a purpose outside a declared list fails. It does not pass every purpose.
+    """
+    ok = bool(purposes) and envelope.purpose in set(purposes)
     return Check(
         check="PURPOSE",
         regime="INTERNAL",
@@ -163,6 +167,9 @@ def decide(
     request_id: str | None = None,
 ) -> Evaluation:
     """Evaluate an envelope against a policy snapshot. Pure — writes nothing.
+
+    ``purposes`` is the list the deployment declared. Missing or empty fails
+    closed. A purpose on that list passes this check; any other purpose fails it.
 
     ``engages`` lets a pack say whether a policy is in scope for this request at
     all. Evaluating a rule from a regime the request never touches produces
