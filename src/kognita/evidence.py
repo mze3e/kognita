@@ -25,7 +25,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, desc, select
 
 from kognita.canonical import canonical_hash, canonical_json
-from kognita.models import EvidenceEvent, as_utc, utcnow
+from kognita.models import EvidenceCheck, EvidenceEvent, EvidenceItem, as_utc, utcnow
 from kognita.vocabulary import ActorType, Classification, EventType
 
 #: Hook applied to every payload before it is hashed and stored. Return the
@@ -42,6 +42,87 @@ GENESIS_HASH = "0" * 64
 #: and a per-instance lock would let them interleave and fork the chain.
 _ENGINE_LOCKS: "WeakKeyDictionary[Engine, threading.Lock]" = WeakKeyDictionary()
 _LOCKS_GUARD = threading.Lock()
+
+
+def _int_ref(value: Any) -> int | None:
+    """An integer row id. Booleans and redacted hashes are not ids."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value
+
+
+def _str_ref(value: Any) -> str | None:
+    """A non-empty string id. A redacted ``{sha256, bytes}`` value is not one."""
+    if isinstance(value, str) and value:
+        return value
+    return None
+
+
+def _apply_payload_links(event: EvidenceEvent, payload: dict[str, Any]) -> None:
+    """Copy the payload's single-valued row ids onto the foreign-key columns.
+
+    The names are the payload keys. A missing key, or a value that is not an
+    id, leaves the column null. SQLite checks the column on insert.
+    """
+    approval_id = _int_ref(payload.get("approval_id"))
+    if approval_id is not None:
+        event.approval_id = approval_id
+    policy_id = _int_ref(payload.get("policy_id"))
+    if policy_id is not None:
+        event.policy_id = policy_id
+    successor_id = _int_ref(payload.get("successor_id"))
+    if successor_id is not None:
+        event.successor_id = successor_id
+    run_id = _str_ref(payload.get("run_id"))
+    if run_id is not None:
+        event.run_id = run_id
+    continuation_hash = _str_ref(payload.get("continuation_hash"))
+    if continuation_hash is not None:
+        event.continuation_hash = continuation_hash
+
+
+def _cite_payload_links(session: Session, event: EvidenceEvent, payload: dict[str, Any]) -> None:
+    """One foreign-key row per repeated id in ``checks``, ``items``, and ``returned_ids``.
+
+    Those lists can cite more than one row, so they are not columns on the
+    event. Content hashes are left in the payload: erasure deletes the bytes
+    and the chain keeps the hash.
+    """
+    if event.id is None:
+        return
+    cited = False
+    seen_policies: set[int] = set()
+    checks = payload.get("checks")
+    if isinstance(checks, list):
+        for check in checks:
+            if not isinstance(check, dict):
+                continue
+            policy_id = _int_ref(check.get("policy_id"))
+            if policy_id is None or policy_id in seen_policies:
+                continue
+            seen_policies.add(policy_id)
+            session.add(EvidenceCheck(evidence_event_id=event.id, policy_id=policy_id))
+            cited = True
+    seen_items: set[int] = set()
+    returned = payload.get("returned_ids")
+    if isinstance(returned, list):
+        for value in returned:
+            item_id = _int_ref(value)
+            if item_id is not None:
+                seen_items.add(item_id)
+    items = payload.get("items")
+    if isinstance(items, list):
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            item_id = _int_ref(item.get("id"))
+            if item_id is not None:
+                seen_items.add(item_id)
+    for item_id in seen_items:
+        session.add(EvidenceItem(evidence_event_id=event.id, item_id=item_id))
+        cited = True
+    if cited:
+        session.flush()
 
 
 def _lock_for(engine: Engine) -> threading.Lock:
@@ -131,8 +212,10 @@ class EvidenceWriter:
                 event_hash=canonical_hash(header),
                 recorded_at=recorded_at,
             )
+            _apply_payload_links(event, body)
             session.add(event)
             session.flush()
+            _cite_payload_links(session, event, body)
         return event
 
 
