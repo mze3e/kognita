@@ -132,6 +132,7 @@ source_modules = [
     "kognita.protocols",
     "kognita.registry",
     "kognita.replay",
+    "kognita.reconstruct",
     "kognita.retention",
     "kognita.retrieval",
     "kognita.rules",
