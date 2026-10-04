@@ -290,7 +290,7 @@ From `docs/gap-analysis-bmos.md`:
 - [ ] Replay test: a decision made from a classifier-derived envelope replays identically without calling the classifier
 - [ ] Injection test: text crafted to relabel itself cannot widen permission
 - [ ] Tamper tests: editing a policy row, a retrieved item, or a stored prompt after the fact is detected by replay and by `reconstruct`
-- [ ] Erasure test: erasing retained content leaves the chain verifiable and records the erasure
+- [x] Erasure test: erasing retained content leaves the chain verifiable and records the erasure
 - [x] Outage test: with the evidence store down, the gateway refuses calls in fail-closed mode
 - [ ] Conformance kit passes
 - [ ] Gateway overhead benchmarked (target: under 50 ms per call, excluding classifier inference)

@@ -14,9 +14,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Column, TypeDecorator, UniqueConstraint
+from sqlalchemy import Column, Text, TypeDecorator, UniqueConstraint, event, inspect as sa_inspect
 from sqlalchemy.types import JSON, DateTime
 from sqlmodel import Field, SQLModel
+
+from kognita.canonical import canonical_hash
+from kognita.exceptions import PolicyEditError
 
 from kognita.vocabulary import (
     ActorType,
@@ -120,6 +123,10 @@ class Policy(SQLModel, table=True):
     citation: str = ""
     effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
     effective_to: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    #: Hash of the rule as stored. The writer stamps it. Replay does not trust it:
+    #: a decision pins its own copy of this hash, and an in-place edit is refused
+    #: when the recomputed hash no longer matches the stamp.
+    content_hash: str = Field(default="")
 
     def is_effective(self, at: datetime) -> bool:
         """Whether this policy is in force at ``at`` (half-open interval)."""
@@ -127,6 +134,28 @@ class Policy(SQLModel, table=True):
         end = as_utc(self.effective_to)
         assert start is not None
         return start <= at and (end is None or end > at)
+
+
+def policy_content(policy: Policy) -> dict[str, Any]:
+    """The policy row as evaluated, without the window's closing instant.
+
+    ``effective_to`` is how a row is closed. It is not part of the rule that
+    ran, so superseding a policy does not change the hash a decision pinned.
+    """
+    start = as_utc(policy.effective_from)
+    return {
+        "regime": policy.regime,
+        "rule_type": policy.rule_type,
+        "applies_to": policy.applies_to,
+        "rule": policy.rule,
+        "citation": policy.citation,
+        "effective_from": start.isoformat() if start else None,
+    }
+
+
+def policy_content_hash(policy: Policy) -> str:
+    """Hash of :func:`policy_content`."""
+    return canonical_hash(policy_content(policy))
 
 
 class GovernanceDecision(SQLModel, table=True):
@@ -348,6 +377,37 @@ class Continuation(SQLModel, table=True):
     payload: dict[str, Any] = Field(sa_column=Column(JSON, nullable=False))
 
 
+class RetentionPolicy(SQLModel, table=True):
+    """How long one use case keeps content in the retention store.
+
+    The use-case register is a later release. This row is only the retention
+    period for a use case the caller names. ``retain_days`` of None keeps the
+    content until an explicit erasure.
+    """
+
+    __tablename__ = "retention_policies"
+
+    use_case: str = Field(primary_key=True)
+    retain_days: int | None = None
+
+
+class RetainedContent(SQLModel, table=True):
+    """Content-addressed prompts, responses, and source snapshots.
+
+    Keyed by the same hash the evidence chain records. The body is the content.
+    Erasure deletes the row; the chain keeps the hash and records the erasure.
+    """
+
+    __tablename__ = "retained_content"
+
+    content_hash: str = Field(primary_key=True)
+    kind: str = Field(index=True)
+    use_case: str = Field(default="", index=True)
+    correlation_id: str = Field(default="", index=True)
+    body: str = Field(sa_column=Column(Text, nullable=False))
+    retained_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+
+
 class EntityEdge(SQLModel, table=True):
     """A relationship in the deterministic mirror."""
 
@@ -360,6 +420,47 @@ class EntityEdge(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
 
 
+def _committed(policy: Policy, name: str) -> Any:
+    """The last flushed value of ``name`` when this update changes it."""
+    state = sa_inspect(policy)
+    if name in state.committed_state:
+        return state.committed_state[name]
+    return getattr(policy, name)
+
+
+@event.listens_for(Policy, "before_insert")
+def _stamp_policy_content_hash(_mapper: Any, _connection: Any, target: Policy) -> None:
+    """The stamp is the row's content. A caller-supplied hash is not kept."""
+    target.content_hash = policy_content_hash(target)
+
+
+@event.listens_for(Policy, "before_update")
+def _reject_in_place_policy_edit(_mapper: Any, _connection: Any, target: Policy) -> None:
+    """Refuse to rewrite a policy that is or was in force.
+
+    Setting ``effective_to`` once, from empty, closes the window. A second
+    change to that instant, or any change to the rule itself, is an in-place
+    edit. The replacement is a new row.
+    """
+    state = sa_inspect(target)
+    if "effective_to" in state.committed_state:
+        previous_end = state.committed_state["effective_to"]
+        if previous_end is not None:
+            raise PolicyEditError(
+                "effective_to is already set; changes must be new effective-dated rows"
+            )
+    fresh = policy_content_hash(target)
+    stored = _committed(target, "content_hash") or ""
+    if fresh == stored:
+        return
+    start = as_utc(_committed(target, "effective_from"))
+    if start is not None and start <= utcnow():
+        raise PolicyEditError(
+            "in-place edit of an effective policy; changes must be new effective-dated rows"
+        )
+    target.content_hash = fresh
+
+
 __all__ = [
     "Agent",
     "Policy",
@@ -369,6 +470,10 @@ __all__ = [
     "KnowledgeItem",
     "Entity",
     "EntityEdge",
+    "RetentionPolicy",
+    "RetainedContent",
+    "policy_content",
+    "policy_content_hash",
     "utcnow",
     "as_utc",
 ]

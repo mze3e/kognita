@@ -10,6 +10,22 @@ class ConfigError(KognitaError):
     """Invalid or incomplete configuration."""
 
 
+class PolicyEditError(KognitaError):
+    """An effective policy was edited in place.
+
+    A policy that is or was in force is not rewritten. Closing its window is
+    the one change the row accepts; anything else is a new effective-dated row.
+    """
+
+
+class ReplayMismatch(KognitaError):
+    """A recorded decision does not match an input it pinned."""
+
+
+class RetentionError(KognitaError):
+    """Retained content could not be stored or erased."""
+
+
 class ProviderError(KognitaError):
     """An LLM or embedder provider returned an error."""
 

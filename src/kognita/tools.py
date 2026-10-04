@@ -47,6 +47,7 @@ from kognita.governance import (
     resolve_outcome,
 )
 from kognita.models import Approval, Continuation, RunRecord, as_utc, utcnow
+from kognita.retention import RetentionStore
 from kognita.vocabulary import (
     ActorType,
     ApprovalStatus,
@@ -462,6 +463,7 @@ def _evaluation_from_continuation(payload: Mapping[str, Any], envelope: Envelope
             result=CheckResult(item["result"]),
             citation=item["citation"],
             policy_id=item.get("policy_id"),
+            policy_hash=item.get("policy_hash"),
         )
         for item in payload["checks"]
     )
@@ -526,6 +528,13 @@ def _release_tool(
 ) -> Any:
     data = spec.fn(envelope, evaluation, session)
     actor_type, actor_id = _call_actor(envelope)
+    response_hash = RetentionStore().retain_value(
+        session,
+        data,
+        kind="tool_response",
+        use_case=envelope.purpose,
+        correlation_id=evaluation.request_id,
+    )
     evidence.emit(
         session,
         correlation_id=evaluation.request_id,
@@ -538,6 +547,7 @@ def _release_tool(
             "subjects": envelope.all_subjects(),
             "outcome": evaluation.outcome.value,
             "approval_required": evaluation.approval_required,
+            "response_hash": response_hash,
         },
     )
     evidence.emit(
@@ -552,6 +562,7 @@ def _release_tool(
             "request_id": evaluation.request_id,
             "outcome": evaluation.outcome.value,
             "bytes": len(canonical_json(data)),
+            "response_hash": response_hash,
             "note": "Payload content is not copied to the evidence plane.",
         },
     )

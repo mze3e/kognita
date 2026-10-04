@@ -97,6 +97,7 @@ class EventType(str, Enum):
     APPROVAL = "APPROVAL"
     EGRESS = "EGRESS"
     POLICY_CHANGE = "POLICY_CHANGE"
+    ERASURE = "ERASURE"
 
 
 class ApprovalStatus(str, Enum):

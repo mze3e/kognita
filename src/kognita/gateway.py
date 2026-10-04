@@ -65,6 +65,7 @@ from kognita.governance import (
     record,
     resolve_outcome,
 )
+from kognita.retention import RetentionStore
 from kognita.rules import build_registry
 from kognita.tools import (
     Run,
@@ -237,6 +238,33 @@ def _json_object(text: str) -> dict[str, Any] | None:
     return None
 
 
+def _template_version(headers: Mapping[str, str]) -> str | None:
+    value = headers.get("prompt_template_version") or headers.get("prompt-template-version")
+    return value or None
+
+
+def _reported_model(
+    requested: str, response: Mapping[str, Any] | None
+) -> tuple[str, str | None]:
+    """Model name and version as the provider reported them.
+
+    The request names the model that was asked for. A response ``model`` is the
+    name the provider says it served. ``model_version`` is that field when the
+    provider sends one, otherwise the response ``model`` string. A provider that
+    reports neither leaves the version empty.
+    """
+    if not isinstance(response, dict):
+        return requested, None
+    reported = response.get("model")
+    name = reported if isinstance(reported, str) and reported else requested
+    version = response.get("model_version")
+    if isinstance(version, str) and version:
+        return name, version
+    if isinstance(reported, str) and reported:
+        return name, reported
+    return name, None
+
+
 def _usage(payload: Mapping[str, Any]) -> tuple[int | None, float | None]:
     """Token total and cost, only when the provider response reports them."""
     usage = payload.get("usage")
@@ -405,10 +433,12 @@ class Gateway:
         classifier: Any | None = None,
         transport: Transport | None = None,
         run: Run | None = None,
+        provider: str | None = None,
     ) -> None:
         self.engine = engine
         self.evidence = evidence
         self.upstream = upstream
+        self.provider = provider
         self.client = client
         self.pack = pack if pack is not None else _GatewayPack()
         self.purposes = purposes
@@ -619,6 +649,7 @@ class Gateway:
                     tokens=None,
                     cost_usd=None,
                     run=bound_run,
+                    prompt_template_version=_template_version(headers),
                 )
             return _json_response(
                 403,
@@ -669,6 +700,7 @@ class Gateway:
                 tokens=None,
                 cost_usd=None,
                 run=bound_run,
+                prompt_template_version=_template_version(headers),
             )
             return _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation)
 
@@ -689,6 +721,7 @@ class Gateway:
                 tokens=None,
                 cost_usd=None,
                 run=bound_run,
+                prompt_template_version=_template_version(headers),
             )
             return _json_response(
                 502,
@@ -721,6 +754,9 @@ class Gateway:
             tokens=tokens,
             cost_usd=cost_usd,
             run=bound_run,
+            received_text=upstream_text,
+            response_payload=_json_object(upstream_text),
+            prompt_template_version=_template_version(headers),
         )
         content_type = "application/json"
         for key, value in upstream_headers.items():
@@ -786,8 +822,34 @@ class Gateway:
         tokens: int | None,
         cost_usd: float | None,
         run: Run | None,
+        received_text: str = "",
+        response_payload: Mapping[str, Any] | None = None,
+        prompt_template_version: str | None = None,
     ) -> None:
         local = _is_local(self.upstream)
+        requested = evaluation.envelope.subject_id or ""
+        use_case = evaluation.envelope.purpose
+        model_name, model_version = _reported_model(requested, response_payload if sent else None)
+        provider = self.provider or (urlparse(self.upstream).hostname or self.upstream)
+        store = RetentionStore()
+        prompt_hash = ""
+        response_hash = ""
+        if sent and sent_body:
+            prompt_hash = store.retain_text(
+                session,
+                sent_body.decode("utf-8"),
+                kind="prompt",
+                use_case=use_case,
+                correlation_id=evaluation.request_id,
+            )
+        if sent and received_text:
+            response_hash = store.retain_text(
+                session,
+                received_text,
+                kind="response",
+                use_case=use_case,
+                correlation_id=evaluation.request_id,
+            )
         common: dict[str, Any] = {
             "destination": self.upstream,
             "destination_is_local": local,
@@ -796,6 +858,7 @@ class Gateway:
             "redacted_spans": len(token_map),
             "manifest_hash": canonical_hash(sorted(token_map)) if sent else "",
             "sent": sent,
+            "response_hash": response_hash,
         }
         if response_record is not None:
             common["response_classifier"] = response_record
@@ -813,7 +876,15 @@ class Gateway:
                 actor_type=actor_type,
                 actor_id=actor_id,
                 classification=classification,
-                payload={**common, "sent_bytes": len(sent_body)},
+                payload={
+                    **common,
+                    "sent_bytes": len(sent_body),
+                    "provider": provider,
+                    "model": model_name,
+                    "model_version": model_version,
+                    "prompt_template_version": prompt_template_version,
+                    "prompt_hash": prompt_hash,
+                },
             )
         )
         self._store(

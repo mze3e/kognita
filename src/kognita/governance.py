@@ -18,8 +18,9 @@ to answer a hypothetical.
 """
 from __future__ import annotations
 
+import json
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from typing import Any, Callable, Sequence
 
@@ -29,12 +30,15 @@ from kognita.canonical import canonical_hash, canonical_json
 from kognita.classify import PatternClassifier, classifier_record
 from kognita.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
 from kognita.evidence import EvidenceWriter
+from kognita.exceptions import PolicyEditError
 from kognita.approvals import open_approval
 from kognita.models import (
     Agent,
     Approval,
     GovernanceDecision,
     Policy,
+    as_utc,
+    policy_content_hash,
     utcnow,
 )
 from kognita.rules import Evaluator, build_registry
@@ -198,7 +202,7 @@ def decide(
             continue
         checks.extend(evaluator(policy, context))
 
-    frozen = tuple(checks)
+    frozen = tuple(_pin_policy_hashes(checks, snapshot.policies))
     return Evaluation(
         request_id=request_id or str(uuid.uuid4()),
         outcome=resolve_outcome(frozen),
@@ -208,6 +212,84 @@ def decide(
         as_of=at,
         envelope_hash=envelope_hash(envelope, attrs, frozen),
     )
+
+
+def _pin_policy_hashes(checks: list[Check], policies: tuple[Policy, ...]) -> list[Check]:
+    """Record the hash of each policy row the check evaluated.
+
+    The hash is taken from the row, not from the evaluator. A check that does
+    not name a policy is left alone.
+    """
+    by_id = {policy.id: policy for policy in policies if policy.id is not None}
+    pinned: list[Check] = []
+    for check in checks:
+        policy = by_id.get(check.policy_id) if check.policy_id is not None else None
+        if policy is None:
+            pinned.append(check)
+            continue
+        pinned.append(replace(check, policy_hash=policy_content_hash(policy)))
+    return pinned
+
+
+def _copy_rule(rule: dict[str, Any]) -> dict[str, Any]:
+    """A rule payload that does not alias the row it was copied from."""
+    return json.loads(canonical_json(rule))
+
+
+def supersede_policy(
+    session: Session,
+    policy: Policy,
+    *,
+    at: datetime,
+    rule: dict[str, Any] | None = None,
+    citation: str | None = None,
+    evidence: EvidenceWriter | None = None,
+    actor_id: str = "system",
+    correlation_id: str | None = None,
+) -> Policy:
+    """Close ``policy`` at ``at`` and insert the successor.
+
+    The closed row keeps the rule that already ran. The successor is a new
+    row starting at ``at``. An in-place edit of the closed row is refused.
+    """
+    start = as_utc(policy.effective_from)
+    end = as_utc(policy.effective_to)
+    if start is None or start > at or not policy.is_effective(at):
+        raise PolicyEditError(
+            "policy is not effective at this instant; a policy that has not "
+            "yet come into force can be edited in place"
+        )
+    if end is not None and end <= at:
+        raise PolicyEditError("policy is already closed")
+    policy.effective_to = at
+    successor = Policy(
+        regime=policy.regime,
+        rule_type=policy.rule_type,
+        applies_to=policy.applies_to,
+        rule=_copy_rule(policy.rule if rule is None else rule),
+        citation=policy.citation if citation is None else citation,
+        effective_from=at,
+    )
+    session.add(policy)
+    session.add(successor)
+    session.flush()
+    if evidence is not None:
+        evidence.emit(
+            session,
+            correlation_id=correlation_id or f"policy:{policy.id}",
+            event_type=EventType.POLICY_CHANGE,
+            actor_type=ActorType.HUMAN,
+            actor_id=actor_id,
+            payload={
+                "action": "SUPERSEDE",
+                "policy_id": policy.id,
+                "successor_id": successor.id,
+                "policy_hash": policy_content_hash(policy),
+                "successor_hash": policy_content_hash(successor),
+                "at": at.isoformat(),
+            },
+        )
+    return successor
 
 
 def classifier_derived_envelope(
@@ -382,5 +464,6 @@ __all__ = [
     "registry_checks",
     "purpose_check",
     "classifier_derived_envelope",
+    "supersede_policy",
     "DEFAULT_APPROVAL_TTL",
 ]

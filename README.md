@@ -178,8 +178,8 @@ Kognita is alpha. These are known gaps in v0.2, each scheduled on the [roadmap](
 
 - **The purpose check fails open when no purpose list is configured.** Pass `purposes=` explicitly until it fails closed.
 - **Agent names are self-asserted.** The registry denies unknown names, but nothing yet authenticates that a caller is the agent it claims to be. A request with no agent name skips the registry and is treated as a human.
-- **Model calls are evidenced but not pinned.** Model-call evidence records the destination and redaction manifest, not the model version or hashes of the prompt and response, so model inputs and outputs cannot yet be reproduced later.
-- **Policy rows can be edited in place,** and retrieved items are not content-hashed, so replay can diverge silently if either changes after the fact.
+- **Reconstruction is not built.** Decisions pin policy, retrieval, and model input/output hashes, and the retention store holds the bytes, but `kognita evidence reconstruct` is not implemented.
+- **Gateway degraded mode is not implemented.** If the evidence store is down the gateway refuses the call. A degraded path for local models is still open.
 
 ## Where it's heading
 
@@ -191,7 +191,7 @@ The test every release is measured against:
 
 Planned, not yet built:
 
-- **0.3: Gateways, the Run and replay.** An explicit proxy in front of model providers and MCP servers, so every agent call is authorised and evidenced with no agent code changes; run budgets; durable suspend and resume for approvals; pinned evidence and a reconstruction report.
+- **0.3 still open:** `kognita evidence reconstruct`, degraded gateway mode, and the remaining Tier 0 defects. The gateway, the MCP proxy, run budgets, suspend and resume, and pinned evidence are already in the tree.
 - **0.4: Ingestion, policy language and the client lifecycle.** Passage-level citations, a YAML policy language with diff and validation, a use-case register, risk-based review, a circuit breaker.
 - **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, autonomy levels, evidence-gated promotion and automatic step-down on drift, blast-radius limits, containment.
 - **0.6: Claims and institutional memory.** Typed, sourced, current claims checked before an RM relies on them; approved-source grounding; supervised memory that turns lessons into shared standards; governed business definitions.
