@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Gateway failure mode, per use case. A use case is the purpose string already recorded as `use_case`. The default is `FAIL_CLOSED`: if the evidence store cannot record the call, the gateway refuses it and does not call the provider. `DEGRADED` may proceed only for a local model and content below classification C2 (C2 is client-identifying), and writes the decision and the model evidence once the store accepts writes again. A call is never forwarded without a decision. `kognita serve --failure-mode` sets the mode for `--purpose`.
+
 - Reconstruction report: `kognita evidence reconstruct <interaction_id>` answers the ten reconstruction-test questions from the evidence chain and the retention store. The same command writes JSON and a readable document. It checks the chain and every pinned hash while building the report; a mismatch is a finding and the rest of the report is still written. Questions that belong to origination, RM review capture, and governed client communication are present and marked "not recorded". The report does not re-run the classifier, the model, or a tool.
 
 - Pinned evidence for replay. Every policy check records the hash of the policy row as evaluated, and replay fails if that row's content no longer matches. An in-place edit of an effective policy is refused; a change is a new effective-dated row via `supersede_policy`. `RETRIEVAL` records a content hash and embedding model for each returned item. `MODEL_CALL` records the provider, the model name and version reported by the provider, the prompt template version, and hashes of the prompt as sent and the response as received. `TOOL_CALL` and `EGRESS` record a hash of the tool response. Prompts, responses, and source snapshots live in a content-addressed retention store keyed by those hashes, with a retention period per use case. Erasure deletes the bytes and appends an `ERASURE` event; the chain keeps the hash and still verifies.
@@ -27,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The purpose check fails closed when the purpose list is missing or empty. A configured list still allows a listed purpose and denies an unlisted one.
+
+- Degraded mode, while the evidence store is down, no longer lets a classification header keep a call below C2. The header is a floor. The classifier runs on the JSON values that would be forwarded after parsing, so client-identifying content outside the extracted prompt, including the OpenAI `user` field, is refused and the provider is not called. A unicode escape of that content cannot stay below C2.
 
 - `HUMAN_APPROVAL` no longer retrieves or returns data from `ask`. A held tool call or retrieval runs only after the approval is actually granted; a denied approval does not execute.
 
