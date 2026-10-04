@@ -273,8 +273,8 @@ Silent pass-through when governance is unavailable is not an option.
 ### Tier 0 Defect Closure
 
 From `docs/gap-analysis-bmos.md`:
-- [ ] HUMAN_APPROVAL withholds nothing (item 2)
-- [ ] Approval loop unclosed (item 2)
+- [x] HUMAN_APPROVAL withholds nothing (item 2)
+- [x] Approval loop unclosed (item 2)
 - [ ] Entitlements fail open
 - [ ] SqliteVecIndex silent failure
 - [ ] Classifiers never invoked (item 4 makes them load-bearing)

@@ -91,7 +91,7 @@ from kognita.models import (
 )
 from kognita.retrieval import Retrieved, index_item, reindex, retrieve
 from kognita.rules import CORE_RULES, build_registry, rule
-from kognita.tools import ToolRegistry, ToolRun, run_governed
+from kognita.tools import Run, ToolRegistry, ToolRun, continue_run, run_governed
 from kognita.vectors import NumpyVectorIndex, SqliteVecIndex, default_index
 from kognita.vocabulary import (
     ActorType,
@@ -207,7 +207,9 @@ __all__ = [
     # tools and broker
     "ToolRegistry",
     "ToolRun",
+    "Run",
     "run_governed",
+    "continue_run",
     "ask",
     "BrokerAnswer",
     "default_route_resolver",
