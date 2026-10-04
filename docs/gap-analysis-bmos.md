@@ -93,6 +93,12 @@ required and leaves the enforcement entirely to the integrator.
 as *visible in every zone*. In a library whose stated posture is fail-closed, the default belongs the
 other way round.
 
+**Drift.** The paragraph above does not match the code. `entitled_items` excludes an item whose
+`zones` are missing or empty, and a caller with no zone does not match a listed zone. A
+classification or ceiling the filter cannot evaluate does not admit the item. An item that lists
+the caller's zone, at or below that ceiling, is still returned. The decision path was not changed.
+The proof is `tests/test_entitlements.py`. The citation `retrieval.py:73-79` is the pre-fix function.
+
 **4. The entitlement filter is not in SQL.** The same function issues `select(KnowledgeItem)` for the
 whole table and filters in Python. Security-wise it is still *before scoring*, which is the part that
 matters; but the plan's performance claim — "entitlement filter in SQL before embedding/scoring" — is
@@ -238,7 +244,8 @@ that fails until it is closed, and it exercises the pack contract against a seco
 shaped domain for the first time.
 
 **C. Tier 0 fixes.** Two are behaviour changes needing a new conformance invariant — `run_governed`
-must not execute on `HUMAN_APPROVAL`, and empty `zones` must mean "no zone". Seven are mechanical.
+must not execute on `HUMAN_APPROVAL`, and empty `zones` must mean "no zone" (the empty-zones half
+is already what `entitled_items` does; the item 3 note is stale). Seven are mechanical.
 Two need a decision first: moving `recorded_at` into the hashed header is correct but **invalidates
 every existing chain** (acceptable at alpha, but stated rather than slipped in), and making
 `Classifier` authoritative rather than decorative is a design choice, not a fix.
