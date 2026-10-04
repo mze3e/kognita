@@ -293,7 +293,7 @@ From `docs/gap-analysis-bmos.md`:
 - [x] Erasure test: erasing retained content leaves the chain verifiable and records the erasure
 - [x] Outage test: with the evidence store down, the gateway refuses calls in fail-closed mode
 - [x] Conformance kit passes
-- [ ] Gateway overhead benchmarked (target: under 50 ms per call, excluding classifier inference)
+- [x] Gateway overhead benchmarked (target: under 50 ms per call, excluding classifier inference)
 - [x] Flagship demo runs end-to-end in under 3 minutes from scaffold
 - [x] Import contracts pass: the core still has no optional dependencies
 - [ ] All Tier 0 defects closed
