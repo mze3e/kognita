@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- AI gateway: `kognita serve --provider openai-compatible --upstream <url>`. Agents point `base_url` at the local gateway. The proxy speaks the OpenAI-compatible wire format, decides before any byte is forwarded, redacts through the egress guard, restores redacted spans, and classifies the response. `MODEL_CALL` and `EGRESS` evidence record hashes and references, not content. Token totals and cost reported by the provider count against the Run budget. A call with no agent name is denied, and an agent name is accepted only when the bound client configuration lists it. An approved system trigger is admitted and is not treated as a human. If the evidence store cannot record the call, the gateway refuses it.
+
 - Classifier-derived envelopes at the decision boundary. `ask` classifies the question, and `run_governed` classifies free-text arguments, using the pattern classifier already in core. Typed attributes stay authoritative. Identity, purpose and subject references are not taken from the text. The recorded model, version, label, calibrated confidence and input hash are what `decide()` replays, so replay does not run the classifier. Below a `CLASSIFIER_CONFIDENCE` policy threshold the outcome is ESCALATE, never ALLOW. A citation that acted on a classifier label names both the policy rule and that label.
 
 - `Run` budgets on `run_governed` and `ask`: call count, wall clock, classification ceiling, and cost when the caller already knows it. Token spend is recorded when the call site supplies it. Exceeding a budget is a DENY that cites that budget, and the consumption is written to the evidence chain.
