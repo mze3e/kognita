@@ -14,7 +14,16 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import Column, Text, TypeDecorator, UniqueConstraint, event, inspect as sa_inspect
+from sqlalchemy import (
+    Column,
+    ForeignKey,
+    Integer,
+    Text,
+    TypeDecorator,
+    UniqueConstraint,
+    event,
+    inspect as sa_inspect,
+)
 from sqlalchemy.types import JSON, DateTime
 from sqlmodel import Field, SQLModel
 
@@ -296,6 +305,17 @@ class EvidenceEvent(SQLModel, table=True):
     prev_hash: str = ""
     event_hash: str = Field(default="", index=True)
     recorded_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+    #: Row ids the payload cites. Same names as the payload keys. Not part of
+    #: the hashed header: the payload already carries them, and the hash covers
+    #: that payload. SQLite rejects a value with no target row. Content hashes
+    #: are not columns here; erasure removes the bytes and the chain keeps the hash.
+    approval_id: int | None = Field(default=None, index=True, foreign_key="approvals.id")
+    policy_id: int | None = Field(default=None, index=True, foreign_key="policies.id")
+    successor_id: int | None = Field(default=None, index=True, foreign_key="policies.id")
+    run_id: str | None = Field(default=None, index=True, foreign_key="runs.id")
+    continuation_hash: str | None = Field(
+        default=None, index=True, foreign_key="continuations.content_hash"
+    )
 
 
 class KnowledgeItem(SQLModel, table=True):
@@ -362,7 +382,11 @@ class RunRecord(SQLModel, table=True):
     tokens_used: int = 0
     cost_usd_used: float = 0.0
     started_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
-    continuation_hash: str | None = None
+    #: Handle into ``continuations``. Null when the run is not suspended.
+    #: The evidence payload records the same hash.
+    continuation_hash: str | None = Field(
+        default=None, foreign_key="continuations.content_hash"
+    )
 
 
 class Continuation(SQLModel, table=True):
@@ -406,6 +430,46 @@ class RetainedContent(SQLModel, table=True):
     correlation_id: str = Field(default="", index=True)
     body: str = Field(sa_column=Column(Text, nullable=False))
     retained_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+
+
+class EvidenceCheck(SQLModel, table=True):
+    """One ``policy_id`` from an evidence payload's ``checks``.
+
+    A decision cites more than one policy, so the id cannot be a single column
+    on ``evidence_events``. The payload stays the hashed body. This row is the
+    foreign key. Deleting the event removes the citation. Deleting the policy
+    does not.
+    """
+
+    __tablename__ = "evidence_checks"
+
+    evidence_event_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("evidence_events.id", ondelete="CASCADE"),
+            primary_key=True,
+        ),
+    )
+    policy_id: int = Field(foreign_key="policies.id", primary_key=True)
+
+
+class EvidenceItem(SQLModel, table=True):
+    """One knowledge-item id from an evidence payload.
+
+    ``RETRIEVAL`` stores that id on ``items[].id`` and again in ``returned_ids``.
+    One row per id. The payload stays the hashed body.
+    """
+
+    __tablename__ = "evidence_items"
+
+    evidence_event_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("evidence_events.id", ondelete="CASCADE"),
+            primary_key=True,
+        ),
+    )
+    item_id: int = Field(foreign_key="knowledge_items.id", primary_key=True)
 
 
 class EntityEdge(SQLModel, table=True):
@@ -467,6 +531,8 @@ __all__ = [
     "GovernanceDecision",
     "Approval",
     "EvidenceEvent",
+    "EvidenceCheck",
+    "EvidenceItem",
     "KnowledgeItem",
     "Entity",
     "EntityEdge",

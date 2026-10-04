@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Evidence payload references are foreign keys, enforced on the SQLite connection `make_engine` opens. `approval_id`, `policy_id`, `successor_id`, `run_id`, and `continuation_hash` are columns on `evidence_events`. Each `checks[].policy_id` is a row in `evidence_checks`, and each `items[].id` / `returned_ids` entry is a row in `evidence_items`. A dangling id is rejected. `runs.continuation_hash` references `continuations`. Content hashes stay in the payload: erasure deletes the bytes and the chain keeps the hash. `approvals.decision_id` and `entity_edges.from_entity_id` / `to_entity_id` already enforced; they are unchanged.
+
 - `index_item` and `reindex` maintain `knowledge_vec` when given a `SqliteVecIndex`. Replacing an embedding deletes that item's previous vec row before the new one is inserted. `search` only reads. A hit is the candidate whose id was stored on the row, so two items that share embedding bytes stay distinct, and the vec `rowid` is not `item.id`. The score is `1 - distance`. A KNN with no rows, or only neighbours outside the candidate set, returns `[]`. `retrieve` still ranks that empty vector result lexically.
 
 - The purpose check fails closed when the purpose list is missing or empty. A configured list still allows a listed purpose and denies an unlisted one. `kognita serve` takes a repeatable `--purposes` allowlist for the AI gateway, separate from `--purpose`. The MCP root config takes a `purposes` list, separate from `actor.purpose`. With neither list set, those processes deny the call.
