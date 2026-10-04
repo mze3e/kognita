@@ -4,10 +4,13 @@ Deliberately small. This is not an application; it is the handful of things an
 operator needs when the application is not running: what is installed, is the
 evidence intact, and give me the artifact the auditor asked for.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import subprocess
 import sys
 from datetime import datetime, timezone
 from importlib import import_module
@@ -81,8 +84,12 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print()
     print(f"vector backend           {_vector_backend()}")
 
-    graph_ok = _probe("kuzu") != "not installed" and _probe("graphiti_core") != "not installed"
-    print(f"graph engine             {'available' if graph_ok else 'unavailable (pip install kognita[graph])'}")
+    graph_ok = (
+        _probe("kuzu") != "not installed" and _probe("graphiti_core") != "not installed"
+    )
+    print(
+        f"graph engine             {'available' if graph_ok else 'unavailable (pip install kognita[graph])'}"
+    )
 
     if args.db:
         print()
@@ -108,7 +115,9 @@ def cmd_evidence_verify(args: argparse.Namespace) -> int:
         except ChainBreak as exc:
             print(f"BROKEN: {exc}", file=sys.stderr)
             return 1
-        print(f"export verified: {count} events, head {payload.get('head_hash', '')[:16]}")
+        print(
+            f"export verified: {count} events, head {payload.get('head_hash', '')[:16]}"
+        )
         return 0
 
     engine = make_engine(args.db)
@@ -165,6 +174,55 @@ def _cmd_serve_mcp(args: argparse.Namespace) -> int:
         return 2
     proxy = McpProxy.from_config(config)
     proxy.serve(args.host, args.port)
+    return 0
+
+
+def _template_dir(name: str) -> Path | None:
+    """Where ``scaffold`` reads a template from.
+
+    An installed wheel carries the template next to this module. A checkout
+    keeps it under ``examples/`` so the core package does not import it.
+    """
+    candidates = (
+        Path(__file__).resolve().parent / "_templates" / name,
+        Path(__file__).resolve().parents[2] / "examples" / name,
+    )
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
+def cmd_scaffold(args: argparse.Namespace) -> int:
+    """Copy a template and seed its SQLite policy and evidence store."""
+    source = _template_dir(args.template)
+    if source is None:
+        print(f"unknown template {args.template}", file=sys.stderr)
+        return 2
+    dest = Path(args.dest)
+    if dest.exists() and any(dest.iterdir()):
+        print(f"{dest} is not empty", file=sys.stderr)
+        return 2
+    dest.mkdir(parents=True, exist_ok=True)
+    for path in sorted(source.iterdir()):
+        if not path.is_file() or path.name.startswith("."):
+            continue
+        if path.suffix in {".pyc", ".db"}:
+            continue
+        shutil.copy2(path, dest / path.name)
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(dest / "app.py"),
+            "seed",
+            "--db",
+            str(dest / "kognita.db"),
+        ],
+        cwd=dest,
+    )
+    if completed.returncode != 0:
+        return completed.returncode
+    print(f"created {dest}")
     return 0
 
 
@@ -245,8 +303,12 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--db", default="kognita.db", help="policy and evidence store")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8080)
-    serve.add_argument("--principal", default="", help="bound principal when the request has none")
-    serve.add_argument("--purpose", default="", help="bound purpose when the request has none")
+    serve.add_argument(
+        "--principal", default="", help="bound principal when the request has none"
+    )
+    serve.add_argument(
+        "--purpose", default="", help="bound purpose when the request has none"
+    )
     serve.add_argument("--actor-location", default="")
     serve.add_argument(
         "--agent",
@@ -261,6 +323,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="approved system trigger this client may present; repeatable",
     )
     serve.set_defaults(func=cmd_serve)
+
+    scaffold = sub.add_parser("scaffold", help="create an application from a template")
+    scaffold.add_argument(
+        "--template",
+        required=True,
+        choices=["governed-agent"],
+        help="application template",
+    )
+    scaffold.add_argument(
+        "--dest",
+        default="governed-agent",
+        help="directory to create (default: governed-agent)",
+    )
+    scaffold.set_defaults(func=cmd_scaffold)
 
     return parser
 
