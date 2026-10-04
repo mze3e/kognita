@@ -77,6 +77,18 @@ class SqliteVecIndex:
     Constructing this raises if the extension cannot be loaded, so a deployment
     opts in explicitly rather than silently falling back and wondering later why
     a query is slow.
+
+    ``index_item`` and ``reindex`` store the embedding bytes and, when given
+    this index, write them here. ``upsert`` deletes that item's previous vec
+    row before inserting the new one. SQLite assigns the vec ``rowid``. The
+    knowledge item id is stored beside the vector as ``knowledge_id``; it is
+    not the rowid.
+
+    ``search`` only reads. The KNN is unfiltered. A neighbour whose
+    ``knowledge_id`` is not in the candidate set is dropped. No rows, or only
+    outside neighbours, yields ``[]``. A hit is ``(item, 1 - distance)`` for
+    the candidate with that ``knowledge_id``, so two items that share embedding
+    bytes stay distinct.
     """
 
     name = "sqlite-vec"
@@ -99,6 +111,60 @@ class SqliteVecIndex:
             ) from exc
         self.connection = connection
         self.table = table
+        self._dimension: int | None = None
+
+    def _table_exists(self) -> bool:
+        row = self.connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE name = ?",
+            (self.table,),
+        ).fetchone()
+        return row is not None
+
+    def vector_dimension(self) -> int | None:
+        """Dimension of the vec table, if it exists and holds a row."""
+        if self._dimension is not None:
+            return self._dimension
+        if not self._table_exists():
+            return None
+        row = self.connection.execute(
+            f"SELECT embedding FROM {self.table} LIMIT 1"
+        ).fetchone()
+        if not row or row[0] is None:
+            return None
+        return len(row[0]) // 4
+
+    def reset(self) -> None:
+        """Drop the vec table. The next ``upsert`` creates it again."""
+        self.connection.execute(f"DROP TABLE IF EXISTS {self.table}")
+        self._dimension = None
+
+    def _ensure_table(self, dimension: int) -> None:
+        if self._table_exists():
+            return
+        self.connection.execute(
+            f"CREATE VIRTUAL TABLE {self.table} USING vec0("
+            f"embedding float[{int(dimension)}], +knowledge_id integer)"
+        )
+        self._dimension = dimension
+
+    def upsert(self, item_id: int, embedding: bytes) -> None:
+        """Replace the vec row for ``item_id`` with ``embedding``.
+
+        Any previous vector for this item is deleted first, so it cannot
+        remain in a later KNN. The new ``rowid`` is assigned by SQLite.
+        """
+        blob = bytes(embedding)
+        if len(blob) == 0 or len(blob) % 4 != 0:
+            raise RuntimeError("stored embedding must be float32 bytes")
+        self._ensure_table(len(blob) // 4)
+        self.connection.execute(
+            f"DELETE FROM {self.table} WHERE knowledge_id = ?",
+            (int(item_id),),
+        )
+        self.connection.execute(
+            f"INSERT INTO {self.table}(embedding, knowledge_id) VALUES (?, ?)",
+            (blob, int(item_id)),
+        )
 
     def search(
         self,
@@ -107,24 +173,44 @@ class SqliteVecIndex:
         *,
         top_k: int = 5,
     ) -> list[tuple[Any, float]]:
-        # The entitlement filter has already reduced the candidate set, so the
-        # KNN runs over ids the caller is permitted to see and nothing else.
+        """Return candidate hits, nearest first. This method does not write.
+
+        ``[]`` means the KNN returned no rows, or every returned neighbour
+        is outside this candidate set. A returned ``knowledge_id`` is the
+        candidate with that item id, scored ``1 - distance``.
+        """
         import struct
 
-        by_id = {item.id: item for item, _ in candidates if hasattr(item, "id")}
+        if not candidates or not self._table_exists():
+            return []
+
+        by_id: dict[int, Any] = {}
+        for item, _vector in candidates:
+            item_id = getattr(item, "id", None)
+            if item_id is None:
+                continue
+            by_id.setdefault(int(item_id), item)
         if not by_id:
             return []
+
         packed = struct.pack(f"{len(query_vector)}f", *query_vector)
         rows = self.connection.execute(
-            f"SELECT rowid, distance FROM {self.table} "
+            f"SELECT knowledge_id, distance FROM {self.table} "
             "WHERE embedding MATCH ? ORDER BY distance LIMIT ?",
-            (packed, top_k),
+            (packed, max(0, top_k)),
         ).fetchall()
+        if not rows:
+            return []
+
         results: list[tuple[Any, float]] = []
-        for rowid, distance in rows:
-            item = by_id.get(rowid)
-            if item is not None:
-                results.append((item, 1.0 - float(distance)))
+        seen: set[int] = set()
+        for knowledge_id, distance in rows:
+            item_id = int(knowledge_id)
+            item = by_id.get(item_id)
+            if item is None or item_id in seen:
+                continue
+            seen.add(item_id)
+            results.append((item, 1.0 - float(distance)))
         return results
 
 

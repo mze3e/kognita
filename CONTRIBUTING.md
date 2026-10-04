@@ -9,7 +9,7 @@ Thank you for your interest in contributing to Kognita! Here's how to get starte
 ```bash
 git clone https://github.com/mze3e/kognita.git
 cd kognita
-uv sync --extra dev
+uv sync --extra dev --extra vec
 ```
 
 ## Running tests
@@ -24,7 +24,7 @@ The test suite includes:
 - **BMOS conformance** (`test_bmos_conformance.py`) — two-signature and proposal-apply patterns
 - **Packaging tests** (`test_packaging.py`) — import layering and architecture contracts
 
-Every test is offline (no network, no API keys). The core is tested with zero optional dependencies.
+Every test is offline (no network, no API keys). The decision engine imports none of the optional extras. The SqliteVecIndex tests load the existing `[vec]` extra, which is why the sync above installs it.
 
 ## Code architecture
 

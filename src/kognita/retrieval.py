@@ -210,8 +210,12 @@ def index_item(
     zones: Sequence[str] = (),
     source_label: str = "",
     published_at: datetime | None = None,
+    index: Any = None,
 ) -> KnowledgeItem:
-    """Embed and store one item with the attributes entitlement is decided on."""
+    """Embed and store one item with the attributes entitlement is decided on.
+
+    ``index``, when given, records the same embedding bytes in the vec table.
+    """
     from kognita.embedding import to_bytes
     from kognita.models import utcnow
 
@@ -230,21 +234,41 @@ def index_item(
     )
     session.add(item)
     session.flush()
+    if index is not None:
+        if item.id is None or item.embedding is None:
+            raise RuntimeError(
+                "index_item could not record the embedding in the vec index"
+            )
+        index.upsert(item.id, item.embedding)
     return item
 
 
-def reindex(session: Session, embedder: Embedder) -> int:
-    """Re-embed every item, e.g. after switching embedder. Returns how many."""
+def reindex(session: Session, embedder: Embedder, *, index: Any = None) -> int:
+    """Re-embed every item, e.g. after switching embedder. Returns how many.
+
+    ``index``, when given, replaces each item's vec row so the previous
+    vector does not stay in the KNN.
+    """
     from kognita.embedding import to_bytes
 
-    items = session.exec(select(KnowledgeItem)).all()
+    items = list(session.exec(select(KnowledgeItem)).all())
+    staged: list[tuple[KnowledgeItem, bytes]] = []
     for item in items:
-        item.embedding = to_bytes(embedder.embed(f"{item.title} {item.body}"))
+        staged.append((item, to_bytes(embedder.embed(f"{item.title} {item.body}"))))
+    if index is not None and staged:
+        dimension = len(staged[0][1]) // 4
+        current = index.vector_dimension()
+        if current is not None and current != dimension:
+            index.reset()
+    for item, blob in staged:
+        item.embedding = blob
         item.embedding_dim = embedder.dimension
         item.embedding_model = embedder.model
         session.add(item)
+        if index is not None and item.id is not None:
+            index.upsert(item.id, blob)
     session.flush()
-    return len(items)
+    return len(staged)
 
 
 __all__ = [
