@@ -82,11 +82,13 @@ def _client(**overrides) -> ClientConfiguration:
 
 def _gateway(engine, evidence, upstream, **kwargs) -> Gateway:
     client = kwargs.pop("client", _client())
+    purposes = kwargs.pop("purposes", (client.purpose,))
     return Gateway(
         engine=engine,
         evidence=evidence,
         upstream=UPSTREAM,
         client=client,
+        purposes=purposes,
         transport=upstream,
         **kwargs,
     )

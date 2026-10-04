@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The purpose check fails closed when the purpose list is missing or empty. A configured list still allows a listed purpose and denies an unlisted one.
+
 - `HUMAN_APPROVAL` no longer retrieves or returns data from `ask`. A held tool call or retrieval runs only after the approval is actually granted; a denied approval does not execute.
 
 ## [0.2.0] - 2026-09-04

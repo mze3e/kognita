@@ -111,12 +111,14 @@ def _proxy(engine, evidence, upstream, **kwargs) -> McpProxy:
         (BackendServer(name="notes", url=NOTES),),
     )
     pack = kwargs.pop("pack", _Pack())
+    purposes = kwargs.pop("purposes", (client.purpose,))
     return McpProxy(
         engine=engine,
         evidence=evidence,
         servers=servers,
         client=client,
         pack=pack,
+        purposes=purposes,
         transport=upstream,
         **kwargs,
     )
