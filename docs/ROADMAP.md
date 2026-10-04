@@ -292,7 +292,7 @@ From `docs/gap-analysis-bmos.md`:
 - [x] Tamper tests: editing a policy row, a retrieved item, or a stored prompt after the fact is detected by replay and by `reconstruct`
 - [x] Erasure test: erasing retained content leaves the chain verifiable and records the erasure
 - [x] Outage test: with the evidence store down, the gateway refuses calls in fail-closed mode
-- [ ] Conformance kit passes
+- [x] Conformance kit passes
 - [ ] Gateway overhead benchmarked (target: under 50 ms per call, excluding classifier inference)
 - [x] Flagship demo runs end-to-end in under 3 minutes from scaffold
 - [x] Import contracts pass: the core still has no optional dependencies
