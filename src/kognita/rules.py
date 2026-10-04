@@ -60,6 +60,26 @@ def _as_set(value: Any) -> set[str]:
     return {str(value)}
 
 
+def _citation(policy: Any, context: RuleContext, *keys: str) -> str:
+    """The policy rule, and the classifier label when the check acted on one.
+
+    A check that did not read a classifier-filled attribute keeps the policy
+    citation alone. Typed attributes are not a classifier label.
+    """
+    citation = policy.citation or ""
+    record = context.attributes.get("classifier")
+    if not isinstance(record, dict):
+        return citation
+    filled = {str(item) for item in record.get("filled") or []}
+    if not filled.intersection(keys):
+        return citation
+    label = record.get("label")
+    confidence = record.get("confidence")
+    if label is None or confidence is None:
+        return citation
+    return f"{citation} — classified as {label} at {float(confidence):.2f}"
+
+
 # ── Primitives ───────────────────────────────────────────────────────────────
 
 
@@ -87,7 +107,7 @@ def attribute_allowlist(policy: Any, context: RuleContext) -> list[Check]:
                 check=f"{policy.rule_type}: {key} {actual!s}",
                 regime=policy.regime,
                 result=CheckResult.PASS if ok else on_violation,
-                citation=policy.citation,
+                citation=_citation(policy, context, key),
                 policy_id=policy.id,
             )
         )
@@ -113,7 +133,7 @@ def attribute_denylist(policy: Any, context: RuleContext) -> list[Check]:
                 check=f"{policy.rule_type}: {key} {actual!s}",
                 regime=policy.regime,
                 result=on_violation if hit else CheckResult.PASS,
-                citation=policy.citation,
+                citation=_citation(policy, context, key),
                 policy_id=policy.id,
             )
         )
@@ -196,6 +216,43 @@ def two_signature_approval(policy: Any, context: RuleContext) -> list[Check]:
             regime=policy.regime,
             result=CheckResult.REQUIRES_HUMAN,
             citation=policy.citation,
+            policy_id=policy.id,
+        )
+    ]
+
+
+@rule("CLASSIFIER_CONFIDENCE")
+def classifier_confidence(policy: Any, context: RuleContext) -> list[Check]:
+    """Escalate when a classifier label is less sure than the policy allows.
+
+    Rule payload::
+
+        {"min_confidence": 0.8}
+
+    The threshold is the policy. Below it the check is ESCALATE, so the
+    decision cannot be ALLOW. A request with no classifier record was not
+    classified; the rule does not invent uncertainty for a typed envelope.
+    A missing threshold is itself uncertain and escalates.
+    """
+    record = context.attributes.get("classifier")
+    if not isinstance(record, dict) or "confidence" not in record:
+        return []
+    label = record.get("label")
+    confidence = float(record["confidence"])
+    citation = (
+        f"{policy.citation} — classified as {label} at {confidence:.2f}"
+    )
+    threshold = policy.rule.get("min_confidence")
+    if threshold is None or confidence < float(threshold):
+        result = CheckResult.ESCALATE
+    else:
+        result = CheckResult.PASS
+    return [
+        Check(
+            check=policy.rule_type,
+            regime=policy.regime,
+            result=result,
+            citation=citation,
             policy_id=policy.id,
         )
     ]

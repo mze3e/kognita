@@ -73,6 +73,7 @@ from kognita.evidence import (
 from kognita.exceptions import ConfigError, KognitaError, ProviderError
 from kognita.governance import (
     PolicySnapshot,
+    classifier_derived_envelope,
     decide,
     load_snapshot,
     record,
@@ -163,6 +164,7 @@ __all__ = [
     "decide",
     "record",
     "resolve_outcome",
+    "classifier_derived_envelope",
     "PolicySnapshot",
     "load_snapshot",
     # rules
