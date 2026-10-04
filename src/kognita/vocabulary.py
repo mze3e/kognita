@@ -116,3 +116,16 @@ class EgressDecision(str, Enum):
     ALLOW = "ALLOW"
     REDACT = "REDACT"
     DENY = "DENY"
+
+
+class FailureMode(str, Enum):
+    """What the gateway does when a call cannot be written to the evidence store.
+
+    ``FAIL_CLOSED`` refuses the call. ``DEGRADED`` may proceed only for a local
+    model and content that is not client-identifying, and writes the decision
+    and the model evidence once the store accepts them. Nothing in this set
+    forwards a call without a decision.
+    """
+
+    FAIL_CLOSED = "FAIL_CLOSED"
+    DEGRADED = "DEGRADED"

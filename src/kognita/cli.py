@@ -22,6 +22,7 @@ from kognita.db import create_all, make_engine, session_scope
 from kognita.evidence import ChainBreak, EvidenceWriter, export_chain, verify_chain
 from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration, Gateway
+from kognita.vocabulary import FailureMode
 from kognita.mcp import McpProxy, load_root_config
 from kognita.reconstruct import reconstruct, render_reconstruction
 
@@ -286,6 +287,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
             system_triggers=frozenset(args.system_trigger or []),
             actor_location=args.actor_location,
         ),
+        failure_mode={args.purpose: args.failure_mode},
     )
     gateway.serve(args.host, args.port)
     return 0
@@ -358,6 +360,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     serve.add_argument(
         "--purpose", default="", help="bound purpose when the request has none"
+    )
+    serve.add_argument(
+        "--failure-mode",
+        default=FailureMode.FAIL_CLOSED.value,
+        choices=[mode.value for mode in FailureMode],
+        help=(
+            "when the evidence store is unavailable, for --purpose. "
+            "FAIL_CLOSED refuses the call. DEGRADED allows a local model "
+            "with no client-identifying content and records it once the store recovers"
+        ),
     )
     serve.add_argument("--actor-location", default="")
     serve.add_argument(

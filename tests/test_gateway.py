@@ -1,8 +1,10 @@
 """The AI gateway: decide, redact, restore, and refuse when evidence cannot be written.
 
-Covers roadmap 0.3 item 3 and the two gateway identity rules. A denial does not
-call the upstream. An allow redacts, forwards, restores, and classifies the
-response. Evidence holds hashes, not the prompt or the answer.
+Covers roadmap 0.3 items 3 and 9, and the two gateway identity rules. A denial
+does not call the upstream. An allow redacts, forwards, restores, and classifies
+the response. Evidence holds hashes, not the prompt or the answer. Fail closed
+refuses when the store is down. Degraded proceeds only for a local model with
+no client data, and records that call once the store recovers.
 """
 from __future__ import annotations
 
@@ -11,7 +13,8 @@ import threading
 from datetime import datetime, timezone
 from http.client import HTTPConnection
 
-from sqlmodel import select
+import pytest
+from sqlmodel import Session, select
 
 from kognita.canonical import canonical_json, hash_text
 from kognita.classify import (
@@ -26,13 +29,15 @@ from kognita.gateway import ClientConfiguration, Gateway
 from kognita.models import EvidenceEvent, GovernanceDecision, Policy, RunRecord
 from kognita.registry import register, set_kill_switch
 from kognita.tools import Run
-from kognita.vocabulary import ActorType, CheckResult, EventType, Outcome
+from kognita.vocabulary import ActorType, CheckResult, EventType, FailureMode, Outcome
 
 SECRET = "ana@example.org"
 MODEL = "gateway-model"
 PATH = "/v1/chat/completions"
 EFFECTIVE = datetime(2026, 1, 1, tzinfo=timezone.utc)
 UPSTREAM = "https://api.openai.com"
+LOCAL_UPSTREAM = "http://127.0.0.1:11434"
+BENIGN = "market hours are public"
 
 
 class _Upstream:
@@ -82,10 +87,11 @@ def _client(**overrides) -> ClientConfiguration:
 
 def _gateway(engine, evidence, upstream, **kwargs) -> Gateway:
     client = kwargs.pop("client", _client())
+    url = kwargs.pop("upstream_url", UPSTREAM)
     return Gateway(
         engine=engine,
         evidence=evidence,
-        upstream=UPSTREAM,
+        upstream=url,
         client=client,
         transport=upstream,
         **kwargs,
@@ -578,3 +584,309 @@ def test_serve_command_is_the_openai_compatible_gateway():
     assert bound.system_trigger == ["nightly-refresh"]
     assert bound.mcp is False
     assert bound.provider == "openai-compatible"
+    assert args.failure_mode == "FAIL_CLOSED"
+    assert bound.failure_mode == "FAIL_CLOSED"
+
+    degraded = build_parser().parse_args(
+        [
+            "serve",
+            "--provider",
+            "openai-compatible",
+            "--upstream",
+            LOCAL_UPSTREAM,
+            "--purpose",
+            "COLLABORATION",
+            "--failure-mode",
+            "DEGRADED",
+        ]
+    )
+    assert degraded.failure_mode == "DEGRADED"
+    assert degraded.purpose == "COLLABORATION"
+
+
+class _Toggle(EvidenceWriter):
+    """Evidence writes fail until ``down`` is cleared."""
+
+    def __init__(self, engine) -> None:
+        super().__init__(engine)
+        self.down = True
+
+    def emit(self, session, **kwargs):
+        if self.down:
+            raise ConnectionError("evidence store unavailable")
+        return super().emit(session, **kwargs)
+
+
+class _Unread:
+    """A store that cannot be read, so no decision can be made."""
+
+    def exec(self, *args, **kwargs):
+        raise ConnectionError("evidence store unavailable")
+
+    def get(self, *args, **kwargs):
+        raise ConnectionError("evidence store unavailable")
+
+    def rollback(self) -> None:
+        return None
+
+
+def _degraded(engine, evidence, transport, **kwargs) -> Gateway:
+    return _gateway(
+        engine,
+        evidence,
+        transport,
+        failure_mode={"COLLABORATION": FailureMode.DEGRADED},
+        **kwargs,
+    )
+
+
+def _stored(engine) -> tuple[list[GovernanceDecision], list[EvidenceEvent]]:
+    with Session(engine) as fresh:
+        decisions = list(fresh.exec(select(GovernanceDecision)).all())
+        events = list(
+            fresh.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
+        )
+    return decisions, events
+
+
+def test_fail_closed_refuses_when_the_store_is_down_and_does_not_call_the_provider(
+    session, engine
+):
+    """Fail closed is the default and the explicit setting. An unlisted use case is too."""
+    _register(session)
+    session.commit()
+    upstream = _Upstream(b"{}")
+    explicit = _gateway(
+        engine,
+        _Down(engine),
+        upstream,
+        upstream_url=LOCAL_UPSTREAM,
+        failure_mode={"COLLABORATION": FailureMode.FAIL_CLOSED},
+    )
+    response = explicit.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _body(BENIGN),
+        session=session,
+    )
+    assert response.status == 503
+    assert upstream.calls == []
+    assert json.loads(response.body)["error"] == "evidence store unavailable"
+
+    other = _Upstream(b"{}")
+    unlisted = _gateway(
+        engine,
+        _Down(engine),
+        other,
+        upstream_url=LOCAL_UPSTREAM,
+        failure_mode={"OTHER": FailureMode.DEGRADED},
+    )
+    missed = unlisted.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent", "purpose": "COLLABORATION"},
+        _body(BENIGN),
+        session=session,
+    )
+    assert missed.status == 503
+    assert other.calls == []
+
+
+def test_degraded_local_call_without_client_data_is_evidenced_when_the_store_recovers(
+    session, engine
+):
+    _register(session)
+    session.commit()
+    answer = json.dumps(
+        {"model": "local-model", "choices": [{"message": {"content": "the market is open"}}]}
+    ).encode()
+    upstream = _Upstream(answer)
+    writer = _Toggle(engine)
+    gateway = _degraded(engine, writer, upstream, upstream_url=LOCAL_UPSTREAM)
+    response = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _body(BENIGN),
+        session=session,
+    )
+
+    assert response.status == 200
+    assert response.evaluation is not None
+    assert response.evaluation.outcome is Outcome.ALLOW
+    assert json.loads(response.body)["choices"][0]["message"]["content"] == "the market is open"
+    assert len(upstream.calls) == 1
+    assert upstream.calls[0]["url"] == f"{LOCAL_UPSTREAM}{PATH}"
+    assert _stored(engine) == ([], [])
+
+    writer.down = False
+    recovered = gateway.handle("GET", PATH, {}, b"")
+    assert recovered.status == 405
+    assert len(upstream.calls) == 1
+
+    decisions, events = _stored(engine)
+    request_id = response.evaluation.request_id
+    assert [row.request_id for row in decisions] == [request_id]
+    assert decisions[0].outcome is Outcome.ALLOW
+    assert decisions[0].purpose == "COLLABORATION"
+    kinds = [event.event_type for event in events if event.correlation_id == request_id]
+    assert EventType.POLICY_DECISION in kinds
+    assert EventType.MODEL_CALL in kinds
+    model_call = next(event for event in events if event.event_type is EventType.MODEL_CALL)
+    assert model_call.payload["destination_is_local"] is True
+    assert model_call.payload["prompt_hash"]
+    assert model_call.payload["sent"] is True
+    stored = canonical_json([event.payload for event in events])
+    assert BENIGN not in stored
+    assert "the market is open" not in stored
+    with Session(engine) as fresh:
+        assert verify_chain(fresh) == len(events)
+
+
+def test_degraded_refuses_a_remote_model_and_client_data_without_calling_the_provider(
+    session, engine
+):
+    _register(session)
+    session.commit()
+    modes = {"COLLABORATION": FailureMode.DEGRADED}
+    writer = _Down(engine)
+
+    remote_upstream = _Upstream(b"{}")
+    remote = _gateway(
+        engine,
+        writer,
+        remote_upstream,
+        upstream_url=UPSTREAM,
+        failure_mode=modes,
+    )
+    remote_response = remote.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _body(BENIGN),
+        session=session,
+    )
+    assert remote_upstream.calls == []
+    assert remote_response.status == 403
+    assert remote_response.evaluation is not None
+    assert remote_response.evaluation.outcome is Outcome.DENY
+    assert any(
+        check.check == "FAILURE_MODE" and "remote model" in check.citation
+        for check in remote_response.evaluation.checks
+    )
+
+    local_upstream = _Upstream(b"{}")
+    local = _gateway(
+        engine,
+        writer,
+        local_upstream,
+        upstream_url=LOCAL_UPSTREAM,
+        failure_mode=modes,
+    )
+    client_data = local.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _body(f"Email {SECRET} about the notes"),
+        session=session,
+    )
+    assert local_upstream.calls == []
+    assert client_data.status == 403
+    assert client_data.evaluation is not None
+    assert client_data.evaluation.outcome is Outcome.DENY
+    assert client_data.evaluation.attributes["classification"] == "C2"
+    assert any(
+        check.check == "FAILURE_MODE" and check.result is CheckResult.FAIL
+        for check in client_data.evaluation.checks
+    )
+    assert SECRET not in client_data.body.decode()
+
+
+def test_degraded_use_case_still_calls_a_remote_model_when_the_store_is_up(session, evidence):
+    _register(session)
+    session.commit()
+    upstream = _Upstream(
+        json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+    )
+    gateway = _degraded(session.get_bind(), evidence, upstream)
+    response = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _body(BENIGN),
+        session=session,
+    )
+    assert response.status == 200
+    assert len(upstream.calls) == 1
+    assert response.evaluation is not None
+    assert _events(session, response.evaluation.request_id)
+
+
+def test_no_failure_mode_forwards_without_a_decision(session, engine):
+    assert {mode.value for mode in FailureMode} == {"FAIL_CLOSED", "DEGRADED"}
+    with pytest.raises(ValueError):
+        _gateway(
+            engine,
+            _Down(engine),
+            _Upstream(b"{}"),
+            failure_mode={"COLLABORATION": "passthrough"},
+        )
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(
+            [
+                "serve",
+                "--provider",
+                "openai-compatible",
+                "--upstream",
+                UPSTREAM,
+                "--failure-mode",
+                "passthrough",
+            ]
+        )
+
+    _register(session)
+    session.add(
+        Policy(
+            regime="INTERNAL",
+            rule_type="PROHIBITED",
+            rule={"description": "model calls barred", "on_violation": "fail"},
+            citation="No external model calls",
+            effective_from=EFFECTIVE,
+        )
+    )
+    session.commit()
+    denied_upstream = _Upstream(b"{}")
+    denied = _degraded(
+        engine,
+        _Down(engine),
+        denied_upstream,
+        upstream_url=LOCAL_UPSTREAM,
+    )
+    denied_response = denied.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _body(BENIGN),
+        session=session,
+    )
+    assert denied_upstream.calls == []
+    assert denied_response.status == 403
+    assert denied_response.evaluation is not None
+    assert denied_response.evaluation.outcome is Outcome.DENY
+    assert any(
+        check.citation == "No external model calls" for check in denied_response.evaluation.checks
+    )
+
+    unread_upstream = _Upstream(b"{}")
+    unread = _degraded(engine, _Down(engine), unread_upstream, upstream_url=LOCAL_UPSTREAM)
+    unread_response = unread.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _body(BENIGN),
+        session=_Unread(),
+    )
+    assert unread_response.status == 503
+    assert unread_upstream.calls == []
+    assert json.loads(unread_response.body)["error"] == "evidence store unavailable"

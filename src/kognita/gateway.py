@@ -32,13 +32,19 @@ behaviour they already have.
 - Until agents carry their own credentials, an agent name is accepted only
   when the bound client configuration lists it.
 
-If the evidence store cannot record the call, the gateway refuses it. A
-silent forward is not a failure mode this module implements.
+The failure mode is set per use case. A use case is the purpose string on the
+envelope; the retention store already records that string as ``use_case``.
+The default is fail closed: if the evidence store cannot record the call, the
+gateway refuses it. Degraded mode may proceed only for a local model and
+content that is not client-identifying, and writes the decision and the model
+evidence once the store accepts them. A call is never forwarded without a
+decision. If the policy snapshot cannot be read, every mode refuses.
 """
 from __future__ import annotations
 
 import json
 import sys
+import threading
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping, Sequence
@@ -83,7 +89,9 @@ from kognita.vocabulary import (
     Classification,
     EgressDecision,
     EventType,
+    FailureMode,
     Outcome,
+    classification_rank,
 )
 
 _FORWARDED_HEADERS = frozenset({"authorization", "content-type", "accept"})
@@ -99,6 +107,42 @@ class _UpstreamUnavailable(KognitaError):
 
 class _RunNotFound(KognitaError):
     """The request named a run that is not in the store."""
+
+
+@dataclass
+class _DeferredModel:
+    """What :meth:`Gateway._emit` needs once the evidence store accepts writes."""
+
+    decision: EgressDecision
+    token_map: dict[str, str]
+    sent: bool
+    sent_body: bytes
+    actor_type: ActorType
+    actor_id: str
+    response_record: dict[str, Any] | None
+    tokens: int | None
+    cost_usd: float | None
+    received_text: str = ""
+    response_payload: dict[str, Any] | None = None
+    prompt_template_version: str | None = None
+
+
+@dataclass
+class _DeferredEvidence:
+    """A decision, and the model evidence of a call that already proceeded.
+
+    Held in the gateway process until the evidence store accepts writes. The
+    bytes are what the model was sent and what it returned, so the retained
+    hashes match a call that was recorded at the time.
+    """
+
+    evaluation: Evaluation
+    classification: Classification
+    decided_at: datetime
+    decision_budget: dict[str, Any] | None
+    run: Run | None = None
+    save_run: bool = False
+    model: _DeferredModel | None = None
 
 
 @dataclass(frozen=True)
@@ -417,8 +461,102 @@ def _json_response(status: int, payload: Mapping[str, Any], **extra: Any) -> Gat
     )
 
 
+def _denied(evaluation: Evaluation) -> GatewayResponse:
+    return _json_response(
+        403,
+        {
+            "outcome": evaluation.outcome.value,
+            "request_id": evaluation.request_id,
+            "checks": [check.to_dict() for check in evaluation.basis()],
+        },
+        evaluation=evaluation,
+    )
+
+
+def _copy_run(run: Run) -> Run:
+    return replace(run, approvals_pending=list(run.approvals_pending))
+
+
+def _client_data(classification: Classification) -> bool:
+    """True at C2 and above. C2 is client-identifying; C3 is tighter."""
+    return classification_rank(classification) >= classification_rank(Classification.C2)
+
+
+def _degraded_may_proceed(upstream: str, classification: Classification) -> bool:
+    """Degraded mode proceeds only for a local model with no client data."""
+    return _is_local(upstream) and not _client_data(classification)
+
+
+def _refuse_degraded(
+    evaluation: Evaluation, classification: Classification, upstream: str
+) -> Evaluation:
+    """The decision that refuses a degraded call the store cannot record."""
+    extra: list[Check] = []
+    if not _is_local(upstream):
+        extra.append(
+            Check(
+                check="FAILURE_MODE",
+                regime="INTERNAL",
+                result=CheckResult.FAIL,
+                citation=(
+                    "a remote model may not be called while the evidence store is unavailable"
+                ),
+            )
+        )
+    if _client_data(classification):
+        extra.append(
+            Check(
+                check="FAILURE_MODE",
+                regime="INTERNAL",
+                result=CheckResult.FAIL,
+                citation=(
+                    f"{classification.value} content is client-identifying or tighter and "
+                    "may not be sent while the evidence store is unavailable"
+                ),
+            )
+        )
+    return _with_checks(evaluation, extra)
+
+
+def _model_evidence(
+    *,
+    decision: EgressDecision,
+    token_map: Mapping[str, str],
+    sent: bool,
+    sent_body: bytes,
+    actor_type: ActorType,
+    actor_id: str,
+    response_record: dict[str, Any] | None,
+    tokens: int | None,
+    cost_usd: float | None,
+    received_text: str = "",
+    response_payload: Mapping[str, Any] | None = None,
+    prompt_template_version: str | None = None,
+) -> _DeferredModel:
+    payload = dict(response_payload) if response_payload is not None else None
+    return _DeferredModel(
+        decision=decision,
+        token_map=dict(token_map),
+        sent=sent,
+        sent_body=sent_body,
+        actor_type=actor_type,
+        actor_id=actor_id,
+        response_record=response_record,
+        tokens=tokens,
+        cost_usd=cost_usd,
+        received_text=received_text,
+        response_payload=payload,
+        prompt_template_version=prompt_template_version,
+    )
+
+
 class Gateway:
-    """OpenAI-compatible proxy. ``transport`` replaces the network in tests."""
+    """OpenAI-compatible proxy. ``transport`` replaces the network in tests.
+
+    ``failure_mode`` maps a use case to :class:`~kognita.vocabulary.FailureMode`.
+    A use case is the purpose string on the envelope. A use case with no entry
+    fails closed.
+    """
 
     def __init__(
         self,
@@ -434,6 +572,7 @@ class Gateway:
         transport: Transport | None = None,
         run: Run | None = None,
         provider: str | None = None,
+        failure_mode: Mapping[str, FailureMode | str] | None = None,
     ) -> None:
         self.engine = engine
         self.evidence = evidence
@@ -446,6 +585,13 @@ class Gateway:
         self.classifier = classifier if classifier is not None else PatternClassifier()
         self.transport = transport if transport is not None else _urllib_transport
         self.run = run
+        # Keys are use cases. A use case is the purpose string on the envelope.
+        # A use case with no entry fails closed. There is no pass-through mode.
+        self.failure_mode = {
+            str(use_case): FailureMode(mode) for use_case, mode in (failure_mode or {}).items()
+        }
+        self._deferred: list[_DeferredEvidence] = []
+        self._deferred_lock = threading.Lock()
 
     def serve(self, host: str = "127.0.0.1", port: int = 8080) -> None:
         """Serve ``http://{host}:{port}/v1`` until the process stops.
@@ -505,6 +651,7 @@ class Gateway:
         run: Run | None = None,
     ) -> GatewayResponse:
         """Govern one request. A supplied ``session`` is left for the caller to commit."""
+        self._flush_deferred()
         if session is None:
             try:
                 with session_scope(self.engine) as owned:
@@ -632,39 +779,87 @@ class Gateway:
                 ],
             )
 
+        actor_type = _actor_type(agent_name, trigger)
+        actor_id = _actor_id(agent_name, trigger)
+        template_version = _template_version(headers)
+        decision_budget = _budget_payload(bound_run) if bound_run is not None else None
+        deferred: _DeferredEvidence | None = None
+
         if evaluation.outcome is not Outcome.ALLOW:
-            evaluation = self._record(session, evaluation, classification, bound_run, now)
+            egress_model = None
             if egress_decision is EgressDecision.DENY:
-                self._emit(
-                    session,
-                    evaluation,
-                    classification=classification,
+                egress_model = _model_evidence(
                     decision=EgressDecision.DENY,
                     token_map={},
                     sent=False,
                     sent_body=b"",
-                    actor_type=_actor_type(agent_name, trigger),
-                    actor_id=_actor_id(agent_name, trigger),
+                    actor_type=actor_type,
+                    actor_id=actor_id,
                     response_record=None,
                     tokens=None,
                     cost_usd=None,
-                    run=bound_run,
-                    prompt_template_version=_template_version(headers),
+                    prompt_template_version=template_version,
                 )
-            return _json_response(
-                403,
-                {
-                    "outcome": evaluation.outcome.value,
-                    "request_id": evaluation.request_id,
-                    "checks": [check.to_dict() for check in evaluation.basis()],
-                },
-                evaluation=evaluation,
-            )
+            try:
+                evaluation = self._record(session, evaluation, classification, bound_run, now)
+                if egress_model is not None:
+                    self._store(
+                        lambda: self._emit_model(
+                            session, evaluation, classification, egress_model, bound_run
+                        )
+                    )
+            except _EvidenceStoreUnavailable:
+                if not self._is_degraded(purpose):
+                    raise
+                self._abandon(session)
+                self._enqueue(
+                    _DeferredEvidence(
+                        evaluation=evaluation,
+                        classification=classification,
+                        decided_at=now,
+                        decision_budget=decision_budget,
+                        run=_copy_run(bound_run) if bound_run is not None else None,
+                        save_run=False,
+                        model=egress_model,
+                    )
+                )
+            return _denied(evaluation)
 
-        evaluation = self._record(session, evaluation, classification, bound_run, now)
-        if bound_run is not None:
-            _consume(bound_run, cost_usd=None, tokens=None, now=now)
-            self._store(lambda: _save_run(session, bound_run))
+        consumed = False
+        try:
+            evaluation = self._record(session, evaluation, classification, bound_run, now)
+            if bound_run is not None:
+                _consume(bound_run, cost_usd=None, tokens=None, now=now)
+                consumed = True
+                self._store(lambda: _save_run(session, bound_run))
+        except _EvidenceStoreUnavailable:
+            if not self._is_degraded(purpose):
+                raise
+            self._abandon(session)
+            if not _degraded_may_proceed(self.upstream, classification):
+                refused = _refuse_degraded(evaluation, classification, self.upstream)
+                self._enqueue(
+                    _DeferredEvidence(
+                        evaluation=refused,
+                        classification=classification,
+                        decided_at=now,
+                        decision_budget=decision_budget,
+                        model=None,
+                    )
+                )
+                return _denied(refused)
+            if bound_run is not None and not consumed:
+                _consume(bound_run, cost_usd=None, tokens=None, now=now)
+            deferred = self._enqueue(
+                _DeferredEvidence(
+                    evaluation=evaluation,
+                    classification=classification,
+                    decided_at=now,
+                    decision_budget=decision_budget,
+                    run=_copy_run(bound_run) if bound_run is not None else None,
+                    save_run=bound_run is not None,
+                )
+            )
 
         raw = body.decode("utf-8")
         if egress_decision is EgressDecision.REDACT:
@@ -677,6 +872,7 @@ class Gateway:
         }
         if "content-type" not in forward:
             forward["content-type"] = "application/json"
+        forward_decision = egress_decision or EgressDecision.ALLOW
 
         try:
             status, upstream_headers, upstream_body = self.transport(
@@ -686,42 +882,52 @@ class Gateway:
                 sent_body,
             )
         except _UpstreamUnavailable:
-            self._emit(
+            self._record_model_evidence(
                 session,
                 evaluation,
                 classification=classification,
-                decision=egress_decision or EgressDecision.ALLOW,
-                token_map=token_map,
-                sent=True,
-                sent_body=sent_body,
-                actor_type=_actor_type(agent_name, trigger),
-                actor_id=_actor_id(agent_name, trigger),
-                response_record=None,
-                tokens=None,
-                cost_usd=None,
+                deferred=deferred,
+                model=_model_evidence(
+                    decision=forward_decision,
+                    token_map=token_map,
+                    sent=True,
+                    sent_body=sent_body,
+                    actor_type=actor_type,
+                    actor_id=actor_id,
+                    response_record=None,
+                    tokens=None,
+                    cost_usd=None,
+                    prompt_template_version=template_version,
+                ),
                 run=bound_run,
-                prompt_template_version=_template_version(headers),
+                decision_budget=decision_budget,
+                decided_at=now,
             )
             return _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation)
 
         try:
             upstream_text = upstream_body.decode("utf-8")
         except UnicodeDecodeError:
-            self._emit(
+            self._record_model_evidence(
                 session,
                 evaluation,
                 classification=classification,
-                decision=egress_decision or EgressDecision.ALLOW,
-                token_map=token_map,
-                sent=True,
-                sent_body=sent_body,
-                actor_type=_actor_type(agent_name, trigger),
-                actor_id=_actor_id(agent_name, trigger),
-                response_record=None,
-                tokens=None,
-                cost_usd=None,
+                deferred=deferred,
+                model=_model_evidence(
+                    decision=forward_decision,
+                    token_map=token_map,
+                    sent=True,
+                    sent_body=sent_body,
+                    actor_type=actor_type,
+                    actor_id=actor_id,
+                    response_record=None,
+                    tokens=None,
+                    cost_usd=None,
+                    prompt_template_version=template_version,
+                ),
                 run=bound_run,
-                prompt_template_version=_template_version(headers),
+                decision_budget=decision_budget,
+                decided_at=now,
             )
             return _json_response(
                 502,
@@ -739,24 +945,28 @@ class Gateway:
         tokens, cost_usd = _usage(restored_payload) if restored_payload else (None, None)
         if bound_run is not None and (tokens is not None or cost_usd is not None):
             _apply_usage(bound_run, tokens=tokens, cost_usd=cost_usd)
-            self._store(lambda: _save_run(session, bound_run))
-        self._emit(
+        self._record_model_evidence(
             session,
             evaluation,
             classification=classification,
-            decision=egress_decision or EgressDecision.ALLOW,
-            token_map=token_map,
-            sent=True,
-            sent_body=sent_body,
-            actor_type=_actor_type(agent_name, trigger),
-            actor_id=_actor_id(agent_name, trigger),
-            response_record=response_record,
-            tokens=tokens,
-            cost_usd=cost_usd,
+            deferred=deferred,
+            model=_model_evidence(
+                decision=forward_decision,
+                token_map=token_map,
+                sent=True,
+                sent_body=sent_body,
+                actor_type=actor_type,
+                actor_id=actor_id,
+                response_record=response_record,
+                tokens=tokens,
+                cost_usd=cost_usd,
+                received_text=upstream_text,
+                response_payload=_json_object(upstream_text),
+                prompt_template_version=template_version,
+            ),
             run=bound_run,
-            received_text=upstream_text,
-            response_payload=_json_object(upstream_text),
-            prompt_template_version=_template_version(headers),
+            decision_budget=decision_budget,
+            decided_at=now,
         )
         content_type = "application/json"
         for key, value in upstream_headers.items():
@@ -770,6 +980,127 @@ class Gateway:
             evaluation=evaluation,
             response_classifier=response_record,
         )
+
+    def _is_degraded(self, use_case: str) -> bool:
+        return self.failure_mode.get(use_case, FailureMode.FAIL_CLOSED) is FailureMode.DEGRADED
+
+    def _abandon(self, session: Session) -> None:
+        """Drop a write the store did not accept, so a later commit cannot keep it."""
+        session.rollback()
+
+    def _enqueue(self, item: _DeferredEvidence) -> _DeferredEvidence:
+        with self._deferred_lock:
+            self._deferred.append(item)
+        return item
+
+    def _flush_deferred(self) -> None:
+        """Write calls that proceeded while the store was down, if it accepts them now."""
+        with self._deferred_lock:
+            if not self._deferred:
+                return
+            pending = list(self._deferred)
+            try:
+                with session_scope(self.engine) as session:
+                    for item in pending:
+                        self._write_deferred(session, item)
+            except _EvidenceStoreUnavailable:
+                return
+            written = {id(item) for item in pending}
+            self._deferred = [item for item in self._deferred if id(item) not in written]
+
+    def _write_deferred(self, session: Session, item: _DeferredEvidence) -> None:
+        if item.save_run and item.run is not None:
+            run = item.run
+            self._store(lambda: _save_run(session, run))
+        evaluation = item.evaluation
+        classification = item.classification
+        self._store(
+            lambda: record(
+                session,
+                evaluation,
+                evidence=self.evidence,
+                classification=classification,
+                budget=item.decision_budget,
+                now=item.decided_at,
+            )
+        )
+        model = item.model
+        if model is not None:
+            self._store(
+                lambda: self._emit_model(session, evaluation, classification, model, item.run)
+            )
+
+    def _emit_model(
+        self,
+        session: Session,
+        evaluation: Evaluation,
+        classification: Classification,
+        model: _DeferredModel,
+        run: Run | None,
+    ) -> None:
+        self._emit(
+            session,
+            evaluation,
+            classification=classification,
+            decision=model.decision,
+            token_map=model.token_map,
+            sent=model.sent,
+            sent_body=model.sent_body,
+            actor_type=model.actor_type,
+            actor_id=model.actor_id,
+            response_record=model.response_record,
+            tokens=model.tokens,
+            cost_usd=model.cost_usd,
+            run=run,
+            received_text=model.received_text,
+            response_payload=model.response_payload,
+            prompt_template_version=model.prompt_template_version,
+        )
+
+    def _record_model_evidence(
+        self,
+        session: Session,
+        evaluation: Evaluation,
+        *,
+        classification: Classification,
+        deferred: _DeferredEvidence | None,
+        model: _DeferredModel,
+        run: Run | None,
+        decision_budget: dict[str, Any] | None,
+        decided_at: datetime,
+    ) -> None:
+        """Record model evidence now, or keep it with the deferred decision.
+
+        Fail closed raises when the store cannot take the write. Degraded keeps
+        the decision and this evidence together until the store recovers.
+        """
+        if deferred is not None:
+            if run is not None:
+                deferred.run = _copy_run(run)
+                deferred.save_run = True
+            deferred.model = model
+            return
+        try:
+            if run is not None and (model.tokens is not None or model.cost_usd is not None):
+                self._store(lambda: _save_run(session, run))
+            self._store(
+                lambda: self._emit_model(session, evaluation, classification, model, run)
+            )
+        except _EvidenceStoreUnavailable:
+            if not self._is_degraded(evaluation.envelope.purpose):
+                raise
+            self._abandon(session)
+            self._enqueue(
+                _DeferredEvidence(
+                    evaluation=evaluation,
+                    classification=classification,
+                    decided_at=decided_at,
+                    decision_budget=decision_budget,
+                    run=_copy_run(run) if run is not None else None,
+                    save_run=run is not None,
+                    model=model,
+                )
+            )
 
     def _bind_run(
         self, session: Session, headers: Mapping[str, str], run: Run | None
