@@ -212,6 +212,7 @@ def test_wall_clock_cost_classification_and_tokens(harness):
                 EvidenceEvent.event_type == EventType.POLICY_DECISION,
             )
         ).one()
+        recorded_tokens = recorded.payload["budget"]["tokens_used"]
         session.commit()
 
     sensitive, sensitive_calls = _registry(Classification.C3)
@@ -238,7 +239,7 @@ def test_wall_clock_cost_classification_and_tokens(harness):
     assert over_tokens.outcome is Outcome.DENY
     assert any(check.citation == "max_tokens" for check in over_tokens.evaluation.basis())
     assert metered.tokens_used == 4
-    assert recorded.payload["budget"]["tokens_used"] == 4
+    assert recorded_tokens == 4
     assert above.outcome is Outcome.DENY
     assert any(check.citation == "classification_ceiling" for check in above.evaluation.basis())
     assert sensitive_calls == []

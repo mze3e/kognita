@@ -274,7 +274,7 @@ def ask(
         evaluation,
         evidence=evidence,
         budget=_budget_payload(run) if run is not None else None,
-        open_approval=already_granted is None,
+        create_approval=already_granted is None,
         now=at,
     )
 

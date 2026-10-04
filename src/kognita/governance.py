@@ -217,7 +217,7 @@ def record(
     approval_ttl: timedelta = DEFAULT_APPROVAL_TTL,
     now: datetime | None = None,
     budget: dict[str, Any] | None = None,
-    open_approval: bool = True,
+    create_approval: bool = True,
 ) -> Evaluation:
     """Persist a decision, evidence it, and open an approval if one is required.
 
@@ -270,7 +270,7 @@ def record(
         payload=payload,
     )
 
-    if evaluation.outcome == Outcome.HUMAN_APPROVAL and open_approval:
+    if evaluation.outcome == Outcome.HUMAN_APPROVAL and create_approval:
         subjects = envelope.all_subjects()
         scope = f"{envelope.tool} · " + (
             ", ".join(f"{k}={v}" for k, v in sorted(subjects.items())) or "no subject"
