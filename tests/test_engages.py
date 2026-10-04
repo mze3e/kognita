@@ -10,7 +10,7 @@ evaluated. This test adds no method and changes no decision.
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, get_protocol_members
+from typing import Any
 
 import pytest
 
@@ -125,8 +125,11 @@ def _prohibited(evaluation):
 
 
 def test_engages_is_on_the_domain_pack_protocol():
-    """The protocol names engages, and the packs the suite already runs implement it."""
-    assert "engages" in get_protocol_members(DomainPack)
+    """The protocol names engages, and the packs the suite already runs implement it.
+
+    ``__protocol_attrs__`` is the member set ``isinstance`` consults on Python 3.12.
+    """
+    assert "engages" in DomainPack.__protocol_attrs__
     assert isinstance(_Pack(True), DomainPack)
     assert isinstance(dp.DemoPack(), DomainPack)
     assert isinstance(bp.BMOSPack(), DomainPack)
