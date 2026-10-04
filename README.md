@@ -125,6 +125,18 @@ result.decision   # REDACT
 
 **Governed tools and questions.** `run_governed()` is the only path to a registered tool: decide, record, and only then execute, with tool-call and egress evidence. `ask()` answers a question from entitled, cited sources only, and when it refuses, the basis for refusing is the answer.
 
+## Continuous Learning and Drift
+
+Kognita is designed to capture not just permissions but outcomes, so agents and workflows improve over time:
+
+**Outcome metrics per use case.** Each workflow registers one primary metric (cycle time, decision quality, reliability) with a baseline and target. Kognita computes these from the evidence it records: how long from trigger to final decision, RM edit and rejection rates, exception handling. A Knowledge Lead owns the quality standard and approves improvements to it.
+
+**Autonomy earns its expansion.** Raising an agent's autonomy level requires evidence thresholds on those metrics. An agent that maintains quality ≥ 95%, exceptions < 5% and full traceability can move to the next level; if metrics degrade, it steps back automatically. Quality is tracked as trends per agent and model version, so gradual drift is caught before a hard breach.
+
+**Institutional memory.** A pattern in RM corrections or outcomes becomes a *proposed change* to the shared standard. The Knowledge Lead approves it; it becomes a new dated version. Each output records which version produced it, so learning is versioned and reproducible, never edited in place.
+
+These close the loop: every correction and outcome feeds back into the next decision, so one RM's lesson improves all subsequent RMs' guidance.
+
 ## Domain packs
 
 The core is domain-blind. A pack supplies what it cannot know: what a request's *attributes* are, and how to load the *subjects* it refers to.
@@ -181,8 +193,8 @@ Planned, not yet built:
 
 - **0.3: Gateways, the Run and replay.** An explicit proxy in front of model providers and MCP servers, so every agent call is authorised and evidenced with no agent code changes; run budgets; durable suspend and resume for approvals; pinned evidence and a reconstruction report.
 - **0.4: Ingestion, policy language and the client lifecycle.** Passage-level citations, a YAML policy language with diff and validation, a use-case register, risk-based review, a circuit breaker.
-- **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, autonomy levels, blast-radius limits, containment.
-- **0.6: Claims.** Typed, sourced, current claims checked before an RM relies on them.
+- **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, autonomy levels, evidence-gated promotion and automatic step-down on drift, blast-radius limits, containment.
+- **0.6: Claims and institutional memory.** Typed, sourced, current claims checked before an RM relies on them; approved-source grounding; supervised memory that turns lessons into shared standards; governed business definitions.
 - **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
 
 The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-framework.md](docs/control-framework.md) (40 domains) and [docs/wealth-ai-control-framework.md](docs/wealth-ai-control-framework.md) (70 controls).
