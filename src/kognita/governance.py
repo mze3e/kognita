@@ -216,6 +216,8 @@ def record(
     classification: Classification = Classification.C1,
     approval_ttl: timedelta = DEFAULT_APPROVAL_TTL,
     now: datetime | None = None,
+    budget: dict[str, Any] | None = None,
+    create_approval: bool = True,
 ) -> Evaluation:
     """Persist a decision, evidence it, and open an approval if one is required.
 
@@ -244,6 +246,20 @@ def record(
     session.add(decision)
     session.flush()
 
+    # Consumption is evidence of the call, not an input to the decision. Keeping
+    # it out of the envelope hash means a budget counter cannot retarget an
+    # approval onto a different request.
+    payload: dict[str, Any] = {
+        "envelope": envelope.to_dict(),
+        "attributes": evaluation.attributes,
+        "outcome": evaluation.outcome.value,
+        "checks": [c.to_dict() for c in evaluation.checks],
+        "envelope_hash": evaluation.envelope_hash,
+        "as_of": evaluation.as_of.isoformat(),
+    }
+    if budget is not None:
+        payload["budget"] = budget
+
     evidence.emit(
         session,
         correlation_id=evaluation.request_id,
@@ -251,17 +267,10 @@ def record(
         actor_type=ActorType.SYSTEM,
         actor_id="governance-pdp",
         classification=classification,
-        payload={
-            "envelope": envelope.to_dict(),
-            "attributes": evaluation.attributes,
-            "outcome": evaluation.outcome.value,
-            "checks": [c.to_dict() for c in evaluation.checks],
-            "envelope_hash": evaluation.envelope_hash,
-            "as_of": evaluation.as_of.isoformat(),
-        },
+        payload=payload,
     )
 
-    if evaluation.outcome == Outcome.HUMAN_APPROVAL:
+    if evaluation.outcome == Outcome.HUMAN_APPROVAL and create_approval:
         subjects = envelope.all_subjects()
         scope = f"{envelope.tool} · " + (
             ", ".join(f"{k}={v}" for k, v in sorted(subjects.items())) or "no subject"

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Run` budgets on `run_governed` and `ask`: call count, wall clock, classification ceiling, and cost when the caller already knows it. Token spend is recorded when the call site supplies it. Exceeding a budget is a DENY that cites that budget, and the consumption is written to the evidence chain.
+- Durable suspend and resume for `HUMAN_APPROVAL`. A hold checkpoints at the policy decision and stores a content-hash continuation; `continue_run(run_id, approvals_resolved={approval_id: True/False})` resumes it. Evidence records the decision requested, then approved or rejected, then resumed.
+
+### Fixed
+
+- `HUMAN_APPROVAL` no longer retrieves or returns data from `ask`. A held tool call or retrieval runs only after the approval is actually granted; a denied approval does not execute.
+
 ## [0.2.0] - 2026-09-04
 
 ### Added

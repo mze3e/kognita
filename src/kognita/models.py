@@ -310,6 +310,44 @@ class Entity(SQLModel, table=True):
     )
 
 
+class RunRecord(SQLModel, table=True):
+    """One run's budgets and counters.
+
+    The continuation itself is not stored here. ``continuation_hash`` is a
+    content-hash handle into :class:`Continuation`; rehydration is a fetch by
+    that hash, so the run row stays small.
+    """
+
+    __tablename__ = "runs"
+
+    id: str = Field(primary_key=True)
+    max_calls: int | None = None
+    max_tokens: int | None = None
+    max_cost_usd: float | None = None
+    wall_clock_seconds: float | None = None
+    classification_ceiling: str | None = None
+    approvals_pending: list[int] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    calls_used: int = 0
+    tokens_used: int = 0
+    cost_usd_used: float = 0.0
+    started_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    continuation_hash: str | None = None
+
+
+class Continuation(SQLModel, table=True):
+    """Content-addressed store for a suspended run.
+
+    Keyed by the hash of the payload. The run record holds only that hash.
+    """
+
+    __tablename__ = "continuations"
+
+    content_hash: str = Field(primary_key=True)
+    payload: dict[str, Any] = Field(sa_column=Column(JSON, nullable=False))
+
+
 class EntityEdge(SQLModel, table=True):
     """A relationship in the deterministic mirror."""
 
