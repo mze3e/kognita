@@ -38,7 +38,13 @@ from kognita.approvals import (
 from kognita.canonical import canonical_hash, canonical_json
 from kognita.envelope import Check, Envelope, Evaluation, envelope_hash
 from kognita.evidence import EvidenceWriter
-from kognita.governance import PolicySnapshot, decide, load_snapshot, record
+from kognita.governance import (
+    PolicySnapshot,
+    classifier_derived_envelope,
+    decide,
+    load_snapshot,
+    record,
+)
 from kognita.models import Approval, Continuation, RunRecord, as_utc, utcnow
 from kognita.vocabulary import (
     ActorType,
@@ -519,6 +525,15 @@ def _release_tool(
     return data
 
 
+def _argument_text(envelope: Envelope) -> str:
+    """String arguments, in insertion order. Non-strings are not prose to classify."""
+    parts: list[str] = []
+    for value in envelope.arguments.values():
+        if isinstance(value, str) and value.strip():
+            parts.append(value)
+    return "\n".join(parts)
+
+
 def run_governed(
     session: Session,
     envelope: Envelope,
@@ -548,6 +563,15 @@ def run_governed(
     subjects = pack.load_subjects(envelope, session)
     attributes = pack.resolve_attributes(envelope, subjects)
     snap = snapshot if snapshot is not None else load_snapshot(session, as_of=as_of)
+    argument_text = _argument_text(envelope)
+    if argument_text:
+        # Free-text arguments have no typed classification. A caller-supplied
+        # classification attribute still wins; identity is not read from the text.
+        envelope, attributes = classifier_derived_envelope(
+            argument_text,
+            envelope,
+            attributes=attributes,
+        )
 
     evaluation = decide(
         envelope,

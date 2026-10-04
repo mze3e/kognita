@@ -27,7 +27,13 @@ from sqlmodel import Session
 from kognita.approvals import ApprovalError, find_granted
 from kognita.envelope import Envelope, Evaluation
 from kognita.evidence import EvidenceWriter
-from kognita.governance import PolicySnapshot, decide, load_snapshot, record
+from kognita.governance import (
+    PolicySnapshot,
+    classifier_derived_envelope,
+    decide,
+    load_snapshot,
+    record,
+)
 from kognita.models import utcnow
 from kognita.protocols import Embedder
 from kognita.retrieval import Retrieved, ceiling_for, retrieve
@@ -242,6 +248,14 @@ def ask(
     subjects = pack.load_subjects(routed, session)
     attributes = pack.resolve_attributes(routed, subjects)
     snap = snapshot if snapshot is not None else load_snapshot(session, as_of=as_of)
+    # The question is free text. Typed envelope fields stay as the caller set
+    # them; classification is filled only when the pack did not supply one.
+    # decide() below reads that recorded label and does not classify again.
+    routed, attributes = classifier_derived_envelope(
+        question,
+        routed,
+        attributes=attributes,
+    )
 
     evaluation = decide(
         routed,

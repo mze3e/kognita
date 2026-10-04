@@ -47,7 +47,8 @@ class Classifier(Protocol):
 
     Classification drives entitlement filtering and the egress guard, so deriving
     it is preferable to asserting it — an unclassified document is one nobody has
-    decided the handling rules for.
+    decided the handling rules for. The result is an attribute for ``decide``.
+    The classifier does not choose the outcome.
     """
 
     def classify(self, text: str, *, hint: Classification | None = None) -> Classification: ...

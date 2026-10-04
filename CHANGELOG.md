@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Classifier-derived envelopes at the decision boundary. `ask` classifies the question, and `run_governed` classifies free-text arguments, using the pattern classifier already in core. Typed attributes stay authoritative. Identity, purpose and subject references are not taken from the text. The recorded model, version, label, calibrated confidence and input hash are what `decide()` replays, so replay does not run the classifier. Below a `CLASSIFIER_CONFIDENCE` policy threshold the outcome is ESCALATE, never ALLOW. A citation that acted on a classifier label names both the policy rule and that label.
+
 - `Run` budgets on `run_governed` and `ask`: call count, wall clock, classification ceiling, and cost when the caller already knows it. Token spend is recorded when the call site supplies it. Exceeding a budget is a DENY that cites that budget, and the consumption is written to the evidence chain.
 - Durable suspend and resume for `HUMAN_APPROVAL`. A hold checkpoints at the policy decision and stores a content-hash continuation; `continue_run(run_id, approvals_resolved={approval_id: True/False})` resumes it. Evidence records the decision requested, then approved or rejected, then resumed.
 

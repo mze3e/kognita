@@ -277,7 +277,7 @@ From `docs/gap-analysis-bmos.md`:
 - [x] Approval loop unclosed (item 2)
 - [ ] Entitlements fail open
 - [ ] SqliteVecIndex silent failure
-- [ ] Classifiers never invoked (item 4 makes them load-bearing)
+- [x] Classifiers never invoked (item 4 makes them load-bearing)
 - [ ] `engages` missing from protocol
 - [ ] No foreign keys on evidence references
 - [ ] Purpose check passes everything when no purpose list is configured; must fail closed (superseded by the use-case register in 0.4)

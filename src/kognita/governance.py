@@ -25,6 +25,7 @@ from typing import Any, Callable, Sequence
 
 from sqlmodel import Session, select
 
+from kognita.classify import PatternClassifier, classifier_record
 from kognita.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
 from kognita.evidence import EvidenceWriter
 from kognita.approvals import open_approval
@@ -208,6 +209,47 @@ def decide(
     )
 
 
+def classifier_derived_envelope(
+    text: str,
+    envelope: Envelope,
+    *,
+    attributes: dict[str, Any] | None = None,
+    classifier: Any | None = None,
+) -> tuple[Envelope, dict[str, Any]]:
+    """Fill gaps in a typed envelope from a text classifier. Does not decide.
+
+    The classifier builds attributes. :func:`decide` is what turns them into an
+    outcome, and it reads the recorded label rather than calling the classifier
+    again. Replay passes those attributes back to :func:`decide` and does not
+    come through here.
+
+    Rules that hold:
+
+    - A typed attribute wins. ``classification`` is written only when the
+      caller did not supply one.
+    - Identity is not read from the text. ``principal``, ``roles``,
+      ``is_admin``, ``agent_name``, ``scopes`` and ``actor_location`` stay as
+      the caller authenticated them.
+    - Purpose and subject are not read from the text either. A purpose token
+      would satisfy the purpose vocabulary and turn a closed denial into an
+      allow. ``subject_type`` and ``subject_id`` choose which record is in
+      scope, and a name in the prose does not get to choose it.
+    - The classifier record (model, version, label, calibrated confidence,
+      input hash) is stored on the attributes when this function classified.
+      The text itself is not stored.
+    """
+    attrs = dict(attributes or {})
+    if attrs.get("classification"):
+        return envelope, attrs
+
+    chosen = classifier if classifier is not None else PatternClassifier()
+    recorded = classifier_record(chosen, text)
+    recorded["filled"] = ["classification"]
+    attrs["classification"] = recorded["label"]
+    attrs["classifier"] = recorded
+    return envelope, attrs
+
+
 def record(
     session: Session,
     evaluation: Evaluation,
@@ -320,5 +362,6 @@ __all__ = [
     "resolve_outcome",
     "registry_checks",
     "purpose_check",
+    "classifier_derived_envelope",
     "DEFAULT_APPROVAL_TTL",
 ]

@@ -15,8 +15,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
+from kognita.canonical import hash_text
 from kognita.vocabulary import Classification, classification_rank
 
 #: Explicit handling markings, checked first — an author's own label wins.
@@ -36,6 +37,21 @@ DEFAULT_INDICATORS: tuple[tuple[str, Classification], ...] = (
     (r"\b(?:\d[ -]*?){13,16}\b", Classification.C2),
 )
 
+#: Calibrated confidence for the pattern classifier. These are not probabilities
+#: fitted to a corpus. They are a fixed scale so a policy threshold can tell a
+#: clear label from an absence of evidence. Absence of indicators is not
+#: evidence that the text is publishable, so the floor sits below a threshold
+#: a deployment would treat as sure.
+MARKING_CONFIDENCE = 0.99
+INDICATOR_CONFIDENCE = 0.94
+FLOOR_CONFIDENCE = 0.50
+
+#: Model identifier and calibration version recorded with every label.
+#: ``version`` changes when the patterns or this scale change, so a recorded
+#: decision names the classifier that produced it.
+PATTERN_MODEL = "pattern"
+PATTERN_VERSION = "1"
+
 
 @dataclass
 class PatternClassifier:
@@ -49,6 +65,10 @@ class PatternClassifier:
     markings: Sequence[tuple[str, Classification]] = DEFAULT_MARKINGS
     indicators: Sequence[tuple[str, Classification]] = DEFAULT_INDICATORS
     floor: Classification = Classification.C1
+    #: Recorded on classifier evidence. Not a product name — the rule and
+    #: pattern classifier the core already ships.
+    model: str = PATTERN_MODEL
+    version: str = PATTERN_VERSION
     _compiled_markings: list[tuple[re.Pattern[str], Classification]] = field(
         init=False, repr=False, default_factory=list
     )
@@ -88,6 +108,34 @@ class PatternClassifier:
 
         return max(candidates, key=classification_rank)
 
+    def calibrated_confidence(
+        self, text: str, *, label: Classification | None = None
+    ) -> float:
+        """How sure this reading is, on the fixed scale above.
+
+        An explicit marking that supports the label is the surest reading.
+        An identifier pattern is next. A label that rests only on the floor —
+        including text that calls itself public and is held at the floor — is
+        not sure, and a confidence policy treats it as uncertain.
+
+        Pass ``label`` when the caller has already classified, so recording
+        confidence does not classify a second time.
+        """
+        resolved = self.classify(text) if label is None else Classification(label)
+        marking: Classification | None = None
+        for pattern, level in self._compiled_markings:
+            if pattern.search(text):
+                marking = Classification(level)
+                break
+        if marking is not None and marking == resolved:
+            return MARKING_CONFIDENCE
+        if any(
+            pattern.search(text) and Classification(level) == resolved
+            for pattern, level in self._compiled_indicators
+        ):
+            return INDICATOR_CONFIDENCE
+        return FLOOR_CONFIDENCE
+
     def explain(self, text: str) -> dict[str, object]:
         """Which patterns fired — for a review screen, and for evidence."""
         marks = [
@@ -105,6 +153,10 @@ class PatternClassifier:
             "markings": marks,
             "indicators": indicators,
             "floor": Classification(self.floor).value,
+            "model": self.model,
+            "version": self.version,
+            "confidence": self.calibrated_confidence(text),
+            "input_hash": hash_text(text),
         }
 
 
@@ -122,10 +174,52 @@ class FixedClassifier:
         return max([self.level, Classification(hint)], key=classification_rank)
 
 
+def classifier_record(classifier: Any, text: str) -> dict[str, Any]:
+    """The evidence a decision keeps so it can be replayed without reclassifying.
+
+    ``model``, ``version``, ``label``, ``confidence`` and ``input_hash`` are
+    the record. The text itself is not: the hash is enough to show which input
+    produced the label, and the label is what ``decide`` will read.
+    """
+    label = Classification(classifier.classify(text))
+    if isinstance(classifier, PatternClassifier):
+        model = classifier.model
+        version = classifier.version
+        confidence = classifier.calibrated_confidence(text, label=label)
+    elif isinstance(classifier, FixedClassifier):
+        # A fixed handling rule is the deployment's choice, not a guess.
+        model = "FixedClassifier"
+        version = "1"
+        confidence = 1.0
+    else:
+        # An uncalibrated backend has no basis for ALLOW. A confidence policy
+        # sees 0 and escalates.
+        model = type(classifier).__name__
+        version = str(getattr(classifier, "version", "") or "")
+        confidence = 0.0
+    return {
+        "model": model,
+        "version": version,
+        "label": label.value,
+        "confidence": confidence,
+        "input_hash": hash_text(text),
+    }
+
+
 def most_sensitive(values: Iterable[Classification | str]) -> Classification:
     """The most restricted classification in ``values``, defaulting to C0."""
     levels = [Classification(v) for v in values]
     return max(levels, key=classification_rank) if levels else Classification.C0
 
 
-__all__ = ["PatternClassifier", "FixedClassifier", "most_sensitive"]
+__all__ = [
+    "PatternClassifier",
+    "FixedClassifier",
+    "classifier_record",
+    "most_sensitive",
+    "MARKING_CONFIDENCE",
+    "INDICATOR_CONFIDENCE",
+    "FLOOR_CONFIDENCE",
+    "PATTERN_MODEL",
+    "PATTERN_VERSION",
+]
