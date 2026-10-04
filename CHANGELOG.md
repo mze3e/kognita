@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- The purpose check fails closed when the purpose list is missing or empty. A configured list still allows a listed purpose and denies an unlisted one.
+- The purpose check fails closed when the purpose list is missing or empty. A configured list still allows a listed purpose and denies an unlisted one. `kognita serve` takes a repeatable `--purposes` allowlist for the AI gateway, separate from `--purpose`. The MCP root config takes a `purposes` list, separate from `actor.purpose`. With neither list set, those processes deny the call.
 
 - Degraded mode, while the evidence store is down, no longer lets a classification header keep a call below C2. The header is a floor. The classifier runs on the JSON values that would be forwarded after parsing, so client-identifying content outside the extracted prompt, including the OpenAI `user` field, is refused and the provider is not called. A unicode escape of that content cannot stay below C2.
 

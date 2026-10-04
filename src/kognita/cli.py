@@ -265,9 +265,12 @@ def cmd_serve(args: argparse.Namespace) -> int:
     """Run the OpenAI-compatible AI gateway, or the MCP proxy.
 
     The AI gateway binds one client configuration. Agent names outside that
-    configuration are denied. ``--provider`` accepts ``openai-compatible``
-    only. ``--mcp --root-config`` fronts MCP servers instead, and does not
-    start the model gateway.
+    configuration are denied. ``--purposes`` is the purpose allowlist.
+    ``--purpose`` is the purpose claimed when a request has none. With no
+    ``--purposes``, every call is denied. ``--provider`` accepts
+    ``openai-compatible`` only. ``--mcp --root-config`` fronts MCP servers
+    instead, and does not start the model gateway. The proxy's allowlist is
+    the ``purposes`` list in that file, not ``--purpose`` and not ``--purposes``.
     """
     if args.mcp:
         return _cmd_serve_mcp(args)
@@ -287,6 +290,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
             system_triggers=frozenset(args.system_trigger or []),
             actor_location=args.actor_location,
         ),
+        purposes=tuple(args.purposes or ()),
         failure_mode={args.purpose: args.failure_mode},
     )
     gateway.serve(args.host, args.port)
@@ -360,6 +364,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     serve.add_argument(
         "--purpose", default="", help="bound purpose when the request has none"
+    )
+    serve.add_argument(
+        "--purposes",
+        action="append",
+        default=None,
+        help=(
+            "purpose the AI gateway may allow; repeatable. Distinct from "
+            "--purpose, which is only the purpose claimed when a request has "
+            "none. With no --purposes, the gateway denies every call"
+        ),
     )
     serve.add_argument(
         "--failure-mode",

@@ -15,12 +15,15 @@ from http.client import HTTPConnection
 from pathlib import Path
 
 import pytest
-from sqlmodel import select
+from sqlmodel import Session, select
+
+from fixtures import demo_pack as dp
 
 from kognita.approvals import grant
 from kognita.canonical import canonical_hash, canonical_json, hash_text
 from kognita.classify import INDICATOR_CONFIDENCE, PATTERN_MODEL, PATTERN_VERSION, PatternClassifier
 from kognita.cli import build_parser, cmd_serve
+from kognita.db import create_all, make_engine
 from kognita.evidence import EvidenceWriter, verify_chain
 from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration
@@ -28,7 +31,7 @@ from kognita.mcp import BackendServer, McpProxy, load_root_config
 from kognita.models import Approval, EvidenceEvent, GovernanceDecision, Policy
 from kognita.registry import register
 from kognita.rules import build_registry
-from kognita.vocabulary import ActorType, EventType, Outcome
+from kognita.vocabulary import ActorType, CheckResult, EventType, Outcome
 
 SECRET = "ana@example.org"
 EFFECTIVE = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -660,11 +663,19 @@ def test_root_config_names_servers_pack_evidence_and_actor(tmp_path: Path):
     assert config.evidence_database == "kognita.db"
     assert config.actor.principal == "alice"
     assert config.actor.purpose == "COLLABORATION"
+    assert config.purposes == ()
     assert "dossier-agent" in config.actor.agent_names
     assert "nightly-refresh" in config.actor.system_triggers
 
     with pytest.raises(ConfigError):
         load_root_config(str(tmp_path / "missing.json"))
+
+    claimed_as_list = json.loads(path.read_text())
+    claimed_as_list["purposes"] = claimed_as_list["actor"]["purpose"]
+    string_path = tmp_path / "purpose-string.json"
+    string_path.write_text(json.dumps(claimed_as_list))
+    with pytest.raises(ConfigError, match="purposes must be a list"):
+        load_root_config(str(string_path))
 
 
 def test_serve_mcp_parses_and_does_not_start_the_model_gateway(tmp_path: Path):
@@ -721,3 +732,113 @@ def _post(port: int, headers: dict[str, str], body: bytes):
         headers={**headers, "Content-Length": str(len(body)), "Content-Type": "application/json"},
     )
     return connection.getresponse()
+
+
+def _seed_agent(path) -> None:
+    engine = make_engine(path)
+    create_all(engine)
+    with Session(engine) as session:
+        register(session, name="dossier-agent", owner_exec="Head of Research Ops")
+        session.commit()
+    engine.dispose()
+
+
+def _write_root(path, db, purposes) -> None:
+    body = {
+        "servers": [{"name": "notes", "url": NOTES}],
+        "policy_pack": "fixtures.demo_pack:DemoPack",
+        "evidence_database": str(db),
+        "actor": {
+            "principal": "alice",
+            "purpose": dp.PURPOSES[0],
+            "actor_location": "SG",
+            "agent_names": ["dossier-agent"],
+        },
+    }
+    if purposes is not None:
+        body["purposes"] = list(purposes)
+    path.write_text(json.dumps(body))
+
+
+def _serve_proxy(monkeypatch, config):
+    """Build the proxy the way ``kognita serve --mcp`` does, and do not listen."""
+    held = {}
+
+    def serve(self, host="127.0.0.1", port=8080):
+        held["proxy"] = self
+
+    monkeypatch.setattr(McpProxy, "serve", serve)
+    args = build_parser().parse_args(["serve", "--mcp", "--root-config", str(config)])
+    assert cmd_serve(args) == 0
+    return held["proxy"]
+
+
+def _purpose(evaluation):
+    matches = [check for check in evaluation.checks if check.check == "PURPOSE"]
+    assert len(matches) == 1
+    return matches[0]
+
+
+def test_mcp_serve_allows_a_listed_purpose_and_denies_an_unlisted_one(tmp_path, monkeypatch):
+    """The root config ``purposes`` list is the allowlist. ``actor.purpose`` is not."""
+    db = tmp_path / "mcp.db"
+    _seed_agent(db)
+    claimed = dp.PURPOSES[0]
+    listed = dp.PURPOSES[1]
+    config = tmp_path / "config.json"
+    _write_root(config, db, (listed,))
+    proxy = _serve_proxy(monkeypatch, config)
+    assert proxy.client.purpose == claimed
+    assert tuple(proxy.purposes) == (listed,)
+    upstream = _Upstream()
+    proxy.transport = upstream
+
+    denied = proxy.handle(
+        "POST",
+        "/mcp",
+        {"agent_name": "dossier-agent", "purpose": claimed},
+        _call(arguments={"query": "hello"}),
+    )
+    assert upstream.calls == []
+    assert denied.evaluation is not None
+    assert denied.evaluation.envelope.purpose == claimed
+    assert denied.evaluation.outcome is Outcome.DENY
+    assert _purpose(denied.evaluation).result is CheckResult.FAIL
+
+    allowed = proxy.handle(
+        "POST",
+        "/mcp",
+        {"agent_name": "dossier-agent", "purpose": listed},
+        _call(arguments={"query": "hello"}),
+    )
+    assert allowed.evaluation is not None
+    assert allowed.evaluation.envelope.purpose == listed
+    assert allowed.evaluation.outcome is Outcome.ALLOW
+    assert _purpose(allowed.evaluation).result is CheckResult.PASS
+    assert len(upstream.calls) == 1
+
+
+def test_mcp_serve_denies_when_no_purpose_list_is_configured(tmp_path, monkeypatch):
+    """A root config with only ``actor.purpose`` still denies the call."""
+    db = tmp_path / "mcp.db"
+    _seed_agent(db)
+    claimed = dp.PURPOSES[0]
+    config = tmp_path / "config.json"
+    _write_root(config, db, None)
+    proxy = _serve_proxy(monkeypatch, config)
+    assert tuple(proxy.purposes) == ()
+    assert proxy.client.purpose == claimed
+    upstream = _Upstream()
+    proxy.transport = upstream
+    response = proxy.handle(
+        "POST",
+        "/mcp",
+        {"agent_name": "dossier-agent"},
+        _call(arguments={"query": "hello"}),
+    )
+    assert upstream.calls == []
+    assert response.evaluation is not None
+    assert response.evaluation.envelope.purpose == claimed
+    assert response.evaluation.outcome is Outcome.DENY
+    assert _purpose(response.evaluation).result is not CheckResult.PASS
+    assert _purpose(response.evaluation).result is CheckResult.FAIL

@@ -113,13 +113,18 @@ class BackendServer:
 
 @dataclass(frozen=True)
 class RootConfig:
-    """What ``--root-config`` names: servers, pack, evidence, actor."""
+    """What ``--root-config`` names: servers, pack, evidence, actor.
+
+    ``purposes`` is the list the proxy may allow. It is not ``actor.purpose``.
+    Missing or empty denies every call.
+    """
 
     servers: tuple[BackendServer, ...]
     policy_pack: str
     pack: Any
     evidence_database: str
     actor: ClientConfiguration
+    purposes: tuple[str, ...] = ()
 
 
 @dataclass
@@ -289,8 +294,26 @@ def _servers_from_config(value: Any) -> tuple[BackendServer, ...]:
     return tuple(servers)
 
 
+def _purposes_from_config(raw: Mapping[str, Any]) -> tuple[str, ...]:
+    """The purpose list, when the file names one.
+
+    A missing field is an empty list. A single string is not a list: that
+    would turn ``actor.purpose``'s shape into an allowlist.
+    """
+    if "purposes" not in raw or raw["purposes"] is None:
+        return ()
+    value = raw["purposes"]
+    if isinstance(value, str) or not isinstance(value, (list, tuple)):
+        raise ConfigError("purposes must be a list")
+    return tuple(str(item) for item in value)
+
+
 def load_root_config(path: str) -> RootConfig:
-    """Read the root config: servers, policy pack, evidence database, actor."""
+    """Read the root config: servers, policy pack, evidence database, actor.
+
+    ``purposes``, when present, is the allowlist. ``actor.purpose`` stays the
+    purpose claimed when a request has none.
+    """
     try:
         with open(path, encoding="utf-8") as handle:
             text = handle.read()
@@ -321,6 +344,7 @@ def load_root_config(path: str) -> RootConfig:
         pack=_load_pack(policy_pack),
         evidence_database=evidence_database,
         actor=_actor_from_config(raw["actor"]),
+        purposes=_purposes_from_config(raw),
     )
 
 
@@ -390,6 +414,7 @@ class McpProxy:
             servers=config.servers,
             client=config.actor,
             pack=config.pack,
+            purposes=config.purposes,
             transport=transport,
             classifier=classifier,
         )
