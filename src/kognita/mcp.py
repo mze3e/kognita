@@ -20,8 +20,10 @@ One call, in order:
    client configuration lists it. An approved system trigger is a system
    actor.
 4. :func:`kognita.tools.run_governed` authorises and records the call. The
-   backend is contacted only when the outcome is allow. A denial returns the
-   outcome and the citations.
+   backend is contacted only when that call is released: an allow, or a
+   human approval that already has a live grant. A denial, an escalation,
+   and an ungranted human approval return the outcome and the citations
+   and do not call the backend. A released call returns the proxied result.
 5. If the evidence store cannot record the call, the proxy refuses it. The
    backend is not called. This module has no degraded mode and no silent
    forward.
@@ -585,7 +587,11 @@ class McpProxy:
             raise _EvidenceStoreUnavailable("evidence store unavailable", rpc_id=rpc_id) from exc
 
         evaluation = result.evaluation
-        if evaluation.outcome not in (Outcome.ALLOW, Outcome.OBSERVE):
+        # Release is run_governed's decision, not "outcome is ALLOW".
+        # Evaluation.allowed includes an ungranted HUMAN_APPROVAL, and a live
+        # grant leaves the outcome as HUMAN_APPROVAL after the tool has run.
+        released = evaluation.allowed and not result.approval_required
+        if not released:
             return self._denied(rpc_id, evaluation)
         if rpc_method not in _IMPLEMENTED:
             return _rpc_error(

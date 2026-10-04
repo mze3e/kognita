@@ -17,14 +17,15 @@ from pathlib import Path
 import pytest
 from sqlmodel import select
 
-from kognita.canonical import hash_text
+from kognita.approvals import grant
+from kognita.canonical import canonical_hash, canonical_json, hash_text
 from kognita.classify import INDICATOR_CONFIDENCE, PATTERN_MODEL, PATTERN_VERSION, PatternClassifier
 from kognita.cli import build_parser, cmd_serve
 from kognita.evidence import EvidenceWriter, verify_chain
 from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration
 from kognita.mcp import BackendServer, McpProxy, load_root_config
-from kognita.models import EvidenceEvent, GovernanceDecision, Policy
+from kognita.models import Approval, EvidenceEvent, GovernanceDecision, Policy
 from kognita.registry import register
 from kognita.rules import build_registry
 from kognita.vocabulary import ActorType, EventType, Outcome
@@ -221,6 +222,123 @@ def test_denial_is_not_proxied_and_returns_outcome_and_citations(session, eviden
     events = _events(session, response.evaluation.request_id)
     assert events
     assert all(event.event_type is EventType.POLICY_DECISION for event in events)
+
+
+def test_granted_human_approval_is_proxied_once_and_returned(session, evidence):
+    """A live grant releases the call. An ungranted hold does not touch the backend."""
+    _register(session)
+    session.add(
+        Policy(
+            regime="INTERNAL",
+            rule_type="REQUIRES_HUMAN_APPROVAL",
+            rule={"tools": ["read_note"]},
+            citation="A person releases this note",
+            effective_from=EFFECTIVE,
+        )
+    )
+    session.flush()
+    upstream = _Upstream()
+    proxy = _proxy(session.get_bind(), evidence, upstream)
+    held = proxy.handle(
+        "POST",
+        "/mcp",
+        {"agent_name": "dossier-agent"},
+        _call(arguments={"query": "hello"}),
+        session=session,
+    )
+
+    assert upstream.calls == []
+    assert held.status == 403
+    assert held.evaluation is not None
+    assert held.evaluation.outcome is Outcome.HUMAN_APPROVAL
+    assert _denial(held)["outcome"] == "HUMAN_APPROVAL"
+
+    approval = session.exec(select(Approval)).one()
+    grant(
+        session,
+        approval,
+        approver_name="reviewer@example.org",
+        evidence=evidence,
+        correlation_id=held.evaluation.request_id,
+        now=evidence.clock(),
+    )
+    session.flush()
+
+    released = proxy.handle(
+        "POST",
+        "/mcp",
+        {"agent_name": "dossier-agent"},
+        _call(arguments={"query": "hello"}, rpc_id=2),
+        session=session,
+    )
+
+    assert len(upstream.calls) == 1
+    assert released.status == 200
+    body = json.loads(released.body)
+    assert body["result"]["content"][0]["text"] == "rivera notes"
+    assert released.evaluation is not None
+    assert released.evaluation.outcome is Outcome.HUMAN_APPROVAL
+
+
+def test_escalation_is_not_proxied(session, evidence):
+    _register(session)
+    session.add(
+        Policy(
+            regime="INTERNAL",
+            rule_type="ATTRIBUTE_ALLOWLIST",
+            rule={"allow": {"actor_location": ["HK"]}, "on_violation": "escalate"},
+            citation="Only Hong Kong may call this tool",
+            effective_from=EFFECTIVE,
+        )
+    )
+    session.flush()
+    upstream = _Upstream()
+    proxy = _proxy(session.get_bind(), evidence, upstream)
+    response = proxy.handle(
+        "POST",
+        "/mcp",
+        {"agent_name": "dossier-agent"},
+        _call(),
+        session=session,
+    )
+
+    assert upstream.calls == []
+    assert response.status == 403
+    assert response.evaluation is not None
+    assert response.evaluation.outcome is Outcome.ESCALATE
+    assert _denial(response)["outcome"] == "ESCALATE"
+
+
+def test_tool_arguments_are_absent_from_evidence(session, evidence):
+    """The secret travels to the backend. The evidence chain keeps its hash."""
+    _register(session)
+    session.flush()
+    arguments = {"query": f"Email {SECRET} about the notes"}
+    upstream = _Upstream()
+    proxy = _proxy(session.get_bind(), evidence, upstream)
+    response = proxy.handle(
+        "POST",
+        "/mcp",
+        {"agent_name": "dossier-agent"},
+        _call(arguments=arguments),
+        session=session,
+    )
+
+    assert response.status == 200
+    assert SECRET not in response.body.decode()
+    forwarded = json.loads(upstream.calls[0]["body"])
+    assert forwarded["params"]["arguments"]["query"] == arguments["query"]
+    assert response.evaluation is not None
+    events = _events(session, response.evaluation.request_id)
+    assert events
+    for event in events:
+        assert SECRET not in canonical_json(event.payload)
+    decision = next(event for event in events if event.event_type is EventType.POLICY_DECISION)
+    stored = decision.payload["envelope"]["arguments"]
+    assert stored == {
+        "sha256": canonical_hash(arguments),
+        "bytes": len(canonical_json(arguments)),
+    }
 
 
 def test_free_text_is_classified_only_when_classification_is_missing(session, evidence):
