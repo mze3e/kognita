@@ -276,7 +276,7 @@ From `docs/gap-analysis-bmos.md`:
 - [x] HUMAN_APPROVAL withholds nothing (item 2)
 - [x] Approval loop unclosed (item 2)
 - [ ] Entitlements fail open
-- [ ] SqliteVecIndex silent failure
+- [x] SqliteVecIndex silent failure
 - [x] Classifiers never invoked (item 4 makes them load-bearing)
 - [ ] `engages` missing from protocol
 - [ ] No foreign keys on evidence references

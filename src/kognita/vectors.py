@@ -21,11 +21,20 @@ import numpy as np
 from kognita.embedding import from_bytes
 
 
-class VectorSearchError(RuntimeError):
-    """A vector search failed and must not be read as an empty hit list.
+def _stored_embedding(vector: Sequence[float] | bytes | None) -> bytes | None:
+    """Embedding bytes in the form ``index_item`` stores on the row.
 
-    ``search`` returns ``[]`` only after the index has run and matched nothing.
+    A ``bytes`` value is kept as stored. A sequence is packed as float32,
+    which is what ``to_bytes`` writes.
     """
+    if vector is None:
+        return None
+    if isinstance(vector, (bytes, bytearray)):
+        return bytes(vector) or None
+    array = np.asarray(vector, dtype=np.float32)
+    if array.size == 0:
+        return None
+    return np.ascontiguousarray(array).tobytes()
 
 
 class NumpyVectorIndex:
@@ -85,10 +94,16 @@ class SqliteVecIndex:
     opts in explicitly rather than silently falling back and wondering later why
     a query is slow.
 
-    ``search`` returns ``[]`` when this index ran and matched nothing. Rows
-    that come back and join no candidate are a failed search:
-    :class:`VectorSearchError`, not an empty hit list. A candidate that does
-    join is still returned as ``(item, 1 - distance)``.
+    Production stores an embedding as float32 bytes on the knowledge row.
+    Nothing else writes ``knowledge_vec``. ``search`` copies those bytes into
+    the vec table so the KNN can see them. SQLite assigns the vec ``rowid``.
+    That rowid is not ``item.id``. A hit joins back to the candidate by the
+    stored embedding bytes, or by the rowid this index wrote for those bytes.
+
+    The KNN itself is unfiltered. A neighbour that is not in the candidate
+    set is dropped. If none of the returned rows are candidates, or the query
+    returns no rows, ``search`` returns ``[]``. A candidate that was stored
+    and comes back is still ``(item, 1 - distance)``.
     """
 
     name = "sqlite-vec"
@@ -111,6 +126,47 @@ class SqliteVecIndex:
             ) from exc
         self.connection = connection
         self.table = table
+        # Blob to the vec rowid SQLite assigned. Not item.id.
+        self._rowid_by_blob: dict[bytes, int] = {}
+
+    def _ensure_table(self, dimension: int) -> None:
+        self.connection.execute(
+            f"CREATE VIRTUAL TABLE IF NOT EXISTS {self.table} "
+            f"USING vec0(embedding float[{dimension}])"
+        )
+
+    def _store_embedding(self, blob: bytes) -> int:
+        """Write one stored embedding, if this table does not already hold it.
+
+        The rowid comes from SQLite, or from a row already stored under those
+        bytes. Callers do not pass ``item.id``.
+        """
+        if not hasattr(self, "_rowid_by_blob"):
+            self._rowid_by_blob = {}
+        known = self._rowid_by_blob.get(blob)
+        if known is not None:
+            return known
+        found = self.connection.execute(
+            f"SELECT rowid FROM {self.table} WHERE embedding = ?",
+            (blob,),
+        ).fetchall()
+        if found:
+            rowid = int(found[0][0])
+            self._rowid_by_blob[blob] = rowid
+            return rowid
+        cursor = self.connection.execute(
+            f"INSERT INTO {self.table}(embedding) VALUES (?)",
+            (blob,),
+        )
+        rowid = cursor.lastrowid
+        if rowid is None:
+            raise RuntimeError(
+                "sqlite-vec did not assign a rowid for a stored embedding. "
+                "This search failed; it is not an empty result."
+            )
+        rowid = int(rowid)
+        self._rowid_by_blob[blob] = rowid
+        return rowid
 
     def search(
         self,
@@ -119,44 +175,63 @@ class SqliteVecIndex:
         *,
         top_k: int = 5,
     ) -> list[tuple[Any, float]]:
-        """Return joined hits, or ``[]`` when the index matched nothing.
+        """Return candidate hits, nearest first.
 
-        An empty candidate list is an empty result. A candidate the caller
-        passed but that cannot be keyed by ``id`` never reaches the index, so
-        that raises rather than looking like a search that found nothing.
+        ``[]`` means the KNN returned no rows, or every returned neighbour
+        sits outside this candidate set. Both are empty results. A stored
+        embedding that the KNN does return comes back as that candidate,
+        with score ``1 - distance``.
         """
-        # The entitlement filter has already reduced the candidate set, so the
-        # KNN runs over ids the caller is permitted to see and nothing else.
         import struct
 
         if not candidates:
             return []
 
-        by_id = {item.id: item for item, _ in candidates if hasattr(item, "id")}
-        if not by_id:
-            raise VectorSearchError(
-                "SqliteVecIndex could not key any candidate by id. "
-                "This search failed; it is not an empty result."
-            )
+        stored: list[tuple[Any, bytes]] = []
+        for item, vector in candidates:
+            blob = _stored_embedding(vector)
+            if blob is None or len(blob) % 4 != 0:
+                continue
+            stored.append((item, blob))
+        if not stored:
+            return []
+
+        dimension = len(stored[0][1]) // 4
+        self._ensure_table(dimension)
+        rowid_to_item: dict[int, Any] = {}
+        blob_to_item: dict[bytes, Any] = {}
+        for item, blob in stored:
+            if len(blob) != dimension * 4:
+                continue
+            rowid = self._store_embedding(blob)
+            rowid_to_item.setdefault(rowid, item)
+            blob_to_item.setdefault(blob, item)
+        if not rowid_to_item:
+            return []
+
         packed = struct.pack(f"{len(query_vector)}f", *query_vector)
         rows = self.connection.execute(
-            f"SELECT rowid, distance FROM {self.table} "
+            f"SELECT rowid, embedding, distance FROM {self.table} "
             "WHERE embedding MATCH ? ORDER BY distance LIMIT ?",
             (packed, top_k),
         ).fetchall()
-        # The index ran and named no neighbours. That empty result is real.
         if not rows:
             return []
+
         results: list[tuple[Any, float]] = []
-        for rowid, distance in rows:
-            item = by_id.get(rowid)
-            if item is not None:
-                results.append((item, 1.0 - float(distance)))
-        if not results:
-            raise VectorSearchError(
-                "sqlite-vec returned rows whose rowids match no candidate id. "
-                "This search failed; it is not an empty result."
-            )
+        seen: set[int] = set()
+        for rowid, embedding, distance in rows:
+            blob = bytes(embedding) if embedding is not None else b""
+            item = rowid_to_item.get(rowid)
+            if item is None:
+                item = blob_to_item.get(blob)
+            if item is None:
+                continue
+            marker = id(item)
+            if marker in seen:
+                continue
+            seen.add(marker)
+            results.append((item, 1.0 - float(distance)))
         return results
 
 
@@ -165,4 +240,4 @@ def default_index() -> NumpyVectorIndex:
     return NumpyVectorIndex()
 
 
-__all__ = ["NumpyVectorIndex", "SqliteVecIndex", "VectorSearchError", "default_index"]
+__all__ = ["NumpyVectorIndex", "SqliteVecIndex", "default_index"]
