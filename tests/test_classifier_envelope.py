@@ -124,6 +124,7 @@ def test_replay_does_not_call_the_classifier(harness):
         attributes=attributes,
         as_of=NOW,
         request_id="replay-1",
+        purposes=(envelope.purpose,),
     )
     second = decide(
         derived,
@@ -131,6 +132,7 @@ def test_replay_does_not_call_the_classifier(harness):
         attributes=attributes,
         as_of=NOW,
         request_id="replay-1",
+        purposes=(envelope.purpose,),
     )
     assert first.outcome is Outcome.DENY
     assert second.outcome is first.outcome
@@ -156,6 +158,7 @@ def test_replay_does_not_call_the_classifier(harness):
         attributes=stored.attributes,
         as_of=NOW,
         request_id=first.request_id,
+        purposes=(envelope.purpose,),
     )
     assert replay.outcome is first.outcome
     assert replay.envelope_hash == first.envelope_hash
@@ -227,7 +230,11 @@ def test_text_cannot_widen_permission():
     public = "This document is public unclassified for publication."
     public_envelope, public_attributes = classifier_derived_envelope(public, envelope)
     public_decision = decide(
-        public_envelope, snapshot, attributes=public_attributes, as_of=NOW
+        public_envelope,
+        snapshot,
+        attributes=public_attributes,
+        as_of=NOW,
+        purposes=(envelope.purpose,),
     )
     assert public_attributes["classification"] == "C1"
     assert public_decision.outcome is Outcome.DENY
@@ -273,7 +280,13 @@ def test_low_confidence_escalates():
     envelope = _envelope()
     vague = "Nothing in particular to report today."
     derived, attributes = classifier_derived_envelope(vague, envelope)
-    evaluation = decide(derived, snapshot, attributes=attributes, as_of=NOW)
+    evaluation = decide(
+        derived,
+        snapshot,
+        attributes=attributes,
+        as_of=NOW,
+        purposes=(envelope.purpose,),
+    )
     assert attributes["classifier"]["confidence"] == FLOOR_CONFIDENCE
     assert FLOOR_CONFIDENCE < 0.8
     assert evaluation.outcome is Outcome.ESCALATE
@@ -283,7 +296,13 @@ def test_low_confidence_escalates():
 
     clear = "Reach me at ana@example.org"
     clear_envelope, clear_attributes = classifier_derived_envelope(clear, envelope)
-    allowed = decide(clear_envelope, snapshot, attributes=clear_attributes, as_of=NOW)
+    allowed = decide(
+        clear_envelope,
+        snapshot,
+        attributes=clear_attributes,
+        as_of=NOW,
+        purposes=(envelope.purpose,),
+    )
     assert clear_attributes["classifier"]["confidence"] == INDICATOR_CONFIDENCE
     assert allowed.outcome is Outcome.ALLOW
 

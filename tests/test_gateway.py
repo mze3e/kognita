@@ -19,6 +19,8 @@ from http.client import HTTPConnection
 import pytest
 from sqlmodel import Session, select
 
+from fixtures import demo_pack as dp
+
 from kognita.canonical import canonical_json, hash_text
 from kognita.classify import (
     INDICATOR_CONFIDENCE,
@@ -26,7 +28,8 @@ from kognita.classify import (
     PATTERN_VERSION,
     PatternClassifier,
 )
-from kognita.cli import build_parser
+from kognita.cli import build_parser, cmd_serve
+from kognita.db import create_all, make_engine
 from kognita.evidence import EvidenceWriter, verify_chain
 from kognita.gateway import ClientConfiguration, Gateway, _prompt_text
 from kognita.models import EvidenceEvent, GovernanceDecision, Policy, RunRecord
@@ -90,12 +93,14 @@ def _client(**overrides) -> ClientConfiguration:
 
 def _gateway(engine, evidence, upstream, **kwargs) -> Gateway:
     client = kwargs.pop("client", _client())
+    purposes = kwargs.pop("purposes", (client.purpose,))
     url = kwargs.pop("upstream_url", UPSTREAM)
     return Gateway(
         engine=engine,
         evidence=evidence,
         upstream=url,
         client=client,
+        purposes=purposes,
         transport=upstream,
         **kwargs,
     )
@@ -583,6 +588,8 @@ def test_serve_command_is_the_openai_compatible_gateway():
         ]
     )
     assert bound.principal == "alice"
+    assert bound.purpose == "COLLABORATION"
+    assert bound.purposes is None
     assert bound.agent == ["dossier-agent"]
     assert bound.system_trigger == ["nightly-refresh"]
     assert bound.mcp is False
@@ -1024,3 +1031,119 @@ def test_no_failure_mode_forwards_without_a_decision(session, engine):
     assert unread_response.status == 503
     assert unread_upstream.calls == []
     assert json.loads(unread_response.body)["error"] == "evidence store unavailable"
+
+
+def _seed_agent(path) -> None:
+    engine = make_engine(path)
+    create_all(engine)
+    with Session(engine) as session:
+        register(session, name="dossier-agent", owner_exec="Head of Research Ops")
+        session.commit()
+    engine.dispose()
+
+
+def _purpose(evaluation):
+    matches = [check for check in evaluation.checks if check.check == "PURPOSE"]
+    assert len(matches) == 1
+    return matches[0]
+
+
+def _serve_gateway(monkeypatch, db, *purposes: str) -> Gateway:
+    """Build the gateway the way ``kognita serve`` does, and do not listen."""
+    held: dict[str, Gateway] = {}
+
+    def serve(self, host="127.0.0.1", port=8080):
+        held["gateway"] = self
+
+    monkeypatch.setattr(Gateway, "serve", serve)
+    argv = [
+        "serve",
+        "--provider",
+        "openai-compatible",
+        "--upstream",
+        UPSTREAM,
+        "--db",
+        str(db),
+        "--principal",
+        "alice",
+        "--purpose",
+        dp.PURPOSES[0],
+        "--actor-location",
+        "SG",
+        "--agent",
+        "dossier-agent",
+    ]
+    for purpose in purposes:
+        argv.extend(["--purposes", purpose])
+    assert cmd_serve(build_parser().parse_args(argv)) == 0
+    return held["gateway"]
+
+
+def test_gateway_serve_allows_a_listed_purpose_and_denies_an_unlisted_one(
+    tmp_path, monkeypatch
+):
+    """``--purposes`` is the allowlist. ``--purpose`` is only the claimed default."""
+    db = tmp_path / "gateway.db"
+    _seed_agent(db)
+    claimed = dp.PURPOSES[0]
+    listed = dp.PURPOSES[1]
+    gateway = _serve_gateway(monkeypatch, db, listed)
+    assert gateway.client.purpose == claimed
+    assert tuple(gateway.purposes) == (listed,)
+    upstream = _Upstream(
+        json.dumps(
+            {
+                "model": MODEL,
+                "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+            }
+        ).encode()
+    )
+    gateway.transport = upstream
+
+    denied = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent", "purpose": claimed},
+        _body("hello"),
+    )
+    assert upstream.calls == []
+    assert denied.evaluation is not None
+    assert denied.evaluation.envelope.purpose == claimed
+    assert denied.evaluation.outcome is Outcome.DENY
+    assert _purpose(denied.evaluation).result is CheckResult.FAIL
+
+    allowed = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent", "purpose": listed},
+        _body("hello"),
+    )
+    assert allowed.evaluation is not None
+    assert allowed.evaluation.envelope.purpose == listed
+    assert allowed.evaluation.outcome is Outcome.ALLOW
+    assert _purpose(allowed.evaluation).result is CheckResult.PASS
+    assert len(upstream.calls) == 1
+
+
+def test_gateway_serve_denies_when_no_purpose_list_is_configured(tmp_path, monkeypatch):
+    """A claimed ``--purpose`` with no ``--purposes`` is still a denial."""
+    db = tmp_path / "gateway.db"
+    _seed_agent(db)
+    claimed = dp.PURPOSES[0]
+    gateway = _serve_gateway(monkeypatch, db)
+    assert gateway.purposes == ()
+    assert gateway.client.purpose == claimed
+    upstream = _Upstream(b"{}")
+    gateway.transport = upstream
+    response = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _body("hello"),
+    )
+    assert upstream.calls == []
+    assert response.evaluation is not None
+    assert response.evaluation.envelope.purpose == claimed
+    assert response.evaluation.outcome is Outcome.DENY
+    assert _purpose(response.evaluation).result is not CheckResult.PASS
+    assert _purpose(response.evaluation).result is CheckResult.FAIL
