@@ -11,7 +11,6 @@ import threading
 from datetime import datetime, timezone
 from http.client import HTTPConnection
 
-import pytest
 from sqlmodel import select
 
 from kognita.canonical import canonical_json, hash_text
@@ -577,6 +576,5 @@ def test_serve_command_is_the_openai_compatible_gateway():
     assert bound.principal == "alice"
     assert bound.agent == ["dossier-agent"]
     assert bound.system_trigger == ["nightly-refresh"]
-
-    with pytest.raises(SystemExit):
-        build_parser().parse_args(["serve", "--mcp", "--root-config", "config.json"])
+    assert bound.mcp is False
+    assert bound.provider == "openai-compatible"

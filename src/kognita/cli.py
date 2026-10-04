@@ -17,7 +17,9 @@ from typing import Any
 
 from kognita.db import create_all, make_engine, session_scope
 from kognita.evidence import ChainBreak, EvidenceWriter, export_chain, verify_chain
+from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration, Gateway
+from kognita.mcp import McpProxy, load_root_config
 
 
 def _probe(module: str) -> str:
@@ -146,13 +148,39 @@ def cmd_evidence_export(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_serve(args: argparse.Namespace) -> int:
-    """Run the OpenAI-compatible AI gateway.
+def _cmd_serve_mcp(args: argparse.Namespace) -> int:
+    """Front the MCP servers named in ``--root-config``.
 
-    The process binds one client configuration. Agent names outside that
-    configuration are denied. ``--provider`` accepts ``openai-compatible``
-    only; a native Anthropic adapter and ``--mcp`` are not this command.
+    The file names the backend servers, the policy pack, the evidence
+    database, and the default actor context. ``--provider`` and ``--upstream``
+    belong to the OpenAI-compatible gateway, not to this mode.
     """
+    if not args.root_config:
+        print("serve --mcp requires --root-config", file=sys.stderr)
+        return 2
+    try:
+        config = load_root_config(args.root_config)
+    except ConfigError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    proxy = McpProxy.from_config(config)
+    proxy.serve(args.host, args.port)
+    return 0
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    """Run the OpenAI-compatible AI gateway, or the MCP proxy.
+
+    The AI gateway binds one client configuration. Agent names outside that
+    configuration are denied. ``--provider`` accepts ``openai-compatible``
+    only. ``--mcp --root-config`` fronts MCP servers instead, and does not
+    start the model gateway.
+    """
+    if args.mcp:
+        return _cmd_serve_mcp(args)
+    if not args.upstream:
+        print("serve --provider openai-compatible requires --upstream", file=sys.stderr)
+        return 2
     engine = make_engine(args.db)
     create_all(engine)
     gateway = Gateway(
@@ -197,14 +225,23 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("-o", "--output", help="write to a file instead of stdout")
     export.set_defaults(func=cmd_evidence_export)
 
-    serve = sub.add_parser("serve", help="run the OpenAI-compatible AI gateway")
-    serve.add_argument(
+    serve = sub.add_parser("serve", help="run the AI gateway or the MCP proxy")
+    mode = serve.add_mutually_exclusive_group(required=True)
+    mode.add_argument(
         "--provider",
-        required=True,
         choices=["openai-compatible"],
         help="wire format. openai-compatible only",
     )
-    serve.add_argument("--upstream", required=True, help="provider origin, not a base path")
+    mode.add_argument(
+        "--mcp",
+        action="store_true",
+        help="front one or more MCP servers",
+    )
+    serve.add_argument("--upstream", help="provider origin, not a base path")
+    serve.add_argument(
+        "--root-config",
+        help="MCP config naming servers, policy pack, evidence database, and actor",
+    )
     serve.add_argument("--db", default="kognita.db", help="policy and evidence store")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8080)
