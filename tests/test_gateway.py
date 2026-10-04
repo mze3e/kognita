@@ -6,7 +6,8 @@ the response. Evidence holds hashes, not the prompt or the answer. Fail closed
 refuses when the store is down. Degraded proceeds only for a local model with
 no client data, and records that call once the store recovers. A classification
 header cannot keep that label below C2, and client-identifying content outside
-the extracted prompt is client data too.
+the extracted prompt is client data too, including a unicode escape that the
+provider would decode.
 """
 from __future__ import annotations
 
@@ -871,6 +872,36 @@ def test_degraded_refuses_client_data_outside_the_extracted_prompt(
         PATH,
         {"agent_name": "dossier-agent"},
         json.dumps(payload).encode(),
+        session=session,
+    )
+
+    assert upstream.calls == []
+    assert response.status == 403
+    assert response.evaluation is not None
+    assert response.evaluation.outcome is Outcome.DENY
+    assert response.evaluation.attributes["classification"] == "C2"
+    assert SECRET not in response.body.decode()
+
+
+def test_degraded_refuses_a_unicode_escaped_email_outside_the_prompt(session, engine):
+    """An email that exists only as a JSON escape is still client data."""
+    _register(session)
+    session.commit()
+    body = (
+        '{"model": "' + MODEL + '", "messages": [{"role": "user", "content": ""}], '
+        '"user": "ana\\u0040example.org"}'
+    ).encode()
+    parsed = json.loads(body)
+    assert SECRET.encode() not in body
+    assert _prompt_text(parsed) == ""
+    assert parsed["user"] == SECRET
+    upstream = _Upstream(b"{}")
+    gateway = _degraded(engine, _Down(engine), upstream, upstream_url=LOCAL_UPSTREAM)
+    response = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        body,
         session=session,
     )
 

@@ -39,7 +39,8 @@ gateway refuses it. Degraded mode may proceed only for a local model and
 content that is not client-identifying, and writes the decision and the model
 evidence once the store accepts them. A caller classification can raise that
 label and cannot lower it: while the store is down the classifier still runs,
-on the body that would be forwarded and not only the extracted prompt. A call
+on the values that would be forwarded after JSON parsing, not the raw wire
+text and not only the extracted prompt. A call
 is never forwarded without a decision. If the policy snapshot cannot be read,
 every mode refuses.
 """
@@ -239,6 +240,31 @@ def _content_text(content: Any) -> str:
                     parts.append(text)
         return "\n".join(part for part in parts if part)
     return ""
+
+
+def _forwarded_text(payload: Any) -> str:
+    """Strings the provider reads after parsing the JSON body.
+
+    The wire text is not that text. A unicode escape is decoded before the
+    value is used, so the classifier has to see the parsed value.
+    """
+    parts: list[str] = []
+
+    def walk(value: Any) -> None:
+        if isinstance(value, str):
+            if value:
+                parts.append(value)
+            return
+        if isinstance(value, Mapping):
+            for item in value.values():
+                walk(item)
+            return
+        if isinstance(value, list):
+            for item in value:
+                walk(item)
+
+    walk(payload)
+    return "\n".join(parts)
 
 
 def _prompt_text(payload: Mapping[str, Any]) -> str:
@@ -492,18 +518,20 @@ def _degraded_may_proceed(upstream: str, classification: Classification) -> bool
 
 def _degraded_label(
     classifier: Any,
-    body: str,
+    payload: Any,
     classification: Classification,
     hint: Classification | None,
 ) -> Classification:
     """The label the degraded gate uses once the store has refused the write.
 
     ``hint`` is the caller classification. It is a floor: the classifier can
-    raise it, and the caller cannot lower what the body supports. ``body`` is
-    the text that would be forwarded, so a field outside the extracted prompt
-    still counts.
+    raise it, and the caller cannot lower what the parsed values support.
+    Those values are what the provider reads after JSON parsing. The raw wire
+    text is not.
     """
-    return most_sensitive([classification, classifier.classify(body, hint=hint)])
+    return most_sensitive(
+        [classification, classifier.classify(_forwarded_text(payload), hint=hint)]
+    )
 
 
 def _with_classification(evaluation: Evaluation, classification: Classification) -> Evaluation:
@@ -870,7 +898,7 @@ class Gateway:
             self._abandon(session)
             classification = _degraded_label(
                 self.classifier,
-                body.decode("utf-8"),
+                payload,
                 classification,
                 typed,
             )
