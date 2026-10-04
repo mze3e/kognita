@@ -100,6 +100,7 @@ from kognita.models import (
     utcnow,
 )
 from kognita.replay import replay_decision
+from kognita.reconstruct import reconstruct, render_reconstruction
 from kognita.retention import RetentionStore
 from kognita.retrieval import Retrieved, index_item, reindex, retrieve
 from kognita.rules import CORE_RULES, build_registry, rule
@@ -182,6 +183,8 @@ __all__ = [
     "load_snapshot",
     "supersede_policy",
     "replay_decision",
+    "reconstruct",
+    "render_reconstruction",
     # rules
     "rule",
     "build_registry",

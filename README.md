@@ -98,6 +98,9 @@ $ kognita evidence verify --db store.db
 BROKEN: evidence chain broken at sequence 2: payload does not match its hash
 
 $ kognita evidence export --db store.db -o audit.json   # portable, self-verifying
+
+$ kognita evidence reconstruct <interaction_id> --db store.db -o report
+# writes report.json and report.txt
 ```
 
 Payloads hold hashes and references by default, because an append-only log full of personal data collides with erasure rights.
@@ -178,7 +181,7 @@ Kognita is alpha. These are known gaps in v0.2, each scheduled on the [roadmap](
 
 - **The purpose check fails open when no purpose list is configured.** Pass `purposes=` explicitly until it fails closed.
 - **Agent names are self-asserted.** The registry denies unknown names, but nothing yet authenticates that a caller is the agent it claims to be. A request with no agent name skips the registry and is treated as a human.
-- **Reconstruction is not built.** Decisions pin policy, retrieval, and model input/output hashes, and the retention store holds the bytes, but `kognita evidence reconstruct` is not implemented.
+- **Reconstruction covers what 0.3 records.** `kognita evidence reconstruct` answers from pinned evidence and the retention store. Why this client, why this insight or product, what the RM saw and changed, who made the final decision, and what was communicated to the client are present and marked "not recorded" until the client-lifecycle records exist.
 - **Gateway degraded mode is not implemented.** If the evidence store is down the gateway refuses the call. A degraded path for local models is still open.
 
 ## Where it's heading
@@ -191,7 +194,7 @@ The test every release is measured against:
 
 Planned, not yet built:
 
-- **0.3 still open:** `kognita evidence reconstruct`, degraded gateway mode, and the remaining Tier 0 defects. The gateway, the MCP proxy, run budgets, suspend and resume, and pinned evidence are already in the tree.
+- **0.3 still open:** degraded gateway mode, and the remaining Tier 0 defects. The gateway, the MCP proxy, run budgets, suspend and resume, pinned evidence, and `kognita evidence reconstruct` are already in the tree.
 - **0.4: Ingestion, policy language and the client lifecycle.** Passage-level citations, a YAML policy language with diff and validation, a use-case register, risk-based review, a circuit breaker.
 - **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, autonomy levels, evidence-gated promotion and automatic step-down on drift, blast-radius limits, containment.
 - **0.6: Claims and institutional memory.** Typed, sourced, current claims checked before an RM relies on them; approved-source grounding; supervised memory that turns lessons into shared standards; governed business definitions.

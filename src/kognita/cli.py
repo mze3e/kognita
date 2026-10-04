@@ -23,6 +23,7 @@ from kognita.evidence import ChainBreak, EvidenceWriter, export_chain, verify_ch
 from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration, Gateway
 from kognita.mcp import McpProxy, load_root_config
+from kognita.reconstruct import reconstruct, render_reconstruction
 
 
 def _probe(module: str) -> str:
@@ -157,6 +158,39 @@ def cmd_evidence_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def _report_paths(output: str) -> tuple[Path, Path]:
+    """JSON and readable paths for one reconstruct ``--output`` prefix."""
+    path = Path(output)
+    if path.suffix in {".json", ".txt", ".md"}:
+        path = path.with_suffix("")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path.with_suffix(".json"), path.with_suffix(".txt")
+
+
+def cmd_evidence_reconstruct(args: argparse.Namespace) -> int:
+    """Write the reconstruction report as JSON and as a readable document.
+
+    ``interaction_id`` is the correlation id on the evidence events. A hash
+    mismatch is printed in the report; the command still writes both forms.
+    """
+    engine = make_engine(args.db)
+    with session_scope(engine) as session:
+        report = reconstruct(session, args.interaction_id)
+    document = render_reconstruction(report)
+    payload = json.dumps(report, indent=2, sort_keys=True)
+    if args.output:
+        json_path, text_path = _report_paths(args.output)
+        json_path.write_text(payload + "\n")
+        text_path.write_text(document)
+        print(f"wrote {json_path}")
+        print(f"wrote {text_path}")
+        return 0
+    print(document, end="")
+    print("--- json ---")
+    print(payload)
+    return 0
+
+
 def _cmd_serve_mcp(args: argparse.Namespace) -> int:
     """Front the MCP servers named in ``--root-config``.
 
@@ -282,6 +316,22 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--correlation-id", help="mark only this request's events")
     export.add_argument("-o", "--output", help="write to a file instead of stdout")
     export.set_defaults(func=cmd_evidence_export)
+
+    reconstruct_cmd = evidence_sub.add_parser(
+        "reconstruct",
+        help="answer the reconstruction test for one interaction",
+    )
+    reconstruct_cmd.add_argument(
+        "interaction_id",
+        help="correlation id of the evidence to reconstruct",
+    )
+    reconstruct_cmd.add_argument("--db", default="kognita.db", help="store path or URL")
+    reconstruct_cmd.add_argument(
+        "-o",
+        "--output",
+        help="path prefix; writes <prefix>.json and <prefix>.txt",
+    )
+    reconstruct_cmd.set_defaults(func=cmd_evidence_reconstruct)
 
     serve = sub.add_parser("serve", help="run the AI gateway or the MCP proxy")
     mode = serve.add_mutually_exclusive_group(required=True)
