@@ -127,6 +127,14 @@ calls `Classifier.classify`. Classification is caller-asserted everywhere.
 reflectively at `tools.py:144`, `broker.py:125` and `testing/harness.py:82`. A pack without it passes
 `isinstance(pack, DomainPack)` and then *every* policy is evaluated — a silent behaviour change.
 
+**Drift.** The paragraph above does not match the code. `DomainPack.engages` is on the protocol.
+A pack that omits the method fails `isinstance(pack, DomainPack)`. `run_governed`, `ask`, and
+`Harness.evaluate` still read it with `getattr` and pass it to `decide`. `decide` skips a policy
+the predicate rejects and evaluates a policy the predicate accepts. When the method is absent,
+`decide` still evaluates every effective policy. That behaviour was not changed. The proof is
+`tests/test_engages.py`. The citations `protocols.py:63-84`, `tools.py:144`, `broker.py:125` and
+`testing/harness.py:82` are the 2026-09-02 reading.
+
 **11. No foreign keys** on `approvals.decision_id` or `entity_edges.*_entity_id`, despite
 `PRAGMA foreign_keys=ON` at `db.py:56`.
 
