@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `SqliteVecIndex.search` writes the embedding bytes `index_item` stored on the knowledge row into `knowledge_vec`, under a rowid SQLite assigns. That rowid is not `item.id`. A KNN hit joins back to the candidate by those stored bytes, so an indexed candidate is returned as `(item, 1 - distance)`. Neighbours outside the candidate set are dropped. A KNN that returns no rows, or only rows outside the set, returns `[]`. `retrieve` still ranks that empty vector result lexically. A hit that carries a candidate's stored embedding is that candidate's semantic score, including when the vec rowid is not `item.id`.
+- `index_item` and `reindex` maintain `knowledge_vec` when given a `SqliteVecIndex`. Replacing an embedding deletes that item's previous vec row before the new one is inserted. `search` only reads. A hit is the candidate whose id was stored on the row, so two items that share embedding bytes stay distinct, and the vec `rowid` is not `item.id`. The score is `1 - distance`. A KNN with no rows, or only neighbours outside the candidate set, returns `[]`. `retrieve` still ranks that empty vector result lexically.
 
 - The purpose check fails closed when the purpose list is missing or empty. A configured list still allows a listed purpose and denies an unlisted one. `kognita serve` takes a repeatable `--purposes` allowlist for the AI gateway, separate from `--purpose`. The MCP root config takes a `purposes` list, separate from `actor.purpose`. With neither list set, those processes deny the call.
 

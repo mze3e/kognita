@@ -1,25 +1,20 @@
-"""SqliteVecIndex must return a stored embedding, and must not invent a failure.
+"""SqliteVecIndex on a real sqlite-vec connection.
 
-Production writes the embedding as float32 bytes on the knowledge row
-(``index_item``). Nothing writes ``knowledge_vec``. ``item.id`` is not the
-vec ``rowid``. The gap note still describes a map keyed by Python ``id()``.
-
-These tests force that identity: a KNN row may carry the stored embedding
-under a rowid that is not ``item.id`` and not the rowid SQLite would assign
-for a fresh insert. The candidate still comes back as ``(item, 1 - distance)``.
-A neighbour outside the candidate set, and a query that returns no rows, are
-empty results. ``retrieve`` may still rank an honest empty vector result
-lexically. A hit that is the stored embedding does not collapse to that
-lexical score.
+``index_item`` and ``reindex`` write ``knowledge_vec``. ``search`` only reads.
+The vec ``rowid`` is not ``item.id``. A hit is the candidate that was indexed,
+including when another candidate has the same embedding bytes. No KNN rows,
+and neighbours outside the candidate set, are empty results. An empty vector
+result may still rank lexically.
 """
 from __future__ import annotations
 
 import sqlite3
 
 import pytest
+import sqlite_vec
 
 from kognita.embedding import HashingEmbedder
-from kognita.retrieval import index_item, retrieve
+from kognita.retrieval import index_item, reindex, retrieve
 from kognita.vectors import SqliteVecIndex
 from kognita.vocabulary import Classification
 
@@ -29,60 +24,266 @@ BODY = "genomic linkage set keys registry"
 QUERY = "genomic linkage set"
 
 
-class _Result:
-    def __init__(self, rows: list, lastrowid: int | None = None) -> None:
-        self._rows = rows
-        self.lastrowid = lastrowid
+class _Vec:
+    """Embedder with caller-chosen vectors. ``index_item`` stores ``to_bytes``."""
 
-    def fetchall(self) -> list:
-        return list(self._rows)
+    def __init__(self) -> None:
+        self.dimension = 4
+        self.model = "vec-test"
+        self.vectors: dict[str, list[float]] = {}
+
+    def embed(self, text: str) -> list[float]:
+        return list(self.vectors[text])
 
 
-class _Connection:
-    """Records vec writes and returns a scripted KNN result.
+def _connection() -> tuple[SqliteVecIndex, sqlite3.Connection]:
+    connection = sqlite3.connect(":memory:")
+    try:
+        connection.enable_load_extension(True)
+        sqlite_vec.load(connection)
+        connection.enable_load_extension(False)
+    except Exception as exc:  # pragma: no cover - the suite requires the extension
+        raise RuntimeError(
+            "sqlite-vec must load for these tests. Install the vec extra."
+        ) from exc
+    return SqliteVecIndex(connection), connection
 
-    Inserted rowids start at 1000 so they are not a knowledge-item id.
+
+def _row_count(connection: sqlite3.Connection) -> int:
+    exists = connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE name = 'knowledge_vec'"
+    ).fetchone()
+    if exists is None:
+        return 0
+    return int(connection.execute("SELECT count(*) FROM knowledge_vec").fetchone()[0])
+
+
+def _vec_rows(connection: sqlite3.Connection) -> list[tuple[int, int]]:
+    return list(
+        connection.execute("SELECT rowid, knowledge_id FROM knowledge_vec").fetchall()
+    )
+
+
+def test_indexed_item_is_returned_when_rowid_is_not_item_id(session):
+    """``index_item`` writes the embedding. After replace, rowid != item.id.
+
+    ``search`` reads that row and returns ``(item, 1 - distance)``. It does
+    not insert.
     """
-
-    def __init__(self, knn) -> None:
-        self.knn = knn
-        self.calls: list[tuple[str, tuple]] = []
-        self.rows: list[tuple[int, bytes]] = []
-        self.next_rowid = 1000
-
-    def execute(self, sql: str, params: tuple = ()) -> _Result:
-        self.calls.append((sql, params))
-        compact = " ".join(sql.split())
-        if compact.startswith("CREATE"):
-            return _Result([])
-        if compact.startswith("INSERT"):
-            blob = params[0]
-            rowid = self.next_rowid
-            self.next_rowid += 1
-            self.rows.append((rowid, blob))
-            return _Result([], lastrowid=rowid)
-        if "MATCH" in compact:
-            rows = self.knn(self) if callable(self.knn) else self.knn
-            return _Result(rows)
-        if "embedding = ?" in compact:
-            blob = params[0]
-            found = [(rowid,) for rowid, stored in self.rows if stored == blob]
-            return _Result(found)
-        raise AssertionError(compact)
-
-
-def _index(knn) -> tuple[SqliteVecIndex, _Connection]:
-    connection = _Connection(knn)
-    index = SqliteVecIndex.__new__(SqliteVecIndex)
-    index.connection = connection
-    index.table = "knowledge_vec"
-    index._rowid_by_blob = {}
-    return index, connection
-
-
-def _seed(session):
-    embedder = HashingEmbedder()
+    index, connection = _connection()
+    embedder = _Vec()
+    embedder.vectors["alpha one"] = [1.0, 0.0, 0.0, 0.0]
     item = index_item(
+        session,
+        title="alpha",
+        body="one",
+        embedder=embedder,
+        zones=["AE"],
+        classification=Classification.C1,
+        index=index,
+    )
+    session.commit()
+    # Replace the row so SQLite assigns a new rowid and the old one is gone.
+    reindex(session, embedder, index=index)
+    session.commit()
+
+    rows = _vec_rows(connection)
+    assert len(rows) == 1
+    rowid, knowledge_id = rows[0]
+    assert knowledge_id == item.id
+    assert rowid != item.id
+
+    statements: list[str] = []
+    before = _row_count(connection)
+    connection.set_trace_callback(statements.append)
+    found = index.search(
+        [1.0, 0.0, 0.0, 0.0],
+        [(item, item.embedding)],
+    )
+    connection.set_trace_callback(None)
+
+    assert found[0][0] is item
+    assert found[0][1] == pytest.approx(1.0)
+    assert _row_count(connection) == before
+    assert not any(statement.lstrip().upper().startswith("INSERT") for statement in statements)
+    assert not any(statement.lstrip().upper().startswith("DELETE") for statement in statements)
+
+
+def test_same_embedding_bytes_keep_each_candidate(session):
+    """Two indexed items with the same bytes are both returned as themselves."""
+    index, _vec = _connection()
+    embedder = _Vec()
+    embedder.vectors["alpha one"] = [1.0, 0.0, 0.0, 0.0]
+    embedder.vectors["beta two"] = [1.0, 0.0, 0.0, 0.0]
+    first = index_item(
+        session,
+        title="alpha",
+        body="one",
+        embedder=embedder,
+        zones=["AE"],
+        index=index,
+    )
+    second = index_item(
+        session,
+        title="beta",
+        body="two",
+        embedder=embedder,
+        zones=["AE"],
+        index=index,
+    )
+    session.commit()
+    assert first.embedding == second.embedding
+    assert first.id != second.id
+
+    found = index.search(
+        [1.0, 0.0, 0.0, 0.0],
+        [(first, first.embedding), (second, second.embedding)],
+        top_k=2,
+    )
+
+    assert {id(item) for item, _score in found} == {id(first), id(second)}
+    assert [score for _item, score in found] == pytest.approx([1.0, 1.0])
+
+
+def test_reindex_drops_the_previous_vector(session):
+    """The old vector must not remain a neighbour that can fill top-k."""
+    index, connection = _connection()
+    embedder = _Vec()
+    embedder.vectors["alpha one"] = [1.0, 0.0, 0.0, 0.0]
+    embedder.vectors["beta two"] = [0.0, 1.0, 0.0, 0.0]
+    alpha = index_item(
+        session,
+        title="alpha",
+        body="one",
+        embedder=embedder,
+        zones=["AE"],
+        index=index,
+    )
+    beta = index_item(
+        session,
+        title="beta",
+        body="two",
+        embedder=embedder,
+        zones=["AE"],
+        index=index,
+    )
+    embedder.vectors["alpha one"] = [0.0, 0.0, 1.0, 0.0]
+    reindex(session, embedder, index=index)
+    session.commit()
+
+    assert _row_count(connection) == 2
+    old = index.search(
+        [1.0, 0.0, 0.0, 0.0],
+        [(alpha, alpha.embedding), (beta, beta.embedding)],
+        top_k=2,
+    )
+    assert old
+    assert all(score < 0.99 for _item, score in old)
+
+    live = index.search([0.0, 0.0, 1.0, 0.0], [(alpha, alpha.embedding)], top_k=2)
+    assert live[0][0] is alpha
+    assert live[0][1] == pytest.approx(1.0)
+
+
+def test_knn_with_no_rows_returns_empty(session):
+    index, _vec = _connection()
+    embedder = _Vec()
+    embedder.vectors["alpha one"] = [1.0, 0.0, 0.0, 0.0]
+    item = index_item(
+        session,
+        title="alpha",
+        body="one",
+        embedder=embedder,
+        zones=["AE"],
+    )
+    session.commit()
+    fresh, _vec = _connection()
+    assert fresh.search([1.0, 0.0, 0.0, 0.0], [(item, item.embedding)]) == []
+
+    embedder.vectors["beta two"] = [0.0, 1.0, 0.0, 0.0]
+    index, _vec = _connection()
+    index_item(
+        session,
+        title="beta",
+        body="two",
+        embedder=embedder,
+        zones=["AE"],
+        index=index,
+    )
+    session.commit()
+    assert index.search([1.0, 0.0, 0.0, 0.0], [(item, item.embedding)], top_k=0) == []
+
+
+def test_partial_knn_keeps_the_candidate(session):
+    """A nearer neighbour outside the set is dropped. The candidate stays."""
+    index, _vec = _connection()
+    embedder = _Vec()
+    embedder.vectors["alpha one"] = [1.0, 0.0, 0.0, 0.0]
+    embedder.vectors["beta two"] = [0.0, 1.0, 0.0, 0.0]
+    alpha = index_item(
+        session,
+        title="alpha",
+        body="one",
+        embedder=embedder,
+        zones=["AE"],
+        index=index,
+    )
+    index_item(
+        session,
+        title="beta",
+        body="two",
+        embedder=embedder,
+        zones=["AE"],
+        index=index,
+    )
+    session.commit()
+
+    found = index.search([0.0, 1.0, 0.0, 0.0], [(alpha, alpha.embedding)], top_k=2)
+
+    assert [item for item, _score in found] == [alpha]
+    assert found[0][1] < 0.99
+
+
+def test_no_candidates_does_not_write():
+    index, connection = _connection()
+    statements: list[str] = []
+    connection.set_trace_callback(statements.append)
+    assert index.search([1.0, 0.0, 0.0, 0.0], []) == []
+    connection.set_trace_callback(None)
+    assert statements == []
+    assert _row_count(connection) == 0
+
+
+def test_neighbours_outside_the_candidate_set_return_empty(session):
+    index, _vec = _connection()
+    embedder = _Vec()
+    embedder.vectors["alpha one"] = [1.0, 0.0, 0.0, 0.0]
+    embedder.vectors["beta two"] = [0.0, 1.0, 0.0, 0.0]
+    alpha = index_item(
+        session,
+        title="alpha",
+        body="one",
+        embedder=embedder,
+        zones=["AE"],
+        index=index,
+    )
+    index_item(
+        session,
+        title="beta",
+        body="two",
+        embedder=embedder,
+        zones=["AE"],
+        index=index,
+    )
+    session.commit()
+
+    missed = index.search([0.0, 1.0, 0.0, 0.0], [(alpha, alpha.embedding)], top_k=1)
+    assert missed == []
+
+
+def test_empty_vector_result_still_ranks_lexically(session):
+    embedder = HashingEmbedder()
+    index_item(
         session,
         title=TITLE,
         body=BODY,
@@ -91,146 +292,45 @@ def _seed(session):
         classification=Classification.C1,
     )
     session.commit()
-    return embedder, item
+    index, _vec = _connection()
 
-
-def test_indexed_embedding_is_returned_when_rowid_is_not_item_id(session):
-    """The bytes ``index_item`` stored come back as that candidate.
-
-    The vec rowid the connection assigns is not ``item.id``. The score is
-    ``1 - distance``.
-    """
-    _embedder, item = _seed(session)
-
-    def knn(conn: _Connection):
-        rowid, blob = conn.rows[-1]
-        assert rowid != item.id
-        assert blob == item.embedding
-        return [(rowid, blob, 0.25)]
-
-    index, conn = _index(knn)
-    found = index.search([0.0, 1.0], [(item, item.embedding)])
-
-    assert found == [(item, 0.75)]
-    inserts = [call for call in conn.calls if call[0].lstrip().upper().startswith("INSERT")]
-    assert len(inserts) == 1
-    sql, params = inserts[0]
-    assert "rowid" not in sql.lower()
-    assert params == (item.embedding,)
-    assert conn.rows[0][0] != item.id
-
-
-def test_knn_rows_outside_the_candidate_set_are_an_empty_result(session):
-    """A global top-k that misses the candidates is empty, and does not raise."""
-    _embedder, item = _seed(session)
-
-    def knn(conn: _Connection):
-        blob = conn.rows[-1][1]
-        other = bytes([blob[0] ^ 0xFF]) + blob[1:]
-        return [(4242, other, 0.1), (4243, other, 0.2)]
-
-    index, _conn = _index(knn)
-    assert index.search([0.0, 1.0], [(item, item.embedding)]) == []
-
-
-def test_knn_that_returns_no_rows_is_empty(session):
-    _embedder, item = _seed(session)
-    index, _conn = _index(lambda _conn: [])
-    assert index.search([0.0, 1.0], [(item, item.embedding)]) == []
-
-
-def test_partial_knn_keeps_the_candidate_and_drops_the_rest(session):
-    """A nearer neighbour outside the set is dropped. The candidate stays."""
-    _embedder, item = _seed(session)
-
-    def knn(conn: _Connection):
-        rowid, blob = conn.rows[-1]
-        other = bytes([blob[0] ^ 0xFF]) + blob[1:]
-        return [(4242, other, 0.0), (rowid, blob, 0.25)]
-
-    index, _conn = _index(knn)
-    assert index.search([0.0, 1.0], [(item, item.embedding)], top_k=2) == [(item, 0.75)]
-
-
-def test_stored_embedding_under_python_id_is_still_that_candidate(session):
-    """The gap's key is Python ``id()``. The stored bytes still name the item.
-
-    ``retrieve`` must apply that semantic score. The same text with an empty
-    KNN ranks lexically, below this score.
-    """
-    _embedder, item = _seed(session)
-
-    def knn(_conn: _Connection):
-        return [(id(item), item.embedding, 0.0)]
-
-    index, _conn = _index(knn)
-    hits = retrieve(session, QUERY, zone="AE", embedder=_embedder, index=index)
-
-    assert [hit.title for hit in hits] == [TITLE]
-    assert hits[0].score == 1.0
-
-
-def test_empty_knn_still_ranks_lexically(session):
-    embedder, _item = _seed(session)
-    index, _conn = _index(lambda _conn: [])
     hits = retrieve(session, QUERY, zone="AE", embedder=embedder, index=index)
 
     assert [hit.title for hit in hits] == [TITLE]
     assert hits[0].score == 0.4
 
 
-def test_neighbours_outside_the_set_still_rank_lexically(session):
-    embedder, item = _seed(session)
+def test_outside_neighbour_still_ranks_lexically(session):
+    """A nearer vec row outside the entitled set is an empty vector result.
 
-    def knn(conn: _Connection):
-        blob = conn.rows[-1][1]
-        other = bytes([blob[0] ^ 0xFF]) + blob[1:]
-        return [(4242, other, 0.0)]
+    ``retrieve`` asks for ``top_k`` equal to the candidate count. That neighbour
+    can fill the only slot. The entitled item still ranks on lexical overlap.
+    """
+    embedder = _Vec()
+    embedder.vectors[QUERY] = [1.0, 0.0, 0.0, 0.0]
+    embedder.vectors[f"{TITLE} {BODY}"] = [0.0, 1.0, 0.0, 0.0]
+    embedder.vectors["other item"] = [1.0, 0.0, 0.0, 0.0]
+    index, _vec = _connection()
+    index_item(
+        session,
+        title=TITLE,
+        body=BODY,
+        embedder=embedder,
+        zones=["AE"],
+        classification=Classification.C1,
+        index=index,
+    )
+    index_item(
+        session,
+        title="other",
+        body="item",
+        embedder=embedder,
+        zones=["XX"],
+        index=index,
+    )
+    session.commit()
 
-    index, _conn = _index(knn)
     hits = retrieve(session, QUERY, zone="AE", embedder=embedder, index=index)
 
     assert [hit.title for hit in hits] == [TITLE]
     assert hits[0].score == 0.4
-
-
-def test_no_candidates_does_not_query():
-    index, conn = _index(lambda _conn: [(1, b"", 0.0)])
-    assert index.search([0.0, 1.0], []) == []
-    assert conn.calls == []
-
-
-def _real_index() -> tuple[SqliteVecIndex, sqlite3.Connection]:
-    sqlite_vec = pytest.importorskip("sqlite_vec")
-    connection = sqlite3.connect(":memory:")
-    try:
-        index = SqliteVecIndex(connection)
-    except RuntimeError as exc:
-        pytest.skip(str(exc))
-    return index, connection
-
-
-def test_sqlite_vec_returns_the_stored_embedding_under_its_own_rowid(session):
-    """Against the extension: the indexed candidate comes back, rowid != item.id."""
-    embedder, item = _seed(session)
-    index, connection = _real_index()
-    text = f"{TITLE} {BODY}"
-    vector = embedder.embed(text)
-
-    spacer = [0.0] * embedder.dimension
-    spacer[0] = 1.0
-    index.search(spacer, [(object(), spacer)], top_k=1)
-
-    found = index.search(vector, [(item, item.embedding)])
-    rows = connection.execute("SELECT rowid, embedding FROM knowledge_vec").fetchall()
-    owned = [rowid for rowid, blob in rows if blob == item.embedding]
-
-    assert found[0][0] is item
-    assert found[0][1] == pytest.approx(1.0, abs=1e-5)
-    assert owned
-    assert owned[0] != item.id
-
-    missed = index.search(spacer, [(item, item.embedding)], top_k=1)
-    assert missed == []
-
-    assert index.search(vector, [(item, item.embedding)], top_k=0) == []
