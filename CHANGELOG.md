@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-06
+
 ### Added
 
 - Gateway overhead on `kognita serve`. The benchmark times an allowed `POST /v1/chat/completions` through the gateway built by `kognita serve --provider openai-compatible --upstream https://api.openai.com`, with `--purpose COLLABORATION`, `--purposes COLLABORATION`, `--agent dossier-agent`, and principal `alice`. The prompt is `Email ana@example.org about the notes`. `_urllib_transport` forwards the call to a local stand-in that returns a fixed completion, so the provider is not called. Overhead for a call is its wall time minus time inside `PatternClassifier.classify` and `PatternClassifier.calibrated_confidence` (the prompt and the response) minus time inside the stand-in. The decision path is the one already on main. The test fails when a call's overhead is not under 50 ms. On Linux 6.12.94+ x86_64, 4 CPUs, Intel(R) Xeon(R) Processor, MemTotal 16398384 kB, a sample of 30 sequential calls, none dropped, measured a maximum overhead of 37.010 ms and a mean of 9.469 ms. Classifier inference on that run averaged 0.041 ms per call, and the stand-in averaged 0.001 ms per call.
@@ -86,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-provider LLM support (Anthropic, OpenAI, Groq, Gemini, Ollama)
 - Streamlit demo application
 
-[Unreleased]: https://github.com/mze3e/kognita/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mze3e/kognita/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/mze3e/kognita/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mze3e/kognita/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/mze3e/kognita/releases/tag/v0.1.0

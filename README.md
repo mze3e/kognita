@@ -234,6 +234,6 @@ kognita.graph      Graphiti + Kuzu knowledge engine          [graph]
 
 ## Status
 
-**Alpha.** v0.2.0 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+**Alpha.** v0.3.0 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 MIT licensed.
