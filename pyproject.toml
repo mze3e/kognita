@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kognita"
-version = "0.2.0"
+version = "0.3.0"
 description = "Prove an AI answer was permitted — and evidence it. A governed decision, retrieval and knowledge-graph library."
 readme = "README.md"
 requires-python = ">=3.12"

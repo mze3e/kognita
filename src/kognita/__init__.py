@@ -119,7 +119,7 @@ from kognita.vocabulary import (
     Outcome,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 #: Names 0.1.x exposed here that 0.2 does not. The graph engine is one optional
 #: backend behind a protocol, so it is reached at ``kognita.graph`` rather than
