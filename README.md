@@ -72,9 +72,9 @@ Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vect
 
 ## What it does today
 
-**Authorise before discovery.** An agent's intent is described as an envelope (who, for what purpose, with which tool, about which subject, from where) and evaluated before anything is fetched. A denial returns no data, not filtered data.
+**Authorise before discovery.** An agent's intent is described as an envelope (who, for what purpose, with which tool, about which subject, from where) and evaluated before anything is fetched. A denial returns no data, not filtered data. Retrieval filters on zones and classification before scoring. An item with no zones is not visible in any zone.
 
-**Fail closed.** Outcomes resolve as `DENY > ESCALATE > HUMAN_APPROVAL > ALLOW`. One failing check among a hundred passes still denies, so a policy set cannot be widened by adding permissive rules. A policy whose rule type has no evaluator escalates rather than being skipped.
+**Fail closed.** Outcomes resolve as `DENY > ESCALATE > HUMAN_APPROVAL > ALLOW`. One failing check among a hundred passes still denies, so a policy set cannot be widened by adding permissive rules. A policy whose rule type has no evaluator escalates rather than being skipped. A missing or empty purpose list fails the purpose check.
 
 **Every decision cites its rule.** Each check carries the regime and citation it came from. A check without a citation is an assertion, not a decision, and the conformance kit enforces it.
 
@@ -84,6 +84,8 @@ Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vect
 DENY  Kill switch engaged — accountable owner: Head of Wealth Advisory
 DENY  Agent inventory — 'AGENT-UNKNOWN' is not registered
 ```
+
+Through `kognita serve`, a call with no agent name is denied. An agent name is accepted only when the bound client configuration lists it. An approved system trigger is admitted, and it is not treated as a human.
 
 **Decisions are pure and replayable.** `decide()` writes nothing and takes the instant as a parameter. Policies are effective-dated rows, so *"what would this have decided in March?"* has an answer:
 
@@ -105,7 +107,9 @@ $ kognita evidence reconstruct <interaction_id> --db store.db -o report
 
 Payloads hold hashes and references by default, because an append-only log full of personal data collides with erasure rights.
 
-**Humans approve what they actually reviewed.** Through `run_governed()`, a `HUMAN_APPROVAL` decision holds the tool until approval is granted. Approvals bind to a hash of the envelope, attributes and checks, so an approval for one request cannot be replayed for a different one. Two-signature approval, where one person marks and a different person confirms, is built in.
+**Pinned evidence and replay.** Each policy check records the hash of the policy row as evaluated. `replay_decision()` fails if a pinned policy row, retrieved item, or retained prompt or response no longer matches. An in-place edit of an effective policy is refused; a change is a new row via `supersede_policy()`. Retrieval records a content hash and the embedding model. A model call records the provider, the model name and version reported by the provider, the prompt template version, and hashes of the prompt as sent and the response as received. Tool and egress events record a hash of the response. Prompts, responses, and source snapshots live in a retention store keyed by those hashes. Erasure deletes the bytes and appends an `ERASURE` event; the chain keeps the hash. `kognita evidence reconstruct` answers the ten reconstruction-test questions from that record. It checks the chain and every pinned hash, and it marks questions answered by origination, RM review capture, and governed client communication "not recorded".
+
+**Humans approve what they actually reviewed.** Through `run_governed()`, a `HUMAN_APPROVAL` decision holds the tool until approval is granted. The hold checkpoints the run. `continue_run(run_id, approvals_resolved={approval_id: True})` resumes it; a denied approval does not execute. Approvals bind to a hash of the envelope, attributes and checks, so an approval for one request cannot be replayed for a different one. Two-signature approval, where one person marks and a different person confirms, is built in.
 
 **Egress is guarded, not merely refused.** The egress guard decides per classification and destination whether content may leave, must be redacted, or may not leave at all:
 
@@ -128,17 +132,34 @@ result.decision   # REDACT
 
 **Governed tools and questions.** `run_governed()` is the only path to a registered tool: decide, record, and only then execute, with tool-call and egress evidence. `ask()` answers a question from entitled, cited sources only, and when it refuses, the basis for refusing is the answer.
 
+**Run budgets.** A `Run` on `run_governed()` and `ask()` caps call count, wall clock, classification ceiling, and cost when the caller already knows it. Token spend is recorded when the call site supplies it. The AI gateway adds the provider's token totals and cost to that budget. Exceeding a budget is a `DENY` that cites that budget, and the consumption is written to the evidence chain.
+
+**Classifier-derived envelopes.** `ask()` classifies the question, and `run_governed()` classifies free-text arguments, with the pattern classifier in core. A typed attribute wins. Identity, purpose, and subject are not taken from the text. The recorded model, version, label, calibrated confidence, and input hash are what `decide()` replays, so replay does not run the classifier. Below a `CLASSIFIER_CONFIDENCE` threshold the outcome is `ESCALATE`, never `ALLOW`. A citation that acted on a classifier label names both the policy rule and that label.
+
+**The AI gateway.** `kognita serve` fronts an OpenAI-compatible provider. Agents point `base_url` at the gateway. It decides before any byte is forwarded, redacts through the egress guard, restores redacted spans, and classifies the response. `MODEL_CALL` and `EGRESS` evidence record hashes and references, not the prompt or the response. If the evidence store cannot record the call, the default `--failure-mode FAIL_CLOSED` refuses it and does not call the provider. `DEGRADED` may proceed only for a local model and content below classification C2 (C2 is client-identifying), and writes the decision and the model evidence once the store accepts writes. The gateway overhead benchmark fails a call whose overhead, excluding classifier inference and the upstream stand-in, is not under 50 ms.
+
+```console
+$ kognita serve --provider openai-compatible --upstream https://api.openai.com \
+    --purpose COLLABORATION --purposes COLLABORATION --agent dossier-agent
+```
+
+`--provider` accepts `openai-compatible` only, and `--upstream` is the provider origin. `--purposes` is the allowlist; with none, every call is denied. `--purpose` is the purpose claimed when a request has none. The process listens on `127.0.0.1:8080`. Clients set `base_url` to `http://127.0.0.1:8080/v1`.
+
+**The MCP proxy.** `kognita serve --mcp --root-config config.json` fronts the MCP servers named in that file. The file also names the policy pack, the evidence database, and the default actor context. Every call becomes an envelope and is authorised with `run_governed()`. The backend is contacted only when the call is released: an allow, or a human approval that already has a live grant. A denial, an escalation, and an ungranted human approval return the outcome and the citations. If the evidence store cannot record the call, the proxy refuses it and does not forward. It has no degraded mode.
+
+**Flagship demo.** `kognita scaffold --template governed-agent` creates a small app and a SQLite policy and evidence store.
+
+**Conformance.** The [conformance kit](#conformance) asserts that a domain pack's rules are decided fail-closed, cited, and evidenced.
+
 ## Continuous Learning and Drift
 
-Kognita is designed to capture not just permissions but outcomes, so agents and workflows improve over time:
+The [roadmap](docs/ROADMAP.md) schedules this loop after 0.3:
 
-**Outcome metrics per use case.** Each workflow registers one primary metric (cycle time, decision quality, reliability) with a baseline and target. Kognita computes these from the evidence it records: how long from trigger to final decision, RM edit and rejection rates, exception handling. A Knowledge Lead owns the quality standard and approves improvements to it.
+**Outcome metrics per use case (0.4).** Each use case names one primary metric — cycle time, decision quality, or reliability — with a baseline and a target. A Knowledge Lead owns the quality standard.
 
-**Autonomy earns its expansion.** Raising an agent's autonomy level requires evidence thresholds on those metrics. An agent that maintains quality ≥ 95%, exceptions < 5% and full traceability can move to the next level; if metrics degrade, it steps back automatically. Quality is tracked as trends per agent and model version, so gradual drift is caught before a hard breach.
+**Autonomy earns its expansion (0.5).** Raising an agent's autonomy level requires thresholds on those metrics. The evidence is necessary, not sufficient: the accountable owner still approves. If the metrics fall below a lower threshold, the agent's effective level steps down one step.
 
-**Institutional memory.** A pattern in RM corrections or outcomes becomes a *proposed change* to the shared standard. The Knowledge Lead approves it; it becomes a new dated version. Each output records which version produced it, so learning is versioned and reproducible, never edited in place.
-
-These close the loop: every correction and outcome feeds back into the next decision, so one RM's lesson improves all subsequent RMs' guidance.
+**Institutional memory (0.6).** A pattern in RM corrections or outcomes becomes a proposed change. The Knowledge Lead approves it as a new dated version. Learning is versioned, never edited in place.
 
 ## Domain packs
 
@@ -152,7 +173,7 @@ class MyPack:
     def rules(self): return build_registry(MY_EVALUATORS)
 ```
 
-Policies are data: effective-dated rows with a JSON payload, interpreted by the evaluator registered for their `rule_type`. The core ships six primitives (allowlist, denylist, required flag, required human approval, two-signature approval, prohibited); a pack registers whatever its regimes need beyond them.
+Policies are data: effective-dated rows with a JSON payload, interpreted by the evaluator registered for their `rule_type`. The core ships seven primitives (allowlist, denylist, required flag, required human approval, two-signature approval, classifier confidence (`CLASSIFIER_CONFIDENCE`), prohibited); a pack registers whatever its regimes need beyond them.
 
 ### Conformance
 
@@ -177,12 +198,12 @@ The invariants are importable, so external packs run them in their own repositor
 
 ## Known limitations
 
-Kognita is alpha. These are known gaps in v0.2, each scheduled on the [roadmap](docs/ROADMAP.md):
+Kognita is alpha. These are known gaps in v0.3.0:
 
-- **The purpose check fails open when no purpose list is configured.** Pass `purposes=` explicitly until it fails closed.
-- **Agent names are self-asserted.** The registry denies unknown names, but nothing yet authenticates that a caller is the agent it claims to be. A request with no agent name skips the registry and is treated as a human.
-- **Reconstruction covers what 0.3 records.** `kognita evidence reconstruct` answers from pinned evidence and the retention store. Why this client, why this insight or product, what the RM saw and changed, who made the final decision, and what was communicated to the client are present and marked "not recorded" until the client-lifecycle records exist.
-- **Gateway degraded mode is not implemented.** If the evidence store is down the gateway refuses the call. A degraded path for local models is still open.
+- **Reconstruction covers what 0.3 records.** `kognita evidence reconstruct` answers from pinned evidence and the retention store. Why this client, why this insight or product, what the RM saw and changed, who made the final decision, and what was communicated to the client are present and marked "not recorded" until the client-lifecycle records exist. The roadmap places those records in 0.4.
+- **Degraded-mode evidence is held in the gateway process.** A `DEGRADED` call that proceeds while the evidence store is down keeps the decision and the model evidence in memory until the store accepts writes. Restarting the process before then drops them. `FAIL_CLOSED` is the default, and it refuses the call. The MCP proxy has no degraded mode.
+- **`create_all` does not migrate an existing SQLite file.** It creates every registered table that does not yet exist. Tables already in the file are left as they are. A domain pack's models must be imported first, or its tables are skipped.
+- **Agent credentials are not issued yet.** Through `kognita serve`, a call with no agent name is denied, and an agent name is accepted only when the bound client configuration lists it. `decide()` still skips the registry when the envelope has no agent name, and the in-process runner records that request as the human principal. Agents authenticating with their own credentials is 0.5.
 
 ## Where it's heading
 
@@ -192,10 +213,11 @@ The test every release is measured against:
 
 > **Can the bank explain, control, stop and reconstruct every material AI action that affects a client?**
 
+**0.3 "Gateways, the Run and Replay" is shipped** in v0.3.0: the AI gateway, the MCP proxy, classifier-derived envelopes, run budgets, suspend and resume, pinned evidence, `kognita evidence reconstruct`, degraded gateway mode, and the Tier 0 defect closures.
+
 Planned, not yet built:
 
-- **0.3 still open:** degraded gateway mode, and the remaining Tier 0 defects. The gateway, the MCP proxy, run budgets, suspend and resume, pinned evidence, and `kognita evidence reconstruct` are already in the tree.
-- **0.4: Ingestion, policy language and the client lifecycle.** Passage-level citations, a YAML policy language with diff and validation, a use-case register, risk-based review, a circuit breaker.
+- **0.4 "Ingestion, Policy Language and the Client Lifecycle".** Make citations real down to the passage, let non-engineers author and review policy, record a client interaction from origination to communication, and meet developers in the frameworks they already use. The roadmap places this in Q1 2027.
 - **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, autonomy levels, evidence-gated promotion and automatic step-down on drift, blast-radius limits, containment.
 - **0.6: Claims and institutional memory.** Typed, sourced, current claims checked before an RM relies on them; approved-source grounding; supervised memory that turns lessons into shared standards; governed business definitions.
 - **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
@@ -222,7 +244,8 @@ Its future is under review. It currently pins `graphiti-core` and caps `openai` 
 
 ```
 kognita            the decision engine: decisions, evidence, approvals,
-                   retrieval, egress, tools. Four dependencies, no network.
+                   retrieval, egress, tools, the AI gateway and the MCP proxy.
+                   Four dependencies, no network.
 kognita.testing    the conformance kit
 kognita.adapters   provider-backed embedders and clients     [openai] …
 kognita.graph      Graphiti + Kuzu knowledge engine          [graph]

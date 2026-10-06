@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "kognita"
 version = "0.3.0"
-description = "Prove an AI answer was permitted — and evidence it. A governed decision, retrieval and knowledge-graph library."
+description = "Prove an AI answer was permitted — and evidence it. A governed decision, retrieval and knowledge-graph library with an AI gateway and MCP proxy."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -20,6 +20,8 @@ keywords = [
     "graphiti",
     "kuzu",
     "rag",
+    "ai-gateway",
+    "mcp",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
