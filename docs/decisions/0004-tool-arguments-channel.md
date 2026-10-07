@@ -19,7 +19,7 @@ The only place tool arguments travel today is `Envelope.context`, documented as 
 - A request could be approved with one argument set and executed with another
 - `envelope_hash` does not change, defeating the binding that makes approvals meaningful
 
-Measured against BMOS's 15 governed tools:
+Measured against 15 governed tools:
 - `get_org_state()` needs no arguments (1 tool)
 - `get_document(doc_id)` needs a document id
 - Every `list_*` needs a pagination cursor
@@ -117,7 +117,7 @@ envelope = Envelope(
 
 - 60 unit tests pass (no test changes needed; default arguments={} maintains compatibility).
 - 10 conformance cases pass.
-- BMOS-shaped fixture pack: new xfail `test_mark_criterion_arguments_hashed` flips to passing once this lands.
+- Governance fixture pack: new xfail `test_mark_criterion_arguments_hashed` flips to passing once this lands.
 - No tool-signature changes required; tools read from envelope rather than function parameters.
 
 ## Related

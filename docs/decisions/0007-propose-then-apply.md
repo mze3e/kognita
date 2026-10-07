@@ -6,7 +6,7 @@
 
 ## Context
 
-BMOS has a `proposals` table and `decide_proposal(id, accept, note)`: an agent proposes a change, humans review the diff, and only when approved does the change apply atomically.
+The reference model has a `proposals` table and `decide_proposal(id, accept, note)`: an agent proposes a change, humans review the diff, and only when approved does the change apply atomically.
 
 Kognita's current model:
 - `Approval` binds to an `envelope_hash` and **carries no payload** of the change.
@@ -173,7 +173,7 @@ approval = open_approval(
 - Proposals are atomic: the change is either applied in full or not at all.
 - Binding: the approval's signature is on the exact change the human reviewed.
 - Auditability: before-state, change, and approver are all recorded.
-- BMOS pattern: agent proposes, human reviews diff, owner applies.
+- Pattern: agent proposes, human reviews diff, owner applies.
 - No diff substitution: once approved, the exact proposal applies (no side-channel proposal swaps).
 
 **What it costs:**
@@ -188,10 +188,10 @@ approval = open_approval(
 ## Verification
 
 - 60 unit tests pass.
-- New test `test_proposal_must_bind_to_diff` passes (was xfail in BMOS pack).
+- New test `test_proposal_must_bind_to_diff` passes (was xfail in the governance pack).
 - New test `test_data_held_until_second_signature` passes (HUMAN_APPROVAL holds data).
 - 10 conformance cases pass.
-- BMOS-shaped fixture pack:
+- Governance fixture pack:
   - `test_marking_requires_two_signatures` passes (two signatures + proposal).
   - `test_data_held_until_second_signature` passes.
   - Proposal is applied atomically, not diff-substituted.
@@ -200,7 +200,7 @@ approval = open_approval(
 
 - ADR 0006 (two-signature) works seamlessly with proposals: first signature proposes, second applies.
 - Tier 2 item 5 (versioned artefacts) is complementary: proposals track before-state; artefacts track versions post-apply.
-- BMOS fixture pack: all xfails in two-signature and propose-then-apply tests flip to passing.
+- Governance fixture pack: all xfails in two-signature and propose-then-apply tests flip to passing.
 
 ## Design notes
 

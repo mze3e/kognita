@@ -1,20 +1,18 @@
-"""BMOS conformance: testing governance doctrine against the fixture pack.
+"""Governance conformance: testing governance doctrine against the fixture pack.
 
-This test suite exercises the BMOS-shaped fixture pack against Kognita's
+This test suite exercises the governance fixture pack against Kognita's
 capability to express its central doctrine: "one person marks a criterion met;
 only an owner confirms; nothing self-passes."
 
 Each test that fails due to a missing Kognita feature is marked `xfail(strict=True)`.
-When all xfails flip to passing, the gap analysis roadmap is complete.
-
-Reference: `docs/gap-analysis-bmos.md`
+When all xfails flip to passing, the roadmap is complete.
 """
 from __future__ import annotations
 
 import pytest
 from sqlmodel import select
 
-from fixtures import bmos_pack as bp
+from fixtures import governance_pack as bp
 
 from kognita.models import Approval, EvidenceEvent
 from kognita.registry import register
@@ -33,9 +31,9 @@ def _seed(session):
 def harness():
     from kognita.vocabulary import Classification
 
-    h = Harness(pack=bp.BMOSPack(), purposes=bp.PURPOSES, seed=_seed)
+    h = Harness(pack=bp.GovernancePack(), purposes=bp.PURPOSES, seed=_seed)
 
-    # Register tools for the BMOS pack
+    # Register tools for the governance pack
     def dummy_tool(envelope, evaluation, session):
         return {"result": "success"}
 

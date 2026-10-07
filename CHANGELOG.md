@@ -74,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SoR (System of Record) mirror architecture for safe separation of concerns
 - Import layering contracts via `import-linter` to prevent architectural drift
 - CLI with `kognita` command and subcommands
-- Comprehensive test suite (75+ tests) with BMOS conformance validation
+- Comprehensive test suite (75+ tests) with governance conformance validation
 
 ### Changed
 
