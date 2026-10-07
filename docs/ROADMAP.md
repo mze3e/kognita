@@ -4,7 +4,7 @@
 
 **Current Status:** v0.3.0 is shipped (0.3 done). Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
 
-**Last revised:** September 2026. See [Decision Log](#decision-log) for what changed and why.
+**Last revised:** 7 October 2026. See [Decision Log](#decision-log) for what changed and why.
 
 ---
 
@@ -35,7 +35,7 @@ The direction of travel in supervision is from AI governance *documentation* tow
 |---|---|---|
 | Governable | Every AI use case is registered, and every action is authorized before it happens | Core today; use-case register (0.4) |
 | Explainable | Why this client, why this product, which controls ran, which rule decided | Citations today; origination evidence (0.4) |
-| Controllable | Budgets, approvals, delegation limits, a human decision point, automatic halts when harm spreads, bounded agent authority | Run and approvals (0.3); risk-based review and circuit breaker (0.4); agent authority, autonomy levels and blast radius (0.5) |
+| Controllable | Budgets, approvals, delegation limits, a human decision point, automatic halts when harm spreads, bounded agent authority | Run and approvals (0.3); risk-based review and circuit breaker (0.4); agent authority and blast radius (0.5) |
 | Replayable | The bank can reproduce the evidence later, exactly | Pinned evidence and reconstruction (0.3) |
 | Resilient | Governance survives outages, key compromise and supplier failure | Gateway failure mode (0.3); resilience track (0.7) |
 
@@ -108,14 +108,14 @@ Its overarching rule is Kognita's founding premise:
 | 8 | Deterministic financial calculations | Boundary: Kognita requires figures to cite a registered calculation service | Calculation provenance (0.6) |
 | 9 | Runtime policy enforcement outside the LLM | **Covered** | Core |
 | 10 | Sandboxed, bounded execution | Partial | Blast-radius limits and sandbox constraints (0.5) |
-| 11 | Human approval for high-impact decisions | Partial: HUMAN_APPROVAL outcome and two-signature approvals | Suspend/resume (0.3); autonomy levels (0.5) |
+| 11 | Human approval for high-impact decisions | Partial: HUMAN_APPROVAL outcome and two-signature approvals | Suspend/resume (0.3) |
 | 12 | Complete action audit trail and kill switch | Partial: hash-chained evidence, per-agent kill switch | Reconstruction (0.3); granular revocation (0.4) |
 
 **Boundary** marks controls whose capability belongs to another system: the truth layer, calculation engines, evaluation harnesses, sandboxes and challenger models. Kognita's role in each is to refuse an output unless the authoritative system was used, and to record that it was. Building those systems inside Kognita would make it the thing being governed.
 
 ### Wealth management AI control framework
 
-A second consolidated framework, covering RM-facing, client-facing and agentic AI, defines 70 controls in 10 domains, drawing on MAS, PDPC, SFC, FCA, the Bank of England, APRA and ASIC, CSBS, BIS/FSI and ESMA. The EVOLVE framework's learning loop and institutional memory are integrated into the roadmap. The full mapping is in [control-frameworks.md](control-frameworks.md).
+A second consolidated framework, covering RM-facing, client-facing and agentic AI, defines 70 controls in 10 domains, drawing on MAS, PDPC, SFC, FCA, the Bank of England, APRA and ASIC, CSBS, BIS/FSI and ESMA. The EVOLVE framework is integrated into the roadmap. The full mapping is in [control-frameworks.md](control-frameworks.md).
 
 It sets one overarching test, which Kognita adopts as the measure for every release:
 
@@ -139,7 +139,7 @@ It sets one overarching test, which Kognita adopts as the measure for every rele
 | 14 | Third-party dependency and exit controls | Partial | Dependency map and concentration risk (0.7) |
 | 15 | Continuous testing, revalidation and incident learning | Partial | Near misses (0.4); adversarial suite (0.5); revalidation (0.6) |
 
-**Two naming collisions.** The framework's C0 to C5 client-impact scale is unrelated to Kognita's C1 to C3 data classification, and its L0 to L5 communication scale is unrelated to Kognita's L0 to L6 autonomy levels. This roadmap calls them the **client-impact class** and the **communication level**, and uses their names rather than codes.
+**Two naming collisions.** The framework's C0 to C5 client-impact scale is unrelated to Kognita's C1 to C3 data classification, and its L0 to L5 scale is a communication scale. This roadmap calls them the **client-impact class** and the **communication level**, and uses their names rather than codes.
 
 ---
 
@@ -400,7 +400,6 @@ Templates: role-based access, geo-fencing, data classification, time-gated acces
   - **Decision quality:** edit, rejection and escalation rates, and outcome events (item 15) per interaction
   - **Reliability:** share of runs completing without denial, exception, budget breach or human recovery
   - Each use case names **one primary metric** with a baseline and a target, recorded in the use-case register (item 8). The metric definitions are versioned, so a trend is never computed across a silent change in what is measured
-  - These metrics are the inputs to autonomy gates (0.5 item 3)
 
 ### Client Interaction Lifecycle
 
@@ -413,10 +412,10 @@ Items 8 to 15 close the ends of the record chain (why an interaction started, an
 - **Owner roles:** business owner (the accountable owner), technology owner, risk owner for residual risk, model owner, and **Knowledge Lead**. Accountability cannot be delegated to an agent: an agent can never be named in an owner role
 - **Knowledge Lead:** the named owner of the use case's quality standard. The Knowledge Lead defines the standard and the primary outcome metric (item 7), approves consequential outputs where the use case requires it, receives escalations of ambiguity and exceptions, and approves changes to the standard, including those proposed from institutional memory (0.6 item 8). A use case at tier 2 or above with no current Knowledge Lead is a DENY. The role may be held by the business owner, but must be named explicitly
 - **Accountability matrix:** beyond the five owner roles, each use case states who is accountable for data, the model, the agent, the business outcome, client communication, suitability and advice, and compliance. The institution stays accountable when a third-party model, a vendor or a sub-agent performs part of the work. Functions may be delegated; accountability may not
-- **Materiality classification on five axes:** business criticality (low to critical); **client-impact class** (internal productivity, RM assistance, client influence, client communication, advice, execution); autonomy; decision consequence (informational, operational, client communication, suitability, financial action); and data sensitivity (public to highly sensitive)
-- **Risk tier 1 to 4,** derived from the classification: research summarization, client intelligence and meeting preparation, KYC and suitability and recommendations, financial execution. The tier sets minimum required controls: approval gates, review sampling rate, maximum autonomy level (0.5), monitoring, explanation depth, and who must validate it. A use case configured below its tier's minimum fails validation
-- **AI risk appetite as top-level policy:** allowed and prohibited use-case categories, maximum permitted autonomy, permitted client impact, external communication and transaction authority. A use case outside the appetite cannot be registered. Changing the appetite is a governed change at senior-management level
-- **Periodic review:** every use case carries a review date set by its tier; past it, the use case is a DENY until re-approved. Revalidation is also triggered by a change of autonomy, jurisdiction, client population or intended use
+- **Materiality classification on four axes:** business criticality (low to critical); **client-impact class** (internal productivity, RM assistance, client influence, client communication, advice, execution); decision consequence (informational, operational, client communication, suitability, financial action); and data sensitivity (public to highly sensitive)
+- **Risk tier 1 to 4,** derived from the classification: research summarization, client intelligence and meeting preparation, KYC and suitability and recommendations, financial execution. The tier sets minimum required controls: approval gates, review sampling rate, monitoring, explanation depth, and who must validate it. A use case configured below its tier's minimum fails validation
+- **AI risk appetite as top-level policy:** allowed and prohibited use-case categories, permitted client impact, external communication and transaction authority. A use case outside the appetite cannot be registered. Changing the appetite is a governed change at senior-management level
+- **Periodic review:** every use case carries a review date set by its tier; past it, the use case is a DENY until re-approved. Revalidation is also triggered by a change of jurisdiction, client population or intended use
 - **Linked to the bank, not kept apart:** each entry links to its business process, client segments, products, data sources, vendors, owner, risk and controls. A senior-management report lists every material AI system with its classification, owner, status and open findings
 - **Training attestation:** a higher-tier use case may require that the invoking user has a current training attestation, checked as a policy attribute. The training itself is the bank's
 - **Independent validation:** activating a tier 3 or 4 use case, or a material change to one, requires sign-off from functions independent of the builders, such as model risk, operational risk, compliance, information security and legal. Enforced as separation of duties: a builder cannot sign off their own use case
@@ -460,7 +459,7 @@ Builds on the existing proposal model (ADR 0007), which already stores before-st
 - **Communication level:** every communication is classified as general information, house view, contextualised insight, investment discussion, product recommendation, or transaction. Each level carries its own required controls, so moving from insight to recommendation triggers suitability checks and RM approval automatically
 - **Approved-channel register:** a channel may carry client communication only if registered as meeting the bank's archiving and supervision requirements. Personal WhatsApp, Telegram or personal email are not registrable; a bank-approved messaging channel can be
 - **Client transparency:** AI-disclosure rules per jurisdiction and use case decide when a client must be told that AI generated content, assisted analysis, powers a chatbot, or materially contributed to a decision. The content provenance label (item 11) drives them
-- **Public lane:** public content such as LinkedIn posts, newsletters and event material uses approved research, approved claims, brand style and disclaimers only, and never client context. The separation is enforced in code (0.5 item 6), not by procedure
+- **Public lane:** public content such as LinkedIn posts, newsletters and event material uses approved research, approved claims, brand style and disclaimers only, and never client context. The separation is enforced in code (0.5 item 5), not by procedure
 
 ### 13. Risk-Based Review
 
@@ -478,7 +477,7 @@ Stops poor guidance from scaling, and finds everyone it reached.
 - Resetting a tripped breaker is a governed action requiring the accountable owner's approval
 - **Affected-client query:** `kognita evidence affected --model <version> | --policy <id> | --usecase <id> --from --to` lists every client who received output under that version in that window, with links to each interaction for remediation
 - **Granular revocation.** A per-agent kill switch exists today. This extends it so any single dimension can be revoked without stopping the platform: `kognita revoke --agent | --model | --tool | --source | --client | --usecase | --action`. Each revocation is a governed, evidenced action, effective on the next decision, and its reversal needs the accountable owner's approval
-- **Intervention controls, not just approve or reject.** For higher-autonomy workflows a human can **observe** what an agent is doing in a live run, **pause** it, **override** its decision with their own, **restrict** its permissions mid-run, **revoke** its credentials, and **recover** to a safe state using registered compensating actions (0.5 item 13). Every intervention is evidenced against the interaction
+- **Intervention controls, not just approve or reject.** A human can **observe** what an agent is doing in a live run, **pause** it, **override** its decision with their own, **restrict** its permissions mid-run, **revoke** its credentials, and **recover** to a safe state using registered compensating actions (0.5 item 12). Every intervention is evidenced against the interaction
 
 ### 15. Outcomes and Near Misses
 
@@ -526,7 +525,7 @@ The principle: not "Ahmed can access this, so Ahmed's agent can", but "Ahmed can
 ### 1. Agent Identity
 
 Extends the agent registry that exists today (name, version, accountable owner, risk class, materiality tier, kill switch).
-- Each agent gains: purpose, linked use cases, permitted systems, tool allow-list (item 5), risk tier, autonomy level (item 3), blast-radius limits (item 4), and a review or expiry date. **An agent past its review date is a DENY**
+- Each agent gains: purpose, linked use cases, permitted systems, tool allow-list (item 4), risk tier, blast-radius limits (item 3), and a review or expiry date. **An agent past its review date is a DENY**
 - **Deployment version covers behavior, not just code:** a hash over the system prompt, instructions, tool set, permissions, data sources, orchestration logic and memory behavior. A prompt can change behavior like code does, so any change to these produces a new version that needs re-approval before it can act. This is change management enforced, not documented
 - Identities follow a readable convention such as `AGENT-RM-PRECALL-01`
 - **Agents authenticate with their own credentials.** Today the agent name is a self-asserted string. Each agent gets its own workload credential, verified by the gateways on every call; no "AI service account", and no credentials shared between agents. The registry also records environment, deployment date, model used, and the principal on whose behalf it operates
@@ -542,29 +541,7 @@ An agent needs explicit authority to act for someone.
 - The object also carries **jurisdiction** (which booking centre or country) and an **approval threshold** (which actions require human approval)
 - **Authority ends when the task does,** not only when the clock runs out: "access client X to prepare tomorrow's meeting" is revoked once the meeting preparation completes
 
-### 3. Autonomy Levels
-
-Autonomy is classified, not implied.
-
-| Level | Agent authority |
-|---|---|
-| L0 | Retrieve |
-| L1 | Explain |
-| L2 | Recommend |
-| L3 | Draft |
-| L4 | Act after approval |
-| L5 | Bounded autonomous action |
-| L6 | Broad autonomy |
-
-- Every agent carries a maximum level; every tool declares the level it requires. A call above the agent's level is a DENY; a call at L4 always routes to human approval
-- The use-case risk tier caps the level. Early private-banking deployments are expected at L1 to L4
-- Raising an agent's level is a governed change requiring the accountable owner and independent validation. Autonomy never increases silently: moving from "generate draft" to "queue draft" to "send automatically" is treated as a material change
-- **Action permissions are per verb.** Read, analyse, recommend, draft, queue, send and execute are separate permissions. **The ability to recommend never implies the ability to execute:** an agent may conclude "client X should be contacted" without being permitted to contact client X
-- **Evidence gates for promotion.** Each use case defines, per autonomy transition, thresholds on the outcome metrics (0.4 item 7) over a minimum sample and window: for example quality at or above 95 percent, exception rate below 5 percent, and every action in the window fully reconstructable. A promotion request below threshold cannot be approved. Approval by the accountable owner and independent validation is still required above it: the evidence is necessary, not sufficient
-- **Automatic step-down.** When the same metrics fall below a lower threshold over a rolling window, the agent's effective level drops one step on the next decision, the step-down is evidenced, and the accountable owner and Knowledge Lead are alerted. Restoring the level goes through the promotion gate again. Step-down is graduated; the circuit breaker (0.4 item 14) remains the hard stop
-- **Quality drift.** The metrics are tracked as trends per agent, model version and prompt version, not only against thresholds. A sustained decline is a drift finding that counts toward step-down and toward risk-based review, so gradual degradation after deployment is caught without waiting for a breach
-
-### 4. Blast-Radius Limits
+### 3. Blast-Radius Limits
 
 Answers "if this agent misbehaves, how much damage can it do?"
 - Per agent: maximum distinct clients, specific clients or portfolios, maximum monetary value, maximum daily actions and transactions, allowed products and systems, execution authority (none, propose, execute), and time to live
@@ -572,29 +549,29 @@ Answers "if this agent misbehaves, how much damage can it do?"
 - **Rate limits per minute and per hour,** not only per day, including maximum clients contacted, allowed channels and allowed jurisdictions. An RM agent sending 2,500 client messages in four minutes is a DENY, whether the cause is malfunction or compromise
 - Limits are enforced by `decide()` and are independent of Run budgets: a Run budget bounds one task, a blast-radius limit bounds the agent
 
-### 5. Tool Allow-Lists and Data Minimization
+### 4. Tool Allow-Lists and Data Minimization
 
 - Each agent has its own tool allow-list. A pre-call agent may read CRM, portfolio, house view and approved research, and is denied sending email, placing orders, changing KYC or moving money. Tools are capabilities, governed separately from prompts
 - **Field-level minimization:** an agent receives only the fields its purpose needs, not whole records. A pre-call agent sees the risk profile but not passport details
 - Access windows: authority may be tied to an event, such as "meeting within 24 hours"
 
-### 6. External Content Isolation
+### 5. External Content Isolation
 
 Anything from outside the bank is treated as potentially hostile: websites, PDFs, emails, attachments, third-party APIs.
-- **Taint tracking:** content from an external source is marked when it enters a run. A tainted run cannot invoke tools above a set autonomy level or with write authority. Instructions inside external content never acquire authority because a model read them
+- **Taint tracking:** content from an external source is marked when it enters a run. A tainted run cannot invoke tools with write authority. Instructions inside external content never acquire authority because a model read them
 - **Separation of duties between agents:** an agent permitted to read the internet cannot also hold internal write permissions. External research agents hand over structured evidence, not free text, to internal agents
 - Injection attempts detected by the classifier are evidenced and alerted
 - **Prompt injection is treated as an access-control problem,** not only an LLM problem. A malicious document can never cause an agent to access another client, reveal confidential data, invoke a prohibited tool, change permissions or send an external message, because none of those depend on the model obeying
 - **Two lanes, separated in code:** client-relationship intelligence may use permissioned client data; public content (LinkedIn, newsletters, marketing, events) may not. Client data carries a taint label just as external content does, and a run that has touched client data can never reach a public-content tool
 
-### 7. Instruction Authenticity
+### 6. Instruction Authenticity
 
 "Communication is not authorization." A request arriving by WhatsApp, email, voice or video, even from a known number, does not prove who sent it.
 - Envelopes carry an authentication assurance level for the human behind a request
 - High-risk actions require step-up authentication evidence in an authenticated workflow, with transaction context and independent authorization. A channel message alone cannot satisfy them
 - Applies equally to instructions relayed by an agent: an agent cannot raise the assurance level of an instruction it received
 
-### 8. Behavioral Anomaly Detection
+### 7. Behavioral Anomaly Detection
 
 - A baseline per agent: distinct clients per day, documents retrieved, actions taken, tools used, data classes touched
 - Deviations block, isolate and alert: a pre-call agent querying 10,000 clients, a KYC agent downloading thousands of documents, a service agent creating 700 tickets, a portfolio agent requesting transaction tools
@@ -602,38 +579,39 @@ Anything from outside the bank is treated as potentially hostile: websites, PDFs
 - **Machine-speed containment.** Agentic failures and attacks can outpace human response, so containment is automatic when a threshold is crossed: quarantine the agent, revoke its credential, stop its tools, then alert a human. The human decides on release, not on containment
 - Blocks are recorded as incidents and count toward the circuit breaker (0.4 item 14)
 
-### 9. Delegation Between Agents
-- `Run.delegate_to(agent_name, attenuated_scope=…)`; the child's budget, scope and autonomy are carved from the parent's and can only narrow
+### 8. Delegation Between Agents
+- `Run.delegate_to(agent_name, attenuated_scope=…)`; the child's budget and scope are carved from the parent's and can only narrow
 - Every delegation is evidenced with the authority transferred: who delegated, why, permitted data and tools, client scope, permitted actions and expiry. A worker never inherits its orchestrator's full privileges
 - **Authority lineage:** `kognita evidence authority <action_id>` answers "show me the chain of authority that permitted this action", from the human through every orchestrator and worker to the action
 
-### 10. Capability Grants
+### 9. Capability Grants
 - `grant_to(grantee, capability, duration, subject_scope)`; issue, use, revoke and expiry are all evidenced
 - Revocation takes effect on the next decision
 
-### 11. Fleet Controls
+### 10. Fleet Controls
 - Per-agent quotas, run isolation, and authorization of agent-to-agent calls through the same gateway path as agent-to-tool calls
 - Agent-to-agent message bodies are free text, so classifier-derived envelopes (0.3 item 4) and taint tracking apply
 - **External agents are untrusted principals.** An agent from outside the bank calling the bank's agents or MCP endpoints must authenticate, is held to the lowest trust level, and its messages are tainted as external content
 
-### 12. Sandbox Constraints as Decision Output
+### 11. Sandbox Constraints as Decision Output
 An ALLOW for code execution carries constraints the executing sandbox must honor: credentials, network destinations (block-all or allow-list), file system scope, permitted APIs and commands, data export, persistence, an auto-stop interval, and CPU, memory and disk limits. The pattern is agent → sandbox → policy enforcement point → approved systems, never agent → enterprise network. Kognita emits and evidences the constraints; it does not ship a sandbox.
 
-### 13. Reversibility
+### 12. Reversibility
 
 - Every tool declares whether its action is reversible and, if so, registers a compensating action: delete a draft, cancel a queued communication, roll back a CRM update, reverse a permission change, withdraw a recommendation
-- Reversibility feeds the decision: an irreversible action requires stronger pre-execution controls, such as a higher autonomy requirement, human approval, or a lower blast-radius limit
+- Reversibility feeds the decision: an irreversible action requires stronger pre-execution controls, such as human approval or a lower blast-radius limit
 - The **recover** intervention (0.4 item 14) runs the registered compensations for a run, in reverse order, as evidenced actions
 
-### 14. Adversarial Suite and Threat Model
+### 13. Adversarial Suite and Threat Model
 
 - **Adversarial conformance suite:** Kognita ships attack scenarios that test its own controls, alongside the existing conformance kit: prompt injection, wrong-client data, stale information, malicious documents, poisoned retrieval, excessive tool permissions, privilege escalation, looping agents and policy bypass. A pack passes only if every attack is denied, escalated or contained
 - **Published threat model** covering both "our agent fails" and "an external agent attacks us": prompt injection, credential theft, malicious tools, poisoned data, autonomous reconnaissance and automated exploitation, each mapped to the control that answers it
 
+Further 0.5 items to be announced.
+
 ### Definition of Done
 - [ ] Every agent has a full identity; agents past review date and changed deployment versions are denied until re-approved
 - [ ] Dual check enforced: a human's entitlement alone never authorizes their agent
-- [ ] Autonomy levels enforced; L4 always routes to approval
 - [ ] Blast-radius limits enforced per agent
 - [ ] Per-agent tool allow-lists and field-level minimization
 - [ ] Injection test: a tainted run cannot call a write tool
@@ -641,15 +619,12 @@ An ALLOW for code execution carries constraints the executing sandbox must honor
 - [ ] Anomaly test: a volume spike blocks the agent and raises an incident
 - [ ] Delegation, grants, fleet controls, sandbox constraints
 - [ ] Agents authenticate with their own credentials; a spoofed agent name is denied
-- [ ] Recommend and execute are separate permissions; an agent with only recommend cannot act
 - [ ] A burst above the per-minute rate limit is denied
 - [ ] A run that has touched client data cannot reach a public-content tool
 - [ ] Containment quarantines, revokes and stops an agent without a human in the loop, then alerts
 - [ ] Authority lineage reconstructs the full chain for a delegated action
 - [ ] Recover runs compensating actions in reverse order
 - [ ] Adversarial suite passes; threat model published
-- [ ] A promotion request below its evidence thresholds cannot be approved
-- [ ] A sustained metric decline steps the agent down one level automatically, evidenced and alerted
 
 ---
 
@@ -826,7 +801,7 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 | mem0 | Run state and memory | Rejected. Telemetry and network clients in its core install; LLM round-trip on the write path. |
 | headroom | Context compression | Rejected. `litellm` in core; lossy compression before the model sees content conflicts with attestable evidence. Content-hash handle idea adopted (0.3 item 2). |
 | caveman / cavemem | Run state | Rejected as a dependency; engine is BSL-1.1. Lifecycle-boundary checkpoint idea adopted (0.3 item 2). |
-| Daytona | Sandboxes | Rejected. AGPL-3.0, and public development stopped in June 2026. Constraint vocabulary borrowed (0.5 item 5). |
+| Daytona | Sandboxes | Rejected. AGPL-3.0, and public development stopped in June 2026. Constraint vocabulary borrowed (0.5 item 11). |
 | Scrapling | Web data | Rejected. Anti-bot evasion tooling does not belong in a compliance product's dependency tree. |
 | OpenSpec, spec-kit, Fabric | Policy language and packs | Ideas only (0.4 items 3 to 5). |
 | TrendRadar, hyperframes, OpenMontage, AI Engineering Hub | — | Out of scope (news aggregation, video, tutorials). |
@@ -880,12 +855,14 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 
 ## Decision Log
 
+**7 October 2026**
+- Scope trimmed; items deferred. Further 0.5 items to be announced.
+
 **4 October 2026: EVOLVE framework**
-- Reviewed the EVOLVE AI-native enterprise framework (five maturity stages, MAS FEAT, the Company Brain) against the roadmap. Temporal governance was already covered: policies are effective-dated in v0.2, and pinned policy hashes, freshness, research expiry, supersession and review dates are planned. Three gaps: institutional memory, a metric-driven learning loop, and governed business definitions.
+- Reviewed the EVOLVE AI-native enterprise framework (five maturity stages, MAS FEAT, the Company Brain) against the roadmap. Temporal governance was already covered: policies are effective-dated in v0.2, and pinned policy hashes, freshness, research expiry, supersession and review dates are planned. Two gaps: institutional memory and governed business definitions.
 - 0.4: outcome metrics per use case (cycle time, decision quality, reliability) with one primary metric, baseline and target; the Knowledge Lead as a fifth owner role, owning the quality standard.
-- 0.5: evidence gates for autonomy promotion, automatic one-step demotion when metrics degrade, and quality-drift tracking per agent, model and prompt version.
 - 0.6: institutional memory, where learning is proposed, approved by the Knowledge Lead, versioned and effective-dated; new item 12, governed business definitions, enforced as a boundary like calculation provenance.
-- Not adopted: the maturity stages and the structured prompting standard (adoption guidance, not enforceable controls); the four-step autonomy staircase (it maps onto L0 to L6, and a second scale would collide); always / ask first / never wording (already ALLOW / HUMAN_APPROVAL / PROHIBITED); a MAS FEAT coverage document.
+- Not adopted: the maturity stages and the structured prompting standard (adoption guidance, not enforceable controls); always / ask first / never wording (already ALLOW / HUMAN_APPROVAL / PROHIBITED); a MAS FEAT coverage document.
 - No release dates changed.
 
 **4 October 2026: Wealth management AI control framework**
@@ -893,7 +870,7 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 - Adopted its overarching test: can the bank explain, control, stop and reconstruct every material AI action that affects a client?
 - Found that agent names are self-asserted and unauthenticated. Added to Tier 0 (gateways bind names to authenticated clients) and to 0.5 (agents get their own credentials).
 - 0.4: accountability matrix, five-axis materiality classification with the tier derived from it, AI risk appetite, periodic review, links to business processes, training attestation; reasons instead of scores and a "do not contact" outcome; defined human boundaries, content provenance labels, edit and rejection rates; communication levels, approved-channel register, client AI-disclosure rules, a public lane; intervention controls; new item 15, outcomes and near misses.
-- 0.5: agent credentials; jurisdiction, approval threshold and task-completion expiry on delegated authority; per-verb action permissions; per-minute rate limits; prompt injection as access control and a client-data lane; automatic containment; authority lineage; external agents as untrusted principals; new items 13, reversibility, and 14, adversarial suite and threat model.
+- 0.5: agent credentials; jurisdiction, approval threshold and task-completion expiry on delegated authority; per-minute rate limits; prompt injection as access control and a client-data lane; automatic containment; authority lineage; external agents as untrusted principals; new items 12, reversibility, and 13, adversarial suite and threat model.
 - 0.6: research lifecycle, approved-source grounding, house-view change propagation, typed and expiring memory, feedback-loop controls, vulnerable-client safeguards, three-level evaluation, fairness reporting. Items renumbered 1 to 11.
 - 0.7: silent model-change detection, AI dependency map, concentration risk, failure drills, retention by record class.
 - Named two scales to avoid collisions with Kognita's own codes: the client-impact class and the communication level.
@@ -905,7 +882,7 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 - Found that an agent registry with per-agent kill switch already exists in code, and that requests without an agent name bypass it. Added the bypass to Tier 0.
 - 0.3: tool response hashes and prompt template versions added to pinned evidence.
 - 0.4: owner roles, risk tiers and independent validation in the use-case register; approval packets and automation-bias detection; communication content policy; granular revocation; OpenTelemetry export; a private-banking starter pack.
-- 0.5 renamed **Agents, Authority and Fleets**: full agent identity with behavioral versioning, delegated authority with a dual check, autonomy levels L0 to L6, blast-radius limits, per-agent tool allow-lists and field minimization, external content isolation, instruction authenticity, anomaly detection.
+- 0.5 renamed **Agents, Authority and Fleets**: full agent identity with behavioral versioning, delegated authority with a dual check, blast-radius limits, per-agent tool allow-lists and field minimization, external content isolation, instruction authenticity, anomaly detection.
 - New 0.6 **Claims**: claim provenance envelope, fact contract and freshness, claim types, calculation provenance, verification gate, memory governance, sensitive attributes, evaluation evidence gate.
 - Trust and Resilience moves to 0.7, with an expanded provider register and incident support. 1.0 moves from Q4 2027 to Q1 2028 to absorb the added release.
 - Recorded five boundary domains where Kognita enforces and evidences but does not build: truth layer, calculations, evaluation, sandbox, challenger.

@@ -151,15 +151,9 @@ $ kognita serve --provider openai-compatible --upstream https://api.openai.com \
 
 **Conformance.** The [conformance kit](#conformance) asserts that a domain pack's rules are decided fail-closed, cited, and evidenced.
 
-## Continuous Learning and Drift
+## Institutional memory
 
-The [roadmap](docs/ROADMAP.md) schedules this loop after 0.3:
-
-**Outcome metrics per use case (0.4).** Each use case names one primary metric — cycle time, decision quality, or reliability — with a baseline and a target. A Knowledge Lead owns the quality standard.
-
-**Autonomy earns its expansion (0.5).** Raising an agent's autonomy level requires thresholds on those metrics. The evidence is necessary, not sufficient: the accountable owner still approves. If the metrics fall below a lower threshold, the agent's effective level steps down one step.
-
-**Institutional memory (0.6).** A pattern in RM corrections or outcomes becomes a proposed change. The Knowledge Lead approves it as a new dated version. Learning is versioned, never edited in place.
+**Institutional memory (0.6).** A pattern in RM corrections or outcomes becomes a proposed change. The Knowledge Lead approves it as a new dated version. Learning is versioned, never edited in place. The [roadmap](docs/ROADMAP.md) places this after 0.3.
 
 ## Domain packs
 
@@ -218,11 +212,11 @@ The test every release is measured against:
 Planned, not yet built:
 
 - **0.4 "Ingestion, Policy Language and the Client Lifecycle".** Make citations real down to the passage, let non-engineers author and review policy, record a client interaction from origination to communication, and meet developers in the frameworks they already use. The roadmap places this in Q1 2027.
-- **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, autonomy levels, evidence-gated promotion and automatic step-down on drift, blast-radius limits, containment.
+- **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, blast-radius limits, containment.
 - **0.6: Claims and institutional memory.** Typed, sourced, current claims checked before an RM relies on them; approved-source grounding; supervised memory that turns lessons into shared standards; governed business definitions.
 - **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
 
-The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop and institutional memory.
+The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's institutional memory.
 
 The design rule behind all of it: **never rely on the LLM to enforce a control that can be enforced outside the LLM.**
 
