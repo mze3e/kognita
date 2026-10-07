@@ -7,11 +7,11 @@
 ## Context
 
 Kognita today has `principal: str` and `is_admin: bool`. There is no way to express:
-- "only an owner may confirm" (BMOS central doctrine)
+- "only an owner may confirm"
 - "this user has role X in scope Y, expiring on date Z"
 - "an agent never has more permission than the person using it"
 
-BMOS has five roles, per-member scope, and time-expiring access grants. The invariant is: *"an agent never has more permission than the person using it."*
+The reference model has five roles, per-member scope, and time-expiring access grants. The invariant is: *"an agent never has more permission than the person using it."*
 
 Kognita's current model:
 - `is_admin` has one effect: `ceiling_for()` returns C3 instead of C2 (retrieval.py:82-88).
@@ -141,7 +141,7 @@ No change to the core enforcement — roles are data, verified by packs.
 - 60 unit tests pass (no change; `is_admin` still works).
 - 10 conformance cases pass.
 - New conformance invariant: `test_role_verified_against_pack` enforces that attributes include resolved (not asserted) role information.
-- BMOS-shaped fixture pack:
+- Governance fixture pack:
   - `test_marker_can_mark_criterion` passes (MARKER role verified, allowed to mark).
   - `test_marker_cannot_confirm` passes (MARKER role verified, denied from confirm tool).
 

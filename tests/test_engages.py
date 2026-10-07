@@ -14,7 +14,7 @@ from typing import Any
 
 import pytest
 
-from fixtures import bmos_pack as bp
+from fixtures import governance_pack as bp
 from fixtures import demo_pack as dp
 
 from kognita.broker import ask
@@ -132,7 +132,7 @@ def test_engages_is_on_the_domain_pack_protocol():
     assert "engages" in DomainPack.__protocol_attrs__
     assert isinstance(_Pack(True), DomainPack)
     assert isinstance(dp.DemoPack(), DomainPack)
-    assert isinstance(bp.BMOSPack(), DomainPack)
+    assert isinstance(bp.GovernancePack(), DomainPack)
 
 
 def test_a_pack_without_engages_is_not_a_domain_pack():

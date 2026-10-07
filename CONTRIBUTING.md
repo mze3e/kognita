@@ -21,7 +21,7 @@ uv run pytest -v
 The test suite includes:
 - **Core functionality tests** (`test_core.py`) — decision engine, governance, evidence
 - **Conformance tests** (`test_conformance.py`) — real-world compliance scenarios
-- **BMOS conformance** (`test_bmos_conformance.py`) — two-signature and proposal-apply patterns
+- **Governance conformance** (`test_governance_conformance.py`) — two-signature and proposal-apply patterns
 - **Packaging tests** (`test_packaging.py`) — import layering and architecture contracts
 
 Every test is offline (no network, no API keys). The decision engine imports none of the optional extras. The SqliteVecIndex tests load the existing `[vec]` extra, which is why the sync above installs it.

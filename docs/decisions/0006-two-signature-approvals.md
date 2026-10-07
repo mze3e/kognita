@@ -2,11 +2,11 @@
 
 **Status:** Accepted (0.2.0)  
 **Depends on:** ADR 0004 (tool arguments), ADR 0005 (identity/roles)  
-**Unblocks:** ADR 0007 (propose-then-apply), BMOS-shaped fixture pack
+**Unblocks:** ADR 0007 (propose-then-apply), governance fixture pack
 
 ## Context
 
-BMOS's central doctrine: *"One person marks a criterion met; only an owner confirms; nothing self-passes."*
+The central doctrine: *"One person marks a criterion met; only an owner confirms; nothing self-passes."*
 
 Kognita cannot express this. The `Approval` model has four compounding problems:
 
@@ -121,7 +121,7 @@ Policy(
         "second_actor_role": "OWNER",
         "description": "Marking requires marker to mark, owner to confirm.",
     },
-    citation="BMOS Governance Model: Two-signature criterion",
+    citation="Governance model: Two-signature criterion",
 )
 ```
 
@@ -141,7 +141,7 @@ A two-signature approval must:
 - Separation of duties: requester and approver are distinct, verifiable entities.
 - Two-signature gating: policies can require explicit confirmation from a designated party.
 - Audit trail: `approved_at` and `confirmed_at` distinguish first and second signatures.
-- BMOS doctrine: "one person marks, only an owner confirms, nothing self-passes" is now expressible.
+- Doctrine: "one person marks, only an owner confirms, nothing self-passes" is now expressible.
 
 **What it costs:**
 
@@ -157,10 +157,10 @@ Existing single-signature approvals remain compatible: a request approved by one
 ## Verification
 
 - 60 unit tests pass; existing single-signature tests remain compatible.
-- New test `test_marking_requires_two_signatures` passes (was xfail in BMOS pack).
+- New test `test_marking_requires_two_signatures` passes (was xfail in the governance pack).
 - New test `test_approval_carries_proposal_payload` passes (two-signature tracking).
 - 10 conformance cases pass.
-- BMOS-shaped fixture pack:
+- Governance fixture pack:
   - Two-signature tests flip from xfail to passing.
   - Data is held (returns None) until second signature.
   - Both signatures are evidenced.

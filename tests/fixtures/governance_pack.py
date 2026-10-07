@@ -1,12 +1,11 @@
-"""A BMOS-shaped fixture pack for testing governance doctrine.
+"""A fixture pack for testing governance doctrine.
 
-BMOS (Business Maximizer® OS) doctrine is governance-shaped: two-signature gates,
+The doctrine is governance-shaped: two-signature gates,
 "agents propose, humans sign", a human-in-the-loop proposal queue, exportable
 artefacts, and falsifiable guarantees. This pack models the core: one person marks
 a criterion met; only an owner confirms; nothing self-passes.
 
-The gap analysis (`docs/gap-analysis-bmos.md`) identifies what Kognita needs to
-express this doctrine. This pack's assertions — marked `xfail(strict=True)` —
+This pack's assertions — marked `xfail(strict=True)` —
 fail until each gap is closed. The pack is deliberately minimal: two roles, one
 criterion type, one gatable tool, and a proposing agent.
 """
@@ -42,7 +41,7 @@ TOOLS = (
 #: A workflow gate: owner must confirm before criteria bind.
 GATES = ("CRITERION_GATE", "PROPOSAL_GATE")
 
-#: BMOS roles: marker and owner.
+#: Roles: marker and owner.
 ROLES = ("MARKER", "OWNER")
 
 
@@ -86,10 +85,10 @@ DOCUMENTS: dict[str, dict[str, Any]] = {
 }
 
 
-class BMOSPack:
-    """A pack shaped like BMOS governance."""
+class GovernancePack:
+    """A pack shaped like this governance doctrine."""
 
-    name = "bmos"
+    name = "governance"
 
     def load_subjects(self, envelope: Envelope, session: Session | None = None) -> dict[str, Any]:
         """Resolve subjects by reference."""
@@ -138,13 +137,13 @@ class BMOSPack:
         }
 
     def rules(self) -> dict[str, Any]:
-        """No custom rules for BMOS pack; core primitives are enough."""
+        """No custom rules for this pack; core primitives are enough."""
         return build_registry()
 
     def engages(self, policy: Policy, context: RuleContext) -> bool:
         """Whether a regime applies to this request.
 
-        BMOS policies are role-gated: a MARKER_ONLY policy only engages for markers.
+        Policies are role-gated: a MARKER_ONLY policy only engages for markers.
         """
         attrs = context.attributes
         subjects = context.subjects
@@ -165,7 +164,7 @@ class BMOSPack:
 
 
 def seed_policies(session: Session, *, now: datetime | None = None) -> list[Policy]:
-    """BMOS governance policies: role-gated, gate-enforced.
+    """Governance policies: role-gated, gate-enforced.
 
     1. Only MARKER role can mark criteria.
     2. Only OWNER role can confirm criteria.
@@ -186,7 +185,7 @@ def seed_policies(session: Session, *, now: datetime | None = None) -> list[Poli
                 "on_violation": "fail",
                 "description": "Markers can only execute mark_criterion tool.",
             },
-            citation="BMOS Governance Model s1: Role-based tool access",
+            citation="Governance model s1: Role-based tool access",
             effective_from=start,
         ),
         # OWNER may confirm, but only if the tool is confirm_criterion
@@ -199,7 +198,7 @@ def seed_policies(session: Session, *, now: datetime | None = None) -> list[Poli
                 "on_violation": "fail",
                 "description": "Owners can execute owner tools.",
             },
-            citation="BMOS Governance Model s2: Owner-role gate",
+            citation="Governance model s2: Owner-role gate",
             effective_from=start,
         ),
         # Criterion confirmation gate: MARKER marks, OWNER confirms (two-signature)
@@ -211,7 +210,7 @@ def seed_policies(session: Session, *, now: datetime | None = None) -> list[Poli
                 "tools": ["mark_criterion"],
                 "description": "Marking a criterion requires owner confirmation.",
             },
-            citation="BMOS Governance Model s3: Two-signature criterion",
+            citation="Governance model s3: Two-signature criterion",
             effective_from=start,
         ),
         # Proposal application gate: AGENT proposes, OWNER applies (two-signature)
@@ -223,7 +222,7 @@ def seed_policies(session: Session, *, now: datetime | None = None) -> list[Poli
                 "tools": ["propose_document"],
                 "description": "Proposing a change requires owner application.",
             },
-            citation="BMOS Governance Model s4: Two-signature proposal",
+            citation="Governance model s4: Two-signature proposal",
             effective_from=start,
         ),
     ]
@@ -240,10 +239,10 @@ def envelope(
     user: str | None = None,
     criterion: str | None = None,
     document: str | None = None,
-    principal: str = "bmos-user",
+    principal: str = "pack-user",
     agent: str | None = None,
 ) -> Envelope:
-    """Build a BMOS envelope."""
+    """Build an envelope."""
     subjects: dict[str, str] = {}
     if criterion is not None:
         subjects["criterion"] = criterion
@@ -270,7 +269,7 @@ def envelope(
         principal=principal,
         purpose=purpose,
         tool=tool,
-        actor_location="",  # Not used in BMOS pack
+        actor_location="",  # Not used in this pack
         agent_name=agent,
         subject_type="user" if user is not None else None,
         subject_id=user,
