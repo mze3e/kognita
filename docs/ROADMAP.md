@@ -141,6 +141,17 @@ It sets one overarching test, which Kognita adopts as the measure for every rele
 
 **Two naming collisions.** The framework's C0 to C5 client-impact scale is unrelated to Kognita's C1 to C3 data classification, and its L0 to L5 communication scale is unrelated to Kognita's L0 to L6 autonomy levels. This roadmap calls them the **client-impact class** and the **communication level**, and uses their names rather than codes.
 
+### MAS Guidelines on AI Risk Management
+
+MAS issued its final Guidelines on Artificial Intelligence Risk Management on 7 October 2026. They take effect on 7 October 2027: Sections 3 and 4 (oversight, identification, inventory, risk materiality) apply from that date, and Sections 5 and 6 (life cycle controls, capability and capacity) by 7 October 2028. The paragraph-by-paragraph mapping is in [control-frameworks.md](control-frameworks.md).
+
+| MAS deadline | Sections | Kognita releases before it |
+|---|---|---|
+| 7 October 2027 | 3 and 4 | 0.4 (Q1 2027) |
+| 7 October 2028 | 5 and 6 | 0.5 to 1.0 (Q2 2027 to Q1 2028) |
+
+The guidelines are principles-based and proportionate. Kognita supplies enforcement and evidence that a bank meets an expectation; board duties and staff capability remain the bank's. Kognita sees only the AI it mediates, so the register must also hold AI that never passes through it (0.4 item 8).
+
 ---
 
 ## Release Timeline
@@ -412,15 +423,22 @@ Items 8 to 15 close the ends of the record chain (why an interaction started, an
 - **Owner roles:** business owner (the accountable owner), technology owner, risk owner for residual risk, model owner, and **Knowledge Lead**. Accountability cannot be delegated to an agent: an agent can never be named in an owner role
 - **Knowledge Lead:** the named owner of the use case's quality standard. The Knowledge Lead defines the standard and the primary outcome metric (item 7), approves consequential outputs where the use case requires it, receives escalations of ambiguity and exceptions, and approves changes to the standard, including those proposed from institutional memory (0.6 item 8). A use case at tier 2 or above with no current Knowledge Lead is a DENY. The role may be held by the business owner, but must be named explicitly
 - **Accountability matrix:** beyond the five owner roles, each use case states who is accountable for data, the model, the agent, the business outcome, client communication, suitability and advice, and compliance. The institution stays accountable when a third-party model, a vendor or a sub-agent performs part of the work. Functions may be delegated; accountability may not
-- **Materiality classification on five axes:** business criticality (low to critical); **client-impact class** (internal productivity, RM assistance, client influence, client communication, advice, execution); autonomy; decision consequence (informational, operational, client communication, suitability, financial action); and data sensitivity (public to highly sensitive)
+- **Designated control function:** a control-function role, separate from the owner roles, decides whether a given use is AI, owns the register's policies, and approves each use case's materiality rating. The tier derived from the classification is a proposal until the control function approves it; an unapproved rating cannot be activated. The control function cannot also be the use case's business or technology owner
+- **Materiality classification on six axes:** business criticality (low to critical); **client-impact class** (internal productivity, RM assistance, client influence, client communication, advice, execution); autonomy; decision consequence (informational, operational, client communication, suitability, financial action); data sensitivity (public to highly sensitive); and **complexity** (technology type, novelty of the application, explainability of outputs, and for third-party AI the visibility into its model and data). The axes map onto the three dimensions MAS requires as a minimum: impact (criticality, client impact, consequence, data sensitivity), complexity, and reliance (autonomy and the degree of human oversight)
+- **Inherent and residual materiality:** each use case records its materiality before controls, the controls credited against it, and the residual materiality after them. Activation is a DENY while residual materiality is outside the risk appetite, not only registration
 - **Risk tier 1 to 4,** derived from the classification: research summarization, client intelligence and meeting preparation, KYC and suitability and recommendations, financial execution. The tier sets minimum required controls: approval gates, review sampling rate, maximum autonomy level (0.5), monitoring, explanation depth, and who must validate it. A use case configured below its tier's minimum fails validation
 - **AI risk appetite as top-level policy:** allowed and prohibited use-case categories, maximum permitted autonomy, permitted client impact, external communication and transaction authority. A use case outside the appetite cannot be registered. Changing the appetite is a governed change at senior-management level
+- **Quantitative appetite measures:** thresholds on the number and impact of AI incidents (item 15), the number of material use cases depending on a single model provider, and the number of material use cases breaching their performance thresholds (item 7). Each is computed from the register and the evidence log and reported against its threshold; a breach escalates to the accountable owner and appears in the senior-management report
+- **Single-provider dependency count:** each material use case records the model providers it depends on, so the single-provider measure is available from 0.4. The full dependency map and concentration report follow in 0.7
 - **Periodic review:** every use case carries a review date set by its tier; past it, the use case is a DENY until re-approved. Revalidation is also triggered by a change of autonomy, jurisdiction, client population or intended use
-- **Linked to the bank, not kept apart:** each entry links to its business process, client segments, products, data sources, vendors, owner, risk and controls. A senior-management report lists every material AI system with its classification, owner, status and open findings
+- **Linked to the bank, not kept apart:** each entry links to its business process, client segments, products, data sources, vendors, owner, risk and controls. Data sources and vendors carry the identifiers used in the bank's data inventory and outsourcing register, so entries cross-reference rather than duplicate. A senior-management report lists every material AI system with its classification, owner, status and open findings, and can be filtered by jurisdiction so local senior management sees its own operations
+- **AI that Kognita does not mediate:** the register also holds AI that never passes through Kognita, such as features embedded in vendor software and approved copilots. Such an entry is marked unmediated and records the assurance gap and the compensating control. The gateways (0.3) flag calls to AI endpoints that no registered use case names, as a discovery signal for the control function; the flag does not decide whether the use is AI
+- **Lifecycle status:** pilot, live, suspended or retired. A **pilot** carries an end date, a named user list and success criteria; a call from outside the list or after the end date is a DENY, and moving to live needs the control function's approval against the recorded criteria
 - **Training attestation:** a higher-tier use case may require that the invoking user has a current training attestation, checked as a policy attribute. The training itself is the bank's
 - **Independent validation:** activating a tier 3 or 4 use case, or a material change to one, requires sign-off from functions independent of the builders, such as model risk, operational risk, compliance, information security and legal. Enforced as separation of duties: a builder cannot sign off their own use case
 - **Model card per approved model:** provider, model name and version, intended use, known limitations, evaluation results the firm relied on to approve it, approval date and approver. Pinned model versions on each call (0.3) link back to the card
 - Every decision must reference a registered use case; **an unregistered or retired use case is a DENY**. This replaces the free-string purpose check
+- **Retirement is complete, not just a flag:** retiring a use case also engages the kill switch of every agent registered only to it (and, from 0.5, revokes their credentials), applies its retention period to its records, and notifies the owners of use cases that depend on it. Each step is evidenced
 - Registry changes are `POLICY_CHANGE` events and go through the same delta, validate and apply lifecycle as policy
 - `kognita usecase list | show | validate` gives compliance a single inventory of AI use
 
@@ -476,7 +494,9 @@ Stops poor guidance from scaling, and finds everyone it reached.
 - **Circuit breaker:** when flags for a use case, model version, prompt version or policy version cross a threshold in a time window, Kognita inserts a prohibiting policy itself, escalates to the accountable owner, and records the trip as an incident. The mechanism already exists: a prohibiting policy takes effect on the next decision for every client. This item makes it automatic
 - Resetting a tripped breaker is a governed action requiring the accountable owner's approval
 - **Affected-client query:** `kognita evidence affected --model <version> | --policy <id> | --usecase <id> --from --to` lists every client who received output under that version in that window, with links to each interaction for remediation
-- **Granular revocation.** A per-agent kill switch exists today. This extends it so any single dimension can be revoked without stopping the platform: `kognita revoke --agent | --model | --tool | --source | --client | --usecase | --action`. Each revocation is a governed, evidenced action, effective on the next decision, and its reversal needs the accountable owner's approval
+- **Granular revocation.** A per-agent kill switch exists today. This extends it so any single dimension can be revoked without stopping the platform: `kognita revoke --agent | --model | --provider | --tool | --source | --client | --usecase | --action`. Each revocation is a governed, evidenced action, effective on the next decision, and its reversal needs the accountable owner's approval
+- **Suspending or limiting a provider:** `--provider` stops or restricts a model provider at the gateway across every use case, for example to named use cases or classifications below C2. It is how the bank limits, suspends or replaces a third-party AI service when residual risk exceeds appetite. Switching to a fallback provider remains a separate governed decision (0.7)
+- **Kill-switch drills:** a high-materiality use case records kill-switch activation drills as evidence: who activated it, how long until the next decision was denied, and how the fallback was reached. A drill past its due date is flagged like a past review date
 - **Intervention controls, not just approve or reject.** For higher-autonomy workflows a human can **observe** what an agent is doing in a live run, **pause** it, **override** its decision with their own, **restrict** its permissions mid-run, **revoke** its credentials, and **recover** to a safe state using registered compensating actions (0.5 item 13). Every intervention is evidenced against the interaction
 
 ### 15. Outcomes and Near Misses
@@ -512,6 +532,13 @@ Do not wait for client harm.
 - [ ] Flight recorder with export
 - [ ] Cycle time, decision quality and reliability reported per use case from evidence, against a registered baseline and target
 - [ ] A tier 2 use case with no named Knowledge Lead is denied
+- [ ] A materiality rating not approved by the control function cannot be activated; the control function cannot approve a use case it owns
+- [ ] A use case whose residual materiality is outside the risk appetite cannot be activated
+- [ ] Quantitative appetite measures (AI incidents, single-provider dependencies, performance breaches) reported against their thresholds from evidence
+- [ ] A pilot denies calls from users outside its list and after its end date
+- [ ] An unmediated AI entry records its assurance gap and compensating control; a gateway call to an unregistered AI endpoint is flagged
+- [ ] Revoking a provider stops it on the next decision for every use case; a kill-switch drill is evidenced and an overdue drill is flagged
+- [ ] Retiring a use case stops its agents and applies its retention period
 
 ---
 
@@ -737,6 +764,7 @@ Kognita is not an evaluation harness. It records evaluation results and enforces
 - Kognita measures the dimensions only it can see from evidence: entitlement blocks, escalation correctness, action correctness, stale-data use, permission and client-boundary compliance, delegation behaviour and retries
 - **Three levels of evaluation:** the model; the agent (task planning, tool selection, permission compliance, delegation, retries, escalation); and the end-to-end system (model, retrieval, tools, data, agent, policies, UI and human interaction). A good model can still produce an unsafe system, so the gate accepts system-level results
 - **Bias and fairness reporting:** recommendation, contact and prioritisation rates computed from origination evidence across segments the bank defines, such as nationality, age group, language, portfolio size, channel and RM team. Disparities above a threshold are flagged to the risk owner. This matters most for client prioritisation, prospect scoring, product recommendations and vulnerability detection
+- **Proxy attributes:** segments include attributes the bank identifies as substitutes for, or highly correlated with, protected attributes, such as postcode or language standing in for nationality. A disparity metric can be registered as a monitored metric with tiered thresholds, so fairness drift is caught like quality drift (0.5 item 3). What counts as a fair outcome is the bank's definition
 - **The continuous loop:** evaluate, deploy, observe, test, challenge, intervene, learn, re-authorise. Validation does not end at deployment
 
 ### 12. Governed Business Definitions
@@ -759,7 +787,7 @@ Without one definition, every agent invents its own version of the business: Fin
 - [ ] Superseding a house view invalidates dependent recommendations and lists affected clients
 - [ ] Exporting interactions for learning without approval is denied; exclusions hold
 - [ ] A vulnerability flag cannot change treatment without RM review
-- [ ] Fairness report produced across bank-defined segments
+- [ ] Fairness report produced across bank-defined segments, including proxy attributes
 - [ ] A learned change to a standard cannot take effect without Knowledge Lead approval; outputs record the standard version that produced them
 - [ ] A figure using a governed term without citing the current registered definition is blocked
 
@@ -807,6 +835,7 @@ Without one definition, every agent invents its own version of the business: Fin
 - **Examinability acceptance:** every row of the reconstruction test in [Supervisory Examinability](#supervisory-examinability) answered from evidence for a real RM interaction, including after a backup restore and a signing key rotation
 - **Control framework acceptance:** all twelve non-negotiable controls demonstrated, and every one of the 40 domains in [control-frameworks.md](control-frameworks.md) either covered or explicitly marked boundary or out of scope
 - **Wealth AI framework acceptance:** all fifteen non-negotiable controls demonstrated, every one of the 70 controls in [control-frameworks.md](control-frameworks.md) covered or explicitly marked boundary or out of scope, and the overarching test passed on a real interaction: the bank can explain, control, stop and reconstruct it
+- **MAS guidelines acceptance:** every paragraph of the MAS Guidelines on AI Risk Management mapped in [control-frameworks.md](control-frameworks.md) either covered or explicitly marked boundary or out of scope, with Sections 3 and 4 met by the 0.4 release ahead of 7 October 2027
 - **Graduation checklist:** coverage above 85 percent, published benchmarks, external security review, at least one production deployment in a regulated domain
 
 ---
@@ -878,6 +907,15 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 ---
 
 ## Decision Log
+
+**8 October 2026: MAS Guidelines on AI Risk Management**
+- Mapped the roadmap against the final MAS guidelines issued 7 October 2026, paragraph by paragraph. Full mapping in [control-frameworks.md](control-frameworks.md). 0.4 lands before the Sections 3 and 4 deadline of 7 October 2027; 0.5 to 1.0 land before the Sections 5 and 6 deadline of 7 October 2028.
+- Twelve gaps found and adopted. 0.4 item 8: a designated control function that approves materiality; complexity as a sixth classification axis, mapped to MAS's impact, complexity and reliance; inherent and residual materiality, with activation denied while residual is outside appetite; quantitative appetite measures; a single-provider dependency count, brought forward from the 0.7 dependency map because it belongs to the 2027 risk appetite; identifiers shared with the bank's data inventory and outsourcing register; unmediated AI entries and gateway flags on unregistered AI endpoints; pilot status with user and time limits; complete retirement.
+- 0.4 item 14: revocation by provider; kill-switch drills.
+- 0.6 item 11: proxy attributes in fairness reporting, and fairness as a monitored metric.
+- Already planned and not changed: independent validation, the senior-management report, provider failover, concentration risk, silent model-change detection.
+- Out of scope: board duties (3.4), staff competence and resourcing (Section 6), model selection and development practice (5.12 to 5.14).
+- No release dates changed.
 
 **4 October 2026: EVOLVE framework**
 - Reviewed the EVOLVE AI-native enterprise framework (five maturity stages, MAS FEAT, the Company Brain) against the roadmap. Temporal governance was already covered: policies are effective-dated in v0.2, and pinned policy hashes, freshness, research expiry, supersession and review dates are planned. Three gaps: institutional memory, a metric-driven learning loop, and governed business definitions.

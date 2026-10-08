@@ -186,7 +186,7 @@ Two caveats govern every row below:
 | 7 October 2027 | 3 (AI oversight), 4 (identification, inventory, risk materiality) | 0.4 (Q1 2027): use-case register, materiality classification, risk appetite, owner roles, senior-management report |
 | 7 October 2028 | 5 (life cycle controls), 6 (capability and capacity) | 0.5 (Q2 2027), 0.6 (Q3 2027), 0.7 (Q4 2027), 1.0 (Q1 2028) |
 
-One timing conflict: the single-provider concentration measure that MAS cites as a risk-appetite measure (3.4(b), footnote 18) depends on the dependency map in 0.7, which lands after the Section 3 deadline. See gap 11.
+One timing conflict was found and resolved: the single-provider concentration measure that MAS cites as a risk-appetite measure (3.4(b), footnote 18) depended on the dependency map in 0.7, which lands after the Section 3 deadline. A single-provider dependency count now ships in the 0.4 register (gap 11).
 
 ### Section 2: Basic AI Governance (2.3 to 2.5)
 
@@ -206,9 +206,9 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | Para | Expectation | Status | Kognita | Release |
 |---|---|---|---|---|
 | 3.2 to 3.4(a)(c)(d)(e) | Board approves the AI governance approach, sets roles, understands AI, reviews regularly | Out of scope | Governance decisions belong to the board | — |
-| 3.4(b) | AI risk in the risk appetite framework, qualitative and quantitative | Partial | Risk appetite as top-level policy: prohibited categories, maximum autonomy, client impact. Quantitative measures are gap 12 | 0.4 |
+| 3.4(b) | AI risk in the risk appetite framework, qualitative and quantitative | Added | Risk appetite as top-level policy: prohibited categories, maximum autonomy, client impact; quantitative measures computed from evidence (gap 12) | 0.4 |
 | 3.5(a)(c) | Implement frameworks consistent with appetite; controls across the life cycle | Planned | A use case outside the appetite cannot be registered; tier sets minimum controls | 0.4 |
-| 3.5(d) | Clear roles, including control functions for identification, inventory and materiality | Partial | Five owner roles and an accountability matrix. The designated control function is gap 2 | 0.4 |
+| 3.5(d) | Clear roles, including control functions for identification, inventory and materiality | Added | Five owner roles, an accountability matrix, and a designated control function (gap 2) | 0.4 |
 | 3.5(e) | Escalation of AI incidents and breaches of risk thresholds | Planned | Circuit breaker, intervention controls, outcomes and near misses (0.4); step-down alerts (0.5) | 0.4, 0.5 |
 | 3.5(f) | Timely board updates on material AI risk | Planned | Senior-management report of every material AI system, its classification, owner, status and open findings | 0.4 |
 | 3.5(g) | Competent personnel and adequate resources | Out of scope | — | — |
@@ -218,37 +218,37 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 
 | Para | Expectation | Status | Kognita | Release |
 |---|---|---|---|---|
-| 4.2 | Consistent identification of AI use, including AI in material third-party services | Gap | The register holds what is registered; an unregistered use case is a DENY. Finding unmediated AI is gap 1 | — |
-| 4.3, 4.9, 4.13 | A designated control function is final arbiter of what is AI, owns inventory policy, and approves materiality | Gap | See gap 2 | — |
-| 4.4 | Residual risk from unidentified AI within appetite; mitigants such as network monitoring and DLP | Partial | Gateways deny unregistered agents and egress guard redacts; discovery of unregistered AI endpoints is gap 1 | 0.3, — |
+| 4.2 | Consistent identification of AI use, including AI in material third-party services | Added | Unmediated AI entries in the register; gateways flag calls to unregistered AI endpoints (gap 1). Finding AI outside the gateways remains the bank's | 0.4 |
+| 4.3, 4.9, 4.13 | A designated control function is final arbiter of what is AI, owns inventory policy, and approves materiality | Added | Designated control function decides what is AI and approves each materiality rating (gap 2) | 0.4 |
+| 4.4 | Residual risk from unidentified AI within appetite; mitigants such as network monitoring and DLP | Partial | Gateways deny unregistered agents and egress guard redacts (0.3); flags on unregistered AI endpoints (gap 1, 0.4); network monitoring and DLP are the bank's | 0.3, 0.4 |
 | 4.5 | Accurate inventory with update frequency for new, changed and decommissioned AI | Planned | Use-case register; registry changes are evidenced policy changes; `kognita usecase list` | 0.4 |
-| 4.6 | Links to other inventories (data assets, vendors, outsourcing registers) | Partial | Each entry links to data sources and vendors. Shared identifiers with the bank's inventories are gap 5 | 0.4 |
+| 4.6 | Links to other inventories (data assets, vendors, outsourcing registers) | Added | Each entry links to data sources and vendors using the identifiers in the bank's data inventory and outsourcing register (gap 5) | 0.4 |
 | 4.7 | Attributes: purpose, approved scope (jurisdiction), model type, data, dependencies, lifecycle status, materiality, review status, roles, documentation | Planned | Use-case register fields, model card per approved model, review dates | 0.4 |
 | 4.7, fn 25 | For agents: identifiers, tools and systems accessible, components, guardrails | Planned | Agent registry: identity, tool allow-list, permitted systems, autonomy level, blast-radius limits, behaviour-version hash | 0.5 |
 | 4.8 | Inventory design reviewed for newer AI technologies | Boundary | The register schema is versioned; the review is the bank's | — |
-| 4.10, 4.12(a) | Materiality methodology; impact on the FI and customers, data sensitivity | Planned | Five axes: business criticality, client-impact class, decision consequence, data sensitivity, autonomy | 0.4 |
-| 4.12(b) | Complexity: technology, novelty, explainability, visibility into third-party AI | Gap | None of the five axes covers complexity. See gap 4 | — |
+| 4.10, 4.12(a) | Materiality methodology; impact on the FI and customers, data sensitivity | Planned | Six axes: business criticality, client-impact class, decision consequence, data sensitivity, autonomy, complexity | 0.4 |
+| 4.12(b) | Complexity: technology, novelty, explainability, visibility into third-party AI | Added | Complexity added as a sixth axis, mapped to MAS's impact, complexity and reliance (gap 4) | 0.4 |
 | 4.12(c) | Reliance, including autonomy and degree of human oversight | Planned | Autonomy axis (0.4); autonomy levels L0 to L6 (0.5) | 0.4, 0.5 |
-| 4.11 | Inherent and residual materiality; residual within appetite before deployment | Gap | Appetite blocks registration, not deployment on residual risk. See gap 3 | — |
+| 4.11 | Inherent and residual materiality; residual within appetite before deployment | Added | Inherent, credited controls and residual recorded; activation denied while residual is outside appetite (gap 3) | 0.4 |
 
 ### Section 5: AI Life Cycle Controls
 
 | Para | Expectation | Status | Kognita | Release |
 |---|---|---|---|---|
-| 5.2, fn 28 | Pilots and phased rollouts: time and user limits, success criteria, close monitoring | Gap | See gap 6 | — |
-| 5.3 | Contingency plans for high-risk AI; kill-switch activation protocols tested regularly | Partial | Per-agent kill switch (Core); gateway failure mode per use case (0.3); failure drills for providers and tools (0.7). Kill-switch drills are gap 7 | Core, 0.3, 0.7 |
+| 5.2, fn 28 | Pilots and phased rollouts: time and user limits, success criteria, close monitoring | Added | Pilot status with end date, named users and success criteria (gap 6) | 0.4 |
+| 5.3 | Contingency plans for high-risk AI; kill-switch activation protocols tested regularly | Partial | Per-agent kill switch (Core); gateway failure mode per use case (0.3); kill-switch drills (gap 7, 0.4); failure drills for providers and tools (0.7) | Core, 0.3, 0.4, 0.7 |
 | 5.4(a)(b)(c) | Data fit for purpose, representative, high quality | Boundary | Fact contract and freshness checks on facts used at run time (0.6); training and test data quality is the bank's | 0.6 |
 | 5.4(d) | Data classification guides use | Covered | Classification ceilings and zones filter data before retrieval; classifier envelopes at the decision boundary | Core, 0.3 |
 | 5.4(e) | Data security, including destruction of outputs no longer required | Covered | Content-addressed retention store with retention per use case; erasure deletes bytes and keeps the chain verifiable | 0.3 |
 | 5.4(f) | Data privacy, consent for sensitive personal data | Partial | Egress redaction; purpose-bound access; consent records are the bank's | Core |
 | 5.4(g) | Auditability and lineage of data | Partial | Retrieval records content hash and embedding model per item; training-data lineage is the bank's | 0.3 |
 | 5.5, 5.6 | Transparency and explainability proportionate to materiality; inform customers; redress | Planned | Cited decisions (Core); reconstruction report (0.3); reasons instead of scores, client AI-disclosure rules (0.4) | Core, 0.3, 0.4 |
-| 5.7, 5.8 | Define fair outcomes; fairness assessments on protected attributes and proxies | Partial | Fairness reporting across bank-defined segments (0.6). Proxy attributes are gap 8; the definition of fair is the bank's | 0.6 |
+| 5.7, 5.8 | Define fair outcomes; fairness assessments on protected attributes and proxies | Partial | Fairness reporting across bank-defined segments, including proxy attributes, as a monitored metric (gap 8). The definition of fair is the bank's | 0.6 |
 | 5.9(a)(b) | Roles for human oversight; authority and ability to intervene | Planned | Owner roles (0.4); intervention controls: observe, pause, override, restrict, recover (0.4) | 0.4 |
 | 5.9(c) | Design for oversight; escalate where reliability conditions are met | Covered | `ESCALATE` below a classifier confidence threshold; `HUMAN_APPROVAL` holds | 0.3 |
 | 5.9(d) | Logs of oversight; review of interventions, incidents and near misses; automation bias | Planned | Approval rate and time, edit and rejection rates, outcomes and near misses | 0.4 |
 | 5.10 | Test third-party AI in the FI's context; compensating tests; contractual visibility of changes | Boundary | Model card records the evaluation relied on (0.4); testing and contracts are the bank's | 0.4 |
-| 5.11 | Limit, suspend or replace a third-party AI service when residual risk exceeds appetite | Partial | Provider failover under policy (0.7). A per-provider suspend is gap 10 | 0.7 |
+| 5.11 | Limit, suspend or replace a third-party AI service when residual risk exceeds appetite | Added | Revocation by provider at the gateway (gap 10, 0.4); provider failover under policy (0.7) | 0.4, 0.7 |
 | 5.11(b) | Supply chain assessment of models, datasets, dependencies | Boundary | Dependency map (0.7); the assessment is the bank's | 0.7 |
 | 5.11(c) | Concentration risk | Planned | Share of critical use cases per provider, cloud and framework | 0.7 |
 | 5.11(d) | Notification and assessment of third-party changes | Planned | Pinned provider model version per call (0.3); silent model-change detection (0.7) | 0.3, 0.7 |
@@ -269,7 +269,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | 5.24 | Re-validation, independent for high materiality; triggered by alerts and changes | Planned | Review dates per tier; revalidation on material change (0.4); drift findings count toward review (0.5) | 0.4, 0.5 |
 | 5.25(a)(b) | Significance of changes; re-approval; version control and rollback | Planned | Policy rows effective-dated, edits refused (0.3); behaviour-version hash over prompt, tools, permissions and data needs re-approval (0.5) | 0.3, 0.5 |
 | 5.25(c) | Enhanced controls on automatic updates | Planned | Learned changes to standards need Knowledge Lead approval and become new versions (0.6) | 0.6 |
-| 5.26 | Retirement and decommissioning | Partial | A retired use case is a DENY (0.4). The rest of retirement is gap 9 | 0.4 |
+| 5.26 | Retirement and decommissioning | Added | A retired use case is a DENY; retirement stops its agents, applies retention and notifies dependants (gap 9) | 0.4 |
 
 ### Section 6: AI Capability and Capacity
 
@@ -280,7 +280,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 
 ### Gaps Found by This Audit
 
-None of these is on the roadmap yet.
+All twelve were adopted into the roadmap on 8 October 2026: gaps 1 to 7 and 9 to 12 in 0.4 (use-case register, item 8; revocation, item 14) and gap 8 in 0.6 (item 11).
 
 1. **Identification of unmediated AI (4.2, 4.4).** Register entries for AI that does not pass through Kognita, such as vendor-embedded features and approved copilots, recording the assurance gap and the compensating control. The gateways flag traffic to AI endpoints that no registered use case names, as a discovery signal for the control function.
 2. **Designated control function (4.3, 4.9, 4.13).** A control-function role, distinct from the five owner roles, that decides whether a use is AI and approves each materiality rating. The tier derived from classification stays a proposal until approved.
