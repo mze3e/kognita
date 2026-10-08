@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The README and the package description were brought up to date for 0.3.0. The roadmap status line now says v0.3.0 is shipped.
+- `docs/control-frameworks.md` maps the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) paragraph by paragraph, with timing against the MAS deadlines and twelve gaps not yet on the roadmap. "Covered" now means shipped in v0.3.0 or earlier.
 
 ## [0.3.0] - 2026-10-06
 
