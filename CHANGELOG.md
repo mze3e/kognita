@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The README and the package description were brought up to date for 0.3.0. The roadmap status line now says v0.3.0 is shipped.
+- `docs/control-frameworks.md` maps the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) paragraph by paragraph, with timing against the MAS deadlines. "Covered" now means shipped in v0.3.0 or earlier.
+- The roadmap adopts the twelve gaps that mapping found. 0.4's use-case register gains a designated control function, complexity as a sixth materiality axis, inherent and residual materiality, quantitative risk-appetite measures, a single-provider dependency count, shared inventory identifiers, unmediated AI entries, pilot status and complete retirement; 0.4 revocation gains `--provider` and kill-switch drills; 0.6 fairness reporting covers proxy attributes. No release dates changed.
 
 ## [0.3.0] - 2026-10-06
 
