@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- The Graphiti + Kuzu graph engine: `kognita.graph`, the `[graph]` extra, and the `[anthropic]`, `[groq]` and `[gemini]` extras, which installed only Graphiti. The Streamlit graph demo under `examples/` is removed with it. Kognita holds policies, guidelines and governance records only (ADR 0008). Touching a removed name such as `kognita.Kognita` or `kognita.GraphEngine` raises an `AttributeError` that names ADR 0008; anyone who still needs the engine can pin `kognita[graph]==0.3.0`. `kognita doctor` no longer lists graph, Anthropic, Groq or Gemini packages. `graphiti_core` and `kuzu` stay on the core's forbidden-import list.
+
 ### Changed
 
 - The README and the package description were brought up to date for 0.3.0. The roadmap status line now says v0.3.0 is shipped.

@@ -74,24 +74,12 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print()
     print("optional extras")
     for label, module in (
-        ("graph (graphiti)", "graphiti_core"),
-        ("graph (kuzu)", "kuzu"),
         ("openai", "openai"),
-        ("anthropic", "anthropic"),
-        ("groq", "groq"),
-        ("gemini", "google.genai"),
         ("vec", "sqlite_vec"),
     ):
         print(f"  {label:<22} {_probe(module)}")
     print()
     print(f"vector backend           {_vector_backend()}")
-
-    graph_ok = (
-        _probe("kuzu") != "not installed" and _probe("graphiti_core") != "not installed"
-    )
-    print(
-        f"graph engine             {'available' if graph_ok else 'unavailable (pip install kognita[graph])'}"
-    )
 
     if args.db:
         print()

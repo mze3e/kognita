@@ -3,7 +3,7 @@
 ``kognita`` **is** the governed decision engine. Everything exported here —
 envelopes, a deterministic policy decision point, entitlement-filtered
 retrieval, an egress guard, a hash-chained evidence plane — installs and runs on
-four dependencies, with no LLM, no graph database and no network::
+four dependencies, with no LLM, no database server and no network::
 
     from kognita import Envelope, decide, load_snapshot
 
@@ -18,11 +18,6 @@ touches a provider or a database engine.
 
 Optional subpackages sit alongside, reached by their own names so that reading
 an import tells you what a call will actually load:
-
-``kognita.graph``
-    The Graphiti + Kuzu knowledge engine — ``pip install kognita[graph]``::
-
-        from kognita.graph import GraphEngine, GraphConfig
 
 ``kognita.adapters``
     Provider-backed embedders and clients — ``pip install kognita[openai]``.
@@ -121,47 +116,41 @@ from kognita.vocabulary import (
 
 __version__ = "0.3.0"
 
-#: Names 0.1.x exposed here that 0.2 does not. The graph engine is one optional
-#: backend behind a protocol, so it is reached at ``kognita.graph`` rather than
-#: advertised in the namespace that has to stay dependency-light.
-_MOVED: dict[str, str] = {
-    "Kognita": "kognita.graph.GraphEngine",
-    "KognitaConfig": "kognita.graph.GraphConfig",
-    "KognitaKuzuDriver": "kognita.graph.KuzuDriver",
-    "KuzuSession": "kognita.graph.KuzuSession",
-    "make_graphiti": "kognita.graph.make_graphiti",
-    "execute_cypher": "kognita.graph.execute_cypher",
-    "chunk_text": "kognita.graph.chunk_text",
-    "GraphSnapshot": "kognita.graph.GraphSnapshot",
-    "save_snapshot": "kognita.graph.save_snapshot",
-    "content_hash": "kognita.graph.content_hash",
-    "Node": "kognita.graph.Node",
-    "Edge": "kognita.graph.Edge",
-    "SearchResult": "kognita.graph.SearchResult",
-    "EpisodeResult": "kognita.graph.EpisodeResult",
-}
+#: Names from the Graphiti + Kuzu graph engine, which 0.1.x exported here and
+#: which left the package entirely after 0.3 (ADR 0008).
+_REMOVED: frozenset[str] = frozenset({
+    "Kognita",
+    "KognitaConfig",
+    "KognitaKuzuDriver",
+    "KuzuSession",
+    "make_graphiti",
+    "execute_cypher",
+    "chunk_text",
+    "GraphSnapshot",
+    "save_snapshot",
+    "content_hash",
+    "Node",
+    "Edge",
+    "SearchResult",
+    "EpisodeResult",
+    "GraphEngine",
+    "GraphConfig",
+})
 
 
 def __getattr__(name: str) -> Any:
-    """Explain the retired 0.1.x graph names rather than resolving them.
+    """Explain the removed graph names rather than failing with a bare error.
 
-    These are not lazily bound aliases. The graph engine deliberately no longer
-    reaches into this namespace, so the error names the module that owns it.
-
-    ``load_snapshot`` is absent from ``_MOVED`` on purpose: it still lives here
-    and means the *policy* snapshot. :func:`kognita.graph.load_snapshot` is a
-    different function that rehydrates a saved graph.
+    ``load_snapshot`` is not in ``_REMOVED``: it lives here and means the
+    *policy* snapshot.
     """
-    destination = _MOVED.get(name)
-    if destination is None:
+    if name not in _REMOVED:
         raise AttributeError(f"module 'kognita' has no attribute {name!r}")
-    module, _, attribute = destination.rpartition(".")
     raise AttributeError(
-        f"'{name}' is no longer exported from 'kognita'. The graph engine is an "
-        f"optional backend rather than the top-level namespace, so import it "
-        f"from the module that owns it:\n"
-        f"    from {module} import {attribute}\n"
-        f"which needs the graph extra:  pip install kognita[graph]"
+        f"'{name}' belonged to the Graphiti + Kuzu graph engine, which is no "
+        f"longer part of kognita (removed after 0.3.0, see ADR 0008). Kognita "
+        f"governs policies, guidelines and evidence; it does not ship a "
+        f"knowledge graph. Pin kognita[graph]==0.3.0 if you still need it."
     )
 
 

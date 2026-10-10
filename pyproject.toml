@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "kognita"
 version = "0.3.0"
-description = "Prove an AI answer was permitted — and evidence it. A governed decision, retrieval and knowledge-graph library with an AI gateway and MCP proxy."
+description = "Prove an AI answer was permitted — and evidence it. A governed decision, retrieval and evidence library with an AI gateway and MCP proxy."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -16,9 +16,6 @@ keywords = [
     "policy-decision-point",
     "audit",
     "compliance",
-    "knowledge-graph",
-    "graphiti",
-    "kuzu",
     "rag",
     "ai-gateway",
     "mcp",
@@ -37,7 +34,7 @@ classifiers = [
 ]
 
 # The core must install and run on these four alone. Anything that reaches an
-# external system — a graph database, an LLM, a vector extension — is an extra.
+# external system — an LLM provider, a vector extension — is an extra.
 dependencies = [
     "pydantic>=2.7.0",
     "sqlmodel>=0.0.22",
@@ -46,17 +43,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-graph = [
-    "graphiti-core[kuzu]==0.28.2",
-    "kuzu==0.11.3",
-    # graphiti-core 0.28.2 imports `httpx`; openai 3.x moved to `httpx2`, so the
-    # pair breaks at import time. Cap until graphiti-core catches up.
-    "openai>=1.91.0,<2",
-]
 openai = ["openai>=1.91.0,<2"]
-anthropic = ["graphiti-core[anthropic]==0.28.2"]
-groq = ["graphiti-core[groq]==0.28.2"]
-gemini = ["graphiti-core[google-genai]==0.28.2"]
 vec = ["sqlite-vec>=0.1.6"]
 local-embeddings = [
     "fastapi>=0.115.0",
@@ -64,7 +51,7 @@ local-embeddings = [
     "sentence-transformers>=3.0.0",
 ]
 all = [
-    "kognita[graph,openai,anthropic,groq,gemini,vec,local-embeddings]",
+    "kognita[openai,vec,local-embeddings]",
 ]
 dev = [
     "pytest>=8.0.0",
@@ -143,7 +130,6 @@ source_modules = [
     "kognita.vocabulary",
 ]
 forbidden_modules = [
-    "kognita.graph",
     "kognita.adapters",
     "kognita.testing",
     "kognita.cli",
@@ -155,11 +141,6 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "the graph engine and the adapters stay independent"
-type = "independence"
-modules = ["kognita.graph", "kognita.adapters"]
-
-[[tool.importlinter.contracts]]
 name = "config and exceptions stay dependency-free"
 type = "forbidden"
 source_modules = ["kognita.config", "kognita.exceptions"]
@@ -169,7 +150,6 @@ forbidden_modules = [
     "kognita.evidence",
     "kognita.retrieval",
     "kognita.egress",
-    "kognita.graph",
     "kognita.adapters",
     "kognita.testing",
     "kognita.cli",

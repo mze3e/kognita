@@ -1,9 +1,9 @@
 """The packaging claims, executable.
 
 The README says the decision engine installs and runs on four dependencies and
-that the graph engine is one optional backend rather than the identity of the
-library. Both are claims about *imports*, so both are testable here rather than
-being left to reviewer discipline.
+that the package no longer ships a graph engine. Both are claims about
+*imports* and files, so both are testable here rather than being left to
+reviewer discipline.
 """
 from __future__ import annotations
 
@@ -67,9 +67,8 @@ def test_every_engine_module_is_covered_by_the_contract():
 def test_importing_kognita_loads_no_optional_dependency():
     """``import kognita`` must not drag in a graph database or a provider SDK.
 
-    Run in a subprocess: this test session has almost certainly imported the
-    graph engine elsewhere, so checking ``sys.modules`` in-process would prove
-    nothing.
+    Run in a subprocess: this test session may have imported a provider SDK
+    elsewhere, so checking ``sys.modules`` in-process would prove nothing.
     """
     probe = (
         "import sys; import kognita; "
@@ -93,29 +92,34 @@ def test_the_engine_is_what_the_top_level_namespace_exports():
 
 
 def test_no_graph_name_is_exported_from_the_top_level():
-    """The graph engine is reached at ``kognita.graph``, never advertised here."""
     for name in ("GraphEngine", "GraphConfig", "KuzuSession", "Kognita", "Node", "Edge"):
         assert name not in kognita.__all__, (
             f"{name!r} is a graph name and must not appear in kognita.__all__"
         )
 
 
-@pytest.mark.parametrize(
-    ("retired", "destination"),
-    [
-        ("Kognita", "kognita.graph"),
-        ("KognitaConfig", "kognita.graph"),
-        ("KuzuSession", "kognita.graph"),
-    ],
-)
-def test_retired_graph_names_say_where_they_went(retired, destination):
+def test_the_package_ships_no_graph_engine():
+    """The Graphiti + Kuzu engine left the package (ADR 0008)."""
+    assert not (PACKAGE_ROOT / "graph").exists()
+    with pytest.raises(ModuleNotFoundError):
+        __import__("kognita.graph")
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
+    extras = config["project"]["optional-dependencies"]
+    assert "graph" not in extras
+    pinned = [req for reqs in extras.values() for req in reqs]
+    assert not [req for req in pinned if req.startswith(("graphiti", "kuzu"))]
+
+
+@pytest.mark.parametrize("removed", ["Kognita", "KognitaConfig", "KuzuSession", "GraphEngine"])
+def test_removed_graph_names_explain_the_removal(removed):
     """A clean break still has to be navigable.
 
-    ``from kognita import Kognita`` worked in 0.1.x. It is gone, and the failure
-    should name the module that owns it rather than leaving a reader to guess.
+    ``from kognita import Kognita`` worked in 0.1.x, and ``kognita.graph`` in
+    0.2 and 0.3. The failure should say the engine was removed and how to keep
+    using it, rather than leaving a reader to guess.
     """
     with pytest.raises(AttributeError) as excinfo:
-        getattr(kognita, retired)
+        getattr(kognita, removed)
     message = str(excinfo.value)
-    assert destination in message
-    assert "kognita[graph]" in message
+    assert "ADR 0008" in message
+    assert "kognita[graph]==0.3.0" in message

@@ -1,6 +1,6 @@
 # ADR 0002: System of Record Mirror Design
 
-**Status:** Pending (Phase 6)  
+**Status:** Superseded by [ADR 0008](0008-remove-the-graph-engine.md); the graph engine left the package before this was built  
 **Decision:** Defer SoR mirror implementation until a real domain pack drives requirements
 
 ## Context

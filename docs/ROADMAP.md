@@ -43,6 +43,8 @@ The direction of travel in supervision is from AI governance *documentation* tow
 
 Kognita governs **AI and agent traffic**: agent-to-tool calls, agent-to-model calls, and agent-to-agent messages. It is **not** a general enterprise integration platform. Protocol mediation, data transformation, and connector catalogs (the MuleSoft, Kong, Apigee space) are out of scope. In that market the differentiator is connector count; in ours it is fail-closed decisions with citations and a tamper-evident chain.
 
+Kognita **holds** only policies, guidelines and governance records: policy rows, the use-case and agent registers, approved-source and standard references, and evidence. Client data, document stores, agent memory, knowledge graphs and connectors to file stores such as Dropbox or OneDrive stay in the bank's systems; Kognita decides and evidences access to them, it does not host them ([ADR 0008](decisions/0008-remove-the-graph-engine.md)).
+
 ---
 
 ## Supervisory Examinability
@@ -330,15 +332,11 @@ Fixes the weak-citation gap. Docling's `ProvenanceItem` carries `page_no`, `bbox
 - Pin exactly. Docling releases very frequently and has shipped regressions that broke all conversions across several versions.
 - Verify licenses of `docling-parse` and its model packages before shipping the PDF extra.
 
-### 2. The Graph Extra: Decide Its Fate
+### 2. The Graph Extra: Removed
 
-`kognita.graph` (Graphiti + Kuzu) has no functional test coverage, its headline SoR mirror is unimplemented, and its only integration into a governed answer is a node and edge count in a summary string. It also hard-pins `graphiti-core==0.28.2` and forces `openai<2` on users' environments.
+**Decided 10 October 2026, ahead of this release ([ADR 0008](decisions/0008-remove-the-graph-engine.md)).** `kognita.graph` (Graphiti + Kuzu), the `[graph]` extra, and the `[anthropic]`, `[groq]` and `[gemini]` extras that only installed Graphiti are removed from the package. No replacement package is published from this repository; the 0.3.0 release keeps the old engine for anyone who pins it. Structured ingestion (item 1) is the only retrieval path, and it indexes policies, guidelines and governance records only.
 
-This release decides between:
-- **Finish it:** functional tests, implement the SoR mirror, lift the pins; or
-- **Extract it** into a separate package so its pins stop travelling with Kognita, with structured ingestion (item 1) becoming the primary retrieval path.
-
-The default, absent a concrete deployment needing cross-plane Cypher, is extraction.
+The `openai` extra keeps its `<2` cap until the OpenAI embedder adapter is tested against the newer SDK; the cap was introduced for Graphiti.
 
 ### 3. Policy Language: YAML and CLI
 
@@ -525,7 +523,7 @@ Do not wait for client harm.
 - [ ] Pause, override, restrict and recover work on a live run and are evidenced
 - [ ] A complaint links back to the exact output, model version and approver
 - [ ] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
-- [ ] Graph extra either tested and unpinned, or extracted
+- [x] Graph extra removed from the package (ADR 0008)
 - [ ] Policy language: load, diff, validate, explain, test
 - [ ] Five starter packs with scenarios
 - [ ] hermes-agent adapter plus at least three others
@@ -907,6 +905,13 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 ---
 
 ## Decision Log
+
+**10 October 2026: Governance records only; graph engine removed**
+- Kognita holds policies, guidelines and governance records, and nothing else. Client data, document stores, agent memory, knowledge graphs and file-store connectors stay in the bank's systems and are governed through `decide()`, the AI gateway and the MCP proxy. Added to the scope boundary.
+- 0.4 item 2 decided early: the Graphiti + Kuzu engine, the `[graph]` extra and the Graphiti-only `[anthropic]`, `[groq]` and `[gemini]` extras are removed ([ADR 0008](decisions/0008-remove-the-graph-engine.md)), along with the Streamlit graph demo. ADRs 0001 and 0002 are superseded.
+- Considered OpenViking as the knowledge and memory layer and did not adopt it: it would host data Kognita should only govern, and its automatic memory extraction conflicts with 0.6 item 8, where learning is proposed, never applied.
+- Connectors to file stores (Dropbox, OneDrive, SharePoint) were proposed as a separate package and not adopted: indexing those sources is data-plane work.
+- No release dates changed.
 
 **8 October 2026: MAS Guidelines on AI Risk Management**
 - Mapped the roadmap against the final MAS guidelines issued 7 October 2026, paragraph by paragraph. Full mapping in [control-frameworks.md](control-frameworks.md). 0.4 lands before the Sections 3 and 4 deadline of 7 October 2027; 0.5 to 1.0 land before the Sections 5 and 6 deadline of 7 October 2028.
