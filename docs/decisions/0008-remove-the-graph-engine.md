@@ -26,6 +26,6 @@ Three things settled it:
 
 - `pip install kognita[graph]` on a later release warns that the extra does not exist and installs the core alone. Anyone who needs the engine pins `kognita[graph]==0.3.0`.
 - `kognita doctor` no longer reports graph, Anthropic, Groq or Gemini packages.
-- The `openai` extra keeps its `<2` cap for now. The cap was introduced for Graphiti; lifting it is a separate change that needs the OpenAI embedder adapter tested against the newer SDK.
+- The `openai` extra's `<2` cap, introduced for Graphiti, is lifted. Nothing in the package imports the OpenAI SDK: the embedder adapter calls `/v1/embeddings` with `urllib`. The extra serves agents that use the SDK as a client of the AI gateway; openai 3.28 was checked end to end through `kognita serve`, with redaction applied and an unnamed agent denied.
 - `LLMConfig` and `list_models` stay. They are standard-library only and public API, though the graph engine was their main consumer.
 - Retrieval keeps its pack-supplied `subgraph` hook for subject context. It is a callback into the domain pack, not a graph database.

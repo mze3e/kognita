@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The `openai` extra no longer caps the SDK below version 2. The cap existed for Graphiti. Kognita does not import the SDK (the embedder adapter uses `urllib`); the extra is for agents that call the AI gateway with it. openai 3.28 was checked through `kognita serve`: the provider received the redacted prompt, the client received the restored values, and a call with no agent name was denied without reaching the provider.
 - The README and the package description were brought up to date for 0.3.0. The roadmap status line now says v0.3.0 is shipped.
 - `docs/control-frameworks.md` maps the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) paragraph by paragraph, with timing against the MAS deadlines. "Covered" now means shipped in v0.3.0 or earlier.
 - The roadmap adopts the twelve gaps that mapping found. 0.4's use-case register gains a designated control function, complexity as a sixth materiality axis, inherent and residual materiality, quantitative risk-appetite measures, a single-provider dependency count, shared inventory identifiers, unmediated AI entries, pilot status and complete retirement; 0.4 revocation gains `--provider` and kill-switch drills; 0.6 fairness reporting covers proxy attributes. No release dates changed.

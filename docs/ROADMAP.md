@@ -336,7 +336,7 @@ Fixes the weak-citation gap. Docling's `ProvenanceItem` carries `page_no`, `bbox
 
 **Decided 10 October 2026, ahead of this release ([ADR 0008](decisions/0008-remove-the-graph-engine.md)).** `kognita.graph` (Graphiti + Kuzu), the `[graph]` extra, and the `[anthropic]`, `[groq]` and `[gemini]` extras that only installed Graphiti are removed from the package. No replacement package is published from this repository; the 0.3.0 release keeps the old engine for anyone who pins it. Structured ingestion (item 1) is the only retrieval path, and it indexes policies, guidelines and governance records only.
 
-The `openai` extra keeps its `<2` cap until the OpenAI embedder adapter is tested against the newer SDK; the cap was introduced for Graphiti.
+The `openai` extra's `<2` cap, introduced for Graphiti, is lifted. Kognita does not import the OpenAI SDK; the embedder adapter uses `urllib`. The extra is for agents that use the SDK as a client of the AI gateway, checked with openai 3.28.
 
 ### 3. Policy Language: YAML and CLI
 

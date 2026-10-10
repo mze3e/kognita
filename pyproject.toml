@@ -43,7 +43,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-openai = ["openai>=1.91.0,<2"]
+openai = ["openai>=1.91.0"]
 vec = ["sqlite-vec>=0.1.6"]
 local-embeddings = [
     "fastapi>=0.115.0",
