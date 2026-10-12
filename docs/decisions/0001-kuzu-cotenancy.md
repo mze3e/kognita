@@ -1,6 +1,6 @@
 # 0001 — Two graphs in one Kuzu database
 
-**Status:** accepted · **Date:** 2026-09-01 · **Verified against:** `kuzu==0.11.3`, `graphiti-core==0.28.2`
+**Status:** superseded by [ADR 0008](0008-remove-the-graph-engine.md) · **Date:** 2026-09-01 · **Verified against:** `kuzu==0.11.3`, `graphiti-core==0.28.2`
 
 ## Context
 
