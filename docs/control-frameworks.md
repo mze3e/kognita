@@ -1,12 +1,13 @@
 # AI Control Frameworks: Wealth Management and Agentic AI Coverage
 
-**Last revised:** 8 October 2026. Companion to [ROADMAP.md](ROADMAP.md).
+**Last revised:** 12 October 2026. Companion to [ROADMAP.md](ROADMAP.md).
 
 **Attribution:** This document maps two control frameworks and one supervisory guideline against Kognita:
 - A **40-domain bank-grade agentic AI control framework** for wealth management and private banking, drawing on supervisory material (MAS, ABS), security references (NIST, OWASP), and production patterns described for large banks.
 - A **70-control wealth management framework**, consolidating material from MAS, PDPC, SFC, FCA, the Bank of England, APRA and ASIC, CSBS, BIS/FSI and ESMA.
 - Integration of the **EVOLVE framework** for continuous learning and institutional memory, authored by Ahmed Muzammil under Creative Commons Attribution Share-Alike 4.0 (CC BY SA 4.0).
 - The **MAS Guidelines on Artificial Intelligence Risk Management**, issued 7 October 2026, mapped paragraph by paragraph in [section VII](#vii-mas-guidelines-on-ai-risk-management-october-2026).
+- The **trust architecture** set out in [Satya Nadella's post of 10 October 2026](https://x.com/satyanadella), mapped principle by principle in [section VIII](#viii-trust-architecture-authority-outside-the-model-satya-nadella-october-2026).
 
 The frameworks overlap heavily. Statuses below are measured against the current roadmap.
 
@@ -297,16 +298,70 @@ All twelve were adopted into the roadmap on 8 October 2026: gaps 1 to 7 and 9 to
 
 ---
 
-## VIII. What Kognita Deliberately Does Not Become
+## VIII. Trust Architecture: Authority Outside the Model (Satya Nadella, October 2026)
+
+Source: [Satya Nadella's post of 10 October 2026](https://x.com/satyanadella), on the trust architecture for AI systems that act with sensitive data and take critical actions. Its argument: models cannot be traced to training data or weights the way code can be traced to a code path, so responsibility cannot be outsourced to a model provider. Separate the supply of intelligence from the authority over it, treat frontier models as insider risks, and keep the controls on what a model can access and do outside the model.
+
+> **The most trustworthy system will not be the one with the model we trust most. It will be the one that enables us to trust the model the least.**
+
+This is Kognita's design rule stated from the outside. The mapping below uses the same status legend as the rest of this document; five gaps it found were adopted into the roadmap on 12 October 2026.
+
+### The core argument
+
+| Principle | Status | Kognita | Release |
+|---|---|---|---|
+| Separate the supply of intelligence from the authority over it | Covered | `decide()` runs outside the model, before any data moves; outcomes resolve fail-closed and every decision cites its rule | Core |
+| Surround non-deterministic models with deterministic design | Covered | Pure, replayable decisions; a classifier label can raise a request to escalation but never allow it, and replay uses the recorded label | Core, 0.3 |
+| Human controls | Partial | Approval holds, two-signature approval, durable suspend and resume (shipped); pause, override, restrict and recover on a live run (0.4); autonomy levels (0.5) | 0.3, 0.4, 0.5 |
+| Responsibility is not outsourced to the model provider | Partial | The institution stays accountable in the accountability matrix (0.4); model card per approved model (0.4); provider register and silent model-change detection (0.7) | 0.4, 0.7 |
+
+### Models as insider risks
+
+| Practice | Status | Kognita | Release |
+|---|---|---|---|
+| Establish identity | Partial | Agent registry; gateways bind agent names to the configured client (0.3); agents get their own credentials (0.5). Models are identified by pinned provider version and model card, and can be revoked per model (0.4) | 0.3, 0.4, 0.5 |
+| Limit privileges | Partial | Entitlement filtering and a tool registry (shipped); per-agent tool allow-lists, per-verb action permissions, blast-radius limits (0.5) | Core, 0.5 |
+| Log activity | Covered | Hash-chained evidence of every decision, model call, tool call and egress | Core, 0.3 |
+| Create containment boundaries | Partial | AI gateway, MCP proxy and egress guard (shipped); anomaly containment and tainted-content tracking (0.5) | 0.3, 0.5 |
+| Chain-of-thought transparency as a non-negotiable, but not sufficient | Added | Reasoning traces recorded where the provider returns them, required per use case, shown in `reconstruct`, and never a basis for a decision | 0.6 item 13 |
+| Models may test each other, without nested black boxes | Partial | Verification gate requires a registered verifier at tier 2 and above (0.6 item 7); the decision itself never rests on a model | 0.6 |
+| Controls outside the model; a program cannot bypass or tamper with what enforces its permissions | Added | Gateway and proxy mode sit outside the agent. Tier 2 and above must run through the gateways, with provider and tool credentials held only by them; library mode runs inside the agent's process and is limited to lower tiers | 0.5 item 15 |
+| Separate the model, the harness and the action space | Covered | AI gateway fronts the model; MCP proxy fronts the tools; the harness is the agent framework, reached through adapters | 0.3 |
+
+### Principles of observability
+
+| Principle | Status | Kognita | Release |
+|---|---|---|---|
+| Model diversity: no sole dependency, no model verifying its own work | Partial | Single-provider dependency count (0.4); concentration report and governed failover (0.7). Verifier independence added: a verifier on the producer's model or provider is denied | 0.4, 0.6 item 7, 0.7 |
+| Observe everything: tamper-proof, human-readable evidence; reproduce an outcome without the model attesting to it | Partial | Hash chain with pinned policy, retrieval, model and tool hashes, and a readable reconstruction report; replay never re-runs the model (shipped). Today the chain is tamper-evident; Ed25519 signing and external anchoring make it tamper-proof | 0.3, 0.7 |
+| Verifiability: test failures, attacks, edge cases and system changes | Partial | Conformance kit (shipped); kill-switch drills (0.4); adversarial suite and re-approval on behaviour change (0.5); evaluation evidence gate (0.6); failure drills (0.7) | Core, 0.4 to 0.7 |
+| Independent controls over access and actions | Covered | Policies are bank-owned, effective-dated data evaluated outside the model | Core |
+| Independent auditability: no single model controls both behaviour and its evidence | Partial | Kognita, not the model, writes the evidence. Independent validation (0.4); in gateway mode the agent has no write access to the evidence store (0.5 item 15); external review API and a separate verifier (0.7) | 0.4, 0.5, 0.7 |
+| Containment: assume compromise; an authorised person can pause or shut down a model mid-task | Partial | Kill switch denies the next decision (shipped); pause, revoke and recover (0.4); automatic containment (0.5). Added: bounded and cancellable tool calls, so an action already running can be stopped | Core, 0.4, 0.5 item 16 |
+| Incident disclosure: tell those affected; share what failed, which controls failed, and the runtime changes behind it | Partial | Affected-client query and circuit-breaker incidents (0.4); incident evidence (0.7). Added: a structured incident report naming the controls that failed and the deployment-version diff, with a redacted variant for sharing. Disclosure itself is the bank's | 0.4, 0.7 |
+| Industry standards where existing ones are insufficient | Out of scope | Standard-setting belongs to industry bodies and regulators. Kognita's conformance kit is open and importable, so a pack can prove it meets the same invariants | — |
+
+### Gaps Adopted
+
+1. **Non-bypassable enforcement** (0.5 item 15): tier 2 and above must run through the AI gateway and MCP proxy; credentials are held only by the gateways; divergence between declared and observed calls is a finding.
+2. **Stopping actions in flight** (0.5 item 16): every tool declares a maximum duration; a pause, revocation or kill switch cancels in-flight tool calls where the tool supports it; tools that cannot be cancelled must be reversible or split into steps.
+3. **Verifier independence** (0.6 item 7): a verifier may not use the producer's model, model version or provider.
+4. **Reasoning traces** (0.6 item 13): recorded and retained where the provider returns them, required by policy at higher tiers, never a basis for a decision.
+5. **Structured incident report** (0.7): what happened, who was affected, which controls failed, and the runtime change behind it, with a redacted variant for sharing.
+
+---
+
+## IX. What Kognita Deliberately Does Not Become
 
 Five domains are marked **Boundary**: the truth layer, calculation engines, evaluation harnesses, sandboxes and challenger models. Kognita's role in each is the same. It refuses to let an output through unless the authoritative system was used, and it records that it was. Building those systems inside Kognita would contradict the design rule above, because it would make Kognita the thing being governed.
 
 ---
 
-## IX. Attribution and Licensing
+## X. Attribution and Licensing
 
 - **40-domain bank-grade framework:** consolidated from supervisory material (MAS, ABS), security references (NIST, OWASP), and production patterns.
 - **MAS Guidelines on Artificial Intelligence Risk Management,** Monetary Authority of Singapore, 7 October 2026. Paragraph numbers in section VII refer to that document; the mapping is Kognita's reading, not MAS guidance.
+- **Trust architecture principles:** [Satya Nadella's post of 10 October 2026](https://x.com/satyanadella). Section VIII paraphrases and quotes it; the mapping is Kognita's reading, not the author's.
 - **70-control wealth management framework:** consolidated from MAS, PDPC, SFC, FCA, the Bank of England, APRA and ASIC, CSBS, BIS/FSI and ESMA.
 - **EVOLVE framework integration:** The continuous learning loop, institutional memory, Knowledge Lead role, evidence-gated autonomy and drift tracking are based on the EVOLVE AI-native enterprise framework, authored by **Ahmed Muzammil**, licensed under **Creative Commons Attribution Share-Alike 4.0 (CC BY SA 4.0)**.
 

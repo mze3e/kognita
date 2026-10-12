@@ -1,8 +1,7 @@
 """Provider configuration dataclasses and model-listing helpers.
 
 Deliberately dependency-free: these types are shared by ``kognita`` (which
-must import on the four hard dependencies alone), ``kognita.graph`` and
-``kognita.adapters``. Model discovery uses :mod:`urllib.request` rather than
+must import on the four hard dependencies alone) and ``kognita.adapters``. Model discovery uses :mod:`urllib.request` rather than
 ``requests`` so that nothing here pulls a transitive dependency tree.
 """
 from __future__ import annotations

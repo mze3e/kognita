@@ -43,6 +43,8 @@ The direction of travel in supervision is from AI governance *documentation* tow
 
 Kognita governs **AI and agent traffic**: agent-to-tool calls, agent-to-model calls, and agent-to-agent messages. It is **not** a general enterprise integration platform. Protocol mediation, data transformation, and connector catalogs (the MuleSoft, Kong, Apigee space) are out of scope. In that market the differentiator is connector count; in ours it is fail-closed decisions with citations and a tamper-evident chain.
 
+Kognita **holds** only policies, guidelines and governance records: policy rows, the use-case and agent registers, approved-source and standard references, and evidence. Client data, document stores, agent memory, knowledge graphs and connectors to file stores such as Dropbox or OneDrive stay in the bank's systems; Kognita decides and evidences access to them, it does not host them ([ADR 0008](decisions/0008-remove-the-graph-engine.md)).
+
 ---
 
 ## Supervisory Examinability
@@ -151,6 +153,12 @@ MAS issued its final Guidelines on Artificial Intelligence Risk Management on 7 
 | 7 October 2028 | 5 and 6 | 0.5 to 1.0 (Q2 2027 to Q1 2028) |
 
 The guidelines are principles-based and proportionate. Kognita supplies enforcement and evidence that a bank meets an expectation; board duties and staff capability remain the bank's. Kognita sees only the AI it mediates, so the register must also hold AI that never passes through it (0.4 item 8).
+
+### Trust architecture: authority outside the model
+
+[Satya Nadella's post of 10 October 2026](https://x.com/satyanadella) argues for separating the supply of intelligence from the authority over it: treat models as insider risks, keep the controls on access and action outside the model, and design for observability, model diversity, verifiability, independent controls and auditability, containment and incident disclosure. That is Kognita's design rule. The principle-by-principle mapping is in [control-frameworks.md](control-frameworks.md). It adds five items: non-bypassable enforcement and stopping actions in flight (0.5 items 15 and 16), verifier independence and reasoning traces (0.6 items 7 and 13), and a structured incident report (0.7).
+
+> **The most trustworthy system will not be the one with the model we trust most. It will be the one that enables us to trust the model the least.**
 
 ---
 
@@ -330,15 +338,11 @@ Fixes the weak-citation gap. Docling's `ProvenanceItem` carries `page_no`, `bbox
 - Pin exactly. Docling releases very frequently and has shipped regressions that broke all conversions across several versions.
 - Verify licenses of `docling-parse` and its model packages before shipping the PDF extra.
 
-### 2. The Graph Extra: Decide Its Fate
+### 2. The Graph Extra: Removed
 
-`kognita.graph` (Graphiti + Kuzu) has no functional test coverage, its headline SoR mirror is unimplemented, and its only integration into a governed answer is a node and edge count in a summary string. It also hard-pins `graphiti-core==0.28.2` and forces `openai<2` on users' environments.
+**Decided 10 October 2026, ahead of this release ([ADR 0008](decisions/0008-remove-the-graph-engine.md)).** `kognita.graph` (Graphiti + Kuzu), the `[graph]` extra, and the `[anthropic]`, `[groq]` and `[gemini]` extras that only installed Graphiti are removed from the package. No replacement package is published from this repository; the 0.3.0 release keeps the old engine for anyone who pins it. Structured ingestion (item 1) is the only retrieval path, and it indexes policies, guidelines and governance records only.
 
-This release decides between:
-- **Finish it:** functional tests, implement the SoR mirror, lift the pins; or
-- **Extract it** into a separate package so its pins stop travelling with Kognita, with structured ingestion (item 1) becoming the primary retrieval path.
-
-The default, absent a concrete deployment needing cross-plane Cypher, is extraction.
+The `openai` extra's `<2` cap, introduced for Graphiti, is lifted. Kognita does not import the OpenAI SDK; the embedder adapter uses `urllib`. The extra is for agents that use the SDK as a client of the AI gateway, checked with openai 3.28.
 
 ### 3. Policy Language: YAML and CLI
 
@@ -525,7 +529,7 @@ Do not wait for client harm.
 - [ ] Pause, override, restrict and recover work on a live run and are evidenced
 - [ ] A complaint links back to the exact output, model version and approver
 - [ ] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
-- [ ] Graph extra either tested and unpinned, or extracted
+- [x] Graph extra removed from the package (ADR 0008)
 - [ ] Policy language: load, diff, validate, explain, test
 - [ ] Five starter packs with scenarios
 - [ ] hermes-agent adapter plus at least three others
@@ -656,6 +660,22 @@ An ALLOW for code execution carries constraints the executing sandbox must honor
 - **Adversarial conformance suite:** Kognita ships attack scenarios that test its own controls, alongside the existing conformance kit: prompt injection, wrong-client data, stale information, malicious documents, poisoned retrieval, excessive tool permissions, privilege escalation, looping agents and policy bypass. A pack passes only if every attack is denied, escalated or contained
 - **Published threat model** covering both "our agent fails" and "an external agent attacks us": prompt injection, credential theft, malicious tools, poisoned data, autonomous reconnaissance and automated exploitation, each mapped to the control that answers it
 
+### 15. Non-Bypassable Enforcement
+
+A program must not be able to bypass or tamper with the mechanism that enforces its permissions. In gateway and MCP-proxy mode Kognita sits outside the agent; in library mode `run_governed()` runs inside the agent's own process, which also holds the evidence store, so an agent could call a tool or model directly.
+- **Deployment mode per use case:** the use-case register (0.4 item 8) records whether a use case runs through the gateways or in library mode. A use case at tier 2 or above must run through the AI gateway and the MCP proxy; registering it in library mode fails validation
+- **Credentials only work through the gateways:** agent workload credentials (item 1) are verified by the gateways, and the provider and tool credentials behind them are held by the gateways, never by the agent. An agent that holds a provider key directly is a finding
+- **Network routing is the bank's control:** restricting egress so agents reach models and tools only through the gateways is the bank's network design. Kognita detects divergence: calls evidenced by the gateways are compared with the declared dependencies (0.7 dependency map) and with gateway flags on unregistered AI endpoints (0.4 item 8)
+- **The evidence store sits outside the agent:** in gateway mode, the agent has no write access to the evidence database. Row-level security (0.7) extends this to agents reading each other's runs
+
+### 16. Stopping Actions in Flight
+
+The kill switch and revocation take effect on the next decision. A tool call already released runs to completion, so "pause mid-task" needs more than a denial of the next request.
+- **Bounded tool calls:** every registered tool declares a maximum duration; the MCP proxy enforces it and records a timeout as an evidenced outcome
+- **Cancellation:** a pause, revocation or kill switch on an agent or run cancels its in-flight tool calls at the proxy where the tool supports cancellation, and records which calls were cancelled and which had already completed
+- **Long actions as steps:** a tool whose action cannot be cancelled must be registered as reversible with a compensating action (item 13), or split into steps with a decision between them, so containment always has a point to act
+- Run wall-clock budgets (0.3) remain the outer limit
+
 ### Definition of Done
 - [ ] Every agent has a full identity; agents past review date and changed deployment versions are denied until re-approved
 - [ ] Dual check enforced: a human's entitlement alone never authorizes their agent
@@ -676,6 +696,8 @@ An ALLOW for code execution carries constraints the executing sandbox must honor
 - [ ] Adversarial suite passes; threat model published
 - [ ] A promotion request below its evidence thresholds cannot be approved
 - [ ] A sustained metric decline steps the agent down one level automatically, evidenced and alerted
+- [ ] A tier 2 use case registered in library mode fails validation; an agent holding a provider credential directly is flagged
+- [ ] Engaging the kill switch cancels an in-flight tool call at the proxy and records which calls were cancelled; a tool call past its maximum duration times out with evidence
 
 ---
 
@@ -732,6 +754,7 @@ Before material output reaches an RM, a registered verifier tries to prove it wr
 - The verifier is a registered agent or service with its own identity. Kognita does not ship one; it requires one per use case at tier 2 and above
 - It checks for wrong client, duplicate identity, stale data, conflicting sources, incorrect calculations, questionable sources, unsupported inferences, wrong currency, wrong company match, prohibited content and broken entitlements
 - Each claim is classified **verified, inferred, unverified, conflicting, stale or blocked**, recorded in `validator_status`. Policy decides what each status may reach
+- **The verifier is independent of the producer.** A verifier may not use the same model, model version or provider as the agent whose output it checks, unless the use case explicitly permits it at tier 1. Both models are pinned in evidence, so the independence is checked at the decision, not asserted. No model verifies its own work
 
 ### 8. Memory Governance
 
@@ -774,6 +797,14 @@ Without one definition, every agent invents its own version of the business: Fin
 - A claim or figure that uses a governed term must cite the registered definition and version in its provenance envelope (item 1). A figure labelled with a governed term but citing no definition, or a superseded one, is blocked, as with calculation provenance (item 6)
 - When a definition changes, `kognita evidence affected --definition <id>` lists the claims, recommendations and communications produced under the previous version, as with house-view changes (item 4)
 
+### 13. Reasoning Traces
+
+Reasoning transparency is necessary but not sufficient: a model's stated reasoning is not guaranteed to be faithful to how it produced the output. Kognita records it and never relies on it.
+- Where a provider returns a reasoning trace or summary, the AI gateway records it as its own `MODEL_CALL` field: a hash in the evidence chain, the content in the retention store, linked to the interaction
+- A use case can require a reasoning trace. At tier 3 and above, a material output whose model returned no trace is flagged to the risk owner and counts toward risk-based review (0.4 item 13); a provider or model that cannot return one is recorded on its model card
+- `reconstruct` shows the trace beside the output, labelled as the model's own account
+- A reasoning trace is never a basis for a decision: no policy may allow an action because the model's reasoning says it is permitted. Decisions stay on cited rules and verified claims
+
 ### Definition of Done
 - [ ] Claim provenance envelope on every material claim, reconstructable
 - [ ] Stale data refreshed, suppressed or flagged per policy; never silently used
@@ -790,6 +821,8 @@ Without one definition, every agent invents its own version of the business: Fin
 - [ ] Fairness report produced across bank-defined segments, including proxy attributes
 - [ ] A learned change to a standard cannot take effect without Knowledge Lead approval; outputs record the standard version that produced them
 - [ ] A figure using a governed term without citing the current registered definition is blocked
+- [ ] A verifier on the same model or provider as the producer is denied
+- [ ] Reasoning traces are retained where the provider returns them; a required trace that is missing is flagged; no policy decision cites a trace
 
 ---
 
@@ -822,6 +855,7 @@ Without one definition, every agent invents its own version of the business: Fin
 - **Retention by record class:** retention periods are set per record class (client communications, advice, recommendations, approvals, transactions, compliance records), so an AI record never expires before the regulatory record it supports
 - **Business continuity is the bank's.** Kognita's own failure mode is defined in 0.3; keeping RM work running without AI (falling back to CRM and research access) is the bank's design, which the dependency map informs
 - **Incident evidence:** chain breaks, gateway outages, degraded-mode periods and provider failures are recorded as incidents with timelines, exportable for incident reporting
+- **Structured incident report:** `kognita incident report <incident_id>` builds a report from evidence: what happened, the affected clients (0.4 item 14), which controls ran, which failed or were missing, and the runtime change behind it, such as a deployment-version diff of the prompt, tools, permissions or model (0.5 item 1). A redacted variant drops client content and identifiers so the report can be shared with regulators or industry peers. Disclosure itself, to clients and across the industry, is the bank's
 
 ---
 
@@ -907,6 +941,20 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 ---
 
 ## Decision Log
+
+**12 October 2026: Trust architecture (Satya Nadella)**
+- Mapped the roadmap against [Satya Nadella's post of 10 October 2026](https://x.com/satyanadella) on a trust architecture for AI systems. Full mapping in [control-frameworks.md](control-frameworks.md). His central principle, separating the supply of intelligence from the authority over it, is Kognita's design rule; most of his principles were already shipped or planned.
+- Five gaps adopted. 0.5: new item 15, non-bypassable enforcement (tier 2 and above must run through the gateways; credentials held only by the gateways); new item 16, stopping actions in flight (bounded and cancellable tool calls). 0.6: verifier independence in item 7 (no model verifies its own work); new item 13, reasoning traces, recorded but never a basis for a decision. 0.7: structured incident report naming the controls that failed and the runtime change behind the incident.
+- Tamper-proof evidence was already planned: signing and external anchoring in 0.7.
+- Not adopted: industry-wide incident sharing and standard-setting, which belong to banks, regulators and standards bodies. Kognita supplies the shareable report.
+- No release dates changed.
+
+**10 October 2026: Governance records only; graph engine removed**
+- Kognita holds policies, guidelines and governance records, and nothing else. Client data, document stores, agent memory, knowledge graphs and file-store connectors stay in the bank's systems and are governed through `decide()`, the AI gateway and the MCP proxy. Added to the scope boundary.
+- 0.4 item 2 decided early: the Graphiti + Kuzu engine, the `[graph]` extra and the Graphiti-only `[anthropic]`, `[groq]` and `[gemini]` extras are removed ([ADR 0008](decisions/0008-remove-the-graph-engine.md)), along with the Streamlit graph demo. ADRs 0001 and 0002 are superseded.
+- Considered OpenViking as the knowledge and memory layer and did not adopt it: it would host data Kognita should only govern, and its automatic memory extraction conflicts with 0.6 item 8, where learning is proposed, never applied.
+- Connectors to file stores (Dropbox, OneDrive, SharePoint) were proposed as a separate package and not adopted: indexing those sources is data-plane work.
+- No release dates changed.
 
 **8 October 2026: MAS Guidelines on AI Risk Management**
 - Mapped the roadmap against the final MAS guidelines issued 7 October 2026, paragraph by paragraph. Full mapping in [control-frameworks.md](control-frameworks.md). 0.4 lands before the Sections 3 and 4 deadline of 7 October 2027; 0.5 to 1.0 land before the Sections 5 and 6 deadline of 7 October 2028.
