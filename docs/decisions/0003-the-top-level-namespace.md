@@ -2,6 +2,7 @@
 
 **Status:** Accepted (0.2.0)
 **Supersedes:** the lazy graph re-export introduced in Phase 0
+**Amended by:** [ADR 0008](0008-remove-the-graph-engine.md), which removed `kognita.graph` from the package; retired names now point there
 
 ## Context
 

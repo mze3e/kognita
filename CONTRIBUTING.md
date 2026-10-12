@@ -31,7 +31,7 @@ Every test is offline (no network, no API keys). The decision engine imports non
 Kognita enforces strict layering via `import-linter` contracts in `pyproject.toml`:
 
 - **The decision engine** (core modules like `governance`, `evidence`, `retrieval`) must stay installable on the four core dependencies alone. These modules are named in the `forbidden_modules` contract.
-- **Optional features** (graph, embeddings, LLM adapters) live in `kognita.graph` and `kognita.adapters`, kept independent.
+- **Optional features** (provider-backed embedders) live in `kognita.adapters`. The package does not ship a graph engine, a document store or connectors (ADR 0008).
 - **CLI and testing** (`kognita.cli`, `kognita.testing`) are loose, not imported by the engine.
 
 To check contracts before committing:

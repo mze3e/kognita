@@ -68,7 +68,7 @@ pip install kognita
 
 The core depends on four packages (`pydantic`, `sqlmodel`, `numpy`, `python-dotenv`) and runs with no network and no API key. Deciding whether a request is permitted should not require the machinery that answers it. `import-linter` contracts and a no-extras install test keep it that way.
 
-Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vector index (`kognita[vec]`), local embeddings (`kognita[local-embeddings]`) and a knowledge-graph engine (`kognita[graph]`, see [below](#optional-knowledge-graph)).
+Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vector index (`kognita[vec]`) and local embeddings (`kognita[local-embeddings]`).
 
 ## What it does today
 
@@ -226,19 +226,11 @@ The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank cont
 
 The design rule behind all of it: **never rely on the LLM to enforce a control that can be enforced outside the LLM.**
 
-## Optional: knowledge graph
+## What Kognita does not hold
 
-`kognita[graph]` adds a Graphiti and Kuzu engine that turns documents into a bi-temporal knowledge graph:
+Kognita governs policies, guidelines and governance records: the rules, the registers and the evidence. It does not host client data, document stores, agent memory or a knowledge graph, and it does not ship connectors to file stores. Those stay in the bank's systems, and Kognita decides and evidences access to them.
 
-```python
-from kognita.graph import GraphEngine, GraphConfig
-
-async with GraphEngine(config) as kg:
-    await kg.ingest_text(document, source="policy-handbook")
-    hits = await kg.search("cross-border disclosure")
-```
-
-Its future is under review. It currently pins `graphiti-core` and caps `openai` below version 2, and the roadmap favours moving it to a separate package with structured document ingestion as the primary retrieval path. See [docs/decisions/0001-kuzu-cotenancy.md](docs/decisions/0001-kuzu-cotenancy.md) for its design.
+> **Removed after 0.3.0.** The Graphiti and Kuzu graph engine (`kognita.graph`, the `[graph]` extra, and the `[anthropic]`, `[groq]` and `[gemini]` extras that only installed it) is no longer part of the package. Pin `kognita[graph]==0.3.0` if you still need it. Details: [docs/decisions/0008-remove-the-graph-engine.md](docs/decisions/0008-remove-the-graph-engine.md).
 
 ## Layout
 
@@ -247,13 +239,12 @@ kognita            the decision engine: decisions, evidence, approvals,
                    retrieval, egress, tools, the AI gateway and the MCP proxy.
                    Four dependencies, no network.
 kognita.testing    the conformance kit
-kognita.adapters   provider-backed embedders and clients     [openai] …
-kognita.graph      Graphiti + Kuzu knowledge engine          [graph]
+kognita.adapters   provider-backed embedders                 [openai]
 ```
 
 `import kognita` never loads a graph database or a provider SDK, and `tests/test_packaging.py` asserts it.
 
-> **Moved in 0.2.** `kognita.Kognita` → `kognita.graph.GraphEngine`, `kognita.KognitaConfig` → `kognita.graph.GraphConfig`, `kognita.core.*` → `kognita.*`. Touching a retired name raises an `AttributeError` naming its new home. Details: [docs/decisions/0003-the-top-level-namespace.md](docs/decisions/0003-the-top-level-namespace.md).
+> **Moved in 0.2.** `kognita.core.*` → `kognita.*`. Details: [docs/decisions/0003-the-top-level-namespace.md](docs/decisions/0003-the-top-level-namespace.md).
 
 ## Status
 
