@@ -83,9 +83,15 @@ def test_checks_pin_the_policy_row_and_replay_accepts_a_successor(harness):
             engages=dp.DemoPack().engages,
             subjects=dp.DemoPack().load_subjects(envelope, session),
         )
+        # Read while the session is open. A later decision loads only the
+        # rows in force at the decision, so a successor that starts later is
+        # not refreshed as a side effect of that read.
+        successor_id = successor.id
+        policy_id = policy.id
+        closed_at = policy.effective_to
     assert replayed.outcome is evaluation.outcome
-    assert successor.id != policy.id
-    assert policy.effective_to is not None
+    assert successor_id != policy_id
+    assert closed_at is not None
 
 
 def harness_supersede(session, policy, harness):

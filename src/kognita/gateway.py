@@ -86,6 +86,7 @@ from kognita.usecases import (
     endpoint_named,
     load_register,
     model_card_link,
+    resolve_model_card,
 )
 from kognita.tools import (
     Run,
@@ -873,6 +874,9 @@ class Gateway:
 
         snapshot = self._store(lambda: load_snapshot(session, as_of=now))
         register = self._store(lambda: load_register(session, as_of=now))
+        # One register for this request. The model-card link and the endpoint
+        # flag read it again; loading it a second time would scan the same rows.
+        session.info["_kognita_register"] = register
         usecases = register if register.entries else None
         flagged = not endpoint_named(register, self.upstream)
 
@@ -1126,14 +1130,14 @@ class Gateway:
         served_name, served_version = _reported_model(
             payload["model"], restored_payload
         )
-        card_id, _card_hash = model_card_link(
-            session,
+        card = resolve_model_card(
+            register,
             provider=self.provider or (urlparse(self.upstream).hostname or self.upstream),
-            model=served_name,
-            version=served_version,
+            model=served_name or "",
+            version=served_version or "",
             use_case=purpose,
-            at=now,
         )
+        card_id = "" if card is None else card.card_id
         entry = register.get(purpose) if usecases is not None else None
         if entry is not None and entry.approved_models and not card_id:
             self._record_model_card_denial(
@@ -1458,6 +1462,10 @@ class Gateway:
             requested, response_payload if sent else None
         )
         provider = self.provider or (urlparse(self.upstream).hostname or self.upstream)
+        if "_kognita_register" in session.info:
+            register = session.info["_kognita_register"]
+        else:
+            register = load_register(session, as_of=at)
         card_id, card_hash = model_card_link(
             session,
             provider=provider,
@@ -1465,8 +1473,9 @@ class Gateway:
             version=model_version,
             use_case=use_case,
             at=at,
+            register=register,
         )
-        flagged = not endpoint_named(load_register(session, as_of=at), self.upstream)
+        flagged = not endpoint_named(register, self.upstream)
         store = RetentionStore()
         prompt_hash = ""
         response_hash = ""

@@ -18,15 +18,17 @@ from typing import Any
 from sqlalchemy import (
     Column,
     ForeignKey,
+    Index,
     Integer,
     Text,
     TypeDecorator,
     UniqueConstraint,
     event,
     inspect as sa_inspect,
+    or_,
 )
 from sqlalchemy.types import JSON, DateTime
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, select
 
 from kognita.canonical import canonical_hash
 from kognita.exceptions import KognitaError, PolicyEditError
@@ -93,6 +95,27 @@ def as_utc(value: datetime | None) -> datetime | None:
     return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
 
 
+def in_force(session: Any, model: type[Any], at: datetime) -> list[Any]:
+    """Rows of ``model`` in force at ``at``.
+
+    The predicate is the same half-open window as ``is_effective``: a row
+    whose ``effective_to`` equals ``at`` is already closed. Closed history
+    stays in the table and is not loaded. Every row the query returns is
+    checked with ``is_effective`` again, so a row that is not in force is
+    dropped.
+    """
+    when = as_utc(at)
+    if when is None:
+        return []
+    rows = session.exec(
+        select(model).where(
+            model.effective_from <= when,
+            or_(model.effective_to.is_(None), model.effective_to > when),
+        )
+    ).all()
+    return [row for row in rows if row.is_effective(when)]
+
+
 class Agent(SQLModel, table=True):
     """A registered non-human actor, with a named accountable owner.
 
@@ -123,6 +146,9 @@ class Policy(SQLModel, table=True):
     """
 
     __tablename__ = "policies"
+    __table_args__ = (
+        Index("ix_policies_effective_window", "effective_from", "effective_to"),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     regime: str = Field(index=True)
@@ -293,7 +319,10 @@ class EvidenceEvent(SQLModel, table=True):
     # current maximum, which is only fork-safe under a single writer. Two writers
     # that computed the same number are rejected here rather than producing a
     # forked chain that verify_chain would only notice later.
-    __table_args__ = (UniqueConstraint("sequence", name="uq_evidence_sequence"),)
+    __table_args__ = (
+        UniqueConstraint("sequence", name="uq_evidence_sequence"),
+        Index("ix_evidence_events_recorded_at", "recorded_at"),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     #: Monotonic position in the chain, assigned by the writer under a lock.
@@ -459,6 +488,7 @@ class UseCase(SQLModel, table=True):
     __tablename__ = "use_cases"
     __table_args__ = (
         UniqueConstraint("usecase_id", "version", name="uq_usecase_version"),
+        Index("ix_use_cases_effective_window", "effective_from", "effective_to"),
     )
 
     id: int | None = Field(default=None, primary_key=True)
@@ -489,6 +519,9 @@ class RiskAppetite(SQLModel, table=True):
     """
 
     __tablename__ = "risk_appetites"
+    __table_args__ = (
+        Index("ix_risk_appetites_effective_window", "effective_from", "effective_to"),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     version: int = 1
@@ -519,6 +552,7 @@ class ModelCard(SQLModel, table=True):
     __tablename__ = "model_cards"
     __table_args__ = (
         UniqueConstraint("card_id", "version", name="uq_model_card_version"),
+        Index("ix_model_cards_effective_window", "effective_from", "effective_to"),
     )
 
     id: int | None = Field(default=None, primary_key=True)
@@ -974,6 +1008,9 @@ class Revocation(SQLModel, table=True):
     """
 
     __tablename__ = "revocations"
+    __table_args__ = (
+        Index("ix_revocations_effective_window", "effective_from", "effective_to"),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     dimension: str = Field(index=True)
@@ -1007,6 +1044,13 @@ class BreakerThreshold(SQLModel, table=True):
     """
 
     __tablename__ = "breaker_thresholds"
+    __table_args__ = (
+        Index(
+            "ix_breaker_thresholds_effective_window",
+            "effective_from",
+            "effective_to",
+        ),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     dimension: str = Field(index=True)
@@ -1033,6 +1077,9 @@ class DrillDue(SQLModel, table=True):
     """
 
     __tablename__ = "drill_dues"
+    __table_args__ = (
+        Index("ix_drill_dues_effective_window", "effective_from", "effective_to"),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     usecase_id: str = Field(index=True)
