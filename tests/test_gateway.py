@@ -925,11 +925,11 @@ def test_degraded_header_cannot_keep_client_data_below_c2(session, engine, heade
 def test_degraded_refuses_client_data_outside_the_extracted_prompt(
     session, engine, payload
 ):
-    """The OpenAI user field is forwarded and is not part of the prompt text."""
+    """Forwarded metadata is screened alongside message content."""
     _register(session)
     _live(session)
     session.commit()
-    assert SECRET not in _prompt_text(payload)
+    assert SECRET in _prompt_text(payload)
     upstream = _Upstream(b"{}")
     gateway = _degraded(engine, _Down(engine), upstream, upstream_url=LOCAL_UPSTREAM)
     response = gateway.handle(
@@ -959,7 +959,7 @@ def test_degraded_refuses_a_unicode_escaped_email_outside_the_prompt(session, en
     ).encode()
     parsed = json.loads(body)
     assert SECRET.encode() not in body
-    assert _prompt_text(parsed) == ""
+    assert SECRET in _prompt_text(parsed)
     assert parsed["user"] == SECRET
     upstream = _Upstream(b"{}")
     gateway = _degraded(engine, _Down(engine), upstream, upstream_url=LOCAL_UPSTREAM)
