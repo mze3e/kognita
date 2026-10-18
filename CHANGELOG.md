@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Use-case register core (`kognita.usecases`). A decision given a register must name a registered use case, and a passing check cites that use case's accountable owner. This replaces the free-text purpose list for that call. The purpose list remains when no register is supplied. An agent cannot hold an owner role or an accountability seat. A tier 2 or higher use case with no Knowledge Lead is denied. Tier minimum controls are enforced at validation, activation, and decision. A tier 3 or 4 use case cannot be signed off or activated by one of its builders. Risk appetite and residual materiality are checked at registration and again at activation. A materiality rating the designated control function has not approved cannot be activated, and the control function cannot approve a use case it owns. A use case past its review date is denied. A pilot denies callers outside its user list and calls after its end date. Registry changes, including appetite changes, are `POLICY_CHANGE` evidence events. `kognita usecase list`, `show`, and `validate` read the register. Model cards, unmediated entries, provider-dependency counts, and retirement beyond the status flag are not in this slice.
+
 ### Removed
 
 - The Graphiti + Kuzu graph engine: `kognita.graph`, the `[graph]` extra, and the `[anthropic]`, `[groq]` and `[gemini]` extras, which installed only Graphiti. The Streamlit graph demo under `examples/` is removed with it. Kognita holds policies, guidelines and governance records only (ADR 0008). Touching a removed name such as `kognita.Kognita` or `kognita.GraphEngine` raises an `AttributeError` that names ADR 0008; anyone who still needs the engine can pin `kognita[graph]==0.3.0`. `kognita doctor` no longer lists graph, Anthropic, Groq or Gemini packages. `graphiti_core` and `kuzu` stay on the core's forbidden-import list.
