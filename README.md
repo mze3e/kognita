@@ -213,13 +213,15 @@ The invariants are importable, so external packs run them in their own repositor
 
 ## Known limitations
 
-Kognita is alpha. These are known gaps in v0.3.0:
+Kognita is alpha. These are known gaps in v0.5.0. The [changelog](CHANGELOG.md) has the full list.
 
-- **The gateway does not place a response on the review queue.** Classification of the model response still happens in the gateway. Scoring that response against the use case's risk criteria happens when the interaction is screened. A response that was never screened is counted as unscreened in the coverage report.
-- **A confirmed review problem is a flag, not a halt.** The flag records the model version and the prompt template version when exactly one of each is on the interaction. It does not insert a prohibiting policy, and it does not list the clients who received the output. A client send is denied while `review_blocks_delivery` reports a before-delivery hold.
+- **Several 0.5 definition-of-done items are partial.** Agent identity does not yet require every field. Blast-radius quota admission is not atomic under concurrency, and there is no daily transaction or allowed-products limit. Containment and step-down alerts are evidence events with no delivery. Provider-credential detection scans declared metadata only. A timed-out or killed MCP call's result is withheld, but the backend call keeps running.
+- **Gateway model calls do not apply every run control.** Live-run interventions (pause, override, restrict, recover), the tool isolation checks and human-approval continuation apply on governed tool calls, not on AI gateway model calls.
+- **The framework adapters cannot pass an agent credential or delegation id yet.** Registered-agent calls through the hermes-agent, openai-agents, langgraph and pydantic-ai adapters are denied (fail closed).
+- **Approved system triggers are denied.** A trigger with no agent credential fails the credential check on the gateway and the MCP proxy.
+- **The gateway does not place a response on the review queue.** Scoring a response against the use case's risk criteria happens when the interaction is screened. A response that was never screened is counted as unscreened in the coverage report.
 - **Degraded-mode evidence is held in the gateway process.** A `DEGRADED` call that proceeds while the evidence store is down keeps the decision and the model evidence in memory until the store accepts writes. Restarting the process before then drops them. `FAIL_CLOSED` is the default, and it refuses the call. The MCP proxy has no degraded mode.
-- **`create_all` does not migrate an existing SQLite file.** It creates every registered table that does not yet exist. Tables already in the file are left as they are. A domain pack's models must be imported first, or its tables are skipped.
-- **Agent credentials are not issued yet.** Through `kognita serve`, a call with no agent name is denied, and an agent name is accepted only when the bound client configuration lists it. `decide()` still skips the registry when the envelope has no agent name, and the in-process runner records that request as the human principal. Agents authenticating with their own credentials is 0.5.
+- **`create_all` does not migrate an existing SQLite file beyond the additive agent columns.** Tables already in the file are otherwise left as they are. A domain pack's models must be imported first, or its tables are skipped.
 
 ## Where it's heading
 
@@ -233,9 +235,10 @@ The test every release is measured against:
 
 **0.4 "Ingestion, Policy Language and the Client Lifecycle" is shipped** in v0.4.1: structured ingestion with passage-level citations, the policy language, the use-case register, the client interaction record, outcomes and the review queue, communication and intervention controls, the circuit breaker and revocation, starter packs, the flight recorder, and the hermes-agent, openai-agents, langgraph and pydantic-ai adapters.
 
+**0.5 "Agents, Authority and Fleets" is released as an alpha** in v0.5.0: authenticated agent identity and workload credentials, delegated authority with dual checks, autonomy levels with evidence-gated promotion and step-down, blast-radius limits, taint isolation, anomaly containment, agent delegation and fleet controls, reversibility, and a threat model. Some definition-of-done items are still partial; see Known limitations.
+
 Planned, not yet built:
 
-- **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, autonomy levels, evidence-gated promotion and automatic step-down on drift, blast-radius limits, containment.
 - **0.6: Claims and institutional memory.** Typed, sourced, current claims checked before an RM relies on them; approved-source grounding; supervised memory that turns lessons into shared standards; governed business definitions.
 - **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
 
@@ -269,6 +272,6 @@ kognita.adapters   provider-backed embedders                 [openai]
 
 ## Status
 
-**Alpha.** v0.4.1 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+**Alpha.** v0.5.0 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 MIT licensed.
