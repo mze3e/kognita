@@ -941,7 +941,7 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 | Classifier errors become policy errors | Classifier output only narrows permission; low confidence escalates; labels are evidenced and replayable |
 | Gateway adds latency | Benchmark every release; gateway overhead target excludes classifier inference, which is reported separately |
 | AI gateway incumbents add policy features | Move fast on 0.3; the citation and evidence model is the part that is hard to retrofit |
-| Heavy optional dependencies leak into core | Import-linter contracts and the no-extras install test stay mandatory in CI |
+| Heavy optional dependencies leak into core | Import-linter contracts and the core import-leak test stay mandatory in CI |
 | Reproducibility conflicts with erasure rights | Chain holds hashes only; content lives in a separate retention store with per-use-case retention; erasure is itself an evidenced event |
 | The gateway becomes a single point of failure | Explicit fail-closed or degraded mode per use case (0.3); tested backup, restore and failover (0.7) |
 | Scope creep into building truth layers, calculation engines, evaluators or sandboxes | Those are marked boundary: Kognita requires that the authoritative system was used and records it, and does not become that system |

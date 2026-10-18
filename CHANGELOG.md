@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Require a bound run before delegated broker retrieval or sensitive model prompts can release content (round 1 finding 3).
+- Pin gateway admission checks for identical replay of successful decisions (r1 #9).
+- Record MCP HTTP socket abortion separately from confirmed cancellation and enforce S6C for uncancellable mutations (r1 #12).
+- Describe the CI core import-leak test accurately in the roadmap.
 
 - 0.5 DoD item 1: Deny incomplete existing identity declarations and cover review expiry and changed deployments through both HTTP ingresses.
 - 0.5 DoD item 4: Cover daily action blast-radius denial through gateway HTTP.

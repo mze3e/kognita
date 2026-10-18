@@ -102,7 +102,7 @@ def replay_decision(
     )
     response_checks = payload.get("_response_checks") or (
         payload.get("attributes") or {}).get("_response_checks") or []
-    if response_checks:
+    if response_checks or (payload.get("attributes") or {}).get("_admission_checks"):
         from kognita.governance import resolve_outcome
         # Admission adapters add identity and isolation checks after decide().
         # Preserve their evidenced order alongside the response restriction.
@@ -110,7 +110,7 @@ def replay_decision(
         from kognita.envelope import envelope_hash
         checks = tuple(_check_from_dict(c) for c in payload.get("checks") or [])
         if any(c not in checks for c in evaluation.checks):
-            raise ReplayMismatch("response admission checks differ on replay")
+            raise ReplayMismatch("admission checks differ on replay")
         evaluation = replace(evaluation, checks=checks,
             outcome=resolve_outcome(checks),
             envelope_hash=envelope_hash(envelope, evaluation.attributes, checks))

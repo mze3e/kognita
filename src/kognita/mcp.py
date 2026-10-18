@@ -376,7 +376,7 @@ class _HttpCall:
                 except OSError:
                     pass
                 connection.close()
-        return True
+        return 'connection_aborted'
 
     def __call__(self, method, url, headers, body):
         from http.client import HTTPConnection, HTTPSConnection
@@ -715,8 +715,8 @@ class McpProxy:
         # Synchronous transports without confirmed cancellation require rollback
         # for mutating operations. Read calls have no action to undo.
         if (permission.get('verb', 'read') in ('draft', 'queue', 'send', 'execute')
-                and self.transport is not _urllib_transport
-                and not callable(getattr(self.transport, '_cancel', None))
+                and (self.transport is _urllib_transport
+                     or not callable(getattr(self.transport, '_cancel', None)))
                 and not (permission.get('reversible') is True and isinstance(permission.get('compensation'), str)
                          and permission['compensation'].strip())):
             identity_checks.append(Check(check='S6C-UNCANCELLABLE', regime='INTERNAL',
@@ -799,7 +799,7 @@ class McpProxy:
         released = evaluation.allowed and not result.approval_required
         if not released:
             return self._denied(rpc_id, evaluation)
-        if state.get('_outcome') in ('timeout', 'cancelled', 'cancellation_requested'):
+        if state.get('_outcome') in ('timeout', 'cancelled', 'cancellation_requested', 'connection_aborted'):
             return _rpc_error(rpc_id, code=-32002, message=state['_outcome'], status=502, evaluation=evaluation)
         if rpc_method not in _IMPLEMENTED:
             return _rpc_error(
