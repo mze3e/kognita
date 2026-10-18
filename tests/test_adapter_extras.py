@@ -55,7 +55,12 @@ def _binding(seeded, engine, evidence, pack, transport, *, agent="dossier-agent"
         purposes=(purpose,),
         transport=transport,
     )
+    # Local tools now authenticate explicitly, just like the gateway.
+    from fixtures.agents import _credentials
+    key = str(engine.url) if engine.url.database else engine
+    credential = _credentials.get(key, {}).get(agent)
     return Binding(
+        agent_credential=credential,
         session=seeded,
         evidence=evidence,
         pack=pack,
