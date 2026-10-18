@@ -66,7 +66,7 @@ from urllib.parse import urlparse
 from sqlmodel import Session
 
 from kognita.approvals import ApprovalError
-from kognita.canonical import canonical_hash
+from kognita.canonical import canonical_hash, hash_text
 from kognita.classify import PatternClassifier, classifier_record, most_sensitive
 from kognita.db import session_scope
 from kognita.egress import EgressGuard
@@ -618,6 +618,13 @@ def _denied(evaluation: Evaluation) -> GatewayResponse:
         },
         evaluation=evaluation,
     )
+
+
+def _deferred_response_outcome(evaluation: Evaluation, checks: Sequence[Check]) -> Evaluation:
+    final = _with_checks(evaluation, checks)
+    attributes = {**final.attributes, "_response_checks": [c.to_dict() for c in checks]}
+    return replace(final, attributes=attributes,
+        envelope_hash=envelope_hash(final.envelope, attributes, final.checks))
 
 
 def _copy_run(run: Run) -> Run:
@@ -1280,6 +1287,31 @@ class Gateway:
             decision_budget=decision_budget,
             decided_at=now,
         )
+        from kognita.tools import _response_outcome
+        from kognita.review import _screen_retained_response
+        delivery_checks = []
+        if bound_run is not None:
+            for name, used, cap in (
+                ("max_tokens", bound_run.tokens_used, bound_run.max_tokens),
+                ("max_cost_usd", bound_run.cost_usd_used, bound_run.max_cost_usd),
+            ):
+                if cap is not None and used > cap:
+                    delivery_checks.append(Check(check="BUDGET", regime="INTERNAL",
+                        result=CheckResult.FAIL, citation=name))
+        if deferred is None:
+            held = self._store(lambda: _screen_retained_response(session, evaluation,
+                evidence=self.evidence, response_text=response_source,
+                output_hash=hash_text(upstream_text), now=self.evidence.clock(), _register=register))
+        else:
+            # Screening cannot write while degraded. Only asynchronous review
+            # may deliver; the retained response is screened on recovery.
+            from kognita.review import _criteria_at, CITE_HOLD
+            criteria = _criteria_at(session, purpose, now)
+            held = (None if criteria is None or
+                (criteria.record or {}).get("timing") == "after delivery" else CITE_HOLD)
+        if held:
+            delivery_checks.append(Check(check="REVIEW", regime="INTERNAL",
+                result=CheckResult.FAIL, citation=held))
         content_type = "application/json"
         for key, value in upstream_headers.items():
             if str(key).lower() == "content-type" and value:
@@ -1298,16 +1330,12 @@ class Gateway:
             at=self.evidence.clock(),
         )
         if stopped is not None:
-            self._record_model_card_denial(
-                session,
-                evaluation,
-                classification=classification,
-                deferred=deferred,
-                model=served_name or "",
-                version=served_version or "",
-                citation=stopped.citation,
-                check=stopped.check,
-            )
+            delivery_checks.append(Check(check=stopped.check, regime="INTERNAL",
+                result=CheckResult.FAIL, citation=stopped.citation))
+            evaluation = (self._store(lambda: _response_outcome(session, evaluation, delivery_checks, self.evidence))
+                if deferred is None else _deferred_response_outcome(evaluation, delivery_checks))
+            if deferred is not None:
+                deferred.evaluation = evaluation
             return finish(
                 _json_response(
                     403,
@@ -1329,19 +1357,12 @@ class Gateway:
         card_id = "" if card is None else card.card_id
         entry = register.get(purpose) if usecases is not None else None
         if entry is not None and entry.approved_models and not card_id:
-            self._record_model_card_denial(
-                session,
-                evaluation,
-                classification=classification,
-                deferred=deferred,
-                model=served_name or "",
-                version=served_version or "",
-                citation=_served_model_citation(
-                    entry,
-                    model=served_name or "",
-                    version=served_version or "",
-                ),
-            )
+            delivery_checks.append(Check(check="USE_CASE_MODEL", regime="INTERNAL",
+                result=CheckResult.FAIL, citation=_served_model_citation(entry, model=served_name or "", version=served_version or "")))
+            evaluation = (self._store(lambda: _response_outcome(session, evaluation, delivery_checks, self.evidence))
+                if deferred is None else _deferred_response_outcome(evaluation, delivery_checks))
+            if deferred is not None:
+                deferred.evaluation = evaluation
             return finish(
                 _json_response(
                     403,
@@ -1353,6 +1374,12 @@ class Gateway:
                     evaluation=evaluation,
                 )
             )
+        if delivery_checks:
+            evaluation = (self._store(lambda: _response_outcome(session, evaluation, delivery_checks, self.evidence))
+                if deferred is None else _deferred_response_outcome(evaluation, delivery_checks))
+            if deferred is not None:
+                deferred.evaluation = evaluation
+            return finish(_denied(evaluation))
         return finish(
             GatewayResponse(
                 status=status,
@@ -1421,6 +1448,11 @@ class Gateway:
                     at=decided_at,
                 )
             )
+        if model is not None and model.received_text:
+            from kognita.review import _screen_retained_response
+            self._store(lambda: _screen_retained_response(session, recorded,
+                evidence=self.evidence, response_text=model.received_text,
+                output_hash=hash_text(model.received_text), now=self.evidence.clock()))
         denial = item.model_card_denial
         if denial is not None:
             self._store(

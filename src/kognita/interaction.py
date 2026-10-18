@@ -165,7 +165,9 @@ def approval_gate(session: Session, interaction: Interaction, at: datetime) -> s
 def _registered_gate(session: Session, use_case: str, at: datetime) -> str:
     if not use_case:
         return ""
-    entry = load_register(session, as_of=at).get(use_case)
+    entry = session.info.get("_response_review_entry")
+    if entry is None or entry.usecase_id != use_case:
+        entry = load_register(session, as_of=at).get(use_case)
     if entry is None:
         return ""
     return entry.approval_gate

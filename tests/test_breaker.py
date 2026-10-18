@@ -1672,7 +1672,7 @@ def test_gateway_withholds_a_revoked_model_version_the_provider_served(session, 
         for event in session.exec(select(EvidenceEvent)).all()
         if event.payload.get("withheld") is True
     ]
-    assert withheld and withheld[-1].payload["checks"][0]["check"] == "REVOCATION"
+    assert withheld and withheld[-1].payload["_response_checks"][0]["check"] == "REVOCATION"
     # The client was given the denial, not the output: a withheld response is
     # not receipt, even though the model call was recorded with its hash.
     calls = [

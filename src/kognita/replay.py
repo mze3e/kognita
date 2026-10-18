@@ -100,6 +100,20 @@ def replay_decision(
         as_of=at,
         request_id=request_id,
     )
+    response_checks = payload.get("_response_checks") or (
+        payload.get("attributes") or {}).get("_response_checks") or []
+    if response_checks:
+        from kognita.governance import resolve_outcome
+        # Admission adapters add identity and isolation checks after decide().
+        # Preserve their evidenced order alongside the response restriction.
+        from dataclasses import replace
+        from kognita.envelope import envelope_hash
+        checks = tuple(_check_from_dict(c) for c in payload.get("checks") or [])
+        if any(c not in checks for c in evaluation.checks):
+            raise ReplayMismatch("response admission checks differ on replay")
+        evaluation = replace(evaluation, checks=checks,
+            outcome=resolve_outcome(checks),
+            envelope_hash=envelope_hash(envelope, evaluation.attributes, checks))
     _same_policy_hashes(payload.get("checks") or [], evaluation)
     _same_result(request_id, payload, evaluation)
     return evaluation
@@ -181,7 +195,7 @@ def _decision_event(session: Session, request_id: str) -> EvidenceEvent:
         select(EvidenceEvent)
         .where(EvidenceEvent.correlation_id == request_id)
         .where(EvidenceEvent.event_type == EventType.POLICY_DECISION)
-        .order_by(EvidenceEvent.sequence)
+        .order_by(EvidenceEvent.sequence.desc())
     ).first()
     if event is None:
         raise ReplayMismatch(f"no policy decision evidence for {request_id}")

@@ -528,7 +528,7 @@ def affected_clients(
         ):
             continue
         interaction = _interaction_for(event.correlation_id, interactions, links)
-        if interaction is None or not interaction.client_id:
+        if interaction is None or interaction.client_id in ("", "client unknown"):
             same = by_correlation.get(event.correlation_id, [])
             if _unlinked_matches(selector, target, payload, same):
                 unlinked.append(

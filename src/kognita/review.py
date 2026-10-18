@@ -946,6 +946,34 @@ def screen_interaction(
     }
 
 
+def _screen_retained_response(session, evaluation, *, evidence, response_text, output_hash="", interaction_id=None, now=None, _register=None):
+    """Screen responses for use cases with a configured review obligation."""
+    at = now or evidence.clock()
+    register = _register or load_register(session, as_of=at)
+    entry = register.get(evaluation.envelope.purpose)
+    # Only use cases with defined risk criteria are screened inline. Without
+    # criteria the response is counted as unscreened in the coverage report.
+    if _criteria_at(session, evaluation.envelope.purpose, at) is None:
+        return None
+    from kognita.interaction import open_interaction, attach
+    ident = interaction_id or evaluation.request_id
+    existing = session.get(Interaction, ident)
+    if existing is not None and existing.use_case != evaluation.envelope.purpose:
+        ident = evaluation.request_id
+    session.info["_response_review_entry"] = entry
+    try:
+        if session.get(Interaction, ident) is None:
+            open_interaction(session, interaction_id=ident,
+                client_id=str(evaluation.envelope.all_subjects().get("client") or "client unknown"),
+                use_case=evaluation.envelope.purpose, evidence=evidence, now=at)
+        attach(session, ident, correlation_id=evaluation.request_id, evidence=evidence, now=at)
+        screen_response(session, ident, evidence=evidence, actor_id="governance-pdp",
+            output_hash=output_hash, response_text=response_text, now=at)
+        return review_blocks_delivery(session, ident)
+    finally:
+        session.info.pop("_response_review_entry", None)
+
+
 def screen_response(
     session: Session,
     interaction_id: str,
@@ -1048,7 +1076,7 @@ def enqueue_for_review(
         when = str((criteria.record or {}).get("timing") or "")
     if when not in QUEUE_TIMING:
         when = "before delivery"
-    entry = (
+    entry = session.info.get("_response_review_entry") or (
         load_register(session, as_of=at).get(interaction.use_case)
         if interaction.use_case
         else None
@@ -1335,7 +1363,7 @@ def _screen_one(
         )
     )
     reasons.extend(_oversight_reasons(session, interaction.id, now))
-    entry = (
+    entry = session.info.get("_response_review_entry") or (
         load_register(session, as_of=now).get(interaction.use_case)
         if interaction.use_case
         else None
@@ -1498,7 +1526,9 @@ def _criterion_reasons(
 
 def _oversight_reasons(session: Session, interaction_id: str, at: datetime) -> list[str]:
     reasons: list[str] = []
-    for event in _events_until(session, at):
+    for event in session.exec(select(EvidenceEvent).where(
+        EvidenceEvent.correlation_id == interaction_id,
+        EvidenceEvent.recorded_at <= at).order_by(EvidenceEvent.sequence)).all():
         payload = _payload(event)
         if str(payload.get("interaction_id") or "") != interaction_id:
             continue
@@ -1536,7 +1566,9 @@ def _sampled(interaction_id: str, criteria_version: int, rate: float) -> bool:
 def _prior_screen(
     session: Session, interaction_id: str, screen_key: str, at: datetime
 ) -> dict[str, Any] | None:
-    for event in _events_until(session, at):
+    for event in session.exec(select(EvidenceEvent).where(
+        EvidenceEvent.correlation_id == interaction_id,
+        EvidenceEvent.recorded_at <= at).order_by(EvidenceEvent.sequence)).all():
         if event.event_type != EventType.REVIEW:
             continue
         payload = _payload(event)
@@ -1554,8 +1586,11 @@ def _model_responses(
 ) -> list[EvidenceEvent]:
     correlations = linked_correlation_ids(session, interaction.id)
     found: list[EvidenceEvent] = []
-    for event in _events_until(session, at):
-        if event.event_type != EventType.MODEL_CALL:
+    for event in session.exec(select(EvidenceEvent).where(
+        EvidenceEvent.correlation_id.in_(correlations),
+        EvidenceEvent.event_type.in_((EventType.MODEL_CALL, EventType.TOOL_CALL)),
+        EvidenceEvent.recorded_at <= at).order_by(EvidenceEvent.sequence)).all():
+        if event.event_type not in (EventType.MODEL_CALL, EventType.TOOL_CALL):
             continue
         if event.correlation_id not in correlations:
             continue
@@ -1729,7 +1764,7 @@ def _population_hashes(
 ) -> set[str]:
     found: set[str] = set()
     for event in events:
-        if event.event_type != EventType.MODEL_CALL:
+        if event.event_type not in (EventType.MODEL_CALL, EventType.TOOL_CALL):
             continue
         if event.correlation_id not in correlations:
             continue
