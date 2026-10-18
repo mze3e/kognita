@@ -1,24 +1,24 @@
 repository = "https://github.com/mze3e/kognita"
 
-[packs."role-based access"]
+[packs."role-based-access"]
 version = "1.0.0"
-sha256 = "6cb958654a3a590eec4bbb6d7ad409ce43e6493c43837ab3bae119af0bd57b2a"
+sha256 = "1cb0c65817a7cf1496577f9d81ff30af82f6fbf2f5068ea6b4814f4aaf289df0"
 
 [packs."geo-fencing"]
 version = "1.0.0"
 sha256 = "4951f7b37537fc5f34356b6a9304d5ad01407f8f98e3c82427755cfcc50273fc"
 
-[packs."data classification"]
+[packs."data-classification"]
 version = "1.0.0"
-sha256 = "29e9648ffb9cf5cddb4bf6ceaa8847b9f4df7216c43e947e8fe5d8e1b4ca91ee"
+sha256 = "3e3a2a55d5c5b6e7fe883cf48c01a68f61b13c3983147af25dcbb3d7363955ff"
 
-[packs."time-gated access"]
+[packs."time-gated-access"]
 version = "1.0.0"
-sha256 = "e83ecb96bbc1a53943178f81cf2eef59c6ad5246de56928266c4358786ae4217"
+sha256 = "064c7b7c843e9c8bf69dee5a3b128ed1fd22ebbadc580c9aff7a7088ea189d90"
 
-[packs."two-signature approval chains"]
+[packs."two-signature-approval-chains"]
 version = "1.0.0"
-sha256 = "f785df75a5e4a7c5c93345beeeb8b517f3ec20599ffa01edf6913a1538a34e3b"
+sha256 = "988643abbd8fbf39dd340bd498003c0f84bc21b90a7516e4d7be7d64d5061345"
 
 [packs."private-banking"]
 version = "1.0.0"

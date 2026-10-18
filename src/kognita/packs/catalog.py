@@ -28,11 +28,11 @@ from kognita.rules import Evaluator, build_registry
 
 #: The five templates, named as the 0.4 roadmap names them.
 STARTER_PACKS: tuple[str, ...] = (
-    "role-based access",
+    "role-based-access",
     "geo-fencing",
-    "data classification",
-    "time-gated access",
-    "two-signature approval chains",
+    "data-classification",
+    "time-gated-access",
+    "two-signature-approval-chains",
 )
 PRIVATE_BANKING_PACK = "private-banking"
 PACK_NAMES: tuple[str, ...] = STARTER_PACKS + (PRIVATE_BANKING_PACK,)

@@ -1,7 +1,7 @@
 id: restricted-classification
 regime: CLASSIFICATION
 rule_type: ATTRIBUTE_DENYLIST
-citation: "Classification C3 is refused. Source: Kognita starter pack data classification, restricted bar."
+citation: "Classification C3 is refused. Source: Kognita starter pack data-classification, restricted bar."
 effective_from: "2020-01-01T00:00:00+00:00"
 rule:
   deny:

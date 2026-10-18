@@ -1,7 +1,7 @@
 id: own-subject
 regime: ACCESS
 rule_type: PRINCIPAL_EQUALITY
-citation: "The principal must be the subject owner named on the request. Source: Kognita starter pack role-based access, principal equality."
+citation: "The principal must be the subject owner named on the request. Source: Kognita starter pack role-based-access, principal equality."
 effective_from: "2020-01-01T00:00:00+00:00"
 rule:
   equals: subject_owner
