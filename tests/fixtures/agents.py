@@ -104,13 +104,6 @@ def _authority_for(envelope, snapshot):
     from dataclasses import replace
     if not envelope.agent_name or envelope.agent_name not in snapshot.agents:
         return envelope, snapshot
-    if envelope.agent_name in snapshot._credentials and '_agent_credential' not in envelope.context:
-        from kognita.credentials import _digest
-        for secrets in _credentials.values():
-            secret = secrets.get(envelope.agent_name)
-            if secret and _digest(secret) in snapshot._credentials[envelope.agent_name]:
-                envelope = replace(envelope, context={**envelope.context, '_agent_credential': secret})
-                break
     identity = f"fixture:{envelope.principal}:{envelope.agent_name}:{envelope.purpose}"
     scope = {k: [v] for k, v in envelope.all_subjects().items()}
     client = scope.get("client", ["fixture"])[0]

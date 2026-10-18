@@ -80,6 +80,7 @@ def _legacy_workload_credentials(request, monkeypatch):
     monkeypatch.setattr(McpProxy, "handle", wrap(McpProxy.handle))
 
 
+
 @pytest.fixture(autouse=True)
 def _legacy_authority_prerequisites(request, monkeypatch):
     """Give pre-S3 control-isolation tests explicit snapshot authority.
@@ -123,6 +124,23 @@ def _legacy_authority_prerequisites(request, monkeypatch):
         'test_vectors',
     }:
         return
+    import kognita.tools as tools
+    original_run = tools.run_governed
+
+    def run_with_credential(session, envelope, *args, **kwargs):
+        from dataclasses import replace
+        from fixtures.agents import _credentials
+        if envelope.agent_name and "_agent_credential" not in envelope.context:
+            engine = session.get_bind()
+            key = str(engine.url) if engine.url.database else engine
+            secret = _credentials.get(key, {}).get(envelope.agent_name)
+            if secret:
+                envelope = replace(envelope, context={**envelope.context, "_agent_credential": secret})
+        return original_run(session, envelope, *args, **kwargs)
+
+    for module in list(sys.modules.values()):
+        if module and module.__name__.startswith(("kognita", "test_")) and getattr(module, "run_governed", None) is original_run:
+            monkeypatch.setattr(module, "run_governed", run_with_credential)
     from fixtures.agents import _authority_for
     import kognita.governance as governance
     original = governance.decide
