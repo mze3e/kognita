@@ -39,7 +39,7 @@ import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from sqlmodel import Session, select
 
@@ -193,6 +193,11 @@ class Run:
     cost_usd_used: float = 0.0
     started_at: datetime | None = None
     continuation_hash: str | None = None
+    #: Set by a live-run intervention. ``_refresh_run`` loads them from the store
+    #: so a later step sees a pause, a restriction, or an override.
+    control_state: str = "live"
+    tool_denylist: list[str] = field(default_factory=list)
+    override_outcome: str = ""
 
 
 def _budget_payload(run: Run) -> dict[str, Any]:
@@ -310,6 +315,11 @@ def _refresh_run(session: Session, run: Run) -> None:
     run.started_at = as_utc(row.started_at)
     run.approvals_pending = list(row.approvals_pending or [])
     run.continuation_hash = row.continuation_hash
+    run.control_state = row.control_state or "live"
+    run.tool_denylist = list(row.tool_denylist or [])
+    run.override_outcome = row.override_outcome or ""
+    if row.classification_ceiling is not None:
+        run.classification_ceiling = Classification(row.classification_ceiling)
 
 
 def _save_run(session: Session, run: Run) -> None:
@@ -331,6 +341,9 @@ def _save_run(session: Session, run: Run) -> None:
     row.cost_usd_used = run.cost_usd_used
     row.started_at = run.started_at
     row.continuation_hash = run.continuation_hash
+    row.control_state = run.control_state or "live"
+    row.tool_denylist = list(run.tool_denylist)
+    row.override_outcome = run.override_outcome or ""
     session.add(row)
     session.flush()
 
@@ -353,6 +366,9 @@ def _load_run(session: Session, run_id: str) -> Run:
         cost_usd_used=row.cost_usd_used,
         started_at=as_utc(row.started_at),
         continuation_hash=row.continuation_hash,
+        control_state=row.control_state or "live",
+        tool_denylist=list(row.tool_denylist or []),
+        override_outcome=row.override_outcome or "",
     )
 
 
@@ -378,6 +394,16 @@ def _admit(
     if run is None:
         return evaluation, []
     _refresh_run(session, run)
+    from kognita.intervention import control_checks
+
+    held = control_checks(
+        session,
+        run,
+        tool=evaluation.envelope.tool,
+        classification=classification,
+    )
+    if held:
+        evaluation = _with_checks(evaluation, held)
     breaches = _budget_breaches(
         run,
         classification=classification,
@@ -550,6 +576,7 @@ def _release_tool(
     evaluation: Evaluation,
     spec: ToolSpec,
     evidence: EvidenceWriter,
+    run: Run | None = None,
 ) -> Any:
     data = spec.fn(envelope, evaluation, session)
     actor_type, actor_id = _call_actor(envelope)
@@ -560,6 +587,7 @@ def _release_tool(
         use_case=envelope.purpose,
         correlation_id=evaluation.request_id,
     )
+    run_ref = {"run_id": run.id} if run is not None else {}
     evidence.emit(
         session,
         correlation_id=evaluation.request_id,
@@ -573,6 +601,7 @@ def _release_tool(
             "outcome": evaluation.outcome.value,
             "approval_required": evaluation.approval_required,
             "response_hash": response_hash,
+            **run_ref,
         },
     )
     evidence.emit(
@@ -589,6 +618,7 @@ def _release_tool(
             "bytes": len(canonical_json(data)),
             "response_hash": response_hash,
             "note": "Payload content is not copied to the evidence plane.",
+            **run_ref,
         },
     )
     return data
@@ -736,7 +766,7 @@ def run_governed(
         _save_run(session, run)
     _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
 
-    data = _release_tool(session, envelope, evaluation, spec, evidence)
+    data = _release_tool(session, envelope, evaluation, spec, evidence, run)
     record_run_decision(session, interaction_id, evaluation, evidence, now=at)
     return ToolRun(
         evaluation=evaluation,
@@ -802,6 +832,19 @@ def continue_run(
 
     correlation_id = str(payload["request_id"])
     envelope = _envelope_from_continuation(payload)
+    withheld = _withheld_by_intervention(
+        session,
+        run,
+        envelope,
+        payload,
+        registry=registry,
+        evidence=evidence,
+        correlation_id=correlation_id,
+        continuation_hash=continuation_hash,
+        approval_id=approval_id,
+    )
+    if withheld is not None:
+        return withheld
     blocked = contact_refusal(
         session,
         envelope,
@@ -933,12 +976,64 @@ def continue_run(
     if registry is None:
         raise ToolNotRegistered("continuing a tool call requires a registry")
     spec = registry.get(envelope.tool)
-    data = _release_tool(session, envelope, evaluation, spec, evidence)
+    data = _release_tool(session, envelope, evaluation, spec, evidence, run)
     return ToolRun(
         evaluation=evaluation,
         data=data,
         approval_required=False,
     )
+
+
+def _withheld_by_intervention(
+    session: Session,
+    run: Run,
+    envelope: Envelope,
+    payload: Mapping[str, Any],
+    *,
+    registry: ToolRegistry | None,
+    evidence: EvidenceWriter,
+    correlation_id: str,
+    continuation_hash: str,
+    approval_id: int,
+) -> ToolRun | None:
+    """Keep a held call where it is when an intervention has stopped the run.
+
+    The continuation and the approval stay in place. The stored decision is
+    not rewritten. The withhold is a new approval event.
+    """
+    from kognita.intervention import control_checks
+
+    classification = Classification.C0
+    if registry is not None and envelope.tool in registry:
+        classification = registry.get(envelope.tool).classification
+    elif payload.get("kind") != "retrieval":
+        classification = Classification.C3
+    held = control_checks(
+        session, run, tool=envelope.tool, classification=classification
+    )
+    if not held:
+        return None
+    evaluation = _with_checks(_evaluation_from_continuation(payload, envelope), held)
+    if evaluation.allowed:
+        return None
+    evidence.emit(
+        session,
+        correlation_id=correlation_id,
+        event_type=EventType.APPROVAL,
+        actor_type=ActorType.SYSTEM,
+        actor_id="governance-pdp",
+        classification=Classification.C1,
+        payload={
+            "action": "WITHHELD",
+            "approval_id": approval_id,
+            "run_id": run.id,
+            "continuation_hash": continuation_hash,
+            "decision": "withheld",
+            "executed": False,
+            "citation": held[0].citation,
+        },
+    )
+    return ToolRun(evaluation=evaluation, data=None, approval_required=False)
 
 
 def _bind_interaction(

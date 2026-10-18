@@ -424,6 +424,15 @@ class RunRecord(SQLModel, table=True):
     continuation_hash: str | None = Field(
         default=None, foreign_key="continuations.content_hash"
     )
+    #: live, paused, recovered, or revoked. A later intervention appends evidence.
+    #: This column is the state the next decision reads. It is not a decision.
+    control_state: str = "live"
+    #: Tools a restrict intervention added. The list only grows.
+    tool_denylist: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    #: DENY, ESCALATE, or ALLOW when an override is in force. Empty when none is.
+    override_outcome: str = ""
 
 
 class Continuation(SQLModel, table=True):
@@ -727,6 +736,41 @@ class ReviewQueueItem(SQLModel, table=True):
     reviewed_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
 
 
+class ApprovedChannel(SQLModel, table=True):
+    """A channel registered for client communication or for the public lane.
+
+    The row is the channel in force. A change appends a ``POLICY_CHANGE``
+    event and then updates the row. Evidence of the earlier registration stays
+    on the chain.
+    """
+
+    __tablename__ = "approved_channels"
+
+    channel: str = Field(primary_key=True)
+    label: str = ""
+    archiving: bool = False
+    supervision: bool = False
+    public: bool = False
+    citation: str = ""
+    registered_by: str = ""
+
+
+class CompensatingAction(SQLModel, table=True):
+    """One registered step a recover intervention can run for a live run.
+
+    Rows are append-only. Recover reads them in reverse order and records that
+    order on the intervention event. It does not delete the rows.
+    """
+
+    __tablename__ = "compensating_actions"
+
+    id: int | None = Field(default=None, primary_key=True)
+    run_id: str = Field(index=True, foreign_key="runs.id")
+    name: str = ""
+    citation: str = ""
+    recorded_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+
+
 class EntityEdge(SQLModel, table=True):
     """A relationship in the deterministic mirror."""
 
@@ -932,6 +976,8 @@ __all__ = [
     "RmReview",
     "RiskCriteria",
     "ReviewQueueItem",
+    "ApprovedChannel",
+    "CompensatingAction",
     "RiskAppetite",
     "ModelCard",
     "RetentionPolicy",

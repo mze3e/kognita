@@ -525,10 +525,10 @@ Do not wait for client harm.
 - [x] OpenTelemetry export
 - [x] A use case outside the risk appetite cannot be registered; a use case past its review date is denied
 - [x] "Do not contact" outcomes recorded with reasons; a bare score is rejected as rationale
-- [ ] Every communication carries a communication level and content provenance label; unregistered channels are denied
-- [ ] Pause, override, restrict and recover work on a live run and are evidenced
+- [x] Every communication carries a communication level and content provenance label; unregistered channels are denied
+- [x] Pause, override, restrict and recover work on a live run and are evidenced
 - [x] A complaint links back to the exact output, model version and approver
-- [ ] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
+- [x] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
 - [x] Graph extra removed from the package (ADR 0008)
 - [x] Policy language: load, diff, validate, explain, test
 - [ ] Five starter packs with scenarios
