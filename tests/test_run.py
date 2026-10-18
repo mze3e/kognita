@@ -797,3 +797,191 @@ def test_run_governed_denies_a_purpose_the_register_does_not_name(harness):
     assert any(
         check.check == "USE_CASE_REGISTERED" for check in result.evaluation.failures()
     )
+
+
+class _PassingRulePack(dp.DemoPack):
+    """The demo pack with one rule type of its own that always passes."""
+
+    def rules(self):
+        from kognita.envelope import Check
+        from kognita.vocabulary import CheckResult
+
+        def _pack_pass(policy, context):
+            return [
+                Check(
+                    check="pack pass",
+                    regime=policy.regime,
+                    result=CheckResult.PASS,
+                    citation=policy.citation,
+                    policy_id=policy.id,
+                )
+            ]
+
+        return {**super().rules(), "PACK_PASS": _pack_pass}
+
+
+def _hold_then_add(harness, registry, pack, policy, *, forget_pack=False):
+    """Hold a call, add ``policy`` during the hold, then grant and resume."""
+    import kognita.tools as tools_module
+
+    run = Run()
+    envelope = _hold_envelope()
+    with harness.session() as session:
+        held = run_governed(
+            session,
+            envelope,
+            registry=registry,
+            evidence=harness.evidence,
+            pack=pack,
+            purposes=dp.PURPOSES,
+            as_of=harness.now,
+            run=run,
+            now=harness.now,
+        )
+        if policy is not None:
+            session.add(policy)
+        session.commit()
+        fresh = run_governed(
+            session,
+            envelope,
+            registry=registry,
+            evidence=harness.evidence,
+            pack=pack,
+            purposes=dp.PURPOSES,
+            as_of=harness.now,
+            now=harness.now,
+        )
+        if forget_pack:
+            # A resume in a process that has not used this pack since it started.
+            tools_module._PACKS.clear()
+        resumed = continue_run(
+            session,
+            run.id,
+            {run.approvals_pending[0]: True},
+            approver_name="Jane Approver",
+            evidence=harness.evidence,
+            registry=registry,
+            now=harness.now,
+        )
+        session.commit()
+        resumed_event = next(
+            event
+            for event in session.exec(select(EvidenceEvent)).all()
+            if event.correlation_id == held.evaluation.request_id
+            and event.event_type == EventType.APPROVAL
+            and event.payload.get("action") == "RESUMED"
+        )
+    return held, fresh, resumed, resumed_event
+
+
+def test_resume_skips_a_new_prohibition_the_pack_scopes_to_another_dataset(harness):
+    """A prohibition for an unrelated dataset kind does not withhold the release.
+
+    The pack's ``engages`` skips it on a fresh decision, and the resume
+    evaluates it in the same scope.
+    """
+    registry, executed = _registry()
+    held, fresh, resumed, event = _hold_then_add(
+        harness,
+        registry,
+        harness.pack,
+        Policy(
+            regime="HOME_SITE",
+            rule_type="PROHIBITED",
+            rule={"description": "restricted datasets barred", "on_violation": "fail"},
+            citation="Restricted datasets withdrawn",
+            applies_to="RESTRICTED",
+            effective_from=harness.now,
+        ),
+    )
+    assert held.outcome is Outcome.HUMAN_APPROVAL
+    assert fresh.evaluation.outcome is Outcome.HUMAN_APPROVAL
+    assert executed == ["draft"]
+    assert resumed.data == {"status": "DRAFT — not for release"}
+    assert event.payload["executed"] is True
+    assert "rechecked" not in event.payload
+
+
+def test_resume_evaluates_a_new_policy_with_the_packs_own_rule_type(harness):
+    """A pack rule type that passes is not reported as unevaluable on resume."""
+    registry, executed = _registry()
+    held, fresh, resumed, event = _hold_then_add(
+        harness,
+        registry,
+        _PassingRulePack(),
+        Policy(
+            regime="HOME_SITE",
+            rule_type="PACK_PASS",
+            rule={"description": "pack rule", "on_violation": "fail"},
+            citation="Pack rule s1",
+            effective_from=harness.now,
+        ),
+    )
+    assert held.outcome is Outcome.HUMAN_APPROVAL
+    assert all("UNEVALUABLE_POLICY" not in c.check for c in fresh.evaluation.checks)
+    assert executed == ["draft"]
+    assert event.payload["executed"] is True
+    assert all(
+        "UNEVALUABLE_POLICY" not in check.check for check in resumed.evaluation.checks
+    )
+
+
+def test_resume_without_the_pack_withholds_a_policy_added_during_the_hold(harness):
+    """When the pack cannot be restored, a new policy escalates and cites why."""
+    registry, executed = _registry()
+    held, _fresh, resumed, event = _hold_then_add(
+        harness,
+        registry,
+        harness.pack,
+        Policy(
+            regime="HOME_SITE",
+            rule_type="PROHIBITED",
+            rule={"description": "restricted datasets barred", "on_violation": "fail"},
+            citation="Restricted datasets withdrawn",
+            applies_to="RESTRICTED",
+            effective_from=harness.now,
+        ),
+        forget_pack=True,
+    )
+    assert executed == []
+    assert resumed.data is None
+    assert event.payload["executed"] is False
+    assert "PACK_CONTEXT" in event.payload["rechecked"]
+    context = [c for c in resumed.evaluation.checks if c.check == "PACK_CONTEXT"]
+    assert context and context[0].policy_id is not None
+    assert "has not been loaded in this process" in context[0].citation
+    assert "'demo'" in context[0].citation
+    assert resumed.evaluation.outcome is not Outcome.ALLOW
+
+
+def test_resume_without_the_pack_releases_when_no_policy_changed(harness):
+    """The pack is only needed for policies that came into force during the hold."""
+    registry, executed = _registry()
+    _held, _fresh, resumed, event = _hold_then_add(
+        harness, registry, harness.pack, None, forget_pack=True
+    )
+    assert executed == ["draft"]
+    assert event.payload["executed"] is True
+
+
+def test_the_continuation_records_the_pack_that_held_the_call(harness):
+    registry, _executed = _registry()
+    run = Run()
+    with harness.session() as session:
+        run_governed(
+            session,
+            _hold_envelope(),
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=harness.now,
+            run=run,
+            now=harness.now,
+        )
+        session.commit()
+        stored = session.get(Continuation, session.get(RunRecord, run.id).continuation_hash)
+    pack = stored.payload["pack"]
+    assert pack["name"] == "demo"
+    assert pack["class"].endswith("DemoPack")
+    assert "PROHIBITED" in pack["rule_types"]

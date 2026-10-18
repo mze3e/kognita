@@ -226,7 +226,6 @@ def _manifest(session) -> None:
 
 def _tamper(engine) -> str:
     from kognita import EvidenceEvent
-    from kognita.evidence import tamper_for_test
 
     intact = _verify(DB)
     if intact.returncode != 0:
@@ -237,7 +236,17 @@ def _tamper(engine) -> str:
         ).first()
         if event is None:
             raise RuntimeError("no evidence row to edit")
-        tamper_for_test(session, event.sequence, {**event.payload, "tampered": True})
+        # Stand in for someone with raw write access to the store: lift the
+        # update guard, rewrite one payload, and leave its hashes as they were.
+        connection = session.connection()
+        connection.exec_driver_sql("DROP TRIGGER IF EXISTS evidence_events_no_update")
+        connection.execute(
+            text("UPDATE evidence_events SET payload = :payload WHERE sequence = :sequence"),
+            {
+                "payload": json.dumps({**event.payload, "tampered": True}),
+                "sequence": event.sequence,
+            },
+        )
     with engine.connect() as connection:
         connection.execute(text("PRAGMA wal_checkpoint(TRUNCATE)"))
         connection.commit()
