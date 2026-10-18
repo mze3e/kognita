@@ -28,6 +28,7 @@ import pytest
 
 from fixtures.agents import register as _register_agent
 
+from kognita.tools import Run
 from kognita.vocabulary import Outcome
 
 from test_classification_floor import _authorize
@@ -68,7 +69,7 @@ def test_json_escaped_email_is_redacted_from_decoded_value_not_wire_text(session
     upstream = _GatewayUpstream(
         json.dumps({"model": MODEL, "choices": [{"message": {"content": "noted"}}]}).encode()
     )
-    gateway = _gateway(session.get_bind(), evidence, upstream)
+    gateway = _gateway(session.get_bind(), evidence, upstream, run=Run())
     response = gateway.handle("POST", PATH, headers, body, session=session)
 
     assert response.evaluation is not None
@@ -117,7 +118,7 @@ def test_tool_call_arguments_email_is_classified_and_redacted(session, evidence)
     upstream = _GatewayUpstream(
         json.dumps({"model": MODEL, "choices": [{"message": {"content": "noted"}}]}).encode()
     )
-    gateway = _gateway(session.get_bind(), evidence, upstream)
+    gateway = _gateway(session.get_bind(), evidence, upstream, run=Run())
     response = gateway.handle("POST", PATH, headers, body, session=session)
 
     assert response.evaluation is not None
@@ -162,7 +163,7 @@ def test_tool_call_arguments_injection_is_denied(session, evidence):
     ).encode()
 
     upstream = _GatewayUpstream(b'{"model":"' + MODEL.encode() + b'","choices":[]}')
-    gateway = _gateway(session.get_bind(), evidence, upstream)
+    gateway = _gateway(session.get_bind(), evidence, upstream, run=Run())
     response = gateway.handle("POST", PATH, headers, body, session=session)
 
     assert response.evaluation is not None
@@ -185,7 +186,7 @@ def test_unrecognized_content_shape_is_denied_not_skipped(session, evidence):
     ).encode()
 
     upstream = _GatewayUpstream(b'{"model":"' + MODEL.encode() + b'","choices":[]}')
-    gateway = _gateway(session.get_bind(), evidence, upstream)
+    gateway = _gateway(session.get_bind(), evidence, upstream, run=Run())
     response = gateway.handle("POST", PATH, headers, body, session=session)
 
     assert response.evaluation is not None
@@ -216,7 +217,7 @@ def test_known_multimodal_parts_are_not_denied_as_unsupported(session, evidence)
     upstream = _GatewayUpstream(
         json.dumps({"model": MODEL, "choices": [{"message": {"content": "noted"}}]}).encode()
     )
-    gateway = _gateway(session.get_bind(), evidence, upstream)
+    gateway = _gateway(session.get_bind(), evidence, upstream, run=Run())
     response = gateway.handle("POST", PATH, headers, body, session=session)
 
     assert response.evaluation is not None
@@ -245,7 +246,7 @@ def test_provider_content_fields_are_screened(session, evidence, field, text):
     else:
         payload["messages"][0]["content"] = [{"type": "text", "text": "hello", "other": text}]
     upstream = _GatewayUpstream(json.dumps({"model": MODEL, "choices": []}).encode())
-    response = _gateway(session.get_bind(), evidence, upstream).handle(
+    response = _gateway(session.get_bind(), evidence, upstream, run=Run()).handle(
         "POST", PATH, headers, json.dumps(payload).encode(), session=session,
     )
     assert response.evaluation is not None
@@ -268,7 +269,7 @@ def test_provider_content_fields_are_screened(session, evidence, field, text):
 def test_malformed_content_is_denied(session, evidence, content):
     headers = _setup(session, evidence)
     upstream = _GatewayUpstream(json.dumps({"model": MODEL, "choices": []}).encode())
-    response = _gateway(session.get_bind(), evidence, upstream).handle(
+    response = _gateway(session.get_bind(), evidence, upstream, run=Run()).handle(
         "POST", PATH, headers,
         json.dumps({"model": MODEL, "messages": [{"role": "tool", "content": content}]}).encode(),
         session=session,
@@ -284,7 +285,7 @@ def test_decoded_values_with_quotes_and_newlines_are_redacted(session, evidence)
     headers = _setup(session, evidence)
     sensitive = 'Client "A"\ninternal'
     upstream = _GatewayUpstream(json.dumps({"model": MODEL, "choices": []}).encode())
-    gateway = _gateway(session.get_bind(), evidence, upstream)
+    gateway = _gateway(session.get_bind(), evidence, upstream, run=Run())
     gateway.egress.redactor = PatternRedactor(extra_terms=[sensitive])
     payload = {"model": MODEL, "messages": [{"role": "user", "content": f"{SECRET}: {sensitive}"}]}
     response = gateway.handle("POST", PATH, headers, json.dumps(payload).encode(), session=session)
@@ -300,7 +301,7 @@ def test_redaction_tokens_are_shared_across_decoded_values(session, evidence):
     upstream = _GatewayUpstream(json.dumps({
         "model": MODEL, "choices": [{"message": {"content": "[EMAIL_1] [EMAIL_2]"}}],
     }).encode())
-    gateway = _gateway(session.get_bind(), evidence, upstream)
+    gateway = _gateway(session.get_bind(), evidence, upstream, run=Run())
     payload = {"model": MODEL, "messages": [
         {"role": "user", "content": SECRET},
         {"role": "tool", "tool_call_id": "call_1", "content": "bob@example.org " + SECRET},
@@ -327,7 +328,7 @@ def test_redaction_tokens_are_shared_across_decoded_values(session, evidence):
 def test_unsupported_request_shapes_are_denied(session, evidence, fields):
     headers = _setup(session, evidence)
     upstream = _GatewayUpstream(json.dumps({"model": MODEL, "choices": []}).encode())
-    response = _gateway(session.get_bind(), evidence, upstream).handle(
+    response = _gateway(session.get_bind(), evidence, upstream, run=Run()).handle(
         "POST", PATH, headers, json.dumps({"model": MODEL, **fields}).encode(), session=session,
     )
     assert response.evaluation.outcome is Outcome.DENY
