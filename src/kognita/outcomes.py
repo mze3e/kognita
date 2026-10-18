@@ -18,6 +18,9 @@ has no measurement is a breach.
 
 A recorded exception or a recorded human recovery counts against reliability.
 A run that never finished is not treated as clean.
+
+A recorded outcome and a recorded near miss count toward a registered
+circuit-breaker threshold. Crossing it inserts the prohibiting policy.
 """
 
 from __future__ import annotations
@@ -306,6 +309,9 @@ def record_outcome(
     )
     body = dict(payload)
     body["sequence"] = event.sequence
+    from kognita.breaker import evaluate_breakers
+
+    evaluate_breakers(session, evidence=evidence, now=at)
     return body
 
 
@@ -393,6 +399,9 @@ def record_near_miss(
         )
     body = dict(payload)
     body["sequence"] = event.sequence
+    from kognita.breaker import evaluate_breakers
+
+    evaluate_breakers(session, evidence=evidence, now=at)
     return body
 
 

@@ -958,6 +958,93 @@ def _reject_in_place_model_card_edit(
     target.content_hash = fresh
 
 
+def _effective(start: datetime | None, end: datetime | None, at: datetime) -> bool:
+    """Half-open window. ``end`` equal to ``at`` is already closed."""
+    opened = as_utc(start)
+    closed = as_utc(end)
+    return opened is not None and opened <= at and (closed is None or closed > at)
+
+
+class Revocation(SQLModel, table=True):
+    """One dimension stopped until an accountable owner reinstates it.
+
+    Closing ``effective_to`` is the reinstatement. The row is not rewritten
+    into a permission. A later revocation is a new row.
+    """
+
+    __tablename__ = "revocations"
+
+    id: int | None = Field(default=None, primary_key=True)
+    dimension: str = Field(index=True)
+    value: str = Field(index=True)
+    citation: str = ""
+    actor_id: str = ""
+    accountable_owners: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    #: Provider only. Empty means the provider is not limited to a use-case list.
+    limit_usecases: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    #: Provider only. Empty means no classification ceiling. A call at or above
+    #: this classification is outside the limit.
+    below_classification: str = ""
+    effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+    effective_to: datetime | None = Field(
+        default=None, sa_column=_nullable_utc_column()
+    )
+
+    def is_effective(self, at: datetime) -> bool:
+        return _effective(self.effective_from, self.effective_to, at)
+
+
+class BreakerThreshold(SQLModel, table=True):
+    """How many flags, in what window, trip a breaker for one dimension value.
+
+    The roadmap does not set the number. Nothing trips until a threshold is
+    recorded. Closing the window retires it; the replacement is a new row.
+    """
+
+    __tablename__ = "breaker_thresholds"
+
+    id: int | None = Field(default=None, primary_key=True)
+    dimension: str = Field(index=True)
+    value: str = Field(index=True)
+    threshold: int = 1
+    window_seconds: int = 1
+    citation: str = ""
+    actor_id: str = ""
+    accountable_owner: str = ""
+    effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+    effective_to: datetime | None = Field(
+        default=None, sa_column=_nullable_utc_column()
+    )
+
+    def is_effective(self, at: datetime) -> bool:
+        return _effective(self.effective_from, self.effective_to, at)
+
+
+class DrillDue(SQLModel, table=True):
+    """When a high-materiality use case must next run a kill-switch drill.
+
+    The evidence of the drill is on the chain. This row is the due date the
+    next decision reads. A new due date closes this window and inserts the next.
+    """
+
+    __tablename__ = "drill_dues"
+
+    id: int | None = Field(default=None, primary_key=True)
+    usecase_id: str = Field(index=True)
+    next_due: datetime = Field(sa_column=_utc_column())
+    effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+    effective_to: datetime | None = Field(
+        default=None, sa_column=_nullable_utc_column()
+    )
+
+    def is_effective(self, at: datetime) -> bool:
+        return _effective(self.effective_from, self.effective_to, at)
+
+
 __all__ = [
     "Agent",
     "Policy",
@@ -980,6 +1067,9 @@ __all__ = [
     "CompensatingAction",
     "RiskAppetite",
     "ModelCard",
+    "Revocation",
+    "BreakerThreshold",
+    "DrillDue",
     "RetentionPolicy",
     "RetainedContent",
     "policy_content",

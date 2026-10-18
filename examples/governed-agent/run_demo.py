@@ -226,6 +226,7 @@ def _manifest(session) -> None:
 
 def _tamper(engine) -> str:
     from kognita import EvidenceEvent
+    from kognita.evidence import tamper_for_test
 
     intact = _verify(DB)
     if intact.returncode != 0:
@@ -236,8 +237,7 @@ def _tamper(engine) -> str:
         ).first()
         if event is None:
             raise RuntimeError("no evidence row to edit")
-        event.payload = {**event.payload, "tampered": True}
-        session.add(event)
+        tamper_for_test(session, event.sequence, {**event.payload, "tampered": True})
     with engine.connect() as connection:
         connection.execute(text("PRAGMA wal_checkpoint(TRUNCATE)"))
         connection.commit()

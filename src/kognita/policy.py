@@ -142,7 +142,20 @@ _SCHEMAS: dict[str, dict[str, Any]] = {
         "optional_lists": ("jurisdictions", "use_cases"),
         "optional": ("text", "description"),
     },
+    "CIRCUIT_BREAKER": {
+        "required_maps": (),
+        "optional_lists": ("usecases",),
+        "optional": (
+            "dimension",
+            "value",
+            "on_violation",
+            "description",
+            "accountable_owner",
+        ),
+    },
 }
+
+_BREAKER_DIMENSIONS = frozenset({"usecase", "model", "prompt", "policy"})
 
 
 class PolicyLanguageError(KognitaError):
@@ -867,6 +880,22 @@ def _payload_messages(rule_type: str, rule: Any) -> list[str]:
         messages.extend(_content_policy_messages(rule))
     if rule_type == "AI_DISCLOSURE":
         messages.extend(_disclosure_messages(rule))
+    if rule_type == "CIRCUIT_BREAKER":
+        messages.extend(_breaker_messages(rule))
+    return messages
+
+
+def _breaker_messages(rule: dict[str, Any]) -> list[str]:
+    """A breaker that does not name one dimension and value does not validate."""
+    messages: list[str] = []
+    if rule.get("dimension") not in _BREAKER_DIMENSIONS:
+        messages.append("dimension must be usecase, model, prompt, or policy")
+    value = rule.get("value")
+    if not isinstance(value, str) or not value.strip():
+        messages.append("value must be a non-empty string")
+    owner = rule.get("accountable_owner")
+    if owner is not None and (not isinstance(owner, str) or not owner.strip()):
+        messages.append("accountable_owner must be a non-empty string")
     return messages
 
 

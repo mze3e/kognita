@@ -654,6 +654,100 @@ def ai_disclosure(policy: Any, context: RuleContext) -> list[Check]:
     ]
 
 
+def request_field_keys(envelope: Any, attributes: dict[str, Any], *fields: str) -> set[str]:
+    """Strings a request carries under ``fields``, from arguments and attributes."""
+    found: set[str] = set()
+    sources = (getattr(envelope, "arguments", None) or {}, attributes or {})
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        for field in fields:
+            value = source.get(field)
+            if isinstance(value, str) and value.strip():
+                found.add(value.strip())
+    return found
+
+
+def request_model_keys(envelope: Any, attributes: dict[str, Any]) -> set[str]:
+    """Model version, model name, model card, and ``provider/model@version``.
+
+    A revocation and a circuit breaker match the same set, so a model stopped
+    under one spelling is the model the breaker saw on the flag.
+    """
+    found = request_field_keys(
+        envelope, attributes, "model_version", "model", "model_card"
+    )
+    subject_type = getattr(envelope, "subject_type", None)
+    subject_id = getattr(envelope, "subject_id", None)
+    if subject_type == "model" and isinstance(subject_id, str) and subject_id.strip():
+        found.add(subject_id.strip())
+    providers = request_field_keys(envelope, attributes, "provider")
+    names = request_field_keys(envelope, attributes, "model")
+    versions = request_field_keys(envelope, attributes, "model_version")
+    if subject_type == "model" and isinstance(subject_id, str) and subject_id.strip():
+        names.add(subject_id.strip())
+    for provider in providers:
+        for name in names:
+            for version in versions:
+                found.add(f"{provider}/{name}@{version}")
+    return found
+
+
+def breaker_matches(rule: dict[str, Any], context: RuleContext) -> bool:
+    """Whether a circuit-breaker policy applies to this request.
+
+    A policy that does not name a known dimension and value matches every
+    request. A breaker that cannot be scoped does not stay silent.
+    """
+    dimension = str(rule.get("dimension") or "")
+    value = str(rule.get("value") or "").strip()
+    if dimension not in {"usecase", "model", "prompt", "policy"} or not value:
+        return True
+    envelope = context.envelope
+    attributes = context.attributes
+    if dimension == "usecase":
+        return envelope.purpose == value
+    if dimension == "model":
+        return value in request_model_keys(envelope, attributes)
+    if dimension == "prompt":
+        return value in request_field_keys(
+            envelope, attributes, "prompt_template_version"
+        )
+    usecases = {
+        str(item).strip()
+        for item in (rule.get("usecases") or [])
+        if str(item).strip()
+    }
+    if not usecases:
+        return True
+    return envelope.purpose in usecases
+
+
+@rule("CIRCUIT_BREAKER")
+def circuit_breaker(policy: Any, context: RuleContext) -> list[Check]:
+    """Deny the dimension a tripped breaker named.
+
+    A request outside that dimension is not checked. The policy is still in
+    force for the dimension it names. ``on_violation`` defaults to fail.
+    """
+    rule = policy.rule if isinstance(policy.rule, dict) else {}
+    if not breaker_matches(rule, context):
+        return []
+    try:
+        result = CheckResult(rule.get("on_violation", "fail"))
+    except ValueError:
+        result = CheckResult.FAIL
+    return [
+        Check(
+            check="CIRCUIT_BREAKER",
+            regime=policy.regime,
+            result=result,
+            citation=policy.citation or "Circuit breaker",
+            policy_id=policy.id,
+        )
+    ]
+
+
 @rule("PROHIBITED")
 def prohibited(policy: Any, context: RuleContext) -> list[Check]:
     """An unconditional bar, once the policy is engaged at all.
@@ -672,4 +766,12 @@ def prohibited(policy: Any, context: RuleContext) -> list[Check]:
     ]
 
 
-__all__ = ["rule", "build_registry", "CORE_RULES", "Evaluator"]
+__all__ = [
+    "rule",
+    "build_registry",
+    "CORE_RULES",
+    "Evaluator",
+    "breaker_matches",
+    "request_field_keys",
+    "request_model_keys",
+]
