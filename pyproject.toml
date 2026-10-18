@@ -158,6 +158,7 @@ source_modules = [
     "kognita.interaction",
     "kognita.mcp",
     "kognita.origination",
+    "kognita.outcomes",
     "kognita.models",
     "kognita.protocols",
     "kognita.registry",

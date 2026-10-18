@@ -673,6 +673,60 @@ class RmReview(SQLModel, table=True):
     decided_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
 
 
+class RiskCriteria(SQLModel, table=True):
+    """How a use case scores a model response for the review queue.
+
+    Versions are effective-dated. A change closes the current row and inserts
+    the next version. ``effective_to`` is not part of the hashed record.
+    """
+
+    __tablename__ = "risk_criteria"
+    __table_args__ = (
+        UniqueConstraint("usecase_id", "version", name="uq_risk_criteria_version"),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    usecase_id: str = Field(index=True)
+    version: int = 1
+    record: dict[str, Any] = Field(sa_column=Column(JSON, nullable=False))
+    content_hash: str = ""
+    effective_from: datetime = Field(sa_column=_utc_column())
+    effective_to: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+
+    def is_effective(self, at: datetime) -> bool:
+        start = as_utc(self.effective_from)
+        end = as_utc(self.effective_to)
+        return start is not None and start <= at and (end is None or end > at)
+
+
+class ReviewQueueItem(SQLModel, table=True):
+    """One place on the review queue.
+
+    The evidence event is the record. This row is the queue a reviewer works.
+    Closing it sets ``status`` and ``reviewed_at``. The reasons and the citation
+    are not rewritten.
+    """
+
+    __tablename__ = "review_queue"
+
+    id: int | None = Field(default=None, primary_key=True)
+    interaction_id: str = Field(index=True, foreign_key="interactions.id")
+    usecase_id: str = Field(default="", index=True)
+    risk_tier: int | None = None
+    risk: str = ""
+    timing: str = ""
+    reasons: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    status: str = Field(default="queued", index=True)
+    citation: str = ""
+    response_hash: str = ""
+    #: Set once, when a review outcome is recorded. Empty while the item is queued.
+    finding: str = ""
+    queued_at: datetime = Field(sa_column=_utc_column())
+    reviewed_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+
+
 class EntityEdge(SQLModel, table=True):
     """A relationship in the deterministic mirror."""
 
@@ -876,6 +930,8 @@ __all__ = [
     "InteractionLink",
     "HumanBoundary",
     "RmReview",
+    "RiskCriteria",
+    "ReviewQueueItem",
     "RiskAppetite",
     "ModelCard",
     "RetentionPolicy",

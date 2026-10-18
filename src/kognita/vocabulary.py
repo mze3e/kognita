@@ -104,6 +104,12 @@ class EventType(str, Enum):
     INTERACTION = "INTERACTION"
     ORIGINATION = "ORIGINATION"
     FINAL_DECISION = "FINAL_DECISION"
+    #: A client complaint, correction, or other outcome linked to the interaction.
+    OUTCOME = "OUTCOME"
+    #: An unsafe draft, a verifier block, or other near miss that is not already a decision.
+    NEAR_MISS = "NEAR_MISS"
+    #: Risk-based review: a screen, a place on the review queue, or a review outcome.
+    REVIEW = "REVIEW"
 
 
 class ApprovalStatus(str, Enum):

@@ -145,9 +145,11 @@ STATUSES: tuple[str, ...] = ("pilot", "live", "suspended", "retired")
 
 #: The one primary metric a use case may name. Direction is fixed by the name:
 #: cycle time breaches above its target; decision quality and reliability
-#: breach below theirs. Item 7 computes these from the interaction record.
-#: Until that record exists, a measurement is an evidenced value compared with
-#: the target stored on that evidence.
+#: breach below theirs. The outcome-metric report computes these from the
+#: interaction record. A use case with no interaction still compares the
+#: latest PRIMARY_METRIC event. A live use case with an interaction compares
+#: the computed value, and a missing measurement is a breach. A pilot with
+#: no measurement stays exempt from the appetite count.
 PRIMARY_METRICS: tuple[str, ...] = (
     "cycle time",
     "decision quality",
@@ -2856,9 +2858,32 @@ def quantitative_measures(
         usecase_id = str((event.payload or {}).get("usecase_id") or "")
         if in_scope(usecase_id):
             latest[usecase_id] = event
+    # Imported here: the outcome report reads the register, and the register
+    # report reads the outcome report.
+    from kognita.outcomes import interaction_measurement
+
     breaching: list[RegisteredUseCase] = []
     saw_unmeasured = False
     for entry in material:
+        has_interaction, computed, measured = interaction_measurement(
+            session, entry, when
+        )
+        if has_interaction and _has_primary_metric(entry):
+            # The interaction record replaces a self-reported value. A live
+            # use case with no computed measurement is a breach. A pilot is
+            # still exempt until it is live.
+            if not measured:
+                if entry.status == "live":
+                    breaching.append(entry)
+                    saw_unmeasured = True
+                continue
+            if (
+                computed is not None
+                and entry.target is not None
+                and _metric_breaches(entry.primary_metric, computed, float(entry.target))
+            ):
+                breaching.append(entry)
+            continue
         event = latest.get(entry.usecase_id)
         if event is None:
             # A live use case with a primary metric and no measurement is a
