@@ -10,6 +10,7 @@ Every evaluator must be a pure function of ``(policy, context)``. No I/O, no
 clock reads, no randomness: replaying a decision must give the same answer, or
 the evidence plane is recording a story rather than a fact.
 """
+
 from __future__ import annotations
 
 from typing import Any, Callable
@@ -239,9 +240,7 @@ def classifier_confidence(policy: Any, context: RuleContext) -> list[Check]:
         return []
     label = record.get("label")
     confidence = float(record["confidence"])
-    citation = (
-        f"{policy.citation} — classified as {label} at {confidence:.2f}"
-    )
+    citation = f"{policy.citation} — classified as {label} at {confidence:.2f}"
     threshold = policy.rule.get("min_confidence")
     if threshold is None or confidence < float(threshold):
         result = CheckResult.ESCALATE
@@ -253,6 +252,57 @@ def classifier_confidence(policy: Any, context: RuleContext) -> list[Check]:
             regime=policy.regime,
             result=result,
             citation=citation,
+            policy_id=policy.id,
+        )
+    ]
+
+
+@rule("CONTACT_FREQUENCY")
+def contact_frequency(policy: Any, context: RuleContext) -> list[Check]:
+    """Refuse another contact once the client is at the policy's limit.
+
+    Rule payload::
+
+        {"max_contacts": 2, "window_days": 30, "tools": ["send_note"]}
+
+    ``tools`` narrows the check to those tools. With no list, the check
+    applies to every request the pack engages. The count is the attribute
+    ``contact_count``. A missing count, limit, or window fails closed: the
+    rule cannot be treated as satisfied. Origination reads the same policy
+    rows and records do-not-contact when a recommendation would cross one.
+    """
+    tools = _as_set(policy.rule.get("tools"))
+    if tools and context.envelope.tool not in tools:
+        return []
+    limit = policy.rule.get("max_contacts")
+    window = policy.rule.get("window_days")
+    count = context.attributes.get("contact_count")
+    citation = policy.citation or "Origination: contact frequency"
+    if (
+        isinstance(limit, bool)
+        or not isinstance(limit, int)
+        or isinstance(window, bool)
+        or not isinstance(window, int)
+        or window < 1
+        or isinstance(count, bool)
+        or not isinstance(count, int)
+    ):
+        return [
+            Check(
+                check=policy.rule_type,
+                regime=policy.regime,
+                result=CheckResult.FAIL,
+                citation=f"{citation} — contact frequency could not be evaluated",
+                policy_id=policy.id,
+            )
+        ]
+    ok = count < limit
+    return [
+        Check(
+            check=policy.rule_type,
+            regime=policy.regime,
+            result=CheckResult.PASS if ok else CheckResult.FAIL,
+            citation=f"{citation} — {count} contacts in {window} days, limit {limit}",
             policy_id=policy.id,
         )
     ]

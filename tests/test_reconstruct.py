@@ -1,9 +1,12 @@
 """Reconstruction report: ten questions, from evidence, with pin findings.
 
-Roadmap 0.3 item 8. Questions answered by 0.4 stay ``not recorded``.
+Roadmap 0.3 item 8. These fixtures do not record origination or RM review,
+so those questions stay ``not recorded``. Client communication stays
+``not recorded`` until that slice exists.
 A tampered policy, retrieved item, or retained prompt is a finding.
 Erasure keeps the hash and is not a mismatch.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -49,7 +52,9 @@ NOT_RECORDED = (
 
 def _seed(session):
     dp.seed_policies(session, now=FROZEN_NOW)
-    register(session, name="eligibility-assistant", owner_exec="Head of Data Governance")
+    register(
+        session, name="eligibility-assistant", owner_exec="Head of Data Governance"
+    )
     register(session, name="dossier-agent", owner_exec="Head of Research Ops")
 
 
@@ -235,7 +240,8 @@ def test_known_interaction_answers_every_question_from_evidence(harness):
         assert reproduce["chain_intact"] is True
         assert reproduce["events_checked"] >= 1
         assert any(
-            pin["kind"] == "policy" and pin["status"] == "matches" for pin in reproduce["pins"]
+            pin["kind"] == "policy" and pin["status"] == "matches"
+            for pin in reproduce["pins"]
         )
         assert any(
             pin["kind"] == "retrieved_item"
@@ -244,7 +250,8 @@ def test_known_interaction_answers_every_question_from_evidence(harness):
             for pin in reproduce["pins"]
         )
         assert any(
-            pin["kind"] == "prompt" and pin["status"] == "retained" for pin in reproduce["pins"]
+            pin["kind"] == "prompt" and pin["status"] == "retained"
+            for pin in reproduce["pins"]
         )
         assert any(
             pin["kind"] == "response"
@@ -279,7 +286,9 @@ def test_reconstruct_does_not_rerun_classifier_model_or_tools(harness, monkeypat
 def test_editing_a_policy_row_is_a_finding_for_replay_and_reconstruct(harness):
     with harness.session() as session:
         evaluation, _item = _record_interaction(harness, session)
-        policy_id = next(check.policy_id for check in evaluation.checks if check.policy_hash)
+        policy_id = next(
+            check.policy_id for check in evaluation.checks if check.policy_hash
+        )
         session.commit()
         session.execute(
             text("UPDATE policies SET citation = :citation WHERE id = :id"),
@@ -290,9 +299,12 @@ def test_editing_a_policy_row_is_a_finding_for_replay_and_reconstruct(harness):
         report = reconstruct(session, evaluation.request_id)
         controls = _answer(report, "What suitability or policy controls ran?")
         assert any(
-            check["policy_id"] == policy_id for check in controls["decisions"][0]["checks"]
+            check["policy_id"] == policy_id
+            for check in controls["decisions"][0]["checks"]
         )
-        assert any("edited in place" in finding["message"] for finding in report["findings"])
+        assert any(
+            "edited in place" in finding["message"] for finding in report["findings"]
+        )
         assert "edited in place" in render_reconstruction(report)
         assert len(report["questions"]) == len(QUESTIONS)
         with pytest.raises(ReplayMismatch, match="edited in place"):
@@ -313,7 +325,8 @@ def test_editing_a_retrieved_item_is_a_finding_for_replay_and_reconstruct(harnes
         info = _answer(report, "What information did the AI use?")
         assert info["retrievals"][0]["items"][0]["id"] == item.id
         assert any(
-            "retrieved item" in finding["message"] and "content hash" in finding["message"]
+            "retrieved item" in finding["message"]
+            and "content hash" in finding["message"]
             for finding in report["findings"]
         )
         assert len(report["questions"]) == len(QUESTIONS)
@@ -345,7 +358,8 @@ def test_editing_a_stored_prompt_is_a_finding_for_replay_and_reconstruct(harness
         assert produced["models"][0]["prompt_hash"] == prompt_hash
         assert produced["models"][0]["prompt_status"] == "mismatch"
         assert any(
-            "does not match its hash" in finding["message"] for finding in report["findings"]
+            "does not match its hash" in finding["message"]
+            for finding in report["findings"]
         )
         assert len(report["questions"]) == len(QUESTIONS)
         with pytest.raises(ReplayMismatch, match="does not match its hash"):
@@ -357,7 +371,9 @@ def test_chain_break_is_a_finding_and_the_report_continues(harness):
         evaluation, _item = _record_interaction(harness, session)
         session.commit()
         session.execute(
-            text("UPDATE evidence_events SET payload = :payload WHERE sequence = :sequence"),
+            text(
+                "UPDATE evidence_events SET payload = :payload WHERE sequence = :sequence"
+            ),
             {"payload": '{"tampered": true}', "sequence": 1},
         )
         session.commit()
@@ -413,7 +429,9 @@ def test_erasure_keeps_the_hash_and_is_not_a_mismatch(harness):
         assert all(pin["status"] == "erased" for pin in erased)
         assert report["chain"]["intact"] is True
         assert report["chain"]["events_checked"] >= 1
-        assert not any(finding["kind"] == "retained_content" for finding in report["findings"])
+        assert not any(
+            finding["kind"] == "retained_content" for finding in report["findings"]
+        )
         assert not any(finding["kind"] == "chain" for finding in report["findings"])
         assert digest in document
         assert "erased" in document
@@ -435,7 +453,9 @@ def test_empty_response_hash_is_not_a_finding(harness):
         pins = _answer(report, "Can the bank reproduce that evidence later?")["pins"]
     assert report["findings"] == []
     assert any(
-        pin["kind"] == "response" and pin["status"] == "empty" and pin["content_hash"] == ""
+        pin["kind"] == "response"
+        and pin["status"] == "empty"
+        and pin["content_hash"] == ""
         for pin in pins
     )
 
@@ -476,7 +496,15 @@ def test_cli_writes_json_and_a_readable_document(tmp_path):
 
     prefix = tmp_path / "report"
     code = main(
-        ["evidence", "reconstruct", "cli-interaction", "--db", str(db), "-o", str(prefix)]
+        [
+            "evidence",
+            "reconstruct",
+            "cli-interaction",
+            "--db",
+            str(db),
+            "-o",
+            str(prefix),
+        ]
     )
     assert code == 0
     report = json.loads((tmp_path / "report.json").read_text())
@@ -504,7 +532,9 @@ def test_superseded_policy_still_matches(harness):
 
     with harness.session() as session:
         evaluation, _item = _record_interaction(harness, session)
-        policy_id = next(check.policy_id for check in evaluation.checks if check.policy_hash)
+        policy_id = next(
+            check.policy_id for check in evaluation.checks if check.policy_hash
+        )
         policy = session.get(Policy, policy_id)
         supersede_policy(
             session,

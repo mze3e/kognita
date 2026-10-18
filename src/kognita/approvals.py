@@ -6,6 +6,7 @@ checks, so an approval granted for "discuss product A with client B from
 Singapore" cannot be replayed for the same tool from a different location: any
 change produces a different hash and no matching approval.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -99,13 +100,18 @@ def _transition(
     correlation_id: str,
     now: datetime | None = None,
 ) -> Approval:
-    """Single-signature approval transition (unchanged behavior).
+    """Single-signature approval transition, and rejection of a marked approval.
 
-    Only used for backward compatibility. New code should use mark() and confirm()
-    for two-signature approvals.
+    A MARKED two-signature approval can be rejected. It cannot be granted here:
+    that second signature is :func:`confirm`.
     """
     at = now or utcnow()
-    if approval.status != ApprovalStatus.PENDING:
+    if approval.status == ApprovalStatus.MARKED:
+        if status != ApprovalStatus.REJECTED:
+            raise ApprovalError(
+                f"approval {approval.id} is MARKED; confirm() is the second signature"
+            )
+    elif approval.status != ApprovalStatus.PENDING:
         raise ApprovalError(
             f"approval {approval.id} is already {ApprovalStatus(approval.status).value}"
         )
@@ -118,9 +124,13 @@ def _transition(
         raise ApprovalError(f"approval {approval.id} expired at {expiry.isoformat()}")
 
     approval.status = status
+    if approval.confirmation_status is not None and status == ApprovalStatus.REJECTED:
+        approval.confirmation_status = ApprovalStatus.REJECTED
     approval.approver_name = approver_name
     approval.reason = reason
-    approval.approved_at = at if status == ApprovalStatus.APPROVED else approval.approved_at
+    approval.approved_at = (
+        at if status == ApprovalStatus.APPROVED else approval.approved_at
+    )
     approval.decided_at = at
     session.add(approval)
     session.flush()
@@ -208,12 +218,25 @@ def confirm(
 ) -> Approval:
     """Second signature of a two-signature approval (ADR 0006).
 
-    Transitions MARKED → APPROVED. Data is now released.
+    Transitions MARKED → APPROVED. Data is now released. The confirming party
+    must differ from the requester and from the person who marked. ``continue_run``
+    calls this when a marked two-signature approval is resolved as granted. It
+    does not call this for an approval that is still pending: that signature
+    is ``mark``, and skipping it is refused.
     """
     at = now or utcnow()
     if approval.status != ApprovalStatus.MARKED:
         raise ApprovalError(
             f"approval {approval.id} is not in MARKED state (current: {ApprovalStatus(approval.status).value})"
+        )
+    if (
+        not approver_id
+        or approver_id == approval.requester_id
+        or approver_id == approval.approver_id
+    ):
+        raise ApprovalError(
+            f"approval {approval.id}: the confirming party must differ from "
+            "the requester and the marker"
         )
     expiry = as_utc(approval.expires_at)
     if expiry is not None and expiry <= at:
@@ -258,10 +281,18 @@ def grant(
 ) -> Approval:
     """Grant a pending approval. Expiry is enforced here, not at read time.
 
-    For single-signature approvals, transitions PENDING → APPROVED.
-    For two-signature approvals already in MARKED state, same as confirm().
+    A single-signature approval moves PENDING → APPROVED. A two-signature
+    approval that is still PENDING is refused: ``mark`` is the first signature
+    and ``confirm`` is the second. A two-signature approval already MARKED is
+    confirmed by the ``approver_name`` given here, who must not be the marker.
     """
-    # If already marked, treat as confirm
+    if (
+        approval.confirmation_status is not None
+        and approval.status == ApprovalStatus.PENDING
+    ):
+        raise ApprovalError(
+            f"approval {approval.id} needs mark() before it can be confirmed"
+        )
     if approval.status == ApprovalStatus.MARKED:
         return confirm(
             session,

@@ -6,6 +6,7 @@ An allowed ``POST /v1/chat/completions`` is timed through the gateway
 that answers for the upstream. The test fails when that overhead is not under
 50 ms.
 """
+
 from __future__ import annotations
 
 import json
@@ -145,7 +146,12 @@ def _stop(server: ThreadingHTTPServer, thread: threading.Thread) -> None:
 def test_gateway_overhead_is_under_50ms_excluding_classifier_inference(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """Each measured call stays under 50 ms after classifier and stand-in time."""
+    """Each measured call stays under 50 ms after classifier and stand-in time.
+
+    One call runs first and is not measured. Thread and database startup on
+    a cold server are outside the sample. The 50 ms cap still applies to
+    every measured call.
+    """
     _StandIn.bodies = []
     _StandIn.model_s = 0.0
     stand_in = ThreadingHTTPServer(("127.0.0.1", 0), _StandIn)
@@ -198,32 +204,41 @@ def test_gateway_overhead_is_under_50ms_excluding_classifier_inference(
     overheads: list[float] = []
     inference: list[float] = []
     upstream: list[float] = []
+
+    def _call() -> tuple[float, float, float]:
+        inference_before = clock.inference_s
+        model_before = _StandIn.model_s
+        started = time.perf_counter()
+        connection = HTTPConnection("127.0.0.1", port, timeout=5)
+        connection.request(
+            "POST",
+            PATH,
+            body=_BODY,
+            headers={
+                "agent_name": "dossier-agent",
+                "Content-Length": str(len(_BODY)),
+            },
+        )
+        response = connection.getresponse()
+        raw = response.read()
+        elapsed = time.perf_counter() - started
+        connection.close()
+        assert response.status == 200, raw
+        assert SECRET.encode() in raw
+        spent_inference = clock.inference_s - inference_before
+        spent_model = _StandIn.model_s - model_before
+        assert spent_inference > 0
+        overhead = elapsed - spent_inference - spent_model
+        assert overhead >= 0
+        return overhead, spent_inference, spent_model
+
     try:
+        _call()
+        _StandIn.bodies.clear()
+        _StandIn.model_s = 0.0
+        clock.inference_s = 0.0
         for _ in range(CALLS):
-            inference_before = clock.inference_s
-            model_before = _StandIn.model_s
-            started = time.perf_counter()
-            connection = HTTPConnection("127.0.0.1", port, timeout=5)
-            connection.request(
-                "POST",
-                PATH,
-                body=_BODY,
-                headers={
-                    "agent_name": "dossier-agent",
-                    "Content-Length": str(len(_BODY)),
-                },
-            )
-            response = connection.getresponse()
-            raw = response.read()
-            elapsed = time.perf_counter() - started
-            connection.close()
-            assert response.status == 200, raw
-            assert SECRET.encode() in raw
-            spent_inference = clock.inference_s - inference_before
-            spent_model = _StandIn.model_s - model_before
-            assert spent_inference > 0
-            overhead = elapsed - spent_inference - spent_model
-            assert overhead >= 0
+            overhead, spent_inference, spent_model = _call()
             overheads.append(overhead)
             inference.append(spent_inference)
             upstream.append(spent_model)

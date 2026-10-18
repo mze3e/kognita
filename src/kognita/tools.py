@@ -15,9 +15,23 @@ be prepared, but the tool body does not run and nothing is returned until
 execute. The continuation for that pause is a content-hash handle into a local
 store; the run record keeps the handle, not the payload.
 
+A single-signature hold is granted by ``continue_run`` itself when the
+resolution is true. A two-signature hold is not. ``mark`` records the first
+signature. ``continue_run`` then confirms the second, and only when the
+approval is already marked. A true resolution on an approval that is still
+pending does not grant it and does not resume the run. The second
+signature is ``confirmer`` when that argument is given, and ``approver_name``
+otherwise. A blank confirming party, or the same identity as the marker or
+the requester, fails closed and leaves the continuation in place.
+
+A tool call that a contact-frequency policy marks as contacting the client
+is refused while do-not-contact is in force for that client. The refusal is
+a denial on ``run_governed``. ``continue_run`` raises and does not resume.
+
 ``EGRESS`` records that data crossed the boundary, by reference: its size and the
 request it belongs to, never its content.
 """
+
 from __future__ import annotations
 
 import json
@@ -31,10 +45,13 @@ from sqlmodel import Session, select
 
 from kognita.approvals import (
     ApprovalError,
+    confirm,
     find_granted,
     grant,
     reject,
 )
+from kognita.interaction import attach, require_interaction
+from kognita.origination import OriginationError, contact_refusal
 from kognita.canonical import canonical_hash, canonical_json
 from kognita.envelope import Check, Envelope, Evaluation, envelope_hash
 from kognita.evidence import EvidenceWriter
@@ -188,7 +205,9 @@ def _budget_payload(run: Run) -> dict[str, Any]:
         "max_tokens": run.max_tokens,
         "max_cost_usd": run.max_cost_usd,
         "wall_clock_seconds": run.wall_clock_seconds,
-        "classification_ceiling": None if ceiling is None else Classification(ceiling).value,
+        "classification_ceiling": None
+        if ceiling is None
+        else Classification(ceiling).value,
     }
 
 
@@ -303,7 +322,9 @@ def _save_run(session: Session, run: Run) -> None:
     row.max_tokens = run.max_tokens
     row.max_cost_usd = run.max_cost_usd
     row.wall_clock_seconds = run.wall_clock_seconds
-    row.classification_ceiling = None if ceiling is None else Classification(ceiling).value
+    row.classification_ceiling = (
+        None if ceiling is None else Classification(ceiling).value
+    )
     row.approvals_pending = list(run.approvals_pending)
     row.calls_used = run.calls_used
     row.tokens_used = run.tokens_used
@@ -389,6 +410,7 @@ def _checkpoint(
     evidence: EvidenceWriter,
     kind: str,
     extra: dict[str, Any] | None = None,
+    interaction_id: str | None = None,
 ) -> str:
     """Persist a continuation by content hash and point the run at that hash.
 
@@ -409,6 +431,7 @@ def _checkpoint(
             "decision_id": evaluation.decision_id,
             "approval_id": approval_id,
             **(extra or {}),
+            **({"interaction_id": interaction_id} if interaction_id else {}),
         }
     )
     digest = canonical_hash(payload)
@@ -455,7 +478,9 @@ def _envelope_from_continuation(payload: Mapping[str, Any]) -> Envelope:
     )
 
 
-def _evaluation_from_continuation(payload: Mapping[str, Any], envelope: Envelope) -> Evaluation:
+def _evaluation_from_continuation(
+    payload: Mapping[str, Any], envelope: Envelope
+) -> Evaluation:
     checks = tuple(
         Check(
             check=item["check"],
@@ -594,6 +619,7 @@ def run_governed(
     now: datetime | None = None,
     classifier: Any | None = None,
     extra_checks: Sequence[Check] = (),
+    interaction_id: str | None = None,
 ) -> ToolRun:
     """Authorise, then execute. The only supported path to a governed tool.
 
@@ -609,6 +635,8 @@ def run_governed(
     """
     spec = registry.get(envelope.tool)
     at = now or utcnow()
+    if interaction_id is not None:
+        require_interaction(session, interaction_id)
 
     # Resolving subjects is a read of the pack's own store, not the governed
     # data: the decision point needs the attributes before it can decide.
@@ -637,6 +665,10 @@ def run_governed(
         as_of=as_of,
     )
     evaluation = _with_checks(evaluation, extra_checks)
+    evaluation = _with_checks(
+        evaluation,
+        contact_refusal(session, envelope, interaction_id=interaction_id, now=at),
+    )
     evaluation, _breaches = _admit(
         session,
         run,
@@ -668,6 +700,8 @@ def run_governed(
     if not evaluation.allowed:
         if run is not None:
             _save_run(session, run)
+        _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
+        record_run_decision(session, interaction_id, evaluation, evidence, now=at)
         # Fail closed. The denial is already evidenced by record(); no tool body
         # has run, so there is nothing to leak.
         return ToolRun(
@@ -679,6 +713,7 @@ def run_governed(
     if evaluation.approval_required and already_granted is None:
         # HUMAN_APPROVAL withholds the tool. The continuation, when a run is
         # present, is how continue_run finishes the call after a person decides.
+        # There is no final decision until that resume.
         if run is not None:
             approval = _approval_for_decision(session, evaluation.decision_id or 0)
             _checkpoint(
@@ -689,13 +724,17 @@ def run_governed(
                 approval_id=approval.id or 0,
                 evidence=evidence,
                 kind="tool",
+                interaction_id=interaction_id,
             )
+        _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
         return ToolRun(evaluation=evaluation, data=None, approval_required=True)
 
     if run is not None:
         _save_run(session, run)
+    _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
 
     data = _release_tool(session, envelope, evaluation, spec, evidence)
+    record_run_decision(session, interaction_id, evaluation, evidence, now=at)
     return ToolRun(
         evaluation=evaluation,
         data=data,
@@ -713,6 +752,7 @@ def continue_run(
     embedder: Any = None,
     subgraph: Callable[..., Any] | None = None,
     approver_name: str = "Unassigned (duty desk)",
+    confirmer: str | None = None,
     now: datetime | None = None,
 ) -> ToolRun | Any:
     """Resume a run suspended on ``HUMAN_APPROVAL``.
@@ -722,9 +762,26 @@ def continue_run(
     and :func:`kognita.approvals.find_granted` still finds it live. A denial
     resumes the record and does not execute.
 
+    A single-signature approval that is still pending is granted or rejected
+    here. A two-signature approval is not. ``mark`` is the first signature.
+    When that approval is ``MARKED``, a true resolution confirms it and then
+    resumes. The confirming party is ``confirmer`` when passed, including an
+    empty string, which is a missing signature and is refused. When
+    ``confirmer`` is omitted, ``approver_name`` is that party. Either way the
+    party must differ from the requester and the marker. A true resolution
+    while the approval is still pending raises
+    :class:`~kognita.approvals.ApprovalError`, leaves the continuation in
+    place, and does not execute.
+
+    A true resolution of a tool that would contact a client under
+    do-not-contact raises :class:`~kognita.origination.OriginationError`
+    before any signature is applied, and the continuation stays where it is.
+    A denial still rejects the hold and does not execute.
+
     Rehydration fetches the continuation by the hash stored on the run. The
     fetch is evidenced; the payload is not copied onto the run or into the
-    resume event.
+    resume event. When the continuation names an interaction, the resume
+    records a ``FINAL_DECISION``.
     """
     at = now or utcnow()
     run = _load_run(session, run_id)
@@ -741,38 +798,45 @@ def continue_run(
         )
 
     correlation_id = str(payload["request_id"])
-    for aid, is_granted in resolved.items():
+    envelope = _envelope_from_continuation(payload)
+    blocked = contact_refusal(
+        session,
+        envelope,
+        interaction_id=payload.get("interaction_id")
+        if isinstance(payload.get("interaction_id"), str)
+        else None,
+        now=at,
+    )
+    if blocked and resolved[approval_id]:
+        raise OriginationError(blocked[0].citation)
+    ordered = [approval_id] + [aid for aid in resolved if aid != approval_id]
+    for aid in ordered:
+        is_granted = resolved[aid]
         approval = session.get(Approval, aid)
         if approval is None:
             raise ApprovalError(f"approval {aid} does not exist")
-        if approval.status == ApprovalStatus.PENDING:
-            if is_granted:
-                grant(
-                    session,
-                    approval,
-                    approver_name=approver_name,
-                    evidence=evidence,
-                    correlation_id=correlation_id,
-                    now=at,
-                )
-            else:
-                reject(
-                    session,
-                    approval,
-                    approver_name=approver_name,
-                    evidence=evidence,
-                    correlation_id=correlation_id,
-                    now=at,
-                )
+        _resolve_approval(
+            session,
+            approval,
+            granted=is_granted,
+            approver_name=approver_name,
+            confirmer=confirmer,
+            evidence=evidence,
+            correlation_id=correlation_id,
+            now=at,
+        )
         if approval.status != ApprovalStatus.PENDING:
-            run.approvals_pending = [item for item in run.approvals_pending if item != aid]
+            run.approvals_pending = [
+                item for item in run.approvals_pending if item != aid
+            ]
 
     granted_flag = resolved[approval_id]
-    envelope = _envelope_from_continuation(payload)
     evaluation = _evaluation_from_continuation(payload, envelope)
     clock_hit = _wall_clock_exceeded(run, at)
     live = (
-        find_granted(session, evaluation.envelope_hash, now=at) if granted_flag else None
+        find_granted(session, evaluation.envelope_hash, now=at)
+        if granted_flag
+        else None
     )
     gating = session.get(Approval, approval_id)
     execute = (
@@ -808,6 +872,18 @@ def continue_run(
         # A denied approval stays a denial and does not execute.
         if clock_hit and granted_flag:
             evaluation = _deny_for_budgets(evaluation, ["wall_clock_seconds"])
+        _record_resume_decision(
+            session,
+            payload,
+            evaluation,
+            evidence,
+            approver_name=approver_name,
+            approval_id=approval_id,
+            execute=False,
+            granted_flag=granted_flag,
+            clock_hit=clock_hit,
+            now=at,
+        )
         if payload.get("kind") == "retrieval":
             from kognita.broker import BrokerAnswer
 
@@ -826,6 +902,18 @@ def continue_run(
             )
         return ToolRun(evaluation=evaluation, data=None, approval_required=False)
 
+    _record_resume_decision(
+        session,
+        payload,
+        evaluation,
+        evidence,
+        approver_name=approver_name,
+        approval_id=approval_id,
+        execute=True,
+        granted_flag=granted_flag,
+        clock_hit=clock_hit,
+        now=at,
+    )
     if payload.get("kind") == "retrieval":
         from kognita.broker import _resume_retrieval
 
@@ -848,6 +936,206 @@ def continue_run(
         data=data,
         approval_required=False,
     )
+
+
+def _bind_interaction(
+    session: Session,
+    interaction_id: str | None,
+    evaluation: Evaluation,
+    run: Run | None,
+    evidence: EvidenceWriter,
+    now: datetime,
+) -> None:
+    """Attach this request, and the run when there is one, to the interaction."""
+    if not interaction_id:
+        return
+    if run is not None:
+        _save_run(session, run)
+    attach(
+        session,
+        interaction_id,
+        evidence=evidence,
+        correlation_id=evaluation.request_id,
+        run_id=run.id if run is not None else None,
+        now=now,
+    )
+
+
+def _rule_citation(evaluation: Evaluation) -> str:
+    chosen = evaluation.failures() or evaluation.checks
+    texts = [check.citation for check in chosen if check.citation]
+    if texts:
+        return "; ".join(texts)
+    if evaluation.outcome == Outcome.ALLOW:
+        return "No policy check failed, and no human approval was required."
+    return "The decision failed closed."
+
+
+def record_run_decision(
+    session: Session,
+    interaction_id: str | None,
+    evaluation: Evaluation,
+    evidence: EvidenceWriter,
+    *,
+    now: datetime,
+) -> None:
+    """``FINAL_DECISION`` for a run that was not held for approval.
+
+    A hold is not a final decision. The resume records that later. ``OBSERVE``
+    is not a client-lifecycle outcome and is left unrecorded.
+    """
+    if not interaction_id:
+        return
+    outcome = {
+        Outcome.ALLOW: "allow",
+        Outcome.DENY: "deny",
+        Outcome.ESCALATE: "escalate",
+    }.get(evaluation.outcome)
+    if outcome is None:
+        return
+    from kognita.review import record_final_decision
+
+    actor_type, actor_id = _call_actor(evaluation.envelope)
+    rm = actor_id if actor_type == ActorType.HUMAN else ""
+    record_final_decision(
+        session,
+        interaction_id,
+        outcome=outcome,
+        evidence=evidence,
+        actor_id=actor_id,
+        actor_type=actor_type,
+        rm=rm,
+        correlation_id=evaluation.request_id,
+        citation=_rule_citation(evaluation),
+        now=now,
+        kind="run",
+        checks=[check.to_dict() for check in evaluation.checks],
+    )
+
+
+def _record_resume_decision(
+    session: Session,
+    payload: Mapping[str, Any],
+    evaluation: Evaluation,
+    evidence: EvidenceWriter,
+    *,
+    approver_name: str,
+    approval_id: int,
+    execute: bool,
+    granted_flag: bool,
+    clock_hit: bool,
+    now: datetime,
+) -> None:
+    interaction_id = payload.get("interaction_id")
+    if not isinstance(interaction_id, str) or not interaction_id:
+        return
+    if execute:
+        outcome = "approve"
+    elif not granted_flag:
+        outcome = "reject"
+    else:
+        outcome = "deny"
+    del clock_hit
+    from kognita.review import record_final_decision
+
+    record_final_decision(
+        session,
+        interaction_id,
+        outcome=outcome,
+        evidence=evidence,
+        actor_id=approver_name,
+        actor_type=ActorType.HUMAN,
+        rm=approver_name,
+        approver=approver_name,
+        correlation_id=str(payload.get("request_id") or interaction_id),
+        citation=_rule_citation(evaluation),
+        now=now,
+        kind="run",
+        approval_id=approval_id,
+        checks=[check.to_dict() for check in evaluation.checks],
+    )
+
+
+def _second_signature(confirmer: str | None, approver_name: str) -> str:
+    """Who confirms a marked two-signature approval.
+
+    ``confirmer`` wins when the caller passed it, and a blank value is a
+    missing signature rather than a fall back to ``approver_name``. Omitting
+    ``confirmer`` keeps ``approver_name`` as that party.
+    """
+    if confirmer is not None:
+        party = confirmer.strip()
+    else:
+        party = approver_name.strip()
+    if not party:
+        raise ApprovalError(
+            "the confirming party is missing "
+            "(two-signature approval: second signature)"
+        )
+    return party
+
+
+def _resolve_approval(
+    session: Session,
+    approval: Approval,
+    *,
+    granted: bool,
+    approver_name: str,
+    confirmer: str | None,
+    evidence: EvidenceWriter,
+    correlation_id: str,
+    now: datetime,
+) -> None:
+    """Apply one resolution.
+
+    Two-signature approvals that are still pending cannot be granted here.
+    Raising leaves the continuation where it is: the caller has not resumed.
+    """
+    two_signature = approval.confirmation_status is not None
+    if approval.status == ApprovalStatus.PENDING and two_signature and granted:
+        raise ApprovalError(
+            f"approval {approval.id} needs mark() before continue_run() can "
+            "confirm it"
+        )
+    if approval.status == ApprovalStatus.PENDING:
+        if granted:
+            grant(
+                session,
+                approval,
+                approver_name=approver_name,
+                evidence=evidence,
+                correlation_id=correlation_id,
+                now=now,
+            )
+        else:
+            reject(
+                session,
+                approval,
+                approver_name=approver_name,
+                evidence=evidence,
+                correlation_id=correlation_id,
+                now=now,
+            )
+        return
+    if approval.status == ApprovalStatus.MARKED:
+        if granted:
+            confirm(
+                session,
+                approval,
+                approver_id=_second_signature(confirmer, approver_name),
+                evidence=evidence,
+                correlation_id=correlation_id,
+                now=now,
+            )
+        else:
+            reject(
+                session,
+                approval,
+                approver_name=approver_name,
+                evidence=evidence,
+                correlation_id=correlation_id,
+                now=now,
+            )
 
 
 __all__ = [
