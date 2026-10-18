@@ -857,6 +857,15 @@ class CompensatingAction(SQLModel, table=True):
     recorded_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
 
 
+class _PendingAction(SQLModel, table=True):
+    """Durable release barrier; unresolved actions block recovery."""
+
+    __tablename__ = "_pending_actions"
+
+    id: str = Field(primary_key=True)
+    run_id: str = Field(index=True, foreign_key="runs.id")
+
+
 class EntityEdge(SQLModel, table=True):
     """A relationship in the deterministic mirror."""
 

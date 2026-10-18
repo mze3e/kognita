@@ -121,6 +121,42 @@ def _register_compensation(session, run_id, spec, envelope, evaluation, evidence
                            'compensating_action_id': row.id, 'name': spec.name, 'citation': 'S6C-RECOVER'})
 
 
+def _begin_action(session, run_id, spec, envelope, evaluation, evidence):
+    from sqlalchemy import update
+    from kognita.models import RunRecord, _PendingAction
+    # Serialize admission against recovery's pause and pending-action query.
+    changed = session.execute(update(RunRecord).where(
+        RunRecord.id == run_id, RunRecord.control_state == 'live'
+    ).values(control_state='live').execution_options(synchronize_session=False))
+    if changed.rowcount != 1:
+        raise RuntimeError('S6C-RECOVER: run is stopped; action release refused')
+    if spec.reversible:
+        _register_compensation(session, run_id, spec, envelope, evaluation, evidence)
+    row = _PendingAction(id=evaluation.request_id, run_id=run_id)
+    session.add(row)
+    evidence.emit(session, correlation_id=evaluation.request_id, event_type=EventType.INTERVENTION,
+                  actor_type=ActorType.SYSTEM, actor_id='governance-pdp',
+                  payload={'action': '_action_pending', 'run_id': run_id,
+                           'name': spec.name, '_compensation': getattr(spec.compensation, '__name__', None),
+                           'citation': 'S6C-RECOVER'})
+    # External effects must not outlive an uncommitted release intent.
+    session.commit()
+    return row.id
+
+
+def _finish_action(session, action_id, evidence):
+    from kognita.models import _PendingAction
+    row = session.get(_PendingAction, action_id)
+    if row is not None:
+        run_id = row.run_id
+        session.delete(row)
+        evidence.emit(session, correlation_id=action_id, event_type=EventType.INTERVENTION,
+                      actor_type=ActorType.SYSTEM, actor_id='governance-pdp',
+                      payload={'action': '_action_finished', 'run_id': run_id,
+                               'citation': 'S6C-RECOVER'})
+        session.commit()
+
+
 def _recover(session, steps, evidence, correlation_id, registry=None):
     from sqlmodel import select
     from kognita.models import EvidenceEvent

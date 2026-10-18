@@ -210,6 +210,25 @@ def recover_run(
         raise InterventionError(
             f"run {run_id} is revoked and is not recovered (Intervention: revoke)"
         )
+    # Take the database write lock before inspecting the release barrier.
+    from sqlalchemy import update
+    from kognita.models import _PendingAction
+    session.execute(update(RunRecord).where(RunRecord.id == run.id).values(
+        control_state="paused").execution_options(synchronize_session=False))
+    run.control_state = "paused"
+    session.flush()
+    pending = session.exec(select(_PendingAction.id).where(
+        _PendingAction.run_id == run.id).limit(1)).first()
+    if pending is not None:
+        payload = _base(run, interaction_id, human, "recover", citation, at)
+        payload["_pending_actions"] = True
+        payload["steps"] = []
+        payload["checks"][0].update(result=CheckResult.FAIL.value, citation="S6C-RECOVER")
+        from kognita._actions import _stop
+        _stop(run=run_id)
+        _emit(session, evidence, human, payload)
+        session.commit()
+        return payload
     steps = _steps(session, run.id)
     run.control_state = "recovered"
     session.add(run)
