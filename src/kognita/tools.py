@@ -699,8 +699,13 @@ def _release_tool(
     spec: ToolSpec,
     evidence: EvidenceWriter,
     run: Run | None = None,
+    *, _at: datetime | None = None,
 ) -> Any:
+    from kognita._limits import _released
+    _released(session, evaluation, evidence, _at or evaluation.as_of)
     data = spec.fn(envelope, evaluation, session)
+    from kognita._limits import _minimize
+    data = _minimize(session, envelope, data, evidence, _request_id=evaluation.request_id)
     actor_type, actor_id = _call_actor(envelope)
     response_hash = RetentionStore().retain_value(
         session,
@@ -900,7 +905,7 @@ def run_governed(
         _save_run(session, run)
     _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
 
-    data = _release_tool(session, envelope, evaluation, spec, evidence, run)
+    data = _release_tool(session, envelope, evaluation, spec, evidence, run, _at=at)
     record_run_decision(session, interaction_id, evaluation, evidence, now=at)
     return ToolRun(
         evaluation=evaluation,
@@ -1049,6 +1054,7 @@ def continue_run(
         recheck += _standing_checks(
             envelope,
             snapshot,
+            _request_id=evaluation.request_id,
             attributes=attributes,
             usecases=usecases,
             at=at,
@@ -1168,7 +1174,7 @@ def continue_run(
     if registry is None:
         raise ToolNotRegistered("continuing a tool call requires a registry")
     spec = registry.get(envelope.tool)
-    data = _release_tool(session, envelope, evaluation, spec, evidence, run)
+    data = _release_tool(session, envelope, evaluation, spec, evidence, run, _at=at)
     return ToolRun(
         evaluation=evaluation,
         data=data,

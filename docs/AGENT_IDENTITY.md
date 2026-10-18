@@ -103,3 +103,58 @@ send external messages. A window permits at most one step-down, and restoration
 requires promotion again. `autonomy.step_down()` runs the same metric gate;
 callers cannot choose a target level. Pure `decide()` and historical replay do
 not mutate the registry.
+
+## Blast radius and field minimization (S4)
+
+Manifests may include `blast_radius`, a JSON object matching
+`kognita.models.BlastRadius`, and `field_allowlist`, a mapping from purpose to
+explicit field paths. Both are nullable additive database columns. Changing
+either through `registry.register()` requires owner evidence and invalidates
+deployment approval. For example:
+
+```json
+{
+  "blast_radius": {
+    "max_clients": 1,
+    "max_value": 0,
+    "max_daily_actions": 100,
+    "per_minute": 5,
+    "per_hour": 30,
+    "channels": ["crm"],
+    "jurisdictions": ["SG"],
+    "execution_authority": "none",
+    "ttl": "2027-01-01T00:00:00+00:00"
+  },
+  "field_allowlist": {
+    "CLIENT_PRECALL": ["risk_profile", "portfolio.rating"]
+  }
+}
+```
+
+Limits apply across runs. Minute and hour limits use rolling windows; daily
+limits use the UTC calendar day. Client and monetary limits cover the agent's
+recorded lifetime usage. Monetary calls must supply a finite, nonnegative
+`arguments.value`; channels use `arguments.channel` and jurisdictions use
+`actor_location`. `ttl` is an absolute expiry. Queue, send and execute require
+execution authority `execute` as well as the existing tool, autonomy and
+delegation checks. `none` and `propose` confer no execution permission.
+
+Allowed decisions reserve quota, including calls awaiting human approval.
+Approval release excludes its own reservation, rechecks current limits, and
+moves the reservation to release time with evidence. Failed tool calls still
+consume quota. Usage reads use an agent/time index and at most 10,001 rows;
+reaching that bound denies with `S4-USAGE`. Limits are independent of Run
+budgets and every failing gate cites its `S4-*` rule.
+
+Governed tool results are projected before retention and release to the agent.
+Nested dictionaries and lists require explicit leaf paths; allowing `portfolio`
+does not expose its descendants. `$` permits a scalar result. Missing purposes
+or declarations release no fields. Each projection appends `S4-FIELDS` evidence
+without copying removed values into the evidence record. Tools absent from the
+agent's allow-list are denied, including private manifest entries.
+
+Delegations can bind access to an event through private numeric limits
+`_event_at` (Unix timestamp) and `_access_window` (seconds, at most 86,400).
+The default window is 24 hours. Access requires the event to be between now and
+the end of that window, in addition to all existing delegation checks. Task
+completion, expiry and revocation continue to terminate authority.

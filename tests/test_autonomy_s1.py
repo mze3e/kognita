@@ -69,12 +69,15 @@ def test_old_sqlite_migration_is_nullable_additive_and_repeatable(tmp_path):
         assert agent.version == "1"
         assert agent.autonomy_level is None
         assert agent.permitted_systems is None
+        assert agent.blast_radius is None
+        assert agent.field_allowlist is None
         evaluation = _decide(agent)
         assert evaluation.outcome is Outcome.DENY
         assert all(check.citation for check in evaluation.checks)
     with engine.connect() as connection:
         columns = {row[1]: row for row in connection.exec_driver_sql("PRAGMA table_info(agents)")}
-        assert all(columns[name][3] == 0 for name in ("purpose", "tool_allowlist", "autonomy_level"))
+        assert all(columns[name][3] == 0 for name in (
+            "purpose", "tool_allowlist", "autonomy_level", "blast_radius", "field_allowlist"))
 
 
 @pytest.mark.parametrize("level", [-1, 7, 99])

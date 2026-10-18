@@ -40,7 +40,7 @@ def register(
         _identity = _provider_key_finding(session, name, _identity, writer)
         evidence = _identity.pop("evidence", None)
         actor_id = _identity.pop("actor_id", "")
-        permitted = {"purpose", "use_cases", "permitted_systems", "tool_allowlist",
+        permitted = {"purpose", "use_cases", "permitted_systems", "tool_allowlist", "blast_radius", "field_allowlist",
                      "autonomy_level", "review_date", "environment", "principal"}
         if set(_identity) - permitted:
             raise ValueError("S1-IDENTITY: unknown identity fields")
@@ -50,6 +50,8 @@ def register(
         if type(level) is not int or not 0 <= level <= (agent.autonomy_level or 0):
             raise ValueError("S1-PROMOTION: use promote() to raise autonomy")
         candidate = Agent.model_validate({**agent.model_dump(), **metadata, **_identity})
+        from kognita._limits import _validate
+        _validate(candidate)
         candidate.deployment_hash = None
         evidence.emit(session, correlation_id=f"identity:{name}",
             event_type=EventType.POLICY_CHANGE, actor_type=ActorType.HUMAN,
@@ -158,7 +160,7 @@ def _deployment_hash(agent: Agent, deployment: dict) -> str:
     return canonical_hash({
         "deployment": deployment,
         "identity": {key: getattr(agent, key) for key in (
-            "purpose", "use_cases", "permitted_systems", "tool_allowlist",
+            "purpose", "use_cases", "permitted_systems", "tool_allowlist", "blast_radius", "field_allowlist",
             "environment", "principal", "owner_exec", "review_date", "autonomy_level",
         )},
     })
@@ -194,6 +196,8 @@ def approve_deployment(
 
     agent.environment = _provider_key_finding(session, name, agent.environment, evidence)
     deployment = _provider_key_finding(session, name, deployment, evidence)
+    from kognita._limits import _validate
+    _validate(agent)
     _deployment_hash(agent, deployment)
     deployment = json.loads(canonical_json(deployment))
     candidate = Agent.model_validate(agent.model_dump())

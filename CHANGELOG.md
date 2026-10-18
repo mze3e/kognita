@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Enforce per-agent blast-radius and rolling rate limits independently of run budgets, with bounded indexed usage reads and checks at approval release.
+- Minimize tool results by purpose-specific field paths and evidence each projection; support event-bound delegation windows.
+
+
 - Add task-bound delegated authority, dual human entitlement checks, approval thresholds, and evidenced capability grant lifecycle.
 
 - Add per-agent hashed workload credentials with evidenced issue and revocation, gateway and MCP authentication, deployment mode validation, and provider-key review findings.

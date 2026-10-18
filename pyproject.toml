@@ -150,6 +150,7 @@ include_external_packages = true
 name = "the decision engine reaches nothing optional"
 type = "forbidden"
 source_modules = [
+    "kognita._limits",
     "kognita.approvals",
     "kognita.autonomy",
     "kognita.authority",

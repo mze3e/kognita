@@ -63,6 +63,7 @@ def make_engine(
 # create_all does not add an index to a table that already exists. These
 # statements cover a store created before the effective-window indexes.
 _WINDOW_INDEXES: tuple[str, ...] = (
+    "CREATE INDEX IF NOT EXISTS ix_decisions_agent_time ON governance_decisions (agent_name, decided_at)",
     "CREATE UNIQUE INDEX IF NOT EXISTS ix_agents_name ON agents (name)",
     "CREATE INDEX IF NOT EXISTS ix_policies_effective_window ON policies (effective_from, effective_to)",
     "CREATE INDEX IF NOT EXISTS ix_use_cases_effective_window ON use_cases (effective_from, effective_to)",
@@ -139,6 +140,7 @@ def create_all(engine: Engine) -> None:
     with engine.begin() as connection:
         columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(agents)")}
         for name, kind in {
+            "blast_radius": "JSON", "field_allowlist": "JSON",
             "purpose": "TEXT", "use_cases": "JSON", "permitted_systems": "JSON",
             "tool_allowlist": "JSON", "autonomy_level": "INTEGER", "review_date": "DATETIME",
             "deployment_hash": "TEXT", "environment": "TEXT", "principal": "TEXT",

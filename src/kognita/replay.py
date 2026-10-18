@@ -81,6 +81,13 @@ def replay_decision(
     if envelope is None:
         return _recorded_evaluation(decision, payload, at)
     snapshot = _pinned_registry(session, load_snapshot(session, as_of=at), event.sequence)
+    recorded_usage = (payload.get("attributes") or {}).get("_s4_usage")
+    if recorded_usage is not None:
+        from dataclasses import replace as _replace
+        from datetime import datetime as _datetime
+        snapshot = _replace(snapshot, _usage={envelope.agent_name: tuple(
+            (as_utc(_datetime.fromisoformat(t)), cs, v, req)
+            for t, cs, v, req in recorded_usage)})
     evaluation = decide(
         envelope,
         snapshot,
