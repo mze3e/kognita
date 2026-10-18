@@ -36,6 +36,7 @@ from kognita.governance import (
     record,
 )
 from kognita.models import Agent, EvidenceEvent, GovernanceDecision, Policy
+from kognita.usecases import load_register
 from kognita.testing.harness import FROZEN_NOW, Harness
 from kognita.tools import ToolRegistry, run_governed
 from kognita.vocabulary import (
@@ -470,6 +471,7 @@ def test_ask_classifies_the_question_and_replays_the_label(harness, monkeypatch)
         assert answer.evaluation is not None
         stored = dict(answer.evaluation.attributes)
         snapshot = load_snapshot(session, as_of=harness.now)
+        register = load_register(session, as_of=harness.now)
 
     assert calls == [question]
     replay = decide(
@@ -479,6 +481,7 @@ def test_ask_classifies_the_question_and_replays_the_label(harness, monkeypatch)
         subjects={},
         rules=harness.pack.rules(),
         purposes=dp.PURPOSES,
+        usecases=register,
         engages=harness.pack.engages,
         as_of=harness.now,
         request_id=answer.evaluation.request_id,

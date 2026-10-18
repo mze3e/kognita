@@ -17,7 +17,7 @@ from kognita.approvals import ApprovalError
 from kognita.broker import ask
 from kognita.canonical import canonical_hash
 from kognita.evidence import verify_chain
-from kognita.models import Continuation, EvidenceEvent, RunRecord
+from kognita.models import Continuation, EvidenceEvent, GovernanceDecision, Policy, RunRecord
 from kognita.retrieval import index_item
 from kognita.tools import Run, ToolRegistry, continue_run, run_governed
 from kognita.vocabulary import Classification, EventType, Outcome
@@ -355,10 +355,95 @@ def test_continue_run_executes_only_after_grant(harness):
         session.commit()
         actions = _approval_actions(session, request_id)
         assert verify_chain(session) > 0
+        resumed_event = next(
+            event
+            for event in session.exec(select(EvidenceEvent)).all()
+            if event.event_type == EventType.APPROVAL and event.payload.get("action") == "RESUMED"
+        )
 
     assert executed == ["draft"]
     assert resumed.data == {"status": "DRAFT — not for release"}
     assert actions.index("REQUESTED") < actions.index("APPROVED") < actions.index("RESUMED")
+    assert "rechecked" not in resumed_event.payload
+    assert resumed_event.payload["executed"] is True
+
+
+def test_continue_run_withholds_a_policy_added_while_the_call_was_held(harness):
+    """A prohibition added after the hold withholds the release.
+
+    A fresh decision on the same call is a denial. Approving the original
+    hold does not execute the tool. The stored decision stays the hold, and
+    the resume event lists the new check.
+    """
+    registry, executed = _registry()
+    run = Run()
+    envelope = _hold_envelope()
+
+    with harness.session() as session:
+        held = run_governed(
+            session,
+            envelope,
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=harness.now,
+            run=run,
+            now=harness.now,
+        )
+        session.add(
+            Policy(
+                regime="HOME_SITE",
+                rule_type="PROHIBITED",
+                rule={"description": "release barred", "on_violation": "fail"},
+                citation="Ethics board withdrew the release",
+                effective_from=harness.now,
+            )
+        )
+        session.commit()
+        fresh = run_governed(
+            session,
+            envelope,
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=harness.now,
+            now=harness.now,
+        )
+        run_id = run.id
+        approval_id = run.approvals_pending[0]
+        request_id = held.evaluation.request_id
+        resumed = continue_run(
+            session,
+            run_id,
+            {approval_id: True},
+            approver_name="Jane Approver",
+            evidence=harness.evidence,
+            registry=registry,
+            now=harness.now,
+        )
+        session.commit()
+        stored = session.exec(
+            select(GovernanceDecision).where(GovernanceDecision.request_id == request_id)
+        ).one()
+        resumed_event = next(
+            event
+            for event in session.exec(select(EvidenceEvent)).all()
+            if event.correlation_id == request_id
+            and event.event_type == EventType.APPROVAL
+            and event.payload.get("action") == "RESUMED"
+        )
+
+    assert held.outcome is Outcome.HUMAN_APPROVAL
+    assert fresh.evaluation.outcome is Outcome.DENY
+    assert executed == []
+    assert resumed.data is None
+    assert resumed.evaluation.outcome is Outcome.DENY
+    assert any(check.check == "release barred" for check in resumed.evaluation.checks)
+    assert "release barred" in resumed_event.payload["rechecked"]
+    assert resumed_event.payload["executed"] is False
+    assert stored.outcome is Outcome.HUMAN_APPROVAL
 
 
 def test_denied_approval_does_not_execute(harness):
@@ -691,20 +776,17 @@ def test_retrieval_excludes_a_revoked_source_the_request_never_named(harness):
     assert after == []
 
 
-def test_run_governed_enforces_the_register_once_one_exists(harness):
-    """A purpose on the deployment's list is denied when the register does not name it."""
-    from test_usecases import _live_purpose
-
+def test_run_governed_denies_a_purpose_the_register_does_not_name(harness):
+    """A purpose the register does not name is denied, including one on the purpose list."""
     registry, executed = _registry()
     with harness.session() as session:
-        _live_purpose(session, harness.evidence, "registered-elsewhere", at=harness.now)
         result = run_governed(
             session,
-            dp.envelope("draft_publication", purpose="COLLABORATION", site="SG", subject="1"),
+            dp.envelope("draft_publication", purpose="NOT-REGISTERED", site="SG", subject="1"),
             registry=registry,
             evidence=harness.evidence,
             pack=harness.pack,
-            purposes=dp.PURPOSES,
+            purposes=dp.PURPOSES + ("NOT-REGISTERED",),
             as_of=harness.now,
             now=harness.now,
         )

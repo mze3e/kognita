@@ -155,7 +155,7 @@ def _seed(path: Path) -> None:
 
 
 def _live_collaboration(path: Path) -> None:
-    """The closed history adopts the register, so the purpose needs a live entry."""
+    """An empty register denies, so the benchmark purpose is a live use case."""
     from datetime import datetime, timezone
 
     from kognita.evidence import EvidenceWriter
@@ -408,7 +408,7 @@ def _bench(tmp_path: Path, monkeypatch, *, fill: bool) -> None:
     _seed(db)
     if fill:
         _fill_store(db)
-        _live_collaboration(db)
+    _live_collaboration(db)
     held: dict[str, Gateway] = {}
 
     def serve(self, host: str = "127.0.0.1", port: int = 8080) -> None:

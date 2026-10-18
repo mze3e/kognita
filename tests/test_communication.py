@@ -341,6 +341,7 @@ def test_content_policy_and_disclosure_rules_parse():
 
 def test_personal_and_unsupervised_channels_are_not_registered(harness):
     with harness.session() as session:
+        before = len(_events(session, EventType.POLICY_CHANGE))
         for name in ("Personal WhatsApp", "Telegram", "personal email"):
             with pytest.raises(CommunicationError, match="not registrable"):
                 _channel(session, harness.evidence, name)
@@ -352,7 +353,7 @@ def test_personal_and_unsupervised_channels_are_not_registered(harness):
             _channel(session, harness.evidence, "Secure Message", human="eligibility-assistant")
         session.commit()
         assert session.exec(select(ApprovedChannel)).all() == []
-        assert _events(session, EventType.POLICY_CHANGE) == []
+        assert len(_events(session, EventType.POLICY_CHANGE)) == before
 
 
 def test_a_general_information_send_carries_level_and_provenance(harness):

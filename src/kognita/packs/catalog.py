@@ -3,6 +3,10 @@
 A user directory shadows a built-in pack of the same name. A policy overlay
 merges extra rules on top of the resolved pack; the same rule id is the user's.
 ``packs update`` never writes either of those directories.
+
+A pack's ``purposes`` list is the header list ``kognita serve --pack`` uses.
+It does not authorize an execution path. Register each purpose as a use case
+before serving, or the register denies the call.
 """
 
 from __future__ import annotations

@@ -57,6 +57,7 @@ from kognita.envelope import Check, Envelope, Evaluation, envelope_hash
 from kognita.evidence import EvidenceWriter
 from kognita.governance import (
     PolicySnapshot,
+    _approval_policy_recheck,
     _standing_checks,
     classifier_derived_envelope,
     decide,
@@ -458,6 +459,7 @@ def _checkpoint(
             "envelope_hash": evaluation.envelope_hash,
             "decision_id": evaluation.decision_id,
             "approval_id": approval_id,
+            "policy_ids": _policy_ids_at(session, evaluation.as_of),
             **(extra or {}),
             **({"interaction_id": interaction_id} if interaction_id else {}),
         }
@@ -485,6 +487,35 @@ def _checkpoint(
         },
     )
     return digest
+
+
+def _policy_ids_at(session: Session, at: datetime) -> list[int]:
+    """Policy ids in force at ``at``, snapshotted when the hold is checkpointed."""
+    return [
+        policy.id
+        for policy in load_snapshot(session, as_of=at).effective(at)
+        if policy.id is not None
+    ]
+
+
+def _known_policy_ids(
+    session: Session, payload: Mapping[str, Any], at: datetime
+) -> set[int]:
+    """Ids the hold already saw, or the ids in force at the original instant.
+
+    A continuation written before policy ids were stored has no list. Those
+    ids are whatever is effective at the original ``as_of`` when the run
+    resumes. A continuation that stored the list, including an empty one,
+    uses that list.
+    """
+    raw = payload.get("policy_ids")
+    if isinstance(raw, list):
+        return {
+            int(item)
+            for item in raw
+            if isinstance(item, int) and not isinstance(item, bool)
+        }
+    return set(_policy_ids_at(session, at))
 
 
 def _envelope_from_continuation(payload: Mapping[str, Any]) -> Envelope:
@@ -898,17 +929,36 @@ def continue_run(
         and not clock_hit
     )
     # The approval answers the hold, not what changed while it waited. A kill
-    # switch, revocation, breaker or register change since the decision still
-    # withholds the call. The stored decision is kept; the recheck is appended.
+    # switch, revocation, breaker, register change, or a policy that came into
+    # force since the decision still withholds the call. The stored decision
+    # is kept; the recheck is appended.
     recheck: list[Check] = []
     if execute:
+        snapshot = load_snapshot(session, as_of=at)
+        attributes = dict(evaluation.attributes)
+        usecases = _governing_register(session, as_of=at)
         recheck = _standing_checks(
             envelope,
-            load_snapshot(session, as_of=at),
-            attributes=dict(evaluation.attributes),
-            usecases=_governing_register(session, as_of=at),
+            snapshot,
+            attributes=attributes,
+            usecases=usecases,
             at=at,
         )
+        seen = {(check.check, check.policy_id, check.result) for check in recheck}
+        for check in _approval_policy_recheck(
+            envelope,
+            snapshot,
+            attributes=attributes,
+            usecases=usecases,
+            at=at,
+            original=evaluation,
+            known_policy_ids=_known_policy_ids(session, payload, evaluation.as_of),
+        ):
+            key = (check.check, check.policy_id, check.result)
+            if key in seen:
+                continue
+            seen.add(key)
+            recheck.append(check)
         if recheck:
             execute = False
 

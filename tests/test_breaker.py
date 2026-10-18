@@ -38,6 +38,7 @@ from kognita.review import enqueue_for_review, record_review_finding
 from kognita.revocation import RevocationError, reinstate, revoke
 from kognita.usecases import load_register
 from kognita.vocabulary import ActorType, EventType, Outcome
+from test_gateway import _live
 from test_usecases import NOW, _activate, _open, _spec
 
 LATER = NOW + timedelta(hours=1)
@@ -266,6 +267,103 @@ def test_a_confirmed_problem_trips_the_breaker(session, evidence):
     )
     assert _decide(session).outcome is Outcome.DENY
     assert _checks(_decide(session), "CIRCUIT_BREAKER")
+
+
+def test_a_problem_flagged_a_day_after_its_decision_trips_a_policy_breaker(
+    session, engine
+):
+    """A flag inside the window cites a decision from the day before.
+
+    The breaker counts the flag. The policy id comes from that older decision,
+    loaded by the interaction link, not from evidence inside the flag window.
+    """
+    from kognita.governance import record
+    from kognita.interaction import attach
+
+    clock = {"at": NOW}
+    evidence = EvidenceWriter(engine, clock=lambda: clock["at"])
+    _open(session, evidence)
+    _activate(session, evidence, _spec())
+    policy = Policy(
+        regime="INTERNAL",
+        rule_type="ATTRIBUTE_ALLOWLIST",
+        rule={
+            "allow": {"actor_location": ["SG"]},
+            "on_violation": "fail",
+            "description": "Requests come from SG",
+        },
+        citation="Site rule",
+        effective_from=NOW - timedelta(days=1),
+    )
+    session.add(policy)
+    session.flush()
+    register = load_register(session, as_of=NOW)
+    evaluation = decide(
+        Envelope(
+            principal="alice",
+            purpose="research-summary",
+            tool="get_subject_profile",
+            actor_location="SG",
+        ),
+        load_snapshot(session, as_of=NOW),
+        usecases=register,
+        as_of=NOW,
+    )
+    assert evaluation.outcome is Outcome.ALLOW
+    assert any(check.policy_id == policy.id for check in evaluation.checks)
+    record(session, evaluation, evidence=evidence, now=NOW)
+    interaction = open_interaction(
+        session,
+        client_id="client-1",
+        use_case="research-summary",
+        evidence=evidence,
+        now=NOW,
+    )
+    attach(
+        session,
+        interaction.id,
+        evidence=evidence,
+        correlation_id=evaluation.request_id,
+    )
+    enqueue_for_review(
+        session,
+        interaction.id,
+        evidence=evidence,
+        reasons=("the note names the wrong bond",),
+        risk="high",
+        citation="Risk-based review: a high-risk response is queued",
+        actor_id="Jane Smith",
+        now=NOW,
+    )
+    later = NOW + timedelta(days=1)
+    clock["at"] = later
+    set_breaker_threshold(
+        session,
+        "policy",
+        str(policy.id),
+        threshold=1,
+        window_seconds=3600,
+        evidence=evidence,
+        actor_id="Jane Smith",
+        citation="One confirmed problem on this policy trips the breaker",
+        owner="Jane Smith",
+        now=later,
+    )
+    record_review_finding(
+        session,
+        interaction.id,
+        reviewer="Jane Smith",
+        outcome="confirmed problem",
+        finding="The note names the wrong bond",
+        evidence=evidence,
+        now=later,
+    )
+    tripped = session.exec(
+        select(Policy).where(Policy.rule_type == "CIRCUIT_BREAKER")
+    ).all()
+    assert len(tripped) == 1
+    assert tripped[0].rule["dimension"] == "policy"
+    assert tripped[0].rule["value"] == str(policy.id)
 
 
 def test_affected_clients_are_exactly_those_who_received_the_output(session, evidence, engine):
@@ -1402,12 +1500,17 @@ def test_gateway_records_the_provider_and_a_revoked_provider_stops_the_next_call
     session, evidence
 ):
     register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    _live(session, model="summary", version="1")
     session.commit()
     upstream_calls: list[bytes] = []
 
     def transport(method, url, headers, body):
         upstream_calls.append(body)
-        return 200, {"content-type": "application/json"}, b'{"choices":[{"message":{"content":"ok"}}]}'
+        return (
+            200,
+            {"content-type": "application/json"},
+            b'{"model":"summary","model_version":"1","choices":[{"message":{"content":"ok"}}]}',
+        )
 
     gateway = Gateway(
         engine=session.get_bind(),
@@ -1510,6 +1613,8 @@ def test_prompt_revocation_is_not_a_dimension_and_prompt_breaker_matches(session
 def test_gateway_withholds_a_revoked_model_version_the_provider_served(session, evidence):
     """The caller sends no model_version header; the response names a revoked one."""
     register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    # Revoke before the use case lists the card, so the named owner stands.
+    # The request names only "summary"; the response is what matches the card.
     revoke(
         session,
         "model",
@@ -1520,6 +1625,7 @@ def test_gateway_withholds_a_revoked_model_version_the_provider_served(session, 
         owner="Head of Research Ops",
         now=NOW,
     )
+    _live(session, model="summary", version="1")
     session.commit()
     upstream_calls: list[bytes] = []
 
@@ -1569,12 +1675,17 @@ def test_gateway_denies_a_principal_header_that_differs_from_the_bound_client(
 ):
     """A caller cannot borrow another principal's name through a header."""
     register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    _live(session, model="summary", version="1")
     session.commit()
     upstream_calls: list[bytes] = []
 
     def transport(method, url, headers, body):
         upstream_calls.append(body)
-        return 200, {"content-type": "application/json"}, b'{"choices":[{"message":{"content":"ok"}}]}'
+        return (
+            200,
+            {"content-type": "application/json"},
+            b'{"model":"summary","model_version":"1","choices":[{"message":{"content":"ok"}}]}',
+        )
 
     gateway = Gateway(
         engine=session.get_bind(),
@@ -1630,12 +1741,17 @@ def test_a_gateway_bound_to_a_run_refuses_a_foreign_run_id(session, evidence):
     from kognita.tools import Run
 
     register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    _live(session, model="summary", version="1")
     session.commit()
     upstream_calls: list[bytes] = []
 
     def transport(method, url, headers, body):
         upstream_calls.append(body)
-        return 200, {"content-type": "application/json"}, b'{"choices":[{"message":{"content":"ok"}}]}'
+        return (
+            200,
+            {"content-type": "application/json"},
+            b'{"model":"summary","model_version":"1","choices":[{"message":{"content":"ok"}}]}',
+        )
 
     bound = Run(max_calls=5)
     gateway = Gateway(
@@ -1681,6 +1797,7 @@ def test_gateway_output_with_no_interaction_is_listed_as_client_unknown(session,
     from datetime import datetime, timezone
 
     register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    _live(session, model="summary", version="1")
     session.commit()
 
     def transport(method, url, headers, body):

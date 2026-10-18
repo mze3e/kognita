@@ -216,18 +216,19 @@ def _activate(session, evidence, spec: UseCaseSpec, **kwargs) -> None:
 
 
 def _live_purpose(
-    session, evidence, usecase_id: str, at=NOW, approved_models=()
+    session, evidence, usecase_id: str, at=NOW, approved_models=(), *, appetite=True
 ) -> None:
-    """A live, tier 1 use case for an existing purpose, registered at ``at``.
+    """A live, tier 1 use case for a purpose, registered at ``at``.
 
-    Once a store has registered any use case the register governs every path,
-    so tests that call through a purpose that predates the register give that
-    purpose a live entry.
+    Execution paths deny an empty register, so a purpose a test wants to run
+    needs a live entry. ``appetite=False`` leaves an appetite that is already
+    in force.
     """
-    set_appetite(
-        session, _appetite(), evidence=evidence, actor_id="CRO",
-        senior_management=True, at=at,
-    )
+    if appetite:
+        set_appetite(
+            session, _appetite(), evidence=evidence, actor_id="CRO",
+            senior_management=True, at=at,
+        )
     spec = _spec(usecase_id=usecase_id, approved_models=tuple(approved_models))
     register(session, spec, evidence=evidence, actor_id="Jane Smith", at=at)
     approve_rating(session, usecase_id, spec.control_function, evidence=evidence, at=at)
@@ -235,6 +236,35 @@ def _live_purpose(
         session, usecase_id, evidence=evidence, actor_id=spec.control_function,
         at=at, status="live",
     )
+
+
+def ensure_live_purposes(
+    session, evidence, purposes, at=NOW, approved_models=()
+) -> None:
+    """Register each missing purpose as a live tier-1 use case.
+
+    An id already stored is left alone. Appetite is set only when none is in
+    force. ``approved_models`` is applied to each purpose registered here, and
+    those cards must already exist.
+    """
+    existing = set(session.exec(select(UseCase.usecase_id)).all())
+    missing = [item for item in purposes if item not in existing]
+    if not missing:
+        return
+    if load_register(session, as_of=at).appetite is None:
+        set_appetite(
+            session, _appetite(), evidence=evidence, actor_id="CRO",
+            senior_management=True, at=at,
+        )
+    for usecase_id in missing:
+        _live_purpose(
+            session,
+            evidence,
+            usecase_id,
+            at=at,
+            approved_models=approved_models,
+            appetite=False,
+        )
 
 
 def _envelope(purpose: str, principal: str = "alice") -> Envelope:
