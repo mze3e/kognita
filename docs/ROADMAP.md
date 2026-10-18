@@ -516,7 +516,7 @@ Do not wait for client harm.
 - [x] Docling-backed ingestion with per-section classification and passage-level citations
 - [x] Use-case register enforced: unregistered use cases are denied, and every decision cites an accountable owner
 - [x] Every approved model has a model card linked from each call that used it
-- [ ] Risk-based review queue with coverage reporting per use case and risk tier
+- [x] Risk-based review queue with coverage reporting per use case and risk tier
 - [ ] Circuit breaker trips automatically in a test scenario, and the affected-client query lists exactly the clients who received output in the window
 - [ ] Revocation by each dimension takes effect on the next decision without affecting other use cases
 - [x] Risk tiers enforce minimum controls; a tier 3 use case cannot be activated by its own builder
@@ -527,14 +527,14 @@ Do not wait for client harm.
 - [x] "Do not contact" outcomes recorded with reasons; a bare score is rejected as rationale
 - [ ] Every communication carries a communication level and content provenance label; unregistered channels are denied
 - [ ] Pause, override, restrict and recover work on a live run and are evidenced
-- [ ] A complaint links back to the exact output, model version and approver
+- [x] A complaint links back to the exact output, model version and approver
 - [ ] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
 - [x] Graph extra removed from the package (ADR 0008)
 - [x] Policy language: load, diff, validate, explain, test
 - [ ] Five starter packs with scenarios
 - [x] hermes-agent adapter plus at least three others
 - [ ] Flight recorder with export
-- [ ] Cycle time, decision quality and reliability reported per use case from evidence, against a registered baseline and target
+- [x] Cycle time, decision quality and reliability reported per use case from evidence, against a registered baseline and target
 - [x] A tier 2 use case with no named Knowledge Lead is denied
 - [x] A materiality rating not approved by the control function cannot be activated; the control function cannot approve a use case it owns
 - [x] A use case whose residual materiality is outside the risk appetite cannot be activated

@@ -166,7 +166,7 @@ $ kognita serve --provider openai-compatible --upstream https://api.openai.com \
 
 The [roadmap](docs/ROADMAP.md) schedules this loop after 0.3:
 
-**Outcome metrics per use case (0.4).** Each use case names one primary metric — cycle time, decision quality, or reliability — with a baseline and a target. A Knowledge Lead owns the quality standard.
+**Outcome metrics per use case (0.4).** Each use case names one primary metric — cycle time, decision quality, or reliability — with a baseline and a target. A Knowledge Lead owns the quality standard. The three metrics are computed from the interaction record. Cycle time is mean seconds from the interaction opening to the final decision. A named primary metric with no measurement is a breach. Autonomy gates that consume those metrics are still 0.5.
 
 **Autonomy earns its expansion (0.5).** Raising an agent's autonomy level requires thresholds on those metrics. The evidence is necessary, not sufficient: the accountable owner still approves. If the metrics fall below a lower threshold, the agent's effective level steps down one step.
 
@@ -211,7 +211,9 @@ The invariants are importable, so external packs run them in their own repositor
 
 Kognita is alpha. These are known gaps in v0.3.0:
 
-- **Client communication is not a governed event yet.** `kognita evidence reconstruct` answers origination and RM review when those events were recorded, and it still marks "What was communicated to the client?" as "not recorded".
+- **Client communication is not a governed event yet.** `kognita evidence reconstruct` answers origination and RM review when those events were recorded, and it still marks "What was communicated to the client?" as "not recorded". A before-delivery review can report that a send should wait. It does not send or block a client message itself.
+- **The gateway does not place a response on the review queue.** Classification of the model response still happens in the gateway. Scoring that response against the use case's risk criteria happens when the interaction is screened. A response that was never screened is counted as unscreened in the coverage report.
+- **A confirmed review problem is a flag, not a halt.** The flag records the model version and the prompt template version when exactly one of each is on the interaction. It does not insert a prohibiting policy, and it does not list the clients who received the output.
 - **Degraded-mode evidence is held in the gateway process.** A `DEGRADED` call that proceeds while the evidence store is down keeps the decision and the model evidence in memory until the store accepts writes. Restarting the process before then drops them. `FAIL_CLOSED` is the default, and it refuses the call. The MCP proxy has no degraded mode.
 - **`create_all` does not migrate an existing SQLite file.** It creates every registered table that does not yet exist. Tables already in the file are left as they are. A domain pack's models must be imported first, or its tables are skipped.
 - **Agent credentials are not issued yet.** Through `kognita serve`, a call with no agent name is denied, and an agent name is accepted only when the bound client configuration lists it. `decide()` still skips the registry when the envelope has no agent name, and the in-process runner records that request as the human principal. Agents authenticating with their own credentials is 0.5.

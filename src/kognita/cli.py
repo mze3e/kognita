@@ -349,6 +349,33 @@ def cmd_usecase_show(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_usecase_metrics(args: argparse.Namespace) -> int:
+    """Print cycle time, decision quality and reliability from the interaction record."""
+    from kognita.outcomes import outcome_metrics
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        reports = outcome_metrics(session, usecase_id=args.usecase_id)
+    if not reports:
+        print("no outcome metrics")
+        return 0
+    print(json.dumps([item.to_dict() for item in reports], indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_usecase_coverage(args: argparse.Namespace) -> int:
+    """Print review-queue coverage per use case and risk tier."""
+    from kognita.review import coverage_report
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        report = coverage_report(session)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
 def cmd_usecase_validate(args: argparse.Namespace) -> int:
     """Fail when a use case is outside the register's rules."""
     from kognita.usecases import validate_usecase
@@ -741,6 +768,25 @@ def build_parser() -> argparse.ArgumentParser:
     )
     usecase_validate.add_argument("--db", default="kognita.db", help="store path or URL")
     usecase_validate.set_defaults(func=cmd_usecase_validate)
+
+    usecase_metrics = usecase_sub.add_parser(
+        "metrics",
+        help="report cycle time, decision quality and reliability",
+    )
+    usecase_metrics.add_argument(
+        "usecase_id",
+        nargs="?",
+        help="one use case; omit to report every use case",
+    )
+    usecase_metrics.add_argument("--db", default="kognita.db", help="store path or URL")
+    usecase_metrics.set_defaults(func=cmd_usecase_metrics)
+
+    usecase_coverage = usecase_sub.add_parser(
+        "coverage",
+        help="report review coverage per use case and risk tier",
+    )
+    usecase_coverage.add_argument("--db", default="kognita.db", help="store path or URL")
+    usecase_coverage.set_defaults(func=cmd_usecase_coverage)
 
     policy = sub.add_parser("policy", help="author, diff, and test policy files")
     policy_sub = policy.add_subparsers(dest="policy_command", required=True)
