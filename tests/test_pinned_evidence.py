@@ -370,3 +370,82 @@ def test_retention_period_erases_and_records_the_event(harness):
         assert erasure.payload["content_hash"] == digest
         assert erasure.payload["use_case"] == "COLLABORATION"
         verify_chain(session)
+
+
+def test_replay_uses_the_kill_switch_state_the_decision_saw(harness):
+    """A kill switch engaged after the decision does not change its replay."""
+    from kognita.models import Agent
+    from kognita.registry import set_kill_switch
+
+    envelope = dp.envelope(
+        "get_subject_profile", site="SG", subject="2", agent="dossier-agent"
+    )
+    with harness.session() as session:
+        if session.exec(select(Agent).where(Agent.name == "dossier-agent")).first() is None:
+            register(session, name="dossier-agent", owner_exec="Head of Research Ops")
+        evaluation = harness.decide_and_record(envelope, session)
+        set_kill_switch(
+            session,
+            "dossier-agent",
+            True,
+            evidence=harness.evidence,
+            actor_id="Head of Research Ops",
+            now=harness.now,
+        )
+        session.commit()
+        replayed = replay_decision(
+            session,
+            evaluation.request_id,
+            envelope,
+            rules=dp.DemoPack().rules(),
+            purposes=dp.PURPOSES,
+            engages=dp.DemoPack().engages,
+            subjects=dp.DemoPack().load_subjects(envelope, session),
+        )
+        still_engaged = session.exec(
+            select(Agent).where(Agent.name == "dossier-agent")
+        ).one().kill_switch
+    assert replayed.outcome is evaluation.outcome
+    assert replayed.envelope_hash == evaluation.envelope_hash
+    assert still_engaged is True
+
+
+def test_replay_that_does_not_reproduce_the_recorded_result_is_a_mismatch(harness):
+    envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
+    with harness.session() as session:
+        evaluation = harness.decide_and_record(envelope, session)
+        session.commit()
+        other = dp.envelope("get_subject_profile", site="SG", subject="2", purpose="NOT_A_PURPOSE")
+        with pytest.raises(ReplayMismatch):
+            replay_decision(
+                session,
+                evaluation.request_id,
+                other,
+                rules=dp.DemoPack().rules(),
+                purposes=dp.PURPOSES,
+                engages=dp.DemoPack().engages,
+                subjects=dp.DemoPack().load_subjects(other, session),
+            )
+
+
+def test_shared_content_is_kept_until_every_use_case_period_passes(harness):
+    """The same bytes under a 1-day and a 365-day use case stay for 365 days."""
+    with harness.session() as session:
+        store = RetentionStore()
+        store.set_policy(session, "short-case", retain_days=1)
+        store.set_policy(session, "long-case", retain_days=365)
+        stored_at = FROZEN_NOW - timedelta(days=2)
+        digest = store.retain_text(
+            session, "same response", kind="response", use_case="short-case", now=stored_at
+        )
+        again = store.retain_text(
+            session, "same response", kind="response", use_case="long-case", now=stored_at
+        )
+        assert again == digest
+        assert store.enforce(session, evidence=harness.evidence, now=FROZEN_NOW) == 0
+        assert store.read(session, digest) == "same response"
+        later = stored_at + timedelta(days=366)
+        assert store.enforce(session, evidence=harness.evidence, now=later) == 1
+        assert store.read(session, digest) is None
+        session.commit()
+        verify_chain(session)

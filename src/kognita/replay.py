@@ -80,9 +80,10 @@ def replay_decision(
     _verify_retained(session, events)
     if envelope is None:
         return _recorded_evaluation(decision, payload, at)
+    snapshot = _pinned_registry(session, load_snapshot(session, as_of=at), event.sequence)
     evaluation = decide(
         envelope,
-        load_snapshot(session, as_of=at),
+        snapshot,
         attributes=dict(payload.get("attributes") or {}),
         subjects=subjects or {},
         rules=rules,
@@ -93,7 +94,55 @@ def replay_decision(
         request_id=request_id,
     )
     _same_policy_hashes(payload.get("checks") or [], evaluation)
+    _same_result(request_id, payload, evaluation)
     return evaluation
+
+
+def _pinned_registry(session: Session, snapshot: Any, cutoff: int) -> Any:
+    """The snapshot with each agent's kill switch as the chain had it at ``cutoff``.
+
+    The agent registry is a current-state table. Kill-switch changes are on the
+    chain, so the state a decision saw is the last change at or before its
+    event. An agent with no change by then had the switch released. The rows
+    are copied; the stored agents are not touched.
+    """
+    from dataclasses import replace as dc_replace
+
+    changes = session.exec(
+        select(EvidenceEvent)
+        .where(EvidenceEvent.event_type == EventType.POLICY_CHANGE)
+        .where(EvidenceEvent.sequence <= cutoff)
+        .order_by(EvidenceEvent.sequence)
+    ).all()
+    engaged: dict[str, bool] = {}
+    for change in changes:
+        body = change.payload if isinstance(change.payload, dict) else {}
+        action = body.get("action")
+        name = body.get("agent")
+        if isinstance(name, str) and action in ("KILL_SWITCH_ENGAGED", "KILL_SWITCH_RELEASED"):
+            engaged[name] = action == "KILL_SWITCH_ENGAGED"
+    agents = {}
+    for name, agent in snapshot.agents.items():
+        copy = type(agent).model_validate(agent.model_dump())
+        copy.kill_switch = engaged.get(name, False)
+        agents[name] = copy
+    return dc_replace(snapshot, agents=agents)
+
+
+def _same_result(request_id: str, payload: dict[str, Any], evaluation: Evaluation) -> None:
+    """The replayed outcome and envelope hash must be the recorded ones."""
+    recorded_outcome = payload.get("outcome")
+    if recorded_outcome and evaluation.outcome.value != recorded_outcome:
+        raise ReplayMismatch(
+            f"replay of {request_id} gave {evaluation.outcome.value}, "
+            f"but the chain records {recorded_outcome}"
+        )
+    recorded_hash = payload.get("envelope_hash")
+    if recorded_hash and evaluation.envelope_hash != recorded_hash:
+        raise ReplayMismatch(
+            f"replay of {request_id} does not reproduce the recorded envelope hash: "
+            "an input the decision used is not the one replayed"
+        )
 
 
 def _events(session: Session, request_id: str) -> list[EvidenceEvent]:

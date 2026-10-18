@@ -14,6 +14,7 @@ from sqlmodel import select
 
 from fixtures import demo_pack as dp
 
+from evidence_guard import lift_evidence_guard
 from kognita.approvals import ApprovalError, expire_stale, find_granted, grant, reject
 from kognita.canonical import canonical_hash, canonical_json
 from kognita.classify import PatternClassifier
@@ -165,6 +166,7 @@ def test_chain_detects_a_rewritten_payload(harness):
         session.commit()
         assert verify_chain(session) == 3
 
+        lift_evidence_guard(session)
         event = session.exec(
             select(EvidenceEvent).where(EvidenceEvent.sequence == 2)
         ).one()
@@ -184,6 +186,7 @@ def test_chain_detects_a_deleted_event(harness):
             harness.decide_and_record(envelope, session)
         session.commit()
 
+        lift_evidence_guard(session)
         victim = session.exec(
             select(EvidenceEvent).where(EvidenceEvent.sequence == 2)
         ).one()
@@ -614,3 +617,62 @@ def test_writers_over_one_engine_share_a_lock(harness):
         redacting.emit(session, correlation_id="b", event_type=EventType.TOOL_CALL, payload={"v": 2})
         session.commit()
         assert verify_chain(session) == 2
+
+
+def test_the_store_refuses_to_update_or_delete_evidence(harness):
+    """Append-only is enforced by the store, not only by convention."""
+    from sqlalchemy.exc import IntegrityError
+
+    envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
+    with harness.session() as session:
+        harness.decide_and_record(envelope, session)
+        session.commit()
+        event = session.exec(select(EvidenceEvent)).one()
+        event.payload = {"outcome": "ALLOW-ish"}
+        session.add(event)
+        with pytest.raises(IntegrityError, match="append-only"):
+            session.commit()
+        session.rollback()
+        victim = session.exec(select(EvidenceEvent)).one()
+        session.delete(victim)
+        with pytest.raises(IntegrityError, match="append-only"):
+            session.commit()
+        session.rollback()
+        assert verify_chain(session) == 1
+
+
+def test_chain_detects_events_removed_from_the_end(harness):
+    """Deleting the tail leaves a valid-looking chain; the head checkpoint catches it."""
+    envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
+    with harness.session() as session:
+        for _ in range(3):
+            harness.decide_and_record(envelope, session)
+        session.commit()
+        assert verify_chain(session) == 3
+
+        lift_evidence_guard(session)
+        victim = session.exec(
+            select(EvidenceEvent).where(EvidenceEvent.sequence == 3)
+        ).one()
+        session.delete(victim)
+        session.commit()
+
+        with pytest.raises(ChainBreak, match="removed from the end"):
+            verify_chain(session)
+
+
+def test_the_head_checkpoint_cannot_be_moved_back(harness):
+    from sqlalchemy.exc import IntegrityError
+    from sqlalchemy import text as sql_text
+
+    envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
+    with harness.session() as session:
+        for _ in range(2):
+            harness.decide_and_record(envelope, session)
+        session.commit()
+        with pytest.raises(IntegrityError, match="backwards"):
+            session.execute(sql_text("UPDATE evidence_head SET sequence = 1"))
+        session.rollback()
+        with pytest.raises(IntegrityError, match="cannot be deleted"):
+            session.execute(sql_text("DELETE FROM evidence_head"))
+        session.rollback()

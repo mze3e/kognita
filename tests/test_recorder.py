@@ -15,6 +15,7 @@ from sqlmodel import Session, select
 
 from fixtures import demo_pack as dp
 
+from evidence_guard import lift_evidence_guard
 from kognita.cli import main
 from kognita.db import create_all, make_engine
 from kognita.evidence import ChainBreak, EvidenceWriter, verify_chain, verify_export
@@ -316,6 +317,7 @@ def test_two_classifier_versions_are_not_one_series(session, evidence):
 def test_a_chain_break_is_an_alert(session, evidence):
     _decision(evidence, session, correlation="c-1", outcome="ALLOW", run_id="run-a")
     session.commit()
+    lift_evidence_guard(session)
     event = session.exec(select(EvidenceEvent)).one()
     event.payload = {"tampered": True}
     session.add(event)

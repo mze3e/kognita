@@ -32,7 +32,7 @@ from typing import Any
 from sqlmodel import Session, select
 
 from kognita.canonical import canonical_hash, hash_text
-from kognita.evidence import GENESIS_HASH, recompute_event_hash
+from kognita.evidence import GENESIS_HASH, evidence_head, recompute_event_hash
 from kognita.models import (
     EvidenceEvent,
     KnowledgeItem,
@@ -77,6 +77,17 @@ def reconstruct(session: Session, interaction_id: str) -> dict[str, Any]:
         session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
     )
     findings, checked = _chain_findings(events)
+    head = evidence_head(session)
+    if head is not None and (
+        head[0] != len(events) or (events and head[1] != events[-1].event_hash)
+    ):
+        findings.append(
+            _chain(
+                head[0],
+                f"the chain ends at sequence {len(events)}, but the head checkpoint "
+                f"records sequence {head[0]}: events were removed from the end",
+            )
+        )
     selected = _events_for(session, interaction_id, events)
     if not selected:
         findings.append(
