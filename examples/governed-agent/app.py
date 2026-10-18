@@ -377,6 +377,9 @@ def seed_store(db_path: str) -> None:
         agent.environment = "local-demo"
         agent.principal = PRINCIPAL
         agent.permitted_systems = ["demo"]
+        agent.field_allowlist = {purpose: ["summary.$", "results.id", "results.title",
+            "results.snippet", "results.source_label", "results.classification",
+            "citations.label", "citations.classification"] for purpose in PURPOSES}
         agent.tool_allowlist = {name: {"verb": "read", "required_level": 0,
             "permissions": ["read"], "system": "demo"}
             for name in ("get_subject_profile", "query", "model_call")}

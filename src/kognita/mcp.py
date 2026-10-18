@@ -709,7 +709,17 @@ class McpProxy:
         from kognita.tools import Run, _refresh_run
         bound_run = Run(id=headers['run_id']) if headers.get('run_id') else None
         if bound_run is not None:
-            _refresh_run(session, bound_run)
+            from kognita.models import RunRecord, _RunScope
+            scope = session.get(_RunScope, bound_run.id, populate_existing=True)
+            identity = dict(agent=envelope.agent_name, human=envelope.principal,
+                            purpose=envelope.purpose, delegation_id=envelope.delegation_id)
+            if (session.get(RunRecord, bound_run.id) is None or scope is None
+                    or any(scope.body.get(k) != v for k, v in identity.items())):
+                identity_checks.append(Check(check='S6B-RUN-ISOLATION', regime='INTERNAL',
+                    result=CheckResult.FAIL, citation='S6B-RUN-ISOLATION'))
+                bound_run = None
+            else:
+                _refresh_run(session, bound_run)
         now = self.evidence.clock()
         try:
             result = run_governed(

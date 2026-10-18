@@ -251,7 +251,7 @@ def test_mcp_uses_approved_public_lane_and_persisted_taint(session, evidence):
     from kognita.gateway import ClientConfiguration
     from kognita.registry import get, approve_deployment
     from copy import deepcopy
-    _, did, _, _ = _setup(session, evidence)
+    _, did, _, env = _setup(session, evidence)
     agent = get(session, 'worker')
     permissions = deepcopy(agent.tool_allowlist)
     permissions['read_note']['public_content'] = True
@@ -262,6 +262,10 @@ def test_mcp_uses_approved_public_lane_and_persisted_taint(session, evidence):
     upstream = _Upstream()
     proxy = _proxy(session.get_bind(), evidence, upstream,
         client=ClientConfiguration(principal='alice', purpose='READ', actor_location='SG', agent_name='worker'))
+    # Bind without a subject: the test exercises a clean public-content lane.
+    from dataclasses import replace
+    from kognita._fleet import _run_checks
+    _run_checks(session, run, replace(env, subject_type=None, subject_id=None), evidence)
     headers = {'agent_credential': session.get_bind()._test_workload_credentials['worker'],
                'delegation_id': did, 'run_id': run.id}
     clean = proxy.handle('POST', '/mcp', headers, rpc_call(), session=session)

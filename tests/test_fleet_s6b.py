@@ -290,6 +290,10 @@ def test_agent_messages_use_mcp_auth_classification_and_taint(session, evidence,
             agent_names=frozenset({'caller'}), actor_location='SG'),
         servers=(BackendServer(name='worker', url='http://worker.invalid/mcp'),), classifier=spy)
     run = Run()
+    # MCP accepts host-created, identity-bound runs only.
+    from kognita.envelope import Envelope
+    _run_checks(session, run, Envelope(principal='alice', agent_name='caller',
+        purpose='READ', tool='worker/read_note', delegation_id=did), evidence)
     headers = dict(agent_name='caller', agent_credential=secret, delegation_id=did, run_id=run.id)
     body = message('worker/read_note', {'query': 'ordinary meeting research'})
     response = proxy.handle('POST', '/mcp', headers, body, session=session)

@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Deny conflicting primary and additional subjects with S3-SUBJECT-CONFLICT and consistently prefer the primary subject when resolving references.
 - Per-tool subject mapping: Enforce private `_subject_paths` declarations against delegated data scopes; deny missing, malformed, or ambiguous argument paths before execution.
+- Reject unknown or foreign MCP runs and preserve workload/delegation taint across omitted or rotated run IDs.
+- Enforce broker run isolation before admission and resumed retrieval; preserve retrieved content's default external taint across runs.
+- Apply field allow-lists to broker summaries, snippets, citations, graph data, and resumed responses.
 
 - Evidence truncation is now detected: `verify_export` checks the export's advertised `event_count` and `head_hash` against what it actually verified, and `verify_chain` treats a missing or unreadable head checkpoint as a chain break (not a pass) whenever events exist.
 - Serialize quota recheck and reservation in the decision transaction.
