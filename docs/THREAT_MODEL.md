@@ -98,3 +98,69 @@ were released before containment. In-flight cancellation and sandbox network
 constraints require their respective enforcement adapters. Gateway isolation
 and the existing authority controls remain necessary against an attacker who
 stays below behavioral thresholds or compromises the host itself.
+
+## Agent handoffs, fleet boundaries and execution constraints
+
+The trusted host calls `Run.delegate_to(agent_name, attenuated_scope=..., session=...,
+evidence=...)` after the parent's first governed call binds its identity. The
+scope supplies `why`, `allowed_actions`, `allowed_data`, `tools`, `autonomy_level`,
+`valid_until`, `max_calls`, `max_tokens`, `max_cost_usd` and `wall_clock_seconds`.
+The child must fit inside the parent's live human delegation, approved tools,
+autonomy ceiling and remaining budgets. All three numeric budgets must be bounded
+on the parent. Reservations immediately reduce parent capacity; unused child
+capacity is not automatically refunded. Transactions must be committed by the
+host; a rollback removes both the reservation and its evidence.
+
+The returned child run's private `_authority_scope` contains its delegation ID
+for the host's envelope or gateway `delegation_id` header. Use that child run's
+ID as `run_id` on MCP/model calls. Identity bindings include agent, human, purpose
+and delegation. A delegated worker cannot move its authority into a fresh run,
+reuse its parent's run, or change the bound identity. Child runs inherit content
+labels, authentication ceilings, classification ceilings and tool restrictions.
+A paused parent cannot delegate. Subsequent parent delegation revocation, human
+entitlement revocation, expiry and task completion deny descendant decisions.
+Each hop is revalidated through primary-key lookups with a maximum depth of 32;
+oversized authority sets fail closed.
+
+Expose worker agents as registered MCP capabilities, with the worker endpoint
+configured as the backend. Requests then use the same `tools/call` admission,
+workload credential, manifest tool permission, classifier, taint, quota and
+evidence path as every other tool. Message text supplies data, never authority.
+The host authenticates the worker endpoint and binds its response provenance;
+Kognita does not discover or trust endpoints named in messages. External callers
+need their own registered identity and credential and a run. They are limited
+to L0 reads with assurance zero, and their messages mark the run `external`.
+The MCP proxy does not forward caller workload secrets to worker backends.
+Per-agent blast-radius quotas aggregate across runs; run budgets remain separate.
+
+`kognita evidence authority <action_id> --db <path>` uses the decision request ID
+and verifies the evidence chain before reconstructing the human grants and each
+orchestrator/worker hop. It reads immutable issuance evidence, so revocation or
+later registry changes do not rewrite historical authority. Missing issuance
+records and excessive or cyclic lineage fail closed.
+
+| Threat | Enforced control | Rule |
+| --- | --- | --- |
+| Workers multiply the orchestrator's budget or broaden its privileges | Reserve child budgets and attenuate data, clients, actions, tools, autonomy and expiry | `S6B-ATTENUATION`, `S6B-DELEGATION` |
+| A worker reuses another task's run to launder provenance | Bind each run to its identity and reject foreign-run writes before ingestion or budget consumption | `S6B-RUN-ISOLATION` |
+| An external agent sends instructions as apparent internal authority | Authenticate workload credentials, cap authority at L0 and taint messages external | `S2-CREDENTIAL`, `S3-DELEGATION`, `S5-TAINT` |
+| Code execution receives ambient machine privileges | Emit explicit constraints with restrictive defaults and evidence them with the decision | `S6B-SANDBOX` |
+
+For an `execute` tool, the approved tool permission may contain private `_sandbox`
+configuration. The private constraints model rejects unknown keys and invalid
+resource bounds. It emits `credentials` (credential references), `network`
+(destinations), `fs_scope` (bounded absolute paths), `permitted_apis`,
+`permitted_commands`, `data_export`, `persistence`, `auto_stop` (seconds), `cpu`
+(cores), `mem` (MiB) and `disk` (MiB). Empty lists deny all access; defaults are
+no export or persistence, a 30-second auto-stop, one CPU, 256 MiB memory and
+64 MiB disk. Explicit allow-lists reject wildcard entries. An ALLOW carries
+these constraints in decision attributes under private `_sandbox_constraints`,
+bound into its hash and append-only evidence. A later denial removes that output.
+
+The executing host must route execution through an independently enforced
+sandbox, honor every constraint, resolve credential references outside the
+agent, and enforce network destinations and filesystem paths after resolution.
+Kognita emits policy output; it ships no sandbox and cannot prove that a host
+obeys it. Filesystem symlinks, DNS changes, backend authentication and direct
+process/network access remain the deployment's responsibility. Library mode
+shares the host's trust boundary. No in-flight cancellation is added here.

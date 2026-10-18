@@ -152,6 +152,8 @@ type = "forbidden"
 source_modules = [
     "kognita._limits",
     "kognita._isolation",
+    "kognita._fleet",
+    "kognita._sandbox",
     "kognita.approvals",
     "kognita.autonomy",
     "kognita.anomaly",

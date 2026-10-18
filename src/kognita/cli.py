@@ -1193,6 +1193,20 @@ def cmd_drill_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_evidence_authority(args):
+    from kognita.authority import _lineage
+    from kognita.evidence import verify_chain, ChainBreak
+    engine = make_engine(args.db if "://" in args.db else "sqlite:///" + args.db)
+    with session_scope(engine) as session:
+        try:
+            verify_chain(session)
+            _print_json(_lineage(session, args.action_id))
+        except (ValueError, ChainBreak) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
@@ -1213,6 +1227,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     evidence = sub.add_parser("evidence", help="evidence plane operations")
     evidence_sub = evidence.add_subparsers(dest="evidence_command", required=True)
+
+    authority = evidence_sub.add_parser("authority", help="reconstruct authority for an action request id")
+    authority.add_argument("action_id")
+    authority.add_argument("--db", default="kognita.db")
+    authority.set_defaults(func=_cmd_evidence_authority)
 
     verify = evidence_sub.add_parser("verify", help="verify a chain is unbroken")
     verify.add_argument("--db", default="kognita.db", help="store path or URL")

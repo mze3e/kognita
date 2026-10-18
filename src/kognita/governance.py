@@ -334,7 +334,13 @@ def decide(
             continue
         checks.extend(evaluator(policy, context))
 
+    from kognita._sandbox import _constraints
+    constraints, sandbox_checks = _constraints(envelope, agent)
+    checks.extend(sandbox_checks)
     frozen = tuple(_pin_policy_hashes(checks, snapshot.policies))
+    attrs.pop('_sandbox_constraints', None)
+    if constraints is not None and resolve_outcome(frozen) is Outcome.ALLOW:
+        attrs['_sandbox_constraints'] = constraints
     return Evaluation(
         request_id=request_id or str(uuid.uuid4()),
         outcome=resolve_outcome(frozen),
@@ -629,6 +635,12 @@ def record(
     evaluation = _recheck(session, evaluation, at)
     from kognita.anomaly import _observe
     evaluation = _observe(session, evaluation, evidence, at, _classification=classification)
+    if evaluation.outcome is not Outcome.ALLOW and '_sandbox_constraints' in evaluation.attributes:
+        from dataclasses import replace
+        attrs = dict(evaluation.attributes)
+        attrs.pop('_sandbox_constraints', None)
+        evaluation = replace(evaluation, attributes=attrs,
+            envelope_hash=envelope_hash(evaluation.envelope, attrs, evaluation.checks))
     envelope = evaluation.envelope
 
     decision = GovernanceDecision(
