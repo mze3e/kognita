@@ -15,6 +15,16 @@ def _validate(agent):
     if any(type(p.get(key, False)) is not bool for p in permissions
            for key in ('external', 'client_data', 'public_content')):
         raise ValueError('S5-TOOL-LABELS: content flags must be booleans')
+    from math import isfinite
+    for p in permissions:
+        reversible = p.get('reversible', False)
+        duration = p.get('max_duration', 30.0)
+        if (type(reversible) is not bool or (not reversible and p.get('compensation') is not None) or (reversible and not (
+                isinstance(p.get('compensation'), str) and p['compensation'].strip()))):
+            raise ValueError('S6C-REVERSIBILITY: compensation identifier required')
+        if (isinstance(duration, bool) or not isinstance(duration, (float, int))
+                or not isfinite(duration) or duration <= 0):
+            raise ValueError('S6C-DURATION: positive finite maximum required')
     internet = any(p.get('external') is True or p.get('system') in ('internet', 'web', 'external') for p in permissions) or any(
         s.lower() in ('internet', 'web', 'external') for s in (agent.permitted_systems or []))
     writes = any(p.get('verb') in ('draft', 'queue', 'send', 'execute') for p in permissions)

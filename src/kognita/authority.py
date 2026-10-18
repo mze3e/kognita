@@ -112,6 +112,8 @@ def revoke(session, delegation_id, *, evidence, actor_id):
         raise ValueError("S3-REVOKE: issuer required")
     if not row.ended:
         _emit(session, evidence, actor_id, "AUTHORITY_REVOKED", row)
+        from kognita._actions import _stop
+        _stop(delegation=delegation_id)
         row.ended = True
         session.add(row)
         session.flush()
@@ -123,6 +125,8 @@ def complete_task(session, task_ref, *, evidence, actor_id):
     for row in rows:
         if row.body["task_ref"] == task_ref and row.body["human"] == actor_id:
             _emit(session, evidence, actor_id, "TASK_COMPLETED", row)
+            from kognita._actions import _stop
+            _stop(delegation=row.id)
             row.ended = True
             session.add(row)
     session.flush()

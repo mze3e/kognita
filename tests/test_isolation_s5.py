@@ -140,7 +140,8 @@ def _authenticate(session, evidence, env, **kw):
 
 def test_step_up_is_bound_to_transaction_and_expires(session, evidence):
     registry = ToolRegistry()
-    registry.register('tool', lambda *_: 'executed', verb='execute', required_level=5)
+    registry.register('tool', lambda *_: 'executed', verb='execute', required_level=5,
+                      reversible=True, compensation=lambda *_: None)
     env = _env(assurance_level=2, arguments={'amount': 10})
     _authenticate(session, evidence, env)
     assert _call(session, evidence, registry, Run(), env).data == 'executed'

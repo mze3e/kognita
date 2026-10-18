@@ -103,6 +103,9 @@ class ToolSpec:
     external: bool = False
     client_data: bool = False
     public_content: bool = False
+    reversible: bool = False
+    compensation: ToolFn | None = None
+    max_duration: float = 30.0
 
 
 class ToolRegistry:
@@ -127,16 +130,25 @@ class ToolRegistry:
         external: bool = False,
         client_data: bool = False,
         public_content: bool = False,
+        reversible: bool = False,
+        compensation: ToolFn | None = None,
+        max_duration: float = 30.0,
     ) -> ToolSpec:
         from kognita.autonomy import _VERBS
         if verb not in _VERBS or type(required_level) is not int or not _VERBS[verb] <= required_level <= 6:
             raise ValueError("S1-TOOL: invalid verb or required level")
         if any(type(value) is not bool for value in (external, client_data, public_content)):
             raise ValueError("S5-TOOL-LABELS: content flags must be booleans")
+        import math
+        if type(reversible) is not bool or (reversible and not callable(compensation)) or (not reversible and compensation is not None):
+            raise ValueError("S6C-REVERSIBILITY: reversible tools require compensation")
+        if isinstance(max_duration, bool) or not isinstance(max_duration, (float, int)) or not math.isfinite(max_duration) or max_duration <= 0:
+            raise ValueError("S6C-DURATION: positive finite maximum required")
         spec = ToolSpec(
             name=name, fn=fn, classification=classification, description=description,
             required_level=required_level, verb=verb, external=external,
-                client_data=client_data, public_content=public_content
+            client_data=client_data, public_content=public_content,
+            reversible=reversible, compensation=compensation, max_duration=max_duration,
         )
         self._tools[name] = spec
         return spec
@@ -152,6 +164,9 @@ class ToolRegistry:
         external: bool = False,
         client_data: bool = False,
         public_content: bool = False,
+        reversible: bool = False,
+        compensation: ToolFn | None = None,
+        max_duration: float = 30.0,
     ) -> Callable[[ToolFn], ToolFn]:
         """Decorator form of :meth:`register`."""
 
@@ -159,7 +174,8 @@ class ToolRegistry:
             self.register(
                 name, fn, classification=classification, description=description,
                 required_level=required_level, verb=verb, external=external,
-                client_data=client_data, public_content=public_content
+                client_data=client_data, public_content=public_content,
+                reversible=reversible, compensation=compensation, max_duration=max_duration
             )
             return fn
 
@@ -757,6 +773,9 @@ def _release_tool(
     from kognita._limits import _released
     _released(session, evaluation, evidence, _at or evaluation.as_of)
     data = spec.fn(envelope, evaluation, session)
+    if run is not None and spec.reversible:
+        from kognita._actions import _register_compensation
+        _register_compensation(session, run.id, spec, envelope, evaluation, evidence)
     from kognita._isolation import _ingest
     _ingest(session, run, evidence, external=spec.external,
             client_data=spec.client_data or spec.classification in (Classification.C2, Classification.C3)
@@ -887,9 +906,8 @@ def run_governed(
     if envelope.agent_name:
         agent = snap.agents.get(envelope.agent_name)
         permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
-        if not isinstance(permission, dict) or permission.get("verb") != spec.verb or permission.get("required_level") != spec.required_level or any(
-                bool(permission.get(key, False)) != getattr(spec, key)
-                for key in ('external', 'client_data', 'public_content')):
+        from kognita._actions import _matches
+        if not _matches(spec, permission):
             evaluation = _with_checks(evaluation, [Check(check="S1-TOOL-DECLARATION",
                 regime="INTERNAL", result=CheckResult.FAIL, citation="S1-TOOL-DECLARATION")])
     from kognita._isolation import _tool_checks, _ingest
@@ -905,6 +923,8 @@ def run_governed(
     _ingest(session, run, evidence, external=_external_agent(session, envelope.agent_name), client_data="client" in envelope.all_subjects() or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
             text=argument_text, correlation_id=evaluation.request_id, _agent_name=envelope.agent_name)
     evaluation = _with_checks(evaluation, _tool_checks(session, envelope, spec, run, evidence, at=at))
+    from kognita._actions import _checks as _action_checks
+    evaluation = _with_checks(evaluation, _action_checks(spec))
     evaluation = _with_checks(evaluation, extra_checks)
     evaluation = _with_checks(
         evaluation,
@@ -1123,12 +1143,13 @@ def continue_run(
             recheck += [c for c in _run_checks(session, run, envelope, evidence)
                         if c.result != CheckResult.PASS]
             recheck += _tool_checks(session, envelope, current_spec, run, evidence, at=at)
+            from kognita._actions import _checks as _action_checks
+            recheck += [c for c in _action_checks(current_spec) if c.result != CheckResult.PASS
+                        and not (c.result == CheckResult.REQUIRES_HUMAN)]
             current_agent = snapshot.agents.get(envelope.agent_name)
             permission = (current_agent.tool_allowlist or {}).get(envelope.tool, {}) if current_agent else {}
-            if envelope.agent_name and (permission.get("verb") != current_spec.verb or
-                    permission.get("required_level") != current_spec.required_level or any(
-                        bool(permission.get(key, False)) != getattr(current_spec, key)
-                        for key in ('external', 'client_data', 'public_content'))):
+            from kognita._actions import _matches
+            if envelope.agent_name and not _matches(current_spec, permission):
                 execute = False
                 recheck.append(Check(check="S1-TOOL-DECLARATION", regime="INTERNAL",
                     result=CheckResult.FAIL, citation="S1-TOOL-DECLARATION"))

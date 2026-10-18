@@ -170,7 +170,7 @@ def _execution(session, evidence, config=None):
     _, _, _, env = _setup(session, evidence, verb='execute', threshold='execute')
     agent = get(session, 'worker')
     permissions = deepcopy(agent.tool_allowlist)
-    permissions['read_note']['required_level'] = 5
+    permissions['read_note'].update(required_level=5, reversible=True, compensation='undo_execution')
     if config is not None:
         permissions['read_note']['_sandbox'] = config
     agent.tool_allowlist = permissions

@@ -163,4 +163,89 @@ agent, and enforce network destinations and filesystem paths after resolution.
 Kognita emits policy output; it ships no sandbox and cannot prove that a host
 obeys it. Filesystem symlinks, DNS changes, backend authentication and direct
 process/network access remain the deployment's responsibility. Library mode
-shares the host's trust boundary. No in-flight cancellation is added here.
+shares the host's trust boundary. In-flight controls are described below.
+
+
+## S6c: Agent and gateway threats
+
+Kognita evaluates explicit authority before releasing a governed action. Model
+instructions, retrieved documents and tool arguments cannot confer authority.
+This model covers a deployed agent malfunctioning or being compromised, and an
+external actor attacking an agent, gateway or MCP endpoint.
+
+| Threat | Our agent fails | External actor attacks | Controls and evidence |
+| --- | --- | --- | --- |
+| Prompt injection | Treats retrieved instructions as permission to send or execute | Places instructions in a document, message or tool result | Sticky external taint, tool allow-lists, independent per-verb authority, client scopes, public-content lane separation; S5 injection alerts and denied decision evidence |
+| Credential theft | Shares a workload secret or exposes a provider key | Replays a stolen credential or claims another agent's name | Per-agent hashed revocable workload credentials, gateway verification on every call, deployment binding, provider-key findings; credential lifecycle and authority lineage evidence |
+| Malicious tools | Invokes an unsafe or irreversible capability | Backend lies, stalls, or continues after containment | Approved tool declarations, required autonomy, irreversible-action human approval (S6C-IRREVERSIBLE), finite proxy deadlines, cancellation and reverse compensation; S6C-IN-FLIGHT outcomes and S6C-RECOVER actions |
+| Poisoned data | Mixes clients or relies on stale or hostile retrieval | Poisons indexed content, attachments or source responses | Dual human/agent entitlements, purpose and subject scopes, field minimization, external/client-data taint, pack freshness and source rules; cited decisions, data lineage and alerts |
+| Autonomous reconnaissance | Enumerates clients, probes tools or loops | Uses an external agent to enumerate endpoints and data | Lowest-trust external principals, narrow temporary delegations, burst and daily limits, anomaly quarantine and credential revocation; anomaly incidents, limits and refused calls |
+| Automated exploitation | Attempts privilege escalation or chains write tools | Probes policy bypasses, execution endpoints or compromised tools | Fail-closed precedence, independent tool verbs, attenuating delegation, assurance and transaction-bound step-up, gateway deployment requirements and sandbox constraints; decision citations, authority reconstruction and intervention evidence |
+
+### Trust boundaries
+
+The agent, model output, external documents and backend tool output are outside
+the enforcement boundary. The gateway, MCP proxy, policy store, registry and
+evidence writer are trusted. Administrators deploy the proxy with its credentials
+and evidence store outside the agent's process and filesystem access. Enterprise
+routing must prevent direct agent access to providers or backend systems.
+Library execution cannot contain arbitrary code that shares its process.
+
+An authenticated human is accountable for delegation and governed changes.
+Authentication does not itself grant a tool capability. Revoked, expired,
+out-of-scope or changed deployments remain denied even after an earlier approval.
+DENY outranks ESCALATE, which outranks HUMAN_APPROVAL, which outranks ALLOW.
+
+### Stopping and recovery
+
+Every registered tool has a positive finite `max_duration` in seconds (default
+30). MCP waits no longer than that duration or the remaining run wall-clock
+budget. An upstream timeout or exception is recorded before returning. Late
+results are withheld. A timeout does not prove the remote action stopped.
+
+Transports supporting confirmed cancellation expose the private adapter hook
+`_cancel(rpc_id)`, returning `True` only when cancellation is confirmed. Kill
+switches, credential and delegation revocation, task completion and run pauses
+signal active proxy calls in the same process; indexed live-state checks also
+observe committed changes made by other processes. The proxy commits admission
+evidence before contacting the backend so SQLite does not block interventions. Evidence distinguishes completed,
+cancelled, cancellation_requested and timeout outcomes. Completion winning a
+cancellation race is recorded as completed. Cross-process control changes must
+be committed; the local callback mechanism is not a distributed cancellation bus. Backend cancellation must be authenticated
+and correlated to the specific request, never inferred from a closed socket.
+
+Mutating MCP tools without cancellation support must declare `reversible=True`
+and a compensation tool name in the approved manifest. Otherwise admission fails
+with S6C-UNCANCELLABLE. Long operations can instead expose bounded cancellable
+steps, each independently governed. Compensation must be idempotent and undo only
+the associated action. For library tools, `compensation` is a callback accepting
+the original envelope, evaluation and session. Its function name must match the
+manifest's compensation identifier; private proxy adapters bind the backend tool
+name instead.
+
+Recovery stops new calls and executes registered compensations in reverse
+registration order. Every attempt records completed, failed or unavailable;
+previously completed compensation records are not rerun. Compensation context is
+retained by hash, separately from evidence. A restarted library process supplies
+its trusted tool registry through the private `_registry` recovery integration.
+Missing executable code or erased retention yields unavailable, never a claim
+of successful rollback. Recovery is a trusted human intervention; it does not
+create broader agent authority. External side effects and the evidence database
+are not a distributed transaction, so operators must reconcile interrupted or
+uncertain calls with backend action identifiers before declaring recovery done.
+
+### Conformance and remaining assumptions
+
+`kognita.testing._adversarial` supplies the nine-scenario pack conformance runner.
+Pack-specific envelopes exercise prompt injection, wrong-client data, stale
+information, malicious documents, poisoned retrieval, excessive tool permissions,
+privilege escalation, loops and policy bypass. All scenarios must be provided;
+every result must deny or escalate, cite a rule, and have verifiable decision
+evidence without a tool release. Human approval alone does not pass this suite.
+
+Kognita does not validate the truth of every backend response, implement a
+sandbox, authenticate human channels, or provide network isolation. Deployment
+owners implement those boundaries. Freshness and approved-source semantics are
+pack rules; taint and access control contain poisoned input but do not establish
+that its factual content is correct. A compromised policy administrator, gateway
+host or backend capable of ignoring cancellation remains a trust-boundary breach.

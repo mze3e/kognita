@@ -95,9 +95,8 @@ def set_kill_switch(
 ) -> Agent:
     """Stop or restart an agent, and evidence who did it.
 
-    Engaging the switch takes effect on the next decision — there is no in-flight
-    cancellation. It is a gate on new actions, not a way to recall one already
-    taken. Releasing it is refused while an agent revocation is open: that
+    Engaging the switch gates new decisions and signals in-flight proxy calls.
+    Remote cancellation is confirmed only where the transport supports it. Releasing it is refused while an agent revocation is open: that
     release is :func:`kognita.revocation.reinstate`, and the error cites the
     revocation.
     """
@@ -132,6 +131,9 @@ def set_kill_switch(
             "at": when.isoformat(),
         },
     )
+    if engaged:
+        from kognita._actions import _stop
+        _stop(agent=name)
     return agent
 
 
