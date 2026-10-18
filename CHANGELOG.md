@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Screen and ingest all gateway response fields, including function arguments, before release (r2 #2).
+- Reevaluate response classification and confidence policies before gateway delivery (r2 #3).
+- Require a bound run before releasing delegated C2+ gateway responses (r2 #4).
+- Retain exact restored and minimized gateway delivery bytes by hash and evidence delivery status (r2 #7).
+
 - Require a bound run before delegated broker retrieval or sensitive model prompts can release content (round 1 finding 3).
 - Pin gateway admission checks for identical replay of successful decisions (r1 #9).
 - Record MCP HTTP socket abortion separately from confirmed cancellation and enforce S6C for uncancellable mutations (r1 #12).
