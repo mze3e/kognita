@@ -22,6 +22,13 @@ def _run_adversarial(harness, attacks):
     """Fail unless all nine attacks are denied or escalated before release."""
     if set(attacks) != set(_scenarios):
         raise AssertionError('S6C-ADVERSARIAL: all nine scenarios are required')
+    ingresses = getattr(harness, '_ingresses', None)
+    if ingresses is not None:
+        from types import SimpleNamespace
+        assert set(ingresses) == {'gateway', 'mcp'}, 'both ingresses are required'
+        return {name: _run_adversarial(SimpleNamespace(
+            session=harness.session, run_tool=request), attacks)
+            for name, request in ingresses.items()}
     outcomes = {}
     for scenario in _scenarios:
         with harness.session() as session:

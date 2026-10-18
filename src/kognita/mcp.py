@@ -36,8 +36,6 @@ from __future__ import annotations
 
 import json
 import sys
-import urllib.error
-import urllib.request
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from importlib import import_module
@@ -357,17 +355,61 @@ def load_root_config(path: str) -> RootConfig:
     )
 
 
+class _HttpCall:
+    """A connection owned by one governed invocation, independent of RPC ids."""
+
+    def __init__(self):
+        from threading import Lock
+        self._lock = Lock()
+        self._connection = None
+        self._socket = None
+        self._stopped = False
+
+    def _cancel(self, _rpc_id):
+        import socket
+        with self._lock:
+            self._stopped = True
+            connection = self._connection
+            if connection is not None and self._socket is not None:
+                try:
+                    self._socket.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+                connection.close()
+        return True
+
+    def __call__(self, method, url, headers, body):
+        from http.client import HTTPConnection, HTTPSConnection
+        from urllib.parse import urlsplit
+        parsed = urlsplit(url)
+        if parsed.scheme not in ('http', 'https'):
+            raise _BackendUnavailable('unsupported backend URL')
+        connection = (HTTPSConnection if parsed.scheme == 'https' else HTTPConnection)(
+            parsed.hostname, parsed.port, timeout=60)
+        try:
+            connection.connect()
+            connection.auto_open = 0
+            with self._lock:
+                if self._stopped:
+                    raise _BackendUnavailable('cancelled')
+                self._connection = connection
+                self._socket = connection.sock
+            path = parsed.path or '/'
+            if parsed.query:
+                path += '?' + parsed.query
+            connection.request(method, path, body=body, headers=dict(headers))
+            response = connection.getresponse()
+            return response.status, dict(response.headers), response.read()
+        except Exception as exc:
+            raise _BackendUnavailable(str(exc)) from exc
+        finally:
+            connection.close()
+
+
 def _urllib_transport(
     method: str, url: str, headers: Mapping[str, str], body: bytes
 ) -> tuple[int, Mapping[str, str], bytes]:
-    request = urllib.request.Request(url, data=body, headers=dict(headers), method=method)
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            return response.status, dict(response.headers), response.read()
-    except urllib.error.HTTPError as exc:
-        return exc.code, dict(exc.headers), exc.read()
-    except urllib.error.URLError as exc:
-        raise _BackendUnavailable(str(exc.reason)) from exc
+    return _HttpCall()(method, url, headers, body)
 
 
 def _package_version() -> str:
@@ -608,7 +650,9 @@ class McpProxy:
         def invoke(env: Envelope, evaluation: Evaluation, sess: Session) -> Any:
             from kognita._actions import _bounded
             from kognita.vocabulary import ActorType, EventType
-            cancel = getattr(self.transport, '_cancel', None)
+            transport = _HttpCall() if self.transport is _urllib_transport else self.transport
+            state['_transport'] = transport
+            cancel = getattr(transport, '_cancel', None)
             seconds = permission.get('max_duration', 30.0)
             if bound_run is not None and bound_run.wall_clock_seconds is not None:
                 from kognita.models import as_utc
@@ -671,6 +715,7 @@ class McpProxy:
         # Synchronous transports without confirmed cancellation require rollback
         # for mutating operations. Read calls have no action to undo.
         if (permission.get('verb', 'read') in ('draft', 'queue', 'send', 'execute')
+                and self.transport is not _urllib_transport
                 and not callable(getattr(self.transport, '_cancel', None))
                 and not (permission.get('reversible') is True and isinstance(permission.get('compensation'), str)
                          and permission['compensation'].strip())):
@@ -884,7 +929,7 @@ class McpProxy:
         forward = {"content-type": "application/json", "accept": "application/json"}
         state["proxied"] = True
         try:
-            _status, _response_headers, raw = self.transport("POST", server.url, forward, body)
+            _status, _response_headers, raw = state.get("_transport", self.transport)("POST", server.url, forward, body)
         except _BackendUnavailable:
             raise
         except Exception as exc:

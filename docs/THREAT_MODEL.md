@@ -201,7 +201,7 @@ DENY outranks ESCALATE, which outranks HUMAN_APPROVAL, which outranks ALLOW.
 Every registered tool has a positive finite `max_duration` in seconds (default
 30). MCP waits no longer than that duration or the remaining run wall-clock
 budget. An upstream timeout or exception is recorded before returning. Late
-results are withheld. A timeout does not prove the remote action stopped.
+results are withheld. The default HTTP transport shuts down its request socket on cancellation or timeout, including while reading a response body. This aborts the connection and withholds late results; it does not prove that a remote side effect stopped.
 
 Transports supporting confirmed cancellation expose the private adapter hook
 `_cancel(rpc_id)`, returning `True` only when cancellation is confirmed. Kill
@@ -211,8 +211,7 @@ observe committed changes made by other processes. The proxy commits admission
 evidence before contacting the backend so SQLite does not block interventions. Evidence distinguishes completed,
 cancelled, cancellation_requested and timeout outcomes. Completion winning a
 cancellation race is recorded as completed. Cross-process control changes must
-be committed; the local callback mechanism is not a distributed cancellation bus. Backend cancellation must be authenticated
-and correlated to the specific request, never inferred from a closed socket.
+be committed; the local callback mechanism is not a distributed cancellation bus. Cancellation of a remote side effect must be authenticated and correlated to the specific request, never inferred from a closed socket. Default transport cancellation evidence confirms local connection abortion only; custom transport hooks must define their confirmation semantics.
 
 Mutating MCP tools without cancellation support must declare `reversible=True`
 and a compensation tool name in the approved manifest. Otherwise admission fails
@@ -249,3 +248,38 @@ owners implement those boundaries. Freshness and approved-source semantics are
 pack rules; taint and access control contain poisoned input but do not establish
 that its factual content is correct. A compromised policy administrator, gateway
 host or backend capable of ignoring cancellation remains a trust-boundary breach.
+
+### Shipped-pack ingress attack coverage
+
+`tests/test_shipped_pack_ingress_attacks.py::test_shipped_pack_nine_attacks_through_gateway_and_mcp`
+runs all nine scenarios over HTTP through the actual Gateway and McpProxy for
+every entry in `PACK_NAMES`: all five starter packs and private-banking. None
+is excluded. Policies are compiled from the shipped files without rule overlays.
+A registered COLLABORATION use case supplies the agent integration context;
+pack policy restrictions remain active. Real workload credentials, entitlements
+and delegations are issued. Each case requires the attack-specific failing
+check as well as a cited DENY/ESCALATE, persisted decision, intact evidence chain,
+and absence of tool release or egress. These checks prevent unrelated pack
+denials from hiding a missing attack control.
+
+| Scenario | Implemented control checked by that test |
+| --- | --- |
+| Prompt injection | S5-INJECTION on model prompts and MCP arguments |
+| Wrong-client data | S3-DELEGATION on another client's MCP subject or separately scoped AI model endpoint |
+| Stale information | S3-DELEGATION rejects an expired authority window before information access |
+| Malicious documents | S5-INJECTION on instructions embedded in document text |
+| Poisoned retrieval | S5-INJECTION on instructions embedded in retrieved text |
+| Excessive tool permissions | S1 tool manifest admission for MCP; S3 model scope for AI endpoints |
+| Privilege escalation | Bound principal mismatch refuses caller-supplied identity |
+| Looping agents | Persisted run max_calls budget, including alongside other policy denials |
+| Policy bypass | Bound purpose refuses an unregistered purpose despite a claimed authorization |
+
+This suite tests containment of stale-authority access and instruction-bearing
+retrieval. It does not establish factual freshness or detect all false content;
+domain freshness rules and trusted source validation remain necessary.
+
+`tests/test_mcp_http_cancellation.py::test_default_http_transport_closes_inflight_connection`
+uses a real upstream HTTP server and the default transport. It checks kill-switch
+and max_duration termination before headers and during body reads, observes EOF
+at the upstream socket, verifies S6C-IN-FLIGHT evidence and withheld results,
+and separately checks successful completion.
