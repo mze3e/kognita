@@ -25,6 +25,7 @@ class Envelope:
     #: Where the actor is acting from — the zone used for entitlement filtering.
     actor_location: str = ""
     agent_name: str | None = None
+    delegation_id: str | None = None
     #: The subject of the request, by reference. ``("client", "1")`` and so on.
     subject_type: str | None = None
     subject_id: str | None = None
@@ -48,6 +49,7 @@ class Envelope:
             "tool": self.tool,
             "actor_location": self.actor_location,
             "agent_name": self.agent_name,
+            "delegation_id": self.delegation_id,
             "subject_type": self.subject_type,
             "subject_id": self.subject_id,
             "subjects": dict(self.subjects),

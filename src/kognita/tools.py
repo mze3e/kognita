@@ -614,6 +614,7 @@ def _envelope_from_continuation(payload: Mapping[str, Any]) -> Envelope:
         tool=data["tool"],
         actor_location=data.get("actor_location") or "",
         agent_name=data.get("agent_name"),
+        delegation_id=data.get("delegation_id"),
         subject_type=data.get("subject_type"),
         subject_id=data.get("subject_id"),
         subjects=dict(data.get("subjects") or {}),
@@ -718,6 +719,7 @@ def _release_tool(
         classification=spec.classification,
         payload={
             "tool": spec.name,
+            "delegation_id": envelope.delegation_id,
             "subjects": envelope.all_subjects(),
             "outcome": evaluation.outcome.value,
             "approval_required": evaluation.approval_required,
@@ -734,6 +736,7 @@ def _release_tool(
         classification=spec.classification,
         payload={
             "tool": spec.name,
+            "delegation_id": envelope.delegation_id,
             "request_id": evaluation.request_id,
             "outcome": evaluation.outcome.value,
             "bytes": len(canonical_json(data)),

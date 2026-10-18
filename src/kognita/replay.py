@@ -116,9 +116,20 @@ def _pinned_registry(session: Session, snapshot: Any, cutoff: int) -> Any:
     ).all()
     engaged: dict[str, bool] = {}
     identities = {}
+    authority = {}
     for change in changes:
         body = change.payload if isinstance(change.payload, dict) else {}
         action = body.get("action")
+        if body.get("citation") == "S3-AUTHORITY" and isinstance(body.get("body"), dict):
+            identity = body["id"]
+            if action in ("GRANT_ISSUED", "DELEGATION_ISSUED"):
+                value = body["body"]
+                grantee = value.get("agent")
+                if body["kind"] == "grant":
+                    grantee = body.get("grantee")
+                authority[identity] = (identity, body["kind"], grantee, value)
+            elif action in ("AUTHORITY_REVOKED", "TASK_COMPLETED", "AUTHORITY_EXPIRED"):
+                authority.pop(identity, None)
         name = body.get("agent")
         if isinstance(name, str) and isinstance(body.get("_identity"), dict):
             identities[name] = body["_identity"]
@@ -129,7 +140,7 @@ def _pinned_registry(session: Session, snapshot: Any, cutoff: int) -> Any:
         copy = type(agent).model_validate(identities.get(name, agent.model_dump()))
         copy.kill_switch = engaged.get(name, False)
         agents[name] = copy
-    return dc_replace(snapshot, agents=agents)
+    return dc_replace(snapshot, agents=agents, _authority=tuple(authority.values()))
 
 
 def _same_result(request_id: str, payload: dict[str, Any], evaluation: Evaluation) -> None:
@@ -335,6 +346,7 @@ def _envelope_from_evidence(data: dict[str, Any]) -> Envelope:
         tool=data.get("tool") or "",
         actor_location=data.get("actor_location") or "",
         agent_name=data.get("agent_name"),
+        delegation_id=data.get("delegation_id"),
         subject_type=data.get("subject_type"),
         subject_id=data.get("subject_id"),
         subjects=dict(data.get("subjects") or {}),

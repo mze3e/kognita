@@ -578,6 +578,7 @@ class McpProxy:
             tool=envelope_tool,
             actor_location=self.client.actor_location,
             agent_name=agent_name,
+            delegation_id=headers.get("delegation_id"),
             arguments=dict(envelope_arguments),
             context=context,
         )

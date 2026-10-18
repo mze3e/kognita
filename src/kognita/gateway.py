@@ -908,6 +908,7 @@ class Gateway:
             tool="model_call",
             actor_location=self.client.actor_location,
             agent_name=agent_name,
+            delegation_id=headers.get("delegation_id"),
             subject_type="model",
             subject_id=payload["model"],
             arguments=arguments,
@@ -1654,6 +1655,7 @@ class Gateway:
                 correlation_id=evaluation.request_id,
             )
         common: dict[str, Any] = {
+            "delegation_id": evaluation.envelope.delegation_id,
             "destination": self.upstream,
             "destination_is_local": local,
             "classification": classification.value,

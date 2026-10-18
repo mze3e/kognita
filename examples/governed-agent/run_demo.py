@@ -15,6 +15,7 @@ chain that ``verify`` then reports as broken.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 import shutil
 import subprocess
 import sys
@@ -80,11 +81,17 @@ def _events(session, request_id: str):
     )
 
 
+def _delegation(session):
+    from kognita.models import _Authority
+    return session.exec(select(_Authority).where(_Authority.grantee == app.AGENT_NAME,
+        _Authority.kind == "delegation", _Authority.ended == False)).one().id
+
+
 def _allowed(session, pack, evidence) -> None:
     answer = ask(
         session,
         app.QUESTION,
-        app.envelope(app.ASSIGNED_SUBJECT),
+        replace(app.envelope(app.ASSIGNED_SUBJECT), delegation_id=_delegation(session)),
         pack=pack,
         embedder=HashingEmbedder(),
         evidence=evidence,
@@ -107,7 +114,7 @@ def _denied(session, pack, evidence) -> None:
     answer = ask(
         session,
         app.QUESTION,
-        app.envelope(app.OTHER_SUBJECT),
+        replace(app.envelope(app.OTHER_SUBJECT), delegation_id=_delegation(session)),
         pack=pack,
         embedder=HashingEmbedder(),
         evidence=evidence,
@@ -137,6 +144,7 @@ def _gateway(engine, pack, evidence) -> None:
     # This local demonstration acts as the owner to provision a workload secret.
     # Production operators deliver it through their agent secret store.
     with session_scope(engine) as session:
+        delegation_id = _delegation(session)
         owner = get(session, app.AGENT_NAME).owner_exec
         credential = issue(session, app.AGENT_NAME, evidence=evidence, actor_id=owner)
 
@@ -192,7 +200,7 @@ def _gateway(engine, pack, evidence) -> None:
         response = gateway.handle(
             "POST",
             "/v1/chat/completions",
-            {"agent_name": app.AGENT_NAME, "agent_credential": credential},
+            {"agent_name": app.AGENT_NAME, "agent_credential": credential, "delegation_id": delegation_id},
             json.dumps(
                 {
                     "model": app.MODEL,

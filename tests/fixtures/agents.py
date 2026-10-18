@@ -89,3 +89,30 @@ PURPOSES = ['A Singapore briefing',
  'p',
  'pilot-summary',
  'research-summary']
+
+
+def _authority_for(envelope, snapshot):
+    """Explicit authority prerequisite for policy regression tests predating S3.
+
+    These tests isolate other controls. S3 tests use the production lifecycle
+    and do not call this helper. No authority is added for unregistered agents.
+    """
+    from dataclasses import replace
+    if not envelope.agent_name or envelope.agent_name not in snapshot.agents:
+        return envelope, snapshot
+    identity = f"fixture:{envelope.principal}:{envelope.agent_name}:{envelope.purpose}"
+    scope = {k: [v] for k, v in envelope.all_subjects().items()}
+    client = scope.get("client", ["fixture"])[0]
+    scope.setdefault("client", [client])
+    start, end = "2000-01-01T00:00:00+00:00", "2099-01-01T00:00:00+00:00"
+    verbs = ["read", "analyse", "recommend", "draft", "queue", "send", "execute"]
+    body = dict(human=envelope.principal, agent=envelope.agent_name,
+        purpose=envelope.purpose, client=client, allowed_actions=verbs,
+        allowed_data=scope, valid_from=start, valid_until=end, limits={},
+        jurisdiction=envelope.actor_location or "fixture", approval_threshold="execute", task_ref=identity)
+    # Location is tested by the old policy; grant precisely the request's value.
+    body["jurisdiction"] = envelope.actor_location
+    rows = [(identity, "delegation", envelope.agent_name, body)]
+    rows += [(identity + verb, "grant", envelope.principal, dict(capability=verb,
+        subject_scope=scope, valid_from=start, valid_until=end)) for verb in verbs]
+    return replace(envelope, delegation_id=identity), replace(snapshot, _authority=tuple(rows))

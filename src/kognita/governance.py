@@ -75,6 +75,7 @@ class PolicySnapshot:
     agents: dict[str, Agent] = field(default_factory=dict)
     revocations: tuple[OpenRevocation, ...] = ()
     drill_dues: tuple[OpenDrill, ...] = ()
+    _authority: tuple = ()
 
     def effective(self, at: datetime) -> tuple[Policy, ...]:
         return tuple(p for p in self.policies if p.is_effective(at))
@@ -97,7 +98,9 @@ def load_snapshot(session: Session, *, as_of: datetime | None = None,
     for agent in agents.values():
         if _evidence is not None and agent.autonomy_level:
             _step_down(session, agent.name, evidence=_evidence, now=at)
+    from kognita.authority import _load
     return PolicySnapshot(
+        _authority=_load(session, _agent_name, at, _evidence),
         policies=policies,
         agents=agents,
         revocations=load_revocations(session, at),
@@ -261,10 +264,15 @@ def decide(
     agent = snapshot.agents.get(envelope.agent_name)
     if agent is not None:
         attrs["deployment_hash"] = agent.deployment_hash
+    from kognita.authority import _grant_ids
+    if envelope.agent_name:
+        attrs["_authority_grants"] = _grant_ids(envelope, snapshot, at)
     subject_rows = dict(subjects or {})
     registry = rules if rules is not None else build_registry()
 
     checks: list[Check] = []
+    from kognita.authority import _checks as _authority_checks
+    checks.extend(_authority_checks(envelope, snapshot, at))
     checks.extend(registry_checks(envelope, snapshot, at=at, usecases=usecases))
     if usecases is not None:
         checks.extend(usecase_checks(envelope, usecases, at))
@@ -347,6 +355,8 @@ def _standing_checks(
     if agent is not None and attrs.get("deployment_hash") != agent.deployment_hash:
         checks.append(Check(check="S1-DEPLOYMENT-HOLD", regime="INTERNAL",
                             result=CheckResult.FAIL, citation="S1-DEPLOYMENT-HOLD"))
+    from kognita.authority import _checks as _authority_checks
+    checks.extend(_authority_checks(envelope, snapshot, at))
     checks.extend(registry_checks(envelope, snapshot, at=at, usecases=usecases))
     if usecases is not None:
         checks.extend(usecase_checks(envelope, usecases, at))
@@ -618,6 +628,8 @@ def record(
     )
     session.add(decision)
     session.flush()
+    from kognita.authority import _record_use
+    _record_use(session, evaluation, evidence)
 
     # Consumption is evidence of the call, not an input to the decision. Keeping
     # it out of the envelope hash means a budget counter cannot retarget an

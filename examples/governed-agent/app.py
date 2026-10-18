@@ -392,6 +392,16 @@ def seed_store(db_path: str) -> None:
                 "orchestration": "Governed retrieval followed by a redacted gateway call.",
                 "memory_behaviour": "No persistent model memory; evidence retained locally.",
             })
+        from kognita.authority import Delegation, grant_to, delegate
+        authority_at = utcnow()
+        scope = {"client": [ASSIGNED_SUBJECT], "subject": [ASSIGNED_SUBJECT], "model": [MODEL]}
+        grant_to(PRINCIPAL, "read", timedelta(days=1), scope, session=session,
+                 evidence=EvidenceWriter(engine), actor_id=OWNER_EXEC, now=authority_at)
+        delegate(session, Delegation(human=PRINCIPAL, agent=AGENT_NAME, purpose=PURPOSE,
+            client=ASSIGNED_SUBJECT, allowed_actions=["read"], allowed_data=scope,
+            valid_from=authority_at, valid_until=authority_at + timedelta(hours=4),
+            jurisdiction=SITE, task_ref="demo-briefing"), evidence=EvidenceWriter(engine),
+            actor_id=PRINCIPAL, now=authority_at)
         _register_purposes(session, EvidenceWriter(engine), at=utcnow())
         index_item(
             session,
