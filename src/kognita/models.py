@@ -968,8 +968,9 @@ def _effective(start: datetime | None, end: datetime | None, at: datetime) -> bo
 class Revocation(SQLModel, table=True):
     """One dimension stopped until an accountable owner reinstates it.
 
-    Closing ``effective_to`` is the reinstatement. The row is not rewritten
-    into a permission. A later revocation is a new row.
+    Closing ``effective_to`` is the reinstatement. A provider stays open until
+    every accountable owner of every use case that lists it has approved.
+    The row is not rewritten into a permission. A later revocation is a new row.
     """
 
     __tablename__ = "revocations"
@@ -1045,6 +1046,22 @@ class DrillDue(SQLModel, table=True):
         return _effective(self.effective_from, self.effective_to, at)
 
 
+class ReinstatementApproval(SQLModel, table=True):
+    """One owner's cited approval toward closing a revocation. Append-only.
+
+    A provider revocation stays open until every required owner has a row.
+    Any other dimension closes on the first approval, which is recorded here too.
+    """
+
+    __tablename__ = "reinstatement_approvals"
+
+    id: int | None = Field(default=None, primary_key=True)
+    revocation_id: int = Field(foreign_key="revocations.id", index=True)
+    actor_id: str = ""
+    citation: str = ""
+    recorded_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+
+
 __all__ = [
     "Agent",
     "Policy",
@@ -1068,6 +1085,7 @@ __all__ = [
     "RiskAppetite",
     "ModelCard",
     "Revocation",
+    "ReinstatementApproval",
     "BreakerThreshold",
     "DrillDue",
     "RetentionPolicy",

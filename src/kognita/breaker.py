@@ -2,22 +2,28 @@
 
 Flags are review findings, outcome events, recorded near misses, and denials
 that are not themselves a breaker, a revocation, or a kill switch. When the
-count for a use case, model version, prompt version, or policy version reaches
-a registered threshold inside its window, Kognita inserts a prohibiting
-policy, escalates to the accountable owner, and records the trip as an incident.
+count for a use case, model version, prompt version, or policy version is
+greater than or equal to a registered threshold inside its window, Kognita
+inserts a prohibiting policy, escalates to the accountable owner, and records
+the trip as an incident of impact 1. Nothing trips until a threshold is
+registered. There is no built-in default.
 
 The prohibiting policy is a ``CIRCUIT_BREAKER`` rule. It is applied on the
 next decision even when a pack's ``engages`` would skip it. Resetting it is a
 governed close of that row, by the accountable owner, with a citation.
 
-``affected_clients`` lists clients who received model output in a window.
-A denial is not receipt.
+``affected_clients`` lists clients who received model output or released tool
+output in a window, when that output is linked to an interaction. A denial
+is not receipt.
 
 A high-materiality use case records kill-switch drills. The drill engages the
 agent's existing kill switch, records who activated it, how long until the
 next decision was denied, and how the fallback was reached, then releases the
-switch unless a revocation is holding it. A drill past its due date denies
-the use case the way a missed review date does.
+switch unless a revocation is holding it. The next due date is
+:data:`DRILL_DAYS` (90) after the drill. A drill past its due date denies the
+use case the way a missed review date does. A high-materiality pilot or live
+use case with no drill scheduled is already overdue, when the decision is
+given the register.
 """
 
 from __future__ import annotations
@@ -53,7 +59,9 @@ from kognita.vocabulary import (
     Outcome,
 )
 
-#: The same period as a tier 3 review. The roadmap does not set a drill interval.
+#: Days from a completed drill to the next due date. The roadmap does not set
+#: an interval. 90 is the same period as a tier 3 review, and it stays this
+#: constant.
 DRILL_DAYS = 90
 
 BREAKER_DIMENSIONS: tuple[str, ...] = ("usecase", "model", "prompt", "policy")
@@ -92,7 +100,11 @@ def set_breaker_threshold(
     owner: str = "",
     now: datetime | None = None,
 ) -> BreakerThreshold:
-    """Record how many flags trip a breaker. An open threshold for the same value is closed."""
+    """Record how many flags trip a breaker. An open threshold for the same value is closed.
+
+    A count greater than or equal to ``threshold`` trips it. Nothing trips
+    until this row exists: there is no built-in default threshold.
+    """
     at = _aware(now or utcnow())
     kind = _breaker_dimension(dimension)
     named = value.strip()
@@ -154,11 +166,13 @@ def evaluate_breakers(
     evidence: EvidenceWriter,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], ...]:
-    """Trip each threshold whose flags in the window have reached it.
+    """Trip each threshold whose flags in the window are at or above it.
 
-    A threshold that already has an open prohibiting policy is left as it is.
-    Called when a flag is recorded, so the trip is the next decision's problem
-    and not a scan on the gateway path.
+    A count greater than or equal to the registered threshold trips it. With
+    no threshold registered, nothing trips. A threshold that already has an
+    open prohibiting policy is left as it is. Called when a flag is recorded,
+    so the trip is the next decision's problem and not a scan on the gateway
+    path. The trip is an incident of impact 1.
     """
     at = _aware(now or utcnow())
     thresholds = [
@@ -179,6 +193,8 @@ def evaluate_breakers(
             if row.value in flag["keys"].get(row.dimension, ())
             and _in_window(flag["at"], at, row.window_seconds)
         ]
+        # At or above the registered threshold. No threshold means this loop
+        # never runs, so nothing trips by default.
         if len(matched) < row.threshold:
             continue
         tripped.append(_trip(session, row, matched, evidence, at))
@@ -264,36 +280,61 @@ def drill_checks(
     register: Any = None,
     at: datetime,
 ) -> list[Check]:
-    """Deny a high-materiality use case whose drill date has been reached.
+    """Deny a high-materiality pilot or live use case that is past its drill.
 
-    With a register, a use case that is not high-materiality, or not pilot or
-    live, is not denied for the drill. With no register, an overdue due date
-    denies: the schedule was recorded and the decision cannot see that it
-    stopped applying.
+    A recorded due date at or before ``at`` is overdue. With a register, a
+    high-materiality pilot or live use case that has no drill scheduled is
+    already overdue. A use case that is not high-materiality, or not pilot or
+    live, is not denied for a missing schedule. With no register, only a
+    recorded overdue date denies: the decision cannot see materiality.
     """
     when = _aware(at)
     checks: list[Check] = []
+    scheduled = False
     for due in dues:
-        if due.usecase_id != envelope.purpose or due.next_due > when:
+        if due.usecase_id != envelope.purpose:
+            continue
+        scheduled = True
+        if due.next_due > when:
             continue
         owner = ""
         if register is not None:
             entry = register.get(envelope.purpose)
-            if entry is None or not is_material(entry) or entry.status not in ("pilot", "live"):
+            if (
+                entry is None
+                or not is_material(entry)
+                or entry.status not in ("pilot", "live")
+            ):
                 continue
             owner = entry.owner.strip()
-        citation = f"{CITE_DRILL} — '{envelope.purpose}' is past its drill date"
-        if owner:
-            citation = f"{citation} · accountable owner: {owner}"
-        checks.append(
-            Check(
-                check="KILL_SWITCH_DRILL",
-                regime="INTERNAL",
-                result=CheckResult.FAIL,
-                citation=citation,
-            )
-        )
+        checks.append(_drill_denial(envelope.purpose, owner, scheduled=True))
+    if checks or scheduled or register is None or not envelope.purpose.strip():
+        return checks
+    entry = register.get(envelope.purpose)
+    if entry is None or not is_material(entry) or entry.status not in ("pilot", "live"):
+        return checks
+    checks.append(
+        _drill_denial(envelope.purpose, entry.owner.strip(), scheduled=False)
+    )
     return checks
+
+
+def _drill_denial(purpose: str, owner: str, *, scheduled: bool) -> Check:
+    if scheduled:
+        citation = f"{CITE_DRILL} — '{purpose}' is past its drill date"
+    else:
+        citation = (
+            f"{CITE_DRILL} — '{purpose}' has no drill scheduled "
+            f"and is past its drill date"
+        )
+    if owner:
+        citation = f"{citation} · accountable owner: {owner}"
+    return Check(
+        check="KILL_SWITCH_DRILL",
+        regime="INTERNAL",
+        result=CheckResult.FAIL,
+        citation=citation,
+    )
 
 
 def schedule_kill_switch_drill(
@@ -445,10 +486,11 @@ def affected_clients(
     start: datetime,
     end: datetime,
 ) -> dict[str, Any]:
-    """Clients who received model output under one version in ``[start, end)``.
+    """Clients who received model or released tool output in ``[start, end)``.
 
-    A client with only a denial is not listed. An output with no interaction
-    is not given a client id.
+    Receipt is a ``MODEL_CALL`` or a released ``TOOL_CALL`` linked to an
+    interaction. A denial is not receipt. An output with no interaction is
+    not given a client id.
     """
     opened = _aware(start)
     closed = _aware(end)
@@ -470,13 +512,13 @@ def affected_clients(
     rows: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
     for event in events:
-        if event.event_type != EventType.MODEL_CALL:
+        if event.event_type not in (EventType.MODEL_CALL, EventType.TOOL_CALL):
             continue
         recorded = as_utc(event.recorded_at)
         if recorded is None or recorded < opened or recorded >= closed:
             continue
         payload = _payload(event)
-        if not _received(payload):
+        if not _released(event.event_type, payload):
             continue
         interaction = _interaction_for(event.correlation_id, interactions, links)
         if interaction is None or not interaction.client_id:
@@ -812,9 +854,20 @@ def _output_matches(
     )
 
 
-def _received(payload: dict[str, Any]) -> bool:
+def _released(event_type: EventType, payload: dict[str, Any]) -> bool:
+    """True when the client was given the output.
+
+    A model call is receipt when it was sent or carries a response hash.
+    A tool call is receipt when it carries a response hash and was not a
+    denial. ``sent`` false or ``withheld`` true is not receipt for either.
+    """
     if payload.get("sent") is False or payload.get("withheld") is True:
         return False
+    if event_type == EventType.TOOL_CALL:
+        outcome = str(payload.get("outcome") or "").strip().upper()
+        if outcome == Outcome.DENY.value:
+            return False
+        return bool(payload.get("response_hash"))
     if payload.get("response_hash"):
         return True
     return payload.get("sent") is True

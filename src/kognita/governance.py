@@ -240,7 +240,8 @@ def decide(
     ``engages`` lets a pack say whether a policy is in scope for this request at
     all. Evaluating a rule from a regime the request never touches produces
     noise at best and a wrong denial at worst, so an un-engaged policy is skipped
-    rather than passed. A revocation, an overdue kill-switch drill, and a tripped
+    rather than passed. A revocation, a kill-switch drill that is overdue or
+    missing on a high-materiality pilot or live use case, and a tripped
     circuit breaker are applied even when ``engages`` would skip them.
     """
     at = as_of or utcnow()

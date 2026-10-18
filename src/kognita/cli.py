@@ -778,7 +778,7 @@ def _revocation_target(args: argparse.Namespace) -> tuple[str, str]:
 
 
 def cmd_evidence_affected(args: argparse.Namespace) -> int:
-    """List clients who received model output in a window."""
+    """List clients who received model output or released tool output in a window."""
     try:
         start = _parse_when(args.start)
         end = _parse_when(args.end)
@@ -841,7 +841,11 @@ def cmd_revoke(args: argparse.Namespace) -> int:
 
 
 def cmd_reinstate(args: argparse.Namespace) -> int:
-    """Close a revocation. The actor must be an accountable owner it names."""
+    """Record one owner's cited reinstatement.
+
+    A provider stays open until every accountable owner of every use case
+    that lists it has reinstated it. ``effective_to`` is null until then.
+    """
     engine = make_engine(args.db)
     create_all(engine)
     evidence = EvidenceWriter(engine)
@@ -859,6 +863,7 @@ def cmd_reinstate(args: argparse.Namespace) -> int:
                 "dimension": row.dimension,
                 "value": row.value,
                 "effective_to": row.effective_to.isoformat() if row.effective_to else None,
+                "closed": row.effective_to is not None,
             }
     except RevocationError as exc:
         print(str(exc), file=sys.stderr)
@@ -1037,7 +1042,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     affected = evidence_sub.add_parser(
         "affected",
-        help="list clients who received model output in a window",
+        help="list clients who received model or released tool output in a window",
     )
     affected.add_argument("--db", default="kognita.db", help="store path or URL")
     affected.add_argument("--model", default="", help="model version, name, or card")

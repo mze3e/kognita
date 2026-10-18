@@ -7,9 +7,11 @@ engages it and records who may turn it back on. A live-run revoke that only
 needs that switch calls :func:`kognita.registry.set_kill_switch` and does not
 open a second mechanism.
 
-A revoked dimension denies until the accountable owner reinstates it and cites
-the rule. Closing the row is that reinstatement. The evidence is appended;
-the old row is not rewritten into a permission.
+A revoked dimension denies until an accountable owner reinstates it and cites
+the rule. Closing the row is that reinstatement. A provider stays revoked
+until every accountable owner of every use case that lists it has cited one;
+one owner records a pending approval and leaves the row open. The evidence
+is appended; the old row is not rewritten into a permission.
 """
 
 from __future__ import annotations
@@ -23,7 +25,7 @@ from sqlmodel import Session, select
 from kognita.envelope import Check, Envelope
 from kognita.evidence import EvidenceWriter
 from kognita.exceptions import KognitaError
-from kognita.models import Agent, Revocation, as_utc, utcnow
+from kognita.models import Agent, ReinstatementApproval, Revocation, as_utc, utcnow
 from kognita.registry import set_kill_switch
 from kognita.rules import request_field_keys, request_model_keys
 from kognita.usecases import load_register
@@ -160,7 +162,13 @@ def reinstate(
     citation: str,
     now: datetime | None = None,
 ) -> Revocation:
-    """Close a revocation. The actor must be an accountable owner it names."""
+    """Record one owner's cited reinstatement.
+
+    Any one accountable owner closes an agent, model, tool, source, client,
+    use case, or action. A provider stays open until every accountable owner
+    of every use case that lists it has cited a reinstatement. One owner
+    records ``REINSTATE_PENDING`` and the next decision still denies.
+    """
     at = _aware(now or utcnow())
     actor = _human(session, actor_id, "reinstate")
     basis = _citation(citation, "reinstate")
@@ -169,13 +177,43 @@ def reinstate(
         raise RevocationError(
             f"{CITE}: revocation {revocation_id} is not in force"
         )
-    owners = tuple(str(item).strip() for item in (row.accountable_owners or []) if str(item).strip())
-    if actor not in owners:
-        named = ", ".join(owners) or "none"
+    required = _required_owners(session, row, at)
+    if actor not in required:
+        named = ", ".join(required) or "none"
         raise RevocationError(
             f"{CITE}: {actor} cannot reinstate {row.dimension} {row.value} "
             f"· accountable owner: {named}"
         )
+    session.add(
+        ReinstatementApproval(
+            revocation_id=row.id or 0,
+            actor_id=actor,
+            citation=basis,
+            recorded_at=at,
+        )
+    )
+    session.flush()
+    approved = _approved_actors(session, row.id or 0)
+    if row.dimension == "provider" and not set(required).issubset(approved):
+        still = [name for name in required if name not in approved]
+        _emit(
+            session,
+            evidence,
+            actor=actor,
+            action="REINSTATE_PENDING",
+            body={
+                "dimension": row.dimension,
+                "value": row.value,
+                "citation": basis,
+                "revocation_citation": row.citation,
+                "accountable_owners": list(required),
+                "approved_by": [name for name in required if name in approved],
+                "still_required": still,
+                "revocation_id": row.id,
+                "at": at.isoformat(),
+            },
+        )
+        return row
     row.effective_to = at
     session.add(row)
     session.flush()
@@ -200,7 +238,7 @@ def reinstate(
             "value": row.value,
             "citation": basis,
             "revocation_citation": row.citation,
-            "accountable_owners": list(owners),
+            "accountable_owners": list(required),
             "revocation_id": row.id,
             "at": at.isoformat(),
         },
@@ -302,10 +340,12 @@ def accountable_owners(
     """Who may reinstate this revocation.
 
     A use case names its business owner. An agent names ``owner_exec``. A
-    provider or model names the business owners of the use cases that depend
-    on it. Where none of those exist, ``explicit`` must already be a business
-    owner or an agent's accountable owner. A revocation with no such person
-    is refused.
+    model names the business owners of the use cases that depend on it, and
+    an explicit owner may narrow that set to one of them. A provider names
+    every business owner of every non-retired use case that lists it. Naming
+    one of them does not drop the others. Where none of those exist,
+    ``explicit`` must already be a business owner or an agent's accountable
+    owner. A revocation with no such person is refused.
     """
     derived = _derived_owners(session, dimension, value, at)
     named = explicit.strip()
@@ -318,6 +358,8 @@ def accountable_owners(
             raise RevocationError(
                 f"{CITE}: {named} is not an accountable owner for {dimension} {value}"
             )
+        if dimension == "provider":
+            return derived
         return (named,) if named else derived
     if not named or not _authorised_human(session, named, at):
         raise RevocationError(
@@ -357,6 +399,33 @@ def _derived_owners(
                 owners.append(entry.owner.strip())
         return tuple(dict.fromkeys(owners))
     return ()
+
+
+def _required_owners(session: Session, row: Revocation, at: datetime) -> tuple[str, ...]:
+    """Who must cite a reinstatement before the row can close.
+
+    A provider is the union of the owners stored at revocation and the
+    business owners of non-retired use cases that list it now. A use case
+    that starts listing the provider while the revocation is open adds its
+    owner. Other dimensions keep the owners stored on the row, and any one
+    of them can close it.
+    """
+    stored = tuple(
+        str(item).strip() for item in (row.accountable_owners or []) if str(item).strip()
+    )
+    if row.dimension != "provider":
+        return stored
+    derived = _derived_owners(session, "provider", row.value, at)
+    return tuple(dict.fromkeys((*stored, *derived)))
+
+
+def _approved_actors(session: Session, revocation_id: int) -> set[str]:
+    rows = session.exec(
+        select(ReinstatementApproval).where(
+            ReinstatementApproval.revocation_id == revocation_id
+        )
+    ).all()
+    return {row.actor_id.strip() for row in rows if row.actor_id and row.actor_id.strip()}
 
 
 def _entry_uses_model(entry: Any, cards: dict[str, Any], value: str) -> bool:

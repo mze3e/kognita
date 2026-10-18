@@ -28,7 +28,7 @@ from kognita.evidence import ChainBreak, EvidenceWriter, tamper_for_test, verify
 from kognita.gateway import ClientConfiguration, Gateway
 from kognita.governance import decide, load_snapshot
 from kognita.interaction import open_interaction
-from kognita.models import EvidenceEvent, Policy, Revocation
+from kognita.models import EvidenceEvent, InteractionLink, Policy, Revocation
 from kognita.outcomes import record_near_miss
 from kognita.policy import parse_rule
 from kognita.registry import get as get_agent
@@ -171,6 +171,7 @@ def test_near_misses_trip_the_breaker_on_the_next_decision(session, evidence):
     ]
     assert incident
     assert incident[-1].payload["accountable_owner"] == "Jane Smith"
+    assert incident[-1].payload["impact"] == 1
     trip = [
         event
         for event in session.exec(select(EvidenceEvent)).all()
@@ -386,6 +387,111 @@ def test_affected_clients_are_exactly_those_who_received_the_output(session, evi
         affected_clients(session, model="1", usecase="research-summary", start=BEFORE, end=LATER)
 
 
+def test_affected_clients_include_released_tool_output(session, evidence):
+    _owners(session, evidence)
+    released = open_interaction(
+        session,
+        client_id="client-tool",
+        use_case="research-summary",
+        evidence=evidence,
+        now=NOW,
+    )
+    session.add(
+        InteractionLink(interaction_id=released.id, correlation_id="tool-released")
+    )
+    session.flush()
+    evidence.emit(
+        session,
+        correlation_id="tool-released",
+        event_type=EventType.TOOL_CALL,
+        actor_type=ActorType.AGENT,
+        actor_id="dossier-agent",
+        payload={
+            "tool": "get_subject_profile",
+            "subjects": {},
+            "outcome": "ALLOW",
+            "approval_required": False,
+            "response_hash": "hash-tool",
+        },
+    )
+    denied = open_interaction(
+        session,
+        client_id="client-denied-tool",
+        use_case="research-summary",
+        evidence=evidence,
+        now=NOW,
+    )
+    evidence.emit(
+        session,
+        correlation_id=denied.id,
+        event_type=EventType.TOOL_CALL,
+        actor_type=ActorType.AGENT,
+        actor_id="dossier-agent",
+        payload={
+            "tool": "get_subject_profile",
+            "subjects": {},
+            "outcome": "DENY",
+            "approval_required": False,
+            "response_hash": "hash-denied-tool",
+        },
+    )
+    evidence.emit(
+        session,
+        correlation_id="tool-orphan",
+        event_type=EventType.TOOL_CALL,
+        actor_type=ActorType.AGENT,
+        actor_id="dossier-agent",
+        payload={
+            "tool": "get_subject_profile",
+            "subjects": {},
+            "outcome": "ALLOW",
+            "approval_required": False,
+            "response_hash": "hash-orphan-tool",
+        },
+    )
+    both = _received(session, evidence, "client-both", "research-summary")
+    evidence.emit(
+        session,
+        correlation_id=both.id,
+        event_type=EventType.TOOL_CALL,
+        actor_type=ActorType.AGENT,
+        actor_id="dossier-agent",
+        payload={
+            "tool": "get_subject_profile",
+            "subjects": {},
+            "outcome": "ALLOW",
+            "approval_required": False,
+            "response_hash": "hash-both-tool",
+        },
+    )
+    egress_only = open_interaction(
+        session,
+        client_id="client-egress",
+        use_case="research-summary",
+        evidence=evidence,
+        now=NOW,
+    )
+    evidence.emit(
+        session,
+        correlation_id=egress_only.id,
+        event_type=EventType.EGRESS,
+        actor_type=ActorType.AGENT,
+        actor_id="dossier-agent",
+        payload={"response_hash": "hash-egress", "sent": True},
+    )
+
+    listed = affected_clients(
+        session, usecase="research-summary", start=BEFORE, end=LATER
+    )
+    assert {row["client_id"] for row in listed["clients"]} == {
+        "client-tool",
+        "client-both",
+    }
+    assert sum(1 for row in listed["clients"] if row["interaction_id"] == both.id) == 1
+    by_model = affected_clients(session, model="1", start=BEFORE, end=LATER)
+    assert {row["client_id"] for row in by_model["clients"]} == {"client-both"}
+
+
 def test_revocation_of_each_dimension_denies_the_next_matching_decision(session, evidence):
     _owners(session, evidence)
     register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
@@ -592,6 +698,102 @@ def test_reinstatement_requires_the_owner_and_a_citation(session, evidence):
     assert _decide(session).outcome is Outcome.ALLOW
 
 
+def test_reinstating_a_provider_needs_every_owner(session, evidence):
+    _open(session, evidence)
+    _activate(session, evidence, _spec(model_providers=("house",)))
+    _activate(
+        session,
+        evidence,
+        _spec(
+            usecase_id="briefing",
+            purpose="Prepare a briefing",
+            business_owner="Priya Shah",
+            validators=("Priya Shah",),
+            model_providers=("house",),
+        ),
+    )
+    row = revoke(
+        session,
+        "provider",
+        "house",
+        evidence=evidence,
+        actor_id="Jane Smith",
+        citation="Provider house is outside appetite",
+        owner="Jane Smith",
+        now=NOW,
+    )
+    assert set(row.accountable_owners) == {"Jane Smith", "Priya Shah"}
+    with pytest.raises(RevocationError, match="cannot reinstate"):
+        reinstate(
+            session,
+            row.id,
+            evidence=evidence,
+            actor_id="Omar Aziz",
+            citation="Technology owner reinstating a provider they do not own",
+            now=NOW,
+        )
+    pending = reinstate(
+        session,
+        row.id,
+        evidence=evidence,
+        actor_id="Jane Smith",
+        citation="Jane reinstates house",
+        now=NOW,
+    )
+    assert pending.effective_to is None
+    assert pending.is_effective(NOW)
+    again = reinstate(
+        session,
+        row.id,
+        evidence=evidence,
+        actor_id="Jane Smith",
+        citation="Jane reinstates house again",
+        now=NOW,
+    )
+    assert again.effective_to is None
+    assert _decide(session, purpose="briefing").outcome is Outcome.DENY
+    _activate(
+        session,
+        evidence,
+        _spec(
+            usecase_id="notes",
+            purpose="Draft a note",
+            business_owner="Luis Ortega",
+            validators=("Luis Ortega",),
+            model_providers=("house",),
+        ),
+    )
+    still = reinstate(
+        session,
+        row.id,
+        evidence=evidence,
+        actor_id="Priya Shah",
+        citation="Priya reinstates house",
+        now=NOW,
+    )
+    assert still.effective_to is None
+    assert _decide(session, purpose="notes").outcome is Outcome.DENY
+    closed = reinstate(
+        session,
+        row.id,
+        evidence=evidence,
+        actor_id="Luis Ortega",
+        citation="Luis reinstates house",
+        now=NOW,
+    )
+    assert closed.effective_to == NOW
+    assert not closed.is_effective(NOW)
+    assert _decide(session, purpose="briefing").outcome is Outcome.ALLOW
+    assert _decide(session, purpose="notes").outcome is Outcome.ALLOW
+    actions = [
+        event.payload.get("action")
+        for event in session.exec(select(EvidenceEvent)).all()
+        if isinstance(event.payload, dict)
+    ]
+    assert actions.count("REINSTATE_PENDING") == 3
+    assert actions.count("REINSTATE") == 1
+
+
 def test_agent_revocation_uses_the_kill_switch(session, evidence):
     _owners(session, evidence)
     register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
@@ -606,19 +808,23 @@ def test_agent_revocation_uses_the_kill_switch(session, evidence):
     )
     agent = get_agent(session, "dossier-agent")
     assert agent is not None and agent.kill_switch is True
-    set_kill_switch(
-        session,
-        "dossier-agent",
-        False,
-        evidence=evidence,
-        actor_id="Jane Smith",
-        reason="A direct release does not reinstate the revocation",
-        now=NOW,
-    )
+    with pytest.raises(RevocationError, match="Stop dossier-agent"):
+        set_kill_switch(
+            session,
+            "dossier-agent",
+            False,
+            evidence=evidence,
+            actor_id="Jane Smith",
+            reason="A direct release does not reinstate the revocation",
+            now=NOW,
+        )
+    held = get_agent(session, "dossier-agent")
+    assert held is not None and held.kill_switch is True
     denied = _decide(session, agent_name="dossier-agent")
     assert denied.outcome is Outcome.DENY
     assert _checks(denied, "REVOCATION")
-    assert not _checks(denied, "KILL_SWITCH")
+    assert _checks(denied, "KILL_SWITCH")
+    assert "Stop dossier-agent" in _checks(denied, "REVOCATION")[0].citation
     reinstate(
         session,
         row.id,
@@ -649,7 +855,9 @@ def test_kill_switch_drill_is_evidenced_and_an_overdue_drill_denies(session, evi
         evidence,
         _spec(usecase_id="briefing", purpose="Prepare a briefing"),
     )
-    assert _decide(session, agent_name="dossier-agent").outcome is Outcome.ALLOW
+    unscheduled = _decide(session, agent_name="dossier-agent")
+    assert unscheduled.outcome is Outcome.DENY
+    assert "no drill scheduled" in _checks(unscheduled, "KILL_SWITCH_DRILL")[0].citation
     with pytest.raises(BreakerError, match="not high-materiality"):
         schedule_kill_switch_drill(
             session,
@@ -690,6 +898,7 @@ def test_kill_switch_drill_is_evidenced_and_an_overdue_drill_denies(session, evi
     overdue = _decide(session, agent_name="dossier-agent")
     assert overdue.outcome is Outcome.DENY
     assert "past its drill date" in _checks(overdue, "KILL_SWITCH_DRILL")[0].citation
+    assert "no drill scheduled" not in _checks(overdue, "KILL_SWITCH_DRILL")[0].citation
     assert "Jane Smith" in _checks(overdue, "KILL_SWITCH_DRILL")[0].citation
     assert _decide(session, purpose="briefing").outcome is Outcome.ALLOW
 
@@ -707,6 +916,81 @@ def test_kill_switch_drill_is_evidenced_and_an_overdue_drill_denies(session, evi
     assert without_register.outcome is Outcome.DENY
     assert _checks(without_register, "KILL_SWITCH_DRILL")
     assert verify_chain(session) > 0
+
+
+def test_a_high_materiality_pilot_or_live_use_case_with_no_drill_denies(session, evidence):
+    _open(session, evidence)
+    _activate(
+        session,
+        evidence,
+        _spec(residual_materiality="high", model_providers=("house",)),
+    )
+    _activate(
+        session,
+        evidence,
+        _spec(
+            usecase_id="pilot-summary",
+            purpose="Pilot the summary with a named user list",
+            residual_materiality="high",
+            model_providers=("house",),
+            pilot_users=("alice",),
+            pilot_end=NOW + timedelta(days=10),
+            success_criteria="RM acceptance above the baseline",
+        ),
+        status="pilot",
+    )
+    _activate(
+        session,
+        evidence,
+        _spec(usecase_id="briefing", purpose="Prepare a briefing"),
+    )
+    live = _decide(session)
+    assert live.outcome is Outcome.DENY
+    assert "no drill scheduled" in _checks(live, "KILL_SWITCH_DRILL")[0].citation
+    assert "Jane Smith" in _checks(live, "KILL_SWITCH_DRILL")[0].citation
+    pilot = _decide(session, purpose="pilot-summary")
+    assert pilot.outcome is Outcome.DENY
+    assert "no drill scheduled" in _checks(pilot, "KILL_SWITCH_DRILL")[0].citation
+    assert _decide(session, purpose="briefing").outcome is Outcome.ALLOW
+
+    schedule_kill_switch_drill(
+        session,
+        "research-summary",
+        due_at=NOW + timedelta(days=1),
+        evidence=evidence,
+        actor_id="Jane Smith",
+        citation="The live drill is tomorrow",
+        now=NOW,
+    )
+    assert _decide(session).outcome is Outcome.ALLOW
+    assert _decide(session, purpose="pilot-summary").outcome is Outcome.DENY
+
+    without_register = decide(
+        Envelope(
+            principal="alice",
+            purpose="pilot-summary",
+            tool="get_subject_profile",
+        ),
+        load_snapshot(session, as_of=NOW),
+        purposes=("pilot-summary",),
+        as_of=NOW,
+    )
+    assert without_register.outcome is Outcome.ALLOW
+    assert not _checks(without_register, "KILL_SWITCH_DRILL")
+
+    schedule_kill_switch_drill(
+        session,
+        "pilot-summary",
+        due_at=NOW,
+        evidence=evidence,
+        actor_id="Jane Smith",
+        citation="The pilot drill is due now",
+        now=NOW,
+    )
+    overdue = _decide(session, purpose="pilot-summary")
+    assert overdue.outcome is Outcome.DENY
+    assert "is past its drill date" in _checks(overdue, "KILL_SWITCH_DRILL")[0].citation
+    assert "no drill scheduled" not in _checks(overdue, "KILL_SWITCH_DRILL")[0].citation
 
 
 def test_a_drill_does_not_release_a_switch_an_open_revocation_holds(session, evidence):
