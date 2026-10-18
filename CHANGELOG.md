@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The gateway overhead benchmark no longer treats the slowest call as the gate. Five warm-up calls are dropped, then 100 calls are measured. The 95th percentile must stay under 50 ms and the mean under 25 ms. The maximum is printed. One stalled call on a shared runner is not the measure. The gateway path is unchanged.
 - The `openai` extra no longer caps the SDK below version 2. The cap existed for Graphiti. Kognita does not import the SDK (the embedder adapter uses `urllib`); the extra is for agents that call the AI gateway with it. openai 3.28 was checked through `kognita serve`: the provider received the redacted prompt, the client received the restored values, and a call with no agent name was denied without reaching the provider.
 - The README and the package description were brought up to date for 0.3.0. The roadmap status line now says v0.3.0 is shipped.
 - `docs/control-frameworks.md` maps the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) paragraph by paragraph, with timing against the MAS deadlines. "Covered" now means shipped in v0.3.0 or earlier.
