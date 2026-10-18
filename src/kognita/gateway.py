@@ -30,9 +30,9 @@ the :class:`~kognita.tools.Run` budget.
 Identity, on this gateway only. Calls that do not come through here keep the
 behaviour they already have.
 
-- A call with no agent name is not a human, and it does not skip the registry.
-  Calls require a registered agent with a workload credential. An approved
-  system trigger alone cannot substitute for workload authentication.
+- Calls require a registered agent with a workload credential or a system
+  trigger listed in the authenticated client configuration. Listed triggers
+  still undergo all other governance checks and are recorded in evidence.
 - Agent names require a matching workload secret in ``agent_credential`` and
   admission by the bound client configuration.
 
@@ -533,6 +533,12 @@ def _identity(
     """
     claimed = headers.get("agent_name") or None
     agent_name = claimed or client.agent_name
+    trigger = headers.get("system_trigger") or client.system_trigger
+    if trigger and trigger not in client.system_triggers:
+        return agent_name, trigger, [Check(
+            check="SYSTEM_TRIGGER", regime="INTERNAL", result=CheckResult.FAIL,
+            citation="S2-SYSTEM-TRIGGER: system trigger is not approved for this client configuration",
+        )]
     if agent_name:
         if agent_name not in client.agent_names:
             return agent_name, None, [
@@ -547,24 +553,13 @@ def _identity(
             ]
         return agent_name, None, []
 
-    claimed_trigger = headers.get("system_trigger") or None
-    trigger = claimed_trigger or client.system_trigger
     if trigger and trigger in client.system_triggers:
         return None, trigger, [
             Check(
                 check="SYSTEM_TRIGGER",
                 regime="INTERNAL",
                 result=CheckResult.PASS,
-                citation=f"approved system trigger {trigger}",
-            )
-        ]
-    if trigger:
-        return None, trigger, [
-            Check(
-                check="SYSTEM_TRIGGER",
-                regime="INTERNAL",
-                result=CheckResult.FAIL,
-                citation="system trigger is not approved for this client configuration",
+                citation=f"S2-SYSTEM-TRIGGER: approved system trigger {trigger}",
             )
         ]
     return None, None, [
@@ -1055,7 +1050,13 @@ class Gateway:
         principal, purpose, principal_checks = _bound_principal(
             self.client, headers, self.purposes
         )
-        if _held is None:
+        admitted = trigger if agent_name is None and any(
+            check.check == "SYSTEM_TRIGGER" and check.result is CheckResult.PASS
+            for check in identity_checks
+        ) else None
+        if admitted:
+            credential_checks = []
+        elif _held is None:
             credential_checks = _credential_checks(session, agent_name, headers)
         else:
             from kognita.models import _WorkloadCredential
@@ -1085,7 +1086,8 @@ class Gateway:
             arguments["prompt_template_version"] = template_version
         from kognita._isolation import _assurance
         envelope = Envelope(
-            context={"_agent_credential": headers.get("agent_credential")},
+            context={"_agent_credential": headers.get("agent_credential"),
+                     **({"system_trigger": admitted} if admitted else {})},
             principal=principal,
             purpose=purpose,
             tool="model_call",
