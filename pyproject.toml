@@ -151,6 +151,7 @@ name = "the decision engine reaches nothing optional"
 type = "forbidden"
 source_modules = [
     "kognita.approvals",
+    "kognita.autonomy",
     "kognita.breaker",
     "kognita.broker",
     "kognita.canonical",

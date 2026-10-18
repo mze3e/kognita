@@ -263,7 +263,7 @@ def ask(
     subjects = pack.load_subjects(routed, session)
     attributes = pack.resolve_attributes(routed, subjects)
     _remember_pack(pack)
-    snap = snapshot if snapshot is not None else load_snapshot(session, as_of=as_of)
+    snap = snapshot if snapshot is not None else load_snapshot(session, as_of=as_of or at, _evidence=evidence, _agent_name=envelope.agent_name or "")
     # The question is free text. Typed envelope fields stay as the caller set
     # them; classification is filled only when the pack did not supply one.
     # decide() below reads that recorded label and does not classify again.

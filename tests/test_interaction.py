@@ -50,7 +50,7 @@ from kognita.testing.harness import FROZEN_NOW, Harness
 
 def _seed(session):
     dp.seed_policies(session, now=FROZEN_NOW)
-    from kognita.registry import register
+    from fixtures.agents import register
 
     register(
         session, name="eligibility-assistant", owner_exec="Head of Data Governance"
@@ -64,7 +64,7 @@ def harness():
 
 def _gov_seed(session):
     gp.seed_policies(session, now=FROZEN_NOW)
-    from kognita.registry import register
+    from fixtures.agents import register
 
     register(session, name="marker-agent", owner_exec="Risk Team")
 

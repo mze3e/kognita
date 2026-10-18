@@ -15,7 +15,7 @@ from sqlmodel import select
 from fixtures import governance_pack as bp
 
 from kognita.models import Approval, EvidenceEvent
-from kognita.registry import register
+from fixtures.agents import register
 from kognita.vocabulary import Outcome
 from kognita.testing.conformance import ConformanceCase
 from kognita.testing.harness import FROZEN_NOW, Harness

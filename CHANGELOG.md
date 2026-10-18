@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Provision the governed-agent scaffold with an approved behavior manifest and explicit read-only model-call permissions matching its gateway request.
+
+### Added
+
+- Agent identity manifests, additive SQLite migration, deployment approval and review expiry gates.
+- Explicit tool verbs and autonomy requirements, use-case risk caps and mandatory L4 approval.
+- Evidence-gated autonomy promotion, automatic drift step-down with owner and Knowledge Lead alerts, and `kognita agent deploy --manifest`.
+
 ## [0.4.1] - 2026-10-18
 
 ### Fixed

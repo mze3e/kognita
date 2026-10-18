@@ -20,7 +20,7 @@ from kognita.evidence import verify_chain
 from kognita.exceptions import PolicyEditError, ReplayMismatch
 from kognita.gateway import ClientConfiguration, Gateway
 from kognita.models import EvidenceEvent, Policy, RetainedContent
-from kognita.registry import register
+from fixtures.agents import register
 from test_gateway import _live
 from kognita.replay import replay_decision
 from kognita.retention import RetentionStore

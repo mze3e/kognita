@@ -11,6 +11,8 @@ hint may raise a classification and may not lower it.
 """
 from __future__ import annotations
 
+from fixtures.agents import configure as _approved_identity
+
 from datetime import datetime, timezone
 
 import pytest
@@ -194,7 +196,7 @@ def test_text_cannot_widen_permission():
     # The agent is registered so the registry check passes. The classification
     # policy is then what allows or denies.
     registered = {
-        "dossier-agent": Agent(name="dossier-agent", owner_exec="Head of Research Ops")
+        "dossier-agent": _approved_identity(Agent(name="dossier-agent", owner_exec="Head of Research Ops"))
     }
     snapshot = PolicySnapshot(
         policies=(

@@ -929,7 +929,20 @@ class Gateway:
         if provider_name and not attributes.get("provider"):
             attributes["provider"] = provider_name
 
-        snapshot = self._store(lambda: load_snapshot(session, as_of=now))
+        snapshot = self._store(lambda: load_snapshot(session, as_of=now, _evidence=self.evidence, _agent_name=agent_name or ""))
+        agent = snapshot.agents.get(agent_name)
+        if agent is not None:
+            declared = (agent.tool_allowlist or {}).get("_deployment")
+            if isinstance(declared, dict):
+                current = dict(declared)
+                messages = payload.get("messages", [])
+                systems = [message.get("content", "") for message in messages
+                           if message.get("role") in ("system", "developer")]
+                current["system_prompt"] = "\n".join(str(value) for value in systems)
+                current["tools"] = payload.get("tools", [])
+                if "instructions" in payload:
+                    current["instructions"] = payload["instructions"]
+                envelope = replace(envelope, context={**envelope.context, "deployment": current})
         register = self._store(lambda: load_register(session, as_of=now))
         # One register for this request. The model-card link and the endpoint
         # flag read it again; loading it a second time would scan the same rows.

@@ -115,15 +115,18 @@ def _pinned_registry(session: Session, snapshot: Any, cutoff: int) -> Any:
         .order_by(EvidenceEvent.sequence)
     ).all()
     engaged: dict[str, bool] = {}
+    identities = {}
     for change in changes:
         body = change.payload if isinstance(change.payload, dict) else {}
         action = body.get("action")
         name = body.get("agent")
+        if isinstance(name, str) and isinstance(body.get("_identity"), dict):
+            identities[name] = body["_identity"]
         if isinstance(name, str) and action in ("KILL_SWITCH_ENGAGED", "KILL_SWITCH_RELEASED"):
             engaged[name] = action == "KILL_SWITCH_ENGAGED"
     agents = {}
     for name, agent in snapshot.agents.items():
-        copy = type(agent).model_validate(agent.model_dump())
+        copy = type(agent).model_validate(identities.get(name, agent.model_dump()))
         copy.kill_switch = engaged.get(name, False)
         agents[name] = copy
     return dc_replace(snapshot, agents=agents)

@@ -25,15 +25,47 @@ def register(
     version: str = "0.1.0",
     risk_class: str = "MEDIUM",
     materiality_tier: str = "T2",
+    **_identity,
 ) -> Agent:
     """Register an agent, or update the existing record with that name."""
     agent = session.exec(select(Agent).where(Agent.name == name)).first()
+    created = agent is None
+    writer = _identity.get("evidence") or EvidenceWriter(session.get_bind())
     if agent is None:
         agent = Agent(name=name)
-    agent.owner_exec = owner_exec
-    agent.version = version
-    agent.risk_class = risk_class
-    agent.materiality_tier = materiality_tier
+    metadata = dict(owner_exec=owner_exec, version=version, risk_class=risk_class,
+                    materiality_tier=materiality_tier)
+    metadata_changed = created or any(getattr(agent, key) != value for key, value in metadata.items())
+    if _identity:
+        evidence = _identity.pop("evidence", None)
+        actor_id = _identity.pop("actor_id", "")
+        permitted = {"purpose", "use_cases", "permitted_systems", "tool_allowlist",
+                     "autonomy_level", "review_date", "environment", "principal"}
+        if set(_identity) - permitted:
+            raise ValueError("S1-IDENTITY: unknown identity fields")
+        if evidence is None or actor_id != (agent.owner_exec or owner_exec) or (agent.owner_exec and owner_exec != agent.owner_exec):
+            raise ValueError("S1-IDENTITY: evidenced owner authorization required")
+        level = _identity.get("autonomy_level", agent.autonomy_level or 0)
+        if type(level) is not int or not 0 <= level <= (agent.autonomy_level or 0):
+            raise ValueError("S1-PROMOTION: use promote() to raise autonomy")
+        candidate = Agent.model_validate({**agent.model_dump(), **metadata, **_identity})
+        candidate.deployment_hash = None
+        evidence.emit(session, correlation_id=f"identity:{name}",
+            event_type=EventType.POLICY_CHANGE, actor_type=ActorType.HUMAN,
+            actor_id=actor_id, payload={"action": "AGENT_IDENTITY_CHANGED",
+                "agent": name, "_identity": candidate.model_dump(mode="json"),
+                "citation": "S1-IDENTITY"})
+        for key in _identity:
+            setattr(agent, key, getattr(candidate, key))
+        agent.deployment_hash = None
+    for key, value in metadata.items():
+        setattr(agent, key, value)
+    if metadata_changed:
+        writer.emit(session, correlation_id=f"identity:{name}",
+            event_type=EventType.POLICY_CHANGE, actor_type=ActorType.HUMAN,
+            actor_id=owner_exec, payload={"action": "AGENT_REGISTERED" if created else "AGENT_UPDATED",
+                "agent": name, "_identity": agent.model_dump(mode="json"),
+                "citation": "S1-IDENTITY"})
     session.add(agent)
     session.flush()
     return agent
@@ -113,3 +145,68 @@ def _refuse_release_while_revoked(session: Session, name: str, at: datetime) -> 
 
 
 __all__ = ["register", "get", "all_agents", "set_kill_switch"]
+
+
+def _deployment_hash(agent: Agent, deployment: dict) -> str:
+    from kognita.canonical import canonical_hash
+
+    required = {"system_prompt", "instructions", "tools", "permissions", "data_sources",
+                "orchestration", "memory_behaviour"}
+    if not isinstance(deployment, dict) or not required <= deployment.keys():
+        raise ValueError("S1-DEPLOYMENT: all seven behaviour components are required")
+    return canonical_hash({
+        "deployment": deployment,
+        "identity": {key: getattr(agent, key) for key in (
+            "purpose", "use_cases", "permitted_systems", "tool_allowlist",
+            "environment", "principal", "owner_exec", "review_date", "autonomy_level",
+        )},
+    })
+
+
+def _approved_level(session: Session, name: str) -> int:
+    from kognita.models import EvidenceEvent
+
+    rows = session.exec(select(EvidenceEvent).where(
+        EvidenceEvent.correlation_id.in_([f"deployment:{name}", f"autonomy:{name}"])
+    ).order_by(EvidenceEvent.sequence.desc()).limit(3)).all()
+    for row in rows:
+        identity = row.payload.get("_identity")
+        if isinstance(identity, dict) and row.payload.get("deployment_hash"):
+            return identity.get("autonomy_level") or 0
+    return 0
+
+
+def approve_deployment(
+    session: Session, name: str, *, deployment: dict, evidence: EvidenceWriter,
+    actor_id: str,
+) -> Agent:
+    """Approve the complete behaviour manifest; later changes require approval."""
+    agent = get(session, name)
+    if agent is None:
+        raise LookupError(name)
+    if not actor_id.strip() or actor_id != agent.owner_exec:
+        raise ValueError("S1-DEPLOYMENT: accountable owner approval required")
+    if (agent.autonomy_level or 0) > _approved_level(session, name):
+        raise ValueError("S1-PROMOTION: deployment approval cannot raise autonomy; use promote()")
+    import json
+    from kognita.canonical import canonical_json
+
+    _deployment_hash(agent, deployment)
+    deployment = json.loads(canonical_json(deployment))
+    candidate = Agent.model_validate(agent.model_dump())
+    candidate.tool_allowlist = {**(agent.tool_allowlist or {}), "_deployment": deployment}
+    digest = _deployment_hash(candidate, deployment)
+    evidence.emit(session, correlation_id=f"deployment:{name}",
+                  event_type=EventType.POLICY_CHANGE, actor_type=ActorType.HUMAN,
+                  actor_id=actor_id, payload={"action": "DEPLOYMENT_APPROVED",
+                  "agent": name, "deployment_hash": digest, "deployment": deployment,
+                  "_identity": {**candidate.model_dump(mode="json"), "deployment_hash": digest},
+                  "citation": "S1-DEPLOYMENT"})
+    agent.tool_allowlist = candidate.tool_allowlist
+    agent.deployment_hash = digest
+    session.add(agent)
+    session.flush()
+    return agent
+
+
+__all__.append("approve_deployment")

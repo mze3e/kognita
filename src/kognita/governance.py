@@ -80,7 +80,8 @@ class PolicySnapshot:
         return tuple(p for p in self.policies if p.is_effective(at))
 
 
-def load_snapshot(session: Session, *, as_of: datetime | None = None) -> PolicySnapshot:
+def load_snapshot(session: Session, *, as_of: datetime | None = None,
+                  _evidence=None, _agent_name=None) -> PolicySnapshot:
     """Read the policy set and agent registry in force at ``as_of``.
 
     Closed policy rows stay in the table and are not loaded. Revocations and
@@ -88,7 +89,14 @@ def load_snapshot(session: Session, *, as_of: datetime | None = None) -> PolicyS
     """
     at = as_of or utcnow()
     policies = tuple(in_force(session, Policy, at))
-    agents = {a.name: a for a in session.exec(select(Agent)).all()}
+    query = select(Agent)
+    if _agent_name is not None:
+        query = query.where(Agent.name == _agent_name)
+    agents = {a.name: a for a in session.exec(query).all()}
+    from kognita.autonomy import _step_down
+    for agent in agents.values():
+        if _evidence is not None and agent.autonomy_level:
+            _step_down(session, agent.name, evidence=_evidence, now=at)
     return PolicySnapshot(
         policies=policies,
         agents=agents,
@@ -116,7 +124,7 @@ def resolve_outcome(checks: Sequence[Check]) -> Outcome:
     return Outcome.ALLOW
 
 
-def registry_checks(envelope: Envelope, snapshot: PolicySnapshot) -> list[Check]:
+def registry_checks(envelope: Envelope, snapshot: PolicySnapshot, *, at=None, usecases=None) -> list[Check]:
     """Pre-policy checks the core always applies: agent identity and kill switch.
 
     The registry is an allowlist. An agent nobody registered is denied, because
@@ -145,7 +153,8 @@ def registry_checks(envelope: Envelope, snapshot: PolicySnapshot) -> list[Check]
                 citation=f"Kill switch engaged — accountable owner: {agent.owner_exec}",
             )
         ]
-    return [
+    from kognita.autonomy import _checks
+    return _checks(envelope, agent, at or utcnow(), usecases) + [
         Check(
             check="AGENT_REGISTRY",
             regime="INTERNAL",
@@ -249,11 +258,14 @@ def decide(
     """
     at = as_of or utcnow()
     attrs = dict(attributes or {})
+    agent = snapshot.agents.get(envelope.agent_name)
+    if agent is not None:
+        attrs["deployment_hash"] = agent.deployment_hash
     subject_rows = dict(subjects or {})
     registry = rules if rules is not None else build_registry()
 
     checks: list[Check] = []
-    checks.extend(registry_checks(envelope, snapshot))
+    checks.extend(registry_checks(envelope, snapshot, at=at, usecases=usecases))
     if usecases is not None:
         checks.extend(usecase_checks(envelope, usecases, at))
     else:
@@ -331,7 +343,11 @@ def _standing_checks(
     """
     attrs = dict(attributes or {})
     checks: list[Check] = []
-    checks.extend(registry_checks(envelope, snapshot))
+    agent = snapshot.agents.get(envelope.agent_name)
+    if agent is not None and attrs.get("deployment_hash") != agent.deployment_hash:
+        checks.append(Check(check="S1-DEPLOYMENT-HOLD", regime="INTERNAL",
+                            result=CheckResult.FAIL, citation="S1-DEPLOYMENT-HOLD"))
+    checks.extend(registry_checks(envelope, snapshot, at=at, usecases=usecases))
     if usecases is not None:
         checks.extend(usecase_checks(envelope, usecases, at))
     checks.extend(
