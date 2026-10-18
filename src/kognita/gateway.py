@@ -179,6 +179,7 @@ class _DeferredEvidence:
     model: _DeferredModel | None = None
     model_card_denial: _ModelCardDenial | None = None
     _minimization: dict[str, Any] | None = None
+    _delivery: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -421,20 +422,8 @@ def _prompt_text(payload: Mapping[str, Any]) -> str:
 
 
 def _response_text(payload: Mapping[str, Any]) -> str:
-    parts: list[str] = []
-    choices = payload.get("choices")
-    if isinstance(choices, list):
-        for choice in choices:
-            if not isinstance(choice, dict):
-                continue
-            message = choice.get("message")
-            if isinstance(message, dict):
-                text = _content_text(message.get("content"))
-                if text:
-                    parts.append(text)
-            if isinstance(choice.get("text"), str) and choice["text"]:
-                parts.append(choice["text"])
-    return "\n".join(parts)
+    # Provider extensions and function arguments can also be delivered.
+    return _forwarded_text(payload)
 
 
 def _json_object(text: str) -> dict[str, Any] | None:
@@ -1120,7 +1109,19 @@ class Gateway:
         usecases = register
         flagged = not endpoint_named(register, self.upstream)
 
+        received = False
+
         def finish(response: GatewayResponse) -> GatewayResponse:
+            if received:
+                delivery = {
+                    "_delivered": response.response_classifier is not None,
+                    "_body": response.body.decode("utf-8") if response.response_classifier is not None else None,
+                }
+                if deferred is not None:
+                    deferred._delivery = delivery
+                else:
+                    self._store(lambda: self._retain_delivery(session, response.evaluation or evaluation,
+                        classification, delivery))
             return _annotate_endpoint(response, flagged)
 
         evaluation = decide(
@@ -1347,6 +1348,7 @@ class Gateway:
                 _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation)
             )
 
+        received = True
         try:
             upstream_text = upstream_body.decode("utf-8")
         except UnicodeDecodeError:
@@ -1417,7 +1419,21 @@ class Gateway:
         )
         from kognita.tools import _response_outcome
         from kognita.review import _screen_retained_response
-        delivery_checks = []
+        response_attributes = {**evaluation.attributes,
+            "classification": response_record["label"], "classifier": response_record}
+        response_evaluation = decide(envelope, snapshot, attributes=response_attributes,
+            subjects=subjects, rules=self.pack.rules(), purposes=self.purposes,
+            usecases=usecases, engages=getattr(self.pack, "engages", None), as_of=now)
+        # The pure policy evaluation does not repeat admission accounting.
+        action_approval_ids = {p.id for p in snapshot.policies
+            if p.rule_type == "REQUIRES_HUMAN_APPROVAL"}
+        # Action approvals were consumed at admission. Classification-dependent
+        # approval checks must still hold the newly produced answer.
+        delivery_checks = [c for c in response_evaluation.checks if c.policy_id is not None
+            and c.policy_id not in action_approval_ids and c.result is not CheckResult.PASS]
+        if envelope.delegation_id and bound_run is None and _client_data(Classification(response_record["label"])):
+            delivery_checks.append(Check(check="S5-RUN-REQUIRED", citation="S5-RUN-REQUIRED",
+                regime="INTERNAL", result=CheckResult.FAIL))
         if bound_run is not None:
             from kognita.vocabulary import at_or_below
             self._store(lambda: _refresh_run(session, bound_run))
@@ -1538,6 +1554,17 @@ class Gateway:
             )
         )
 
+    def _retain_delivery(self, session, evaluation, classification, delivery):
+        payload = {"_delivered": delivery["_delivered"], "_delivered_hash": "",
+                   "citation": "GATEWAY-RESPONSE-DELIVERY"}
+        if delivery["_body"] is not None:
+            payload["_delivered_hash"] = RetentionStore().retain_text(session,
+                delivery["_body"], kind="response", use_case=evaluation.envelope.purpose,
+                correlation_id=evaluation.request_id)
+        self.evidence.emit(session, correlation_id=evaluation.request_id,
+            event_type=EventType.EGRESS, actor_type=ActorType.SYSTEM, actor_id="gateway",
+            classification=classification, payload=payload)
+
     def _is_degraded(self, use_case: str) -> bool:
         return self.failure_mode.get(use_case, FailureMode.FAIL_CLOSED) is FailureMode.DEGRADED
 
@@ -1583,6 +1610,8 @@ class Gateway:
                 run_id=run_id,
             )
         )
+        if item._delivery is not None:
+            self._store(lambda: self._retain_delivery(session, recorded, classification, item._delivery))
         if item._minimization is not None:
             self._store(lambda: self.evidence.emit(session, **item._minimization))
         model = item.model
