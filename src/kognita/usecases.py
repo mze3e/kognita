@@ -1,9 +1,11 @@
 """The use-case register.
 
-Every decision that is given a register must name a use case in it, and the
-check cites that use case's accountable owner. An unregistered, retired,
-suspended, or not-yet-activated use case is a denial. This is the check that
-replaces the free-text purpose list on that path.
+Every execution path passes the register, including an empty one. The
+envelope's purpose must name a use case in it, and the check cites that use
+case's accountable owner. An unregistered, retired, suspended, or
+not-yet-activated use case is a denial. This replaces the free-text purpose
+list on ``run_governed``, ``ask``, the MCP proxy and the gateway. ``decide``
+still uses the purpose list when the caller does not pass a register.
 
 The envelope's ``purpose`` is the use case id. That is already how a use case
 is named on a decision; the register's own purpose field is the statement of
@@ -1488,25 +1490,14 @@ def load_register(
 
 def _governing_register(
     session: Session, *, as_of: datetime | None = None
-) -> UseCaseRegister | None:
-    """The register that governs a decision, or ``None`` when none was adopted.
+) -> UseCaseRegister:
+    """The register that governs an execution path.
 
-    Once any use case has been registered, the register governs every
-    execution path, even when nothing is in force at ``as_of``: an empty
-    register then denies every purpose rather than falling back to the
-    deployment's purpose list. A store that never registered a use case keeps
-    the purpose list.
+    An empty register is still the register. The purpose must be a registered
+    use case, and an empty register denies rather than falling back to the
+    deployment's purpose list.
     """
-    register = load_register(session, as_of=as_of)
-    return _governing(session, register)
-
-
-def _governing(session: Session, register: UseCaseRegister) -> UseCaseRegister | None:
-    """``register`` when it governs; see :func:`_governing_register`."""
-    if register.entries:
-        return register
-    adopted = session.exec(select(UseCase.usecase_id).limit(1)).first()
-    return register if adopted is not None else None
+    return load_register(session, as_of=as_of)
 
 
 def _emit(

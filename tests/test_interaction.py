@@ -14,7 +14,6 @@ from sqlmodel import select
 from fixtures import demo_pack as dp
 from fixtures import governance_pack as gp
 
-from test_usecases import _live_purpose
 from kognita import confirm, mark
 from kognita.approvals import ApprovalError, grant
 from kognita.envelope import Check, Envelope, RuleContext
@@ -729,11 +728,6 @@ def test_do_not_contact_blocks_later_client_contact_until_reversal(harness):
             )
         )
         session.flush()
-        # The store now has a register, so the purpose the calls use needs a
-        # live entry; the register governs every execution path.
-        _live_purpose(
-            session, harness.evidence, "COLLABORATION", at=FROZEN_NOW - timedelta(days=1)
-        )
         _boundary(session, harness.evidence)
         barred = _open(session, harness.evidence, interaction_id="int-barred")
         same = _open(session, harness.evidence, interaction_id="int-same")

@@ -113,6 +113,42 @@ def _register(session, name: str = "dossier-agent") -> None:
     register(session, name=name, owner_exec="Head of Research Ops")
 
 
+def _live(
+    session,
+    *,
+    provider: str = "api.openai.com",
+    purpose: str = "COLLABORATION",
+    model: str = MODEL,
+    version: str | None = None,
+) -> None:
+    """A live use case and the one card the gateway's served model must match."""
+    from kognita.usecases import load_register, model_card_id, register_model_card
+    from test_usecases import ensure_live_purposes
+
+    if load_register(session, as_of=NOW).get(purpose) is not None:
+        return
+    served = version or model
+    evidence = EvidenceWriter(session.get_bind(), clock=lambda: NOW)
+    card = model_card_id(provider, model, served)
+    register_model_card(
+        session,
+        provider=provider,
+        model=model,
+        version=served,
+        intended_use="Gateway fixture",
+        limitations="Fixture card",
+        evaluation_results="Not evaluated",
+        approver="Luis Ortega",
+        approved_at=NOW,
+        evidence=evidence,
+        actor_id="Luis Ortega",
+        at=NOW,
+    )
+    ensure_live_purposes(
+        session, evidence, (purpose,), at=NOW, approved_models=(card,)
+    )
+
+
 def _events(session, request_id: str) -> list[EvidenceEvent]:
     return list(
         session.exec(
@@ -161,6 +197,7 @@ def test_denial_returns_before_any_upstream_call(session, evidence):
 
 def test_allow_redacts_forwards_restores_and_classifies(session, evidence):
     _register(session)
+    _live(session)
     session.flush()
     prompt = f"Email {SECRET} about the notes"
     restored_answer = f"Reply to {SECRET} tomorrow"
@@ -212,11 +249,13 @@ def test_allow_redacts_forwards_restores_and_classifies(session, evidence):
 
 def test_evidence_holds_hashes_not_content(session, evidence):
     _register(session)
+    _live(session)
     session.flush()
     prompt = f"Email {SECRET} about the notes"
     upstream = _Upstream(
         json.dumps(
             {
+                "model": MODEL,
                 "choices": [
                     {"message": {"content": "Reply to [EMAIL_1] tomorrow"}}
                 ]
@@ -261,11 +300,13 @@ def test_evidence_holds_hashes_not_content(session, evidence):
 
 def test_token_usage_counts_against_the_run_budget(session, evidence):
     _register(session)
+    _live(session)
     session.flush()
     run = Run(max_tokens=10, max_cost_usd=1.0)
     upstream = _Upstream(
         json.dumps(
             {
+                "model": MODEL,
                 "choices": [{"message": {"content": "ack"}}],
                 "usage": {"total_tokens": 10, "cost_usd": 0.25},
             }
@@ -372,9 +413,10 @@ def test_agent_name_must_match_the_client_configuration(session, evidence):
 def test_registered_agent_and_approved_system_trigger_are_not_denials(session, evidence):
     """A matching agent is admitted. An approved system trigger is admitted as SYSTEM."""
     _register(session)
+    _live(session)
     session.flush()
     upstream = _Upstream(
-        json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+        json.dumps({"model": MODEL, "choices": [{"message": {"content": "ok"}}]}).encode()
     )
     agent_gateway = _gateway(session.get_bind(), evidence, upstream)
     agent_response = agent_gateway.handle(
@@ -484,9 +526,10 @@ def test_unregistered_agent_and_kill_switch_still_deny(session, evidence):
 
 def test_typed_classification_wins(session, evidence):
     _register(session)
+    _live(session)
     session.flush()
     upstream = _Upstream(
-        json.dumps({"choices": [{"message": {"content": "noted"}}]}).encode()
+        json.dumps({"model": MODEL, "choices": [{"message": {"content": "noted"}}]}).encode()
     )
     gateway = _gateway(session.get_bind(), evidence, upstream)
     response = gateway.handle(
@@ -527,9 +570,10 @@ def test_evidence_store_unavailable_refuses_the_call(session, engine):
 def test_http_server_refuses_before_upstream_and_returns_an_allow(session, evidence, engine):
     """``serve`` is the same path: the socket does not forward a denial."""
     _register(session)
+    _live(session)
     session.commit()
     upstream = _Upstream(
-        json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+        json.dumps({"model": MODEL, "choices": [{"message": {"content": "ok"}}]}).encode()
     )
     gateway = _gateway(engine, evidence, upstream)
     server = gateway._make_server("127.0.0.1", 0)
@@ -710,13 +754,15 @@ def test_degraded_local_call_without_client_data_is_evidenced_when_the_store_rec
     session, engine
 ):
     _register(session)
+    _live(session, provider="127.0.0.1")
     session.commit()
     answer = json.dumps(
-        {"model": "local-model", "choices": [{"message": {"content": "the market is open"}}]}
+        {"model": MODEL, "choices": [{"message": {"content": "the market is open"}}]}
     ).encode()
     upstream = _Upstream(answer)
     writer = _Toggle(engine)
     gateway = _degraded(engine, writer, upstream, upstream_url=LOCAL_UPSTREAM)
+    _decisions, seeded = _stored(engine)
     response = gateway.handle(
         "POST",
         PATH,
@@ -731,7 +777,9 @@ def test_degraded_local_call_without_client_data_is_evidenced_when_the_store_rec
     assert json.loads(response.body)["choices"][0]["message"]["content"] == "the market is open"
     assert len(upstream.calls) == 1
     assert upstream.calls[0]["url"] == f"{LOCAL_UPSTREAM}{PATH}"
-    assert _stored(engine) == ([], [])
+    held_decisions, held_events = _stored(engine)
+    assert held_decisions == []
+    assert len(held_events) == len(seeded)
 
     writer.down = False
     recovered = gateway.handle("GET", PATH, {}, b"")
@@ -761,6 +809,7 @@ def test_degraded_refuses_a_remote_model_and_client_data_without_calling_the_pro
     session, engine
 ):
     _register(session)
+    _live(session)
     session.commit()
     modes = {"COLLABORATION": FailureMode.DEGRADED}
     writer = _Down(engine)
@@ -820,6 +869,7 @@ def test_degraded_refuses_a_remote_model_and_client_data_without_calling_the_pro
 def test_degraded_header_cannot_keep_client_data_below_c2(session, engine, header):
     """A classification header is a floor. It cannot keep an email below C2."""
     _register(session)
+    _live(session)
     session.commit()
     upstream = _Upstream(b"{}")
     spy = _Spy()
@@ -873,6 +923,7 @@ def test_degraded_refuses_client_data_outside_the_extracted_prompt(
 ):
     """The OpenAI user field is forwarded and is not part of the prompt text."""
     _register(session)
+    _live(session)
     session.commit()
     assert SECRET not in _prompt_text(payload)
     upstream = _Upstream(b"{}")
@@ -896,6 +947,7 @@ def test_degraded_refuses_client_data_outside_the_extracted_prompt(
 def test_degraded_refuses_a_unicode_escaped_email_outside_the_prompt(session, engine):
     """An email that exists only as a JSON escape is still client data."""
     _register(session)
+    _live(session)
     session.commit()
     body = (
         '{"model": "' + MODEL + '", "messages": [{"role": "user", "content": ""}], '
@@ -928,9 +980,10 @@ def test_degraded_low_header_still_calls_a_local_model_without_client_data(
 ):
     """A header below C2 does not refuse content the classifier leaves below C2."""
     _register(session)
+    _live(session, provider="127.0.0.1")
     session.commit()
     upstream = _Upstream(
-        json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+        json.dumps({"model": MODEL, "choices": [{"message": {"content": "ok"}}]}).encode()
     )
     gateway = _degraded(engine, _Down(engine), upstream, upstream_url=LOCAL_UPSTREAM)
     response = gateway.handle(
@@ -949,9 +1002,10 @@ def test_degraded_low_header_still_calls_a_local_model_without_client_data(
 
 def test_degraded_use_case_still_calls_a_remote_model_when_the_store_is_up(session, evidence):
     _register(session)
+    _live(session)
     session.commit()
     upstream = _Upstream(
-        json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+        json.dumps({"model": MODEL, "choices": [{"message": {"content": "ok"}}]}).encode()
     )
     gateway = _degraded(session.get_bind(), evidence, upstream)
     response = gateway.handle(
@@ -1085,11 +1139,20 @@ def _serve_gateway(monkeypatch, db, *purposes: str) -> Gateway:
 def test_gateway_serve_allows_a_listed_purpose_and_denies_an_unlisted_one(
     tmp_path, monkeypatch
 ):
-    """``--purposes`` is the allowlist. ``--purpose`` is only the claimed default."""
+    """A registered use case is allowed. A purpose the register does not name is denied.
+
+    ``--purposes`` still limits a purpose header that is not the client's own.
+    It does not authorize the call.
+    """
     db = tmp_path / "gateway.db"
     _seed_agent(db)
     claimed = dp.PURPOSES[0]
     listed = dp.PURPOSES[1]
+    engine = make_engine(db)
+    with Session(engine) as session:
+        _live(session, purpose=listed)
+        session.commit()
+    engine.dispose()
     gateway = _serve_gateway(monkeypatch, db, listed)
     assert gateway.client.purpose == claimed
     assert tuple(gateway.purposes) == (listed,)
@@ -1113,7 +1176,11 @@ def test_gateway_serve_allows_a_listed_purpose_and_denies_an_unlisted_one(
     assert denied.evaluation is not None
     assert denied.evaluation.envelope.purpose == claimed
     assert denied.evaluation.outcome is Outcome.DENY
-    assert _purpose(denied.evaluation).result is CheckResult.FAIL
+    denied_check = next(
+        check for check in denied.evaluation.checks if check.check == "USE_CASE_REGISTERED"
+    )
+    assert denied_check.result is CheckResult.FAIL
+    assert "not registered" in denied_check.citation
 
     allowed = gateway.handle(
         "POST",
@@ -1124,12 +1191,15 @@ def test_gateway_serve_allows_a_listed_purpose_and_denies_an_unlisted_one(
     assert allowed.evaluation is not None
     assert allowed.evaluation.envelope.purpose == listed
     assert allowed.evaluation.outcome is Outcome.ALLOW
-    assert _purpose(allowed.evaluation).result is CheckResult.PASS
+    allowed_check = next(
+        check for check in allowed.evaluation.checks if check.check == "USE_CASE"
+    )
+    assert allowed_check.result is CheckResult.PASS
     assert len(upstream.calls) == 1
 
 
 def test_gateway_serve_denies_when_no_purpose_list_is_configured(tmp_path, monkeypatch):
-    """A claimed ``--purpose`` with no ``--purposes`` is still a denial."""
+    """A claimed purpose with an empty register is a denial."""
     db = tmp_path / "gateway.db"
     _seed_agent(db)
     claimed = dp.PURPOSES[0]
@@ -1148,8 +1218,11 @@ def test_gateway_serve_denies_when_no_purpose_list_is_configured(tmp_path, monke
     assert response.evaluation is not None
     assert response.evaluation.envelope.purpose == claimed
     assert response.evaluation.outcome is Outcome.DENY
-    assert _purpose(response.evaluation).result is not CheckResult.PASS
-    assert _purpose(response.evaluation).result is CheckResult.FAIL
+    denied_check = next(
+        check for check in response.evaluation.checks if check.check == "USE_CASE_REGISTERED"
+    )
+    assert denied_check.result is CheckResult.FAIL
+    assert "not registered" in denied_check.citation
 
 
 def _summary_request() -> bytes:

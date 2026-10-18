@@ -47,7 +47,7 @@ from kognita.packs.catalog import manifest_bytes, merge_policy_sets, read_pack_f
 from kognita.policy import compile_rules
 from kognita.rules import principal_equality
 from kognita.vocabulary import CheckResult, EventType, Outcome
-from test_gateway import BENIGN, PATH, _Upstream, _body, _gateway, _register
+from test_gateway import BENIGN, PATH, _Upstream, _body, _gateway, _live, _register
 from test_packaging import PACKAGE_ROOT, _engine_modules_on_disk
 
 AS_OF = datetime(2026, 6, 1, 12, 0, tzinfo=timezone.utc)
@@ -590,6 +590,7 @@ def test_gateway_cites_the_geo_fence_and_does_not_call_upstream_on_denial(sessio
     )
     compile_rules(session, pack.policies, at=AS_OF)
     _register(session)
+    _live(session, purpose="ACCESS")
     session.flush()
     upstream = _Upstream(
         json.dumps(

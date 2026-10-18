@@ -84,7 +84,6 @@ from kognita.breaker import circuit_breaker_checks
 from kognita.revocation import revocation_checks
 from kognita.rules import build_registry
 from kognita.usecases import (
-    _governing,
     _served_model_citation,
     endpoint_named,
     load_register,
@@ -935,7 +934,7 @@ class Gateway:
         # One register for this request. The model-card link and the endpoint
         # flag read it again; loading it a second time would scan the same rows.
         session.info["_kognita_register"] = register
-        usecases = _governing(session, register)
+        usecases = register
         flagged = not endpoint_named(register, self.upstream)
 
         def finish(response: GatewayResponse) -> GatewayResponse:

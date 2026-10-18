@@ -470,15 +470,16 @@ def cmd_serve(args: argparse.Namespace) -> int:
     """Run the OpenAI-compatible AI gateway, or the MCP proxy.
 
     The AI gateway binds one client configuration. Agent names outside that
-    configuration are denied. ``--purposes`` is the purpose allowlist.
-    ``--purpose`` is the purpose claimed when a request has none. With no
-    ``--purposes`` and no ``--pack``, every call is denied. ``--pack`` loads
-    that pack first and, when ``--purposes`` is omitted, uses the pack's
-    purposes.
+    configuration are denied. ``--purposes`` constrains a purpose header.
+    ``--purpose`` is the purpose claimed when a request has none. Authorization
+    is the use-case register: an empty register denies the call.
+    ``--pack`` loads that pack first and, when ``--purposes`` is omitted, uses
+    the pack's purposes as the header list. Those names do not authorize the
+    call until they are registered use cases.
     ``--provider`` accepts ``openai-compatible`` only. ``--mcp --root-config``
     fronts MCP servers instead, and does not start the model gateway. The
-    proxy's allowlist is the ``purposes`` list in that file, not ``--purpose``
-    and not ``--purposes``.
+    proxy's header list is the ``purposes`` list in that file, not ``--purpose``
+    and not ``--purposes``. The register authorizes that call too.
     """
     if args.mcp:
         if args.pack or args.overlay:
@@ -1277,10 +1278,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=None,
         help=(
-            "purpose the AI gateway may allow; repeatable. Distinct from "
+            "purpose header the AI gateway accepts; repeatable. Distinct from "
             "--purpose, which is only the purpose claimed when a request has "
             "none. With no --purposes, the gateway uses the loaded pack's "
-            "purposes, and denies every call when neither is set"
+            "purposes as that header list. Authorization is the use-case "
+            "register, and an empty register denies the call"
         ),
     )
     serve.add_argument("--pack", help="starter or installed pack to load before serving")

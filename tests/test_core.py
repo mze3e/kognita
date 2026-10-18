@@ -161,14 +161,15 @@ def test_unevaluable_policy_escalates_rather_than_being_ignored(harness):
 def test_chain_detects_a_rewritten_payload(harness):
     envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
     with harness.session() as session:
+        before = verify_chain(session)
         for _ in range(3):
             harness.decide_and_record(envelope, session)
         session.commit()
-        assert verify_chain(session) == 3
+        assert verify_chain(session) == before + 3
 
         lift_evidence_guard(session)
         event = session.exec(
-            select(EvidenceEvent).where(EvidenceEvent.sequence == 2)
+            select(EvidenceEvent).where(EvidenceEvent.sequence == before + 2)
         ).one()
         event.payload = {**event.payload, "outcome": "ALLOW-ish"}
         session.add(event)
@@ -176,7 +177,7 @@ def test_chain_detects_a_rewritten_payload(harness):
 
         with pytest.raises(ChainBreak) as excinfo:
             verify_chain(session)
-    assert excinfo.value.sequence == 2
+    assert excinfo.value.sequence == before + 2
 
 
 def test_chain_detects_a_deleted_event(harness):
@@ -235,6 +236,7 @@ def test_redact_payload_hook_keeps_content_out_of_the_log(harness):
         harness.engine, redact_payload=hashes_only, clock=lambda: harness.now
     )
     with harness.session() as session:
+        before = verify_chain(session)
         writer.emit(
             session,
             correlation_id="r1",
@@ -242,13 +244,15 @@ def test_redact_payload_hook_keeps_content_out_of_the_log(harness):
             payload={"subject_name": "Rivera Cohort", "notes": "sensitive detail"},
         )
         session.commit()
-        event = session.exec(select(EvidenceEvent)).one()
+        event = session.exec(
+            select(EvidenceEvent).where(EvidenceEvent.correlation_id == "r1")
+        ).one()
 
     assert "Rivera Cohort" not in canonical_json(event.payload)
     assert set(event.payload) == {"subject_name", "notes"}
     assert event.payload["subject_name"]["sha256"]
     with harness.session() as session:
-        assert verify_chain(session) == 1
+        assert verify_chain(session) == before + 1
 
 
 # ── Approvals ────────────────────────────────────────────────────────────────
@@ -613,10 +617,11 @@ def test_writers_over_one_engine_share_a_lock(harness):
     assert plain._lock is redacting._lock
 
     with harness.session() as session:
+        before = verify_chain(session)
         plain.emit(session, correlation_id="a", event_type=EventType.TOOL_CALL, payload={"v": 1})
         redacting.emit(session, correlation_id="b", event_type=EventType.TOOL_CALL, payload={"v": 2})
         session.commit()
-        assert verify_chain(session) == 2
+        assert verify_chain(session) == before + 2
 
 
 def test_the_store_refuses_to_update_or_delete_evidence(harness):
@@ -625,34 +630,44 @@ def test_the_store_refuses_to_update_or_delete_evidence(harness):
 
     envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
     with harness.session() as session:
-        harness.decide_and_record(envelope, session)
+        before = verify_chain(session)
+        evaluation = harness.decide_and_record(envelope, session)
         session.commit()
-        event = session.exec(select(EvidenceEvent)).one()
+        event = session.exec(
+            select(EvidenceEvent).where(
+                EvidenceEvent.correlation_id == evaluation.request_id
+            )
+        ).one()
         event.payload = {"outcome": "ALLOW-ish"}
         session.add(event)
         with pytest.raises(IntegrityError, match="append-only"):
             session.commit()
         session.rollback()
-        victim = session.exec(select(EvidenceEvent)).one()
+        victim = session.exec(
+            select(EvidenceEvent).where(
+                EvidenceEvent.correlation_id == evaluation.request_id
+            )
+        ).one()
         session.delete(victim)
         with pytest.raises(IntegrityError, match="append-only"):
             session.commit()
         session.rollback()
-        assert verify_chain(session) == 1
+        assert verify_chain(session) == before + 1
 
 
 def test_chain_detects_events_removed_from_the_end(harness):
     """Deleting the tail leaves a valid-looking chain; the head checkpoint catches it."""
     envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
     with harness.session() as session:
+        before = verify_chain(session)
         for _ in range(3):
             harness.decide_and_record(envelope, session)
         session.commit()
-        assert verify_chain(session) == 3
+        assert verify_chain(session) == before + 3
 
         lift_evidence_guard(session)
         victim = session.exec(
-            select(EvidenceEvent).where(EvidenceEvent.sequence == 3)
+            select(EvidenceEvent).where(EvidenceEvent.sequence == before + 3)
         ).one()
         session.delete(victim)
         session.commit()

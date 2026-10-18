@@ -346,6 +346,50 @@ def _standing_checks(
     ]
 
 
+def _approval_policy_recheck(
+    envelope: Envelope,
+    snapshot: PolicySnapshot,
+    *,
+    attributes: dict[str, Any] | None,
+    usecases: UseCaseRegister | None,
+    at: datetime,
+    original: Evaluation,
+    known_policy_ids: set[int],
+) -> list[Check]:
+    """Policies that were not in force at the hold and are stricter than this approval.
+
+    The approval satisfies a ``HUMAN_APPROVAL`` check whose policy was already
+    in force. A policy that was not in that set, and that now fails, escalates,
+    or requires a human approval this grant does not satisfy, withholds the
+    release. Policies already known at the checkpoint are not re-litigated
+    here. Standing checks cover the kill switch, the register, revocations,
+    drills and breakers.
+    """
+    fresh = decide(
+        envelope,
+        snapshot,
+        attributes=attributes,
+        usecases=usecases,
+        as_of=at,
+        request_id=original.request_id,
+    )
+    satisfied = {
+        check.policy_id
+        for check in original.checks
+        if check.result is CheckResult.REQUIRES_HUMAN and check.policy_id is not None
+    }
+    withheld: list[Check] = []
+    for check in fresh.checks:
+        if check.policy_id is None or check.policy_id in known_policy_ids:
+            continue
+        if check.result in (CheckResult.FAIL, CheckResult.ESCALATE):
+            withheld.append(check)
+            continue
+        if check.result is CheckResult.REQUIRES_HUMAN and check.policy_id not in satisfied:
+            withheld.append(check)
+    return withheld
+
+
 def _pin_policy_hashes(checks: list[Check], policies: tuple[Policy, ...]) -> list[Check]:
     """Record the hash of each policy row the check evaluated.
 

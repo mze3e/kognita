@@ -25,7 +25,19 @@ from kognita import (
     make_engine,
     utcnow,
 )
+from kognita.evidence import EvidenceWriter
 from kognita.registry import register
+from kognita.usecases import (
+    ACCOUNTABILITY,
+    Appetite,
+    UseCaseSpec,
+    activate,
+    approve_rating,
+    model_card_id,
+    register as register_usecase,
+    register_model_card,
+    set_appetite,
+)
 
 # Names already used by the demo pack and the gateway tests.
 PURPOSES = (
@@ -185,6 +197,87 @@ def envelope(subject_id: str) -> Envelope:
     )
 
 
+def _register_purposes(session: Session, evidence: EvidenceWriter, *, at) -> None:
+    """The demo's purposes are live use cases. An empty register would deny them."""
+    card = model_card_id("127.0.0.1", MODEL, MODEL)
+    register_model_card(
+        session,
+        provider="127.0.0.1",
+        model=MODEL,
+        version=MODEL,
+        intended_use="Demo gateway stand-in",
+        limitations="The stand-in returns a fixed completion",
+        evaluation_results="Not a production model",
+        approver="Luis Ortega",
+        approved_at=at,
+        evidence=evidence,
+        actor_id="Luis Ortega",
+        at=at,
+    )
+    set_appetite(
+        session,
+        Appetite(
+            allowed_categories=("research summarization",),
+            prohibited_categories=(),
+            maximum_autonomy=4,
+            permitted_client_impact=("internal productivity",),
+            external_communication=False,
+            transaction_authority=False,
+            maximum_residual_materiality="high",
+        ),
+        evidence=evidence,
+        actor_id="CRO",
+        senior_management=True,
+        at=at,
+    )
+    for purpose in PURPOSES:
+        spec = UseCaseSpec(
+            usecase_id=purpose,
+            purpose=f"Demo purpose {purpose}",
+            category="research summarization",
+            business_owner="Jane Smith",
+            technology_owner="Omar Aziz",
+            risk_owner="Priya Shah",
+            model_owner="Luis Ortega",
+            accountability={seat: "Jane Smith" for seat in ACCOUNTABILITY},
+            control_function="Alex Chen",
+            builders=("Ann Builder",),
+            business_criticality="low",
+            client_impact="internal productivity",
+            autonomy="none",
+            decision_consequence="informational",
+            data_sensitivity="internal",
+            complexity={
+                "technology": "established",
+                "novelty": "familiar",
+                "explainability": "explainable",
+                "third_party_visibility": "not_applicable",
+            },
+            inherent_materiality="medium",
+            credited_controls=("entitlement filter",),
+            residual_materiality="low",
+            approval_gate="none",
+            review_sampling_rate=0.1,
+            maximum_autonomy=1,
+            monitoring=True,
+            explanation_depth="citation",
+            validators=("Jane Smith",),
+            approved_models=(card,) if purpose == PURPOSE else (),
+        )
+        register_usecase(session, spec, evidence=evidence, actor_id="Jane Smith", at=at)
+        approve_rating(
+            session, purpose, spec.control_function, evidence=evidence, at=at
+        )
+        activate(
+            session,
+            purpose,
+            evidence=evidence,
+            actor_id=spec.control_function,
+            at=at,
+            status="live",
+        )
+
+
 def seed_store(db_path: str) -> None:
     """Create the SQLite policy and evidence store and load the demo rows."""
     engine = make_engine(db_path)
@@ -275,6 +368,7 @@ def seed_store(db_path: str) -> None:
             ]
         )
         register(session, name=AGENT_NAME, owner_exec=OWNER_EXEC)
+        _register_purposes(session, EvidenceWriter(engine), at=utcnow())
         index_item(
             session,
             title="House guidance Q3 — cohort methodology",

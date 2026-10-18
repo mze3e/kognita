@@ -21,6 +21,7 @@ from kognita.exceptions import PolicyEditError, ReplayMismatch
 from kognita.gateway import ClientConfiguration, Gateway
 from kognita.models import EvidenceEvent, Policy, RetainedContent
 from kognita.registry import register
+from test_gateway import _live
 from kognita.replay import replay_decision
 from kognita.retention import RetentionStore
 from kognita.retrieval import index_item, retrieve
@@ -215,6 +216,7 @@ def test_reindex_changes_the_embedding_model_and_replay_fails(harness):
 
 def test_model_call_pins_identity_and_a_stored_prompt_edit_fails_replay(session, evidence):
     register(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    _live(session, version=MODEL_VERSION)
     session.flush()
     prompt = f"Email {SECRET} about the notes"
     answer = "Reply to [EMAIL_1] tomorrow"

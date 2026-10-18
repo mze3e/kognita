@@ -43,6 +43,33 @@ def _transport():
     return transport, calls
 
 
+def _live_collaboration(session, evidence) -> None:
+    """Adapters run tools and model calls. An empty register denies both."""
+    from kognita.usecases import load_register, model_card_id, register_model_card
+    from test_usecases import NOW, ensure_live_purposes
+
+    if load_register(session, as_of=NOW).get("COLLABORATION") is not None:
+        return
+    card = model_card_id("127.0.0.1", "governed", "governed")
+    register_model_card(
+        session,
+        provider="127.0.0.1",
+        model="governed",
+        version="governed",
+        intended_use="Adapter fixture",
+        limitations="Fixture card",
+        evaluation_results="Not evaluated",
+        approver="Luis Ortega",
+        approved_at=NOW,
+        evidence=evidence,
+        actor_id="Luis Ortega",
+        at=NOW,
+    )
+    ensure_live_purposes(
+        session, evidence, ("COLLABORATION",), at=NOW, approved_models=(card,)
+    )
+
+
 def _binding(
     seeded,
     engine,
@@ -55,6 +82,7 @@ def _binding(
     subject=None,
 ):
     purpose = "COLLABORATION"
+    _live_collaboration(seeded, evidence)
     client = ClientConfiguration(
         principal="alice",
         purpose=purpose,

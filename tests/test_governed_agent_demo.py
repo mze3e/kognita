@@ -88,7 +88,10 @@ def test_four_scenarios_run_from_scaffold(tmp_path: Path):
         assert session.exec(select(Policy)).all()
         assert session.exec(select(Agent).where(Agent.name == "dossier-agent")).first()
         assert session.exec(select(KnowledgeItem)).all()
-        assert session.exec(select(EvidenceEvent)).all() == []
+        seeded = session.exec(select(EvidenceEvent)).all()
+        assert seeded
+        assert all(event.event_type is EventType.POLICY_CHANGE for event in seeded)
+        assert session.exec(select(GovernanceDecision)).all() == []
     engine.dispose()
 
     demo = subprocess.run(

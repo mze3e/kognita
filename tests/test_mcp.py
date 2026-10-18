@@ -127,8 +127,12 @@ def _proxy(engine, evidence, upstream, **kwargs) -> McpProxy:
     )
 
 
-def _register(session, name: str = "dossier-agent") -> None:
+def _register(session, name: str = "dossier-agent", *, purpose: str = "COLLABORATION") -> None:
     register(session, name=name, owner_exec="Head of Research Ops")
+    from test_usecases import NOW, ensure_live_purposes
+
+    evidence = EvidenceWriter(session.get_bind(), clock=lambda: NOW)
+    ensure_live_purposes(session, evidence, (purpose,), at=NOW)
 
 
 def _call(name: str = "read_note", arguments: dict | None = None, rpc_id: int = 1) -> bytes:
@@ -462,6 +466,10 @@ def test_agent_name_outside_the_client_configuration_is_deny(session, evidence):
 
 
 def test_approved_system_trigger_is_a_system_actor(session, evidence):
+    from test_usecases import NOW, ensure_live_purposes
+
+    ensure_live_purposes(session, evidence, ("COLLABORATION",), at=NOW)
+    session.flush()
     upstream = _Upstream()
     proxy = _proxy(
         session.get_bind(),
@@ -526,8 +534,11 @@ def test_evidence_store_failure_refuses_without_backend_call(session, engine):
     assert response.status == 503
     assert upstream.calls == []
     assert json.loads(response.body)["error"]["message"] == "evidence store unavailable"
-    assert session.exec(select(EvidenceEvent)).all() == []
     assert session.exec(select(GovernanceDecision)).all() == []
+    assert all(
+        event.event_type is EventType.POLICY_CHANGE
+        for event in session.exec(select(EvidenceEvent)).all()
+    )
 
 
 def test_a_call_reaches_only_the_named_backend(session, evidence):
@@ -780,11 +791,24 @@ def _purpose(evaluation):
 
 
 def test_mcp_serve_allows_a_listed_purpose_and_denies_an_unlisted_one(tmp_path, monkeypatch):
-    """The root config ``purposes`` list is the allowlist. ``actor.purpose`` is not."""
+    """A registered use case is proxied. A purpose the register does not name is denied.
+
+    The root config ``purposes`` list constrains a purpose header. It does not
+    authorize the call.
+    """
     db = tmp_path / "mcp.db"
     _seed_agent(db)
     claimed = dp.PURPOSES[0]
     listed = dp.PURPOSES[1]
+    from test_usecases import NOW, ensure_live_purposes
+
+    engine = make_engine(db)
+    with Session(engine) as session:
+        ensure_live_purposes(
+            session, EvidenceWriter(engine, clock=lambda: NOW), (listed,), at=NOW
+        )
+        session.commit()
+    engine.dispose()
     config = tmp_path / "config.json"
     _write_root(config, db, (listed,))
     proxy = _serve_proxy(monkeypatch, config)
@@ -803,7 +827,11 @@ def test_mcp_serve_allows_a_listed_purpose_and_denies_an_unlisted_one(tmp_path, 
     assert denied.evaluation is not None
     assert denied.evaluation.envelope.purpose == claimed
     assert denied.evaluation.outcome is Outcome.DENY
-    assert _purpose(denied.evaluation).result is CheckResult.FAIL
+    denied_check = next(
+        check for check in denied.evaluation.checks if check.check == "USE_CASE_REGISTERED"
+    )
+    assert denied_check.result is CheckResult.FAIL
+    assert "not registered" in denied_check.citation
 
     allowed = proxy.handle(
         "POST",
@@ -814,12 +842,15 @@ def test_mcp_serve_allows_a_listed_purpose_and_denies_an_unlisted_one(tmp_path, 
     assert allowed.evaluation is not None
     assert allowed.evaluation.envelope.purpose == listed
     assert allowed.evaluation.outcome is Outcome.ALLOW
-    assert _purpose(allowed.evaluation).result is CheckResult.PASS
+    allowed_check = next(
+        check for check in allowed.evaluation.checks if check.check == "USE_CASE"
+    )
+    assert allowed_check.result is CheckResult.PASS
     assert len(upstream.calls) == 1
 
 
 def test_mcp_serve_denies_when_no_purpose_list_is_configured(tmp_path, monkeypatch):
-    """A root config with only ``actor.purpose`` still denies the call."""
+    """A claimed purpose with an empty register is a denial."""
     db = tmp_path / "mcp.db"
     _seed_agent(db)
     claimed = dp.PURPOSES[0]
@@ -840,5 +871,10 @@ def test_mcp_serve_denies_when_no_purpose_list_is_configured(tmp_path, monkeypat
     assert response.evaluation is not None
     assert response.evaluation.envelope.purpose == claimed
     assert response.evaluation.outcome is Outcome.DENY
-    assert _purpose(response.evaluation).result is not CheckResult.PASS
-    assert _purpose(response.evaluation).result is CheckResult.FAIL
+    denied_check = next(
+        check
+        for check in response.evaluation.checks
+        if check.check == "USE_CASE_REGISTERED"
+    )
+    assert denied_check.result is CheckResult.FAIL
+    assert "not registered" in denied_check.citation

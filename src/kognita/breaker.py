@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Sequence
 
+from sqlalchemy import or_
 from sqlmodel import Session, select
 
 from kognita.envelope import Check, Envelope, RuleContext
@@ -52,7 +53,7 @@ from kognita.models import (
 from kognita.registry import set_kill_switch
 from kognita.revocation import OpenRevocation, load_revocations
 from kognita.rules import circuit_breaker
-from kognita.usecases import _governing, is_material, load_register, record_incident
+from kognita.usecases import is_material, load_register, record_incident
 from kognita.vocabulary import (
     ActorType,
     CheckResult,
@@ -179,8 +180,9 @@ def evaluate_breakers(
     thresholds = in_force(session, BreakerThreshold, at)
     if not thresholds:
         return ()
-    # The widest open window. A flag older than every threshold cannot trip
-    # one, so the evidence read stops at that bound instead of the whole chain.
+    # The widest open window bounds which flags are read, on recorded_at.
+    # A decision linked to a flag inside that window is loaded by id even
+    # when the decision itself is older. The read does not walk the chain.
     window = max(int(row.window_seconds) for row in thresholds)
     flags = _flags(session, at, window_seconds=window)
     tripped: list[dict[str, Any]] = []
@@ -658,13 +660,16 @@ def _trip(
 def _flags(
     session: Session, at: datetime, *, window_seconds: int
 ) -> list[dict[str, Any]]:
-    """Flags at or before ``at`` and inside ``window_seconds`` of it.
+    """Flags inside the window, with the decisions those flags cite.
 
-    Older evidence is outside every open threshold and is not loaded.
+    The window is when the problem was flagged or confirmed. A decision that
+    the flag cites can be older than that window. Those decisions are loaded
+    by correlation id, and the interactions and links that join them are
+    loaded by id. Nothing else on the chain is read.
     """
     when = _aware(at)
     start = when - timedelta(seconds=window_seconds)
-    events = session.exec(
+    windowed = session.exec(
         select(EvidenceEvent)
         .where(
             EvidenceEvent.recorded_at >= start,
@@ -683,17 +688,13 @@ def _flags(
     ).all()
     events = [
         event
-        for event in events
-        if (recorded := as_utc(event.recorded_at)) is not None
+        for event in windowed
+        if _is_flag(event, _payload(event))
+        and (recorded := as_utc(event.recorded_at)) is not None
         and start <= recorded <= when
     ]
-    interactions = {
-        row.id: row
-        for row in session.exec(select(Interaction)).all()
-        if (opened := as_utc(row.opened_at)) is not None and opened <= at
-    }
-    links = list(session.exec(select(InteractionLink)).all())
-    by_correlation, by_interaction = _policy_ids(events, interactions, links)
+    interactions, links, decisions = _flag_context(session, events, at)
+    by_correlation, by_interaction = _policy_ids(decisions, interactions, links)
     found: list[dict[str, Any]] = []
     for event in events:
         payload = _payload(event)
@@ -730,6 +731,80 @@ def _flags(
         )
         found.append({"at": recorded, "usecase": usecase, "keys": keys})
     return found
+
+
+def _flag_context(
+    session: Session,
+    events: Sequence[EvidenceEvent],
+    at: datetime,
+) -> tuple[dict[str, Interaction], list[InteractionLink], list[EvidenceEvent]]:
+    """Interactions, links and decisions a windowed flag can cite.
+
+    The flag names a correlation id and, when it has one, an interaction id.
+    Links for those ids name the decision's correlation. The decisions are
+    read by that id, with no time bound.
+    """
+    correlation_ids: set[str] = set()
+    interaction_ids: set[str] = set()
+    for event in events:
+        if event.correlation_id:
+            correlation_ids.add(event.correlation_id)
+            interaction_ids.add(event.correlation_id)
+        named = _payload(event).get("interaction_id")
+        if isinstance(named, str) and named:
+            interaction_ids.add(named)
+    links = _links_for(session, correlation_ids, interaction_ids)
+    for link in links:
+        if link.correlation_id:
+            correlation_ids.add(link.correlation_id)
+        if link.interaction_id:
+            interaction_ids.add(link.interaction_id)
+    interactions = _interactions_for(session, interaction_ids, at)
+    decisions = _decisions_for(session, correlation_ids)
+    return interactions, links, decisions
+
+
+def _links_for(
+    session: Session, correlation_ids: set[str], interaction_ids: set[str]
+) -> list[InteractionLink]:
+    clauses = []
+    if correlation_ids:
+        clauses.append(InteractionLink.correlation_id.in_(tuple(correlation_ids)))
+    if interaction_ids:
+        clauses.append(InteractionLink.interaction_id.in_(tuple(interaction_ids)))
+    if not clauses:
+        return []
+    return list(session.exec(select(InteractionLink).where(or_(*clauses))).all())
+
+
+def _interactions_for(
+    session: Session, interaction_ids: set[str], at: datetime
+) -> dict[str, Interaction]:
+    if not interaction_ids:
+        return {}
+    rows = session.exec(
+        select(Interaction).where(Interaction.id.in_(tuple(interaction_ids)))
+    ).all()
+    return {
+        row.id: row
+        for row in rows
+        if (opened := as_utc(row.opened_at)) is not None and opened <= at
+    }
+
+
+def _decisions_for(
+    session: Session, correlation_ids: set[str]
+) -> list[EvidenceEvent]:
+    if not correlation_ids:
+        return []
+    return list(
+        session.exec(
+            select(EvidenceEvent).where(
+                EvidenceEvent.event_type == EventType.POLICY_DECISION,
+                EvidenceEvent.correlation_id.in_(tuple(correlation_ids)),
+            )
+        ).all()
+    )
 
 
 def _is_flag(event: EvidenceEvent, payload: dict[str, Any]) -> bool:
@@ -984,7 +1059,7 @@ def _probe(
     evaluation = decide(
         envelope,
         load_snapshot(session, as_of=at),
-        usecases=_governing(session, register),
+        usecases=register,
         as_of=at,
     )
     return record(session, evaluation, evidence=evidence, now=at)

@@ -311,8 +311,9 @@ def _purposes_from_config(raw: Mapping[str, Any]) -> tuple[str, ...]:
 def load_root_config(path: str) -> RootConfig:
     """Read the root config: servers, policy pack, evidence database, actor.
 
-    ``purposes``, when present, is the allowlist. ``actor.purpose`` stays the
-    purpose claimed when a request has none.
+    ``purposes``, when present, constrains the purpose header. ``actor.purpose``
+    stays the purpose claimed when a request has none. Authorization is the
+    use-case register, and an empty register denies the call.
     """
     try:
         with open(path, encoding="utf-8") as handle:
