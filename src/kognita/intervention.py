@@ -485,14 +485,15 @@ def _narrowed_ceiling(current: str | None, ceiling: str | None) -> str | None:
 
 
 def _was_restricted(session: Session, run_id: str) -> bool:
-    rows = session.exec(
-        select(EvidenceEvent).where(EvidenceEvent.event_type == EventType.INTERVENTION)
-    ).all()
-    for event in rows:
-        payload = _payload(event)
-        if payload.get("run_id") == run_id and payload.get("action") == "restrict":
-            return True
-    return False
+    # The gateway also uses this check: fetch one match through the event-type
+    # index rather than materialising the entire intervention history.
+    return session.exec(
+        select(EvidenceEvent.id).where(
+            EvidenceEvent.event_type == EventType.INTERVENTION,
+            EvidenceEvent.payload["run_id"].as_string() == run_id,
+            EvidenceEvent.payload["action"].as_string() == "restrict",
+        ).limit(1)
+    ).first() is not None
 
 
 def _snapshot(run: RunRecord) -> dict[str, Any]:
