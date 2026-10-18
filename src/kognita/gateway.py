@@ -10,8 +10,9 @@ One request, in order:
    Principal and purpose come from authenticated headers or the bound client
    configuration. ``tool`` is ``model_call``. The subject is the model name.
 2. Fill attributes the caller did not supply from the prompt, through
-   :func:`kognita.governance.classifier_derived_envelope`. A typed attribute
-   already on the request wins.
+   :func:`kognita.governance.classifier_derived_envelope`. A typed
+   classification already on the request is a floor: the classifier still
+   runs on the prompt and can only raise it, never suppress or lower it.
 3. :func:`kognita.governance.decide` before any byte is forwarded. A denial
    is returned here.
 4. On allow, redact with the egress guard and forward to the upstream.
@@ -933,10 +934,14 @@ class Gateway:
         subjects = self.pack.load_subjects(domain, session)
         attributes = dict(self.pack.resolve_attributes(envelope, subjects))
         if typed is not None:
-            attributes["classification"] = typed.value
-        if prompt:
+            # The header is a floor: it may raise the pack's label, never lower it.
+            packed = attributes.get("classification")
+            attributes["classification"] = (
+                most_sensitive([packed, typed]) if packed else typed
+            ).value
+        if prompt or typed is not None:
             envelope, attributes = classifier_derived_envelope(
-                prompt,
+                prompt or "",
                 envelope,
                 attributes=attributes,
                 classifier=self.classifier,

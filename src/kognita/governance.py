@@ -27,7 +27,7 @@ from typing import Any, Callable, Sequence
 from sqlmodel import Session, select
 
 from kognita.canonical import canonical_hash, canonical_json
-from kognita.classify import PatternClassifier, classifier_record
+from kognita.classify import PatternClassifier, classifier_record, most_sensitive
 from kognita.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
 from kognita.evidence import EvidenceWriter
 from kognita.exceptions import PolicyEditError
@@ -570,8 +570,11 @@ def classifier_derived_envelope(
 
     Rules that hold:
 
-    - A typed attribute wins. ``classification`` is written only when the
-      caller did not supply one.
+    - A typed ``classification`` is a floor, never a ceiling: the classifier
+      always runs on ``text``, and the caller's value can only raise the
+      label it produces, never suppress it or lower it. This is the same
+      floor semantics :meth:`PatternClassifier.classify` already applies to
+      its own ``hint`` argument, applied here for every classifier.
     - Identity is not read from the text. ``principal``, ``roles``,
       ``is_admin``, ``agent_name``, ``scopes`` and ``actor_location`` stay as
       the caller authenticated them.
@@ -580,15 +583,19 @@ def classifier_derived_envelope(
       allow. ``subject_type`` and ``subject_id`` choose which record is in
       scope, and a name in the prose does not get to choose it.
     - The classifier record (model, version, label, calibrated confidence,
-      input hash) is stored on the attributes when this function classified.
-      The text itself is not stored.
+      input hash) is stored on the attributes whenever this function ran the
+      classifier — which, unlike ``classification`` itself, is always. The
+      text itself is not stored.
     """
     attrs = dict(attributes or {})
-    if attrs.get("classification"):
-        return envelope, attrs
+    typed = attrs.get("classification")
 
     chosen = classifier if classifier is not None else PatternClassifier()
     recorded = classifier_record(chosen, text)
+    if typed:
+        # The floor is applied here, not delegated to the classifier, so a
+        # host classifier that ignores hints still cannot lower the label.
+        recorded["label"] = most_sensitive([recorded["label"], typed]).value
     recorded["filled"] = ["classification"]
     attrs["classification"] = recorded["label"]
     attrs["classifier"] = recorded

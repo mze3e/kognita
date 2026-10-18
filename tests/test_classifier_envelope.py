@@ -190,8 +190,7 @@ def test_text_cannot_widen_permission():
 
     A caller hint may raise that classification. It may not lower it. The
     decision on either hint is not more permissive than the unhinted label
-    under the same policy. A typed classification still replaces the label,
-    including a lower one. That path is unchanged.
+    under the same policy.
     """
     # The agent is registered so the registry check passes. The classification
     # policy is then what allows or denies.
@@ -415,10 +414,14 @@ def test_low_confidence_escalates():
 
 
 def test_typed_attributes_are_not_overwritten():
-    """Caller-supplied purpose, subject and classification stay as given.
+    """Caller-supplied purpose, subject and identity stay as given.
 
     The text asks for a different purpose, a different subject, public
     handling and admin identity. None of those replace the typed envelope.
+    ``classification`` is different: it is a floor, not an override, so the
+    classifier still runs on the text and raises it when the text supports a
+    higher label than the caller supplied — here "RESTRICTED need-to-know"
+    marks the text C3, above the caller's typed C2.
     """
     envelope = _envelope(subject_type="subject", subject_id="1")
     typed = {"classification": "C2", "requester_site": "SG"}
@@ -433,7 +436,7 @@ def test_typed_attributes_are_not_overwritten():
         attributes=typed,
         classifier=spy,
     )
-    assert spy.calls == 0
+    assert spy.calls == 1
     assert derived.purpose == "COLLABORATION"
     assert derived.subject_type == "subject"
     assert derived.subject_id == "1"
@@ -441,9 +444,9 @@ def test_typed_attributes_are_not_overwritten():
     assert derived.roles == ["RM"]
     assert derived.is_admin is False
     assert derived.actor_location == "SG"
-    assert attributes["classification"] == "C2"
+    assert attributes["classification"] == Classification.C3.value
     assert attributes["requester_site"] == "SG"
-    assert "classifier" not in attributes
+    assert attributes["classifier"]["label"] == Classification.C3.value
 
 
 def test_ask_classifies_the_question_and_replays_the_label(harness, monkeypatch):
