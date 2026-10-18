@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - #6: Lock parent run capacity before checking and reserving child budgets.
 - #27: Serialize daily anomaly row creation and counter updates across workers.
 - 0.5 DoD item 4 (concurrency): Enforce atomic per-minute and daily quota admission.
+- #20: Require non-blank, stripped approval signers and distinct requester, marker, and confirmer identities.
+- #21: Escalate checks with blank citations using CITATION-REQUIRED, preserving denials.
+- #31: Require approval packet text fields and list members to contain non-blank text.
 
 ## [0.5.0] - 2026-10-19
 

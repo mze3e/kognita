@@ -111,6 +111,7 @@ def _transition(
     A MARKED two-signature approval can be rejected. It cannot be granted here:
     that second signature is :func:`confirm`.
     """
+    approver_name = _identity(approver_name)
     at = now or utcnow()
     if approval.status == ApprovalStatus.MARKED:
         if status != ApprovalStatus.REJECTED:
@@ -157,6 +158,13 @@ def _transition(
     return approval
 
 
+def _identity(value: str | None) -> str:
+    name = (value or "").strip()
+    if not name or name == _UNASSIGNED_APPROVER:
+        raise ApprovalError("APPROVAL-IDENTITY: a signature must name a person")
+    return name
+
+
 def mark(
     session: Session,
     approval: Approval,
@@ -184,8 +192,10 @@ def mark(
         session.flush()
         raise ApprovalError(f"approval {approval.id} expired at {expiry.isoformat()}")
 
-    # Validation: requester != approver for separation of duties
-    if approval.requester_id == approver_id:
+    approver_id = _identity(approver_id)
+    requester = _identity(approval.requester_id)
+    # Compare canonical identities, including on pre-existing approval rows.
+    if requester == approver_id:
         raise ApprovalError(
             f"approval {approval.id}: requester and approver must differ (separation of duties)"
         )
@@ -235,11 +245,10 @@ def confirm(
         raise ApprovalError(
             f"approval {approval.id} is not in MARKED state (current: {ApprovalStatus(approval.status).value})"
         )
-    if (
-        not approver_id
-        or approver_id == approval.requester_id
-        or approver_id == approval.approver_id
-    ):
+    approver_id = _identity(approver_id)
+    requester = _identity(approval.requester_id)
+    marker = _identity(approval.approver_id)
+    if len({requester, marker, approver_id}) != 3:
         raise ApprovalError(
             f"approval {approval.id}: the confirming party must differ from "
             "the requester and the marker"

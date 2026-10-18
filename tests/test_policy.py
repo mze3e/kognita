@@ -119,14 +119,18 @@ def test_a_scenario_failure_names_the_outcome(tmp_path):
     assert "expected ALLOW, got DENY" in failed[0].detail
 
 
-def test_a_decision_without_a_citation_fails_the_scenario(tmp_path):
+def test_a_decision_without_a_citation_escalates_unless_denied(tmp_path):
     rule = RULE.replace(
         "citation: A client may read only their own mailbox",
         'citation: ""',
     )
     results = run_scenarios(read_policy_set(_policy_dir(tmp_path, rule=rule)), as_of=AT)
-    assert results[1].passed is False
-    assert "no citation" in results[1].detail
+    # The PDP now supplies CITATION-REQUIRED and escalates the former ALLOW;
+    # the denial retains its stronger outcome and has a usable rule citation.
+    assert results[0].passed is False
+    assert "ESCALATE" in results[0].detail
+    assert results[1].passed is True
+    assert results[1].detail == "DENY"
 
 
 def test_cites_must_name_a_rule_in_the_basis(tmp_path):
