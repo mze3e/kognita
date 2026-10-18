@@ -1245,3 +1245,11 @@ class _RunScope(SQLModel, table=True):
     __tablename__ = "_run_scopes"
     id: str = Field(primary_key=True, foreign_key="runs.id")
     body: dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class _AgentTaint(SQLModel, table=True):
+    """Sticky provenance for a workload/delegation across run rotations."""
+    __tablename__ = "_agent_taint"
+    id: str = Field(primary_key=True)
+    external: bool = False
+    client_data: bool = False

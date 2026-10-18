@@ -404,6 +404,8 @@ def _save_run(session: Session, run: Run) -> None:
         session.add(row)
     row.external = bool(row.external) or run.external
     row.client_data = bool(row.client_data) or run.client_data
+    run.external = row.external
+    run.client_data = row.client_data
     if row.assurance_level is not None:
         run.assurance_level = min(row.assurance_level, run.assurance_level) if run.assurance_level is not None else row.assurance_level
     row.assurance_level = run.assurance_level
@@ -426,6 +428,8 @@ def _save_run(session: Session, run: Run) -> None:
     row.override_outcome = run.override_outcome or ""
     session.add(row)
     session.flush()
+    from kognita._fleet import _remember_taint
+    _remember_taint(session, run)
 
 
 def _load_run(session: Session, run_id: str) -> Run:
@@ -1135,6 +1139,11 @@ def continue_run(
         snapshot = load_snapshot(session, as_of=at, _evidence=evidence, _agent_name=envelope.agent_name or "")
         attributes = dict(evaluation.attributes)
         usecases = _governing_register(session, as_of=at)
+        if payload.get("kind") == "retrieval":
+            from kognita._fleet import _run_checks
+            _refresh_run(session, run)
+            recheck += [c for c in _run_checks(session, run, envelope, evidence)
+                        if c.result != CheckResult.PASS]
         if registry is not None and payload.get("kind") == "tool":
             current_spec = registry.get(envelope.tool)
             from kognita._isolation import _tool_checks

@@ -303,7 +303,11 @@ def test_committed_remote_control_cancels_without_local_signal(tmp_path, monkeyp
         from kognita.tools import _save_run
         from kognita.models import RunRecord
         run = Run(started_at=NOW)
-        _save_run(session, run)
+        # Ingress requires the trusted host to bind the run before use.
+        from kognita._fleet import _run_checks
+        from kognita.envelope import Envelope
+        _run_checks(session, run, Envelope(principal='alice', agent_name='dossier-agent',
+            purpose='COLLABORATION', tool='read_note', delegation_id=headers['delegation_id']), writer)
         headers['run_id'] = run.id
         session.commit()
         monkeypatch.setattr('kognita.intervention._ready',

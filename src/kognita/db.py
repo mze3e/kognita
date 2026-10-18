@@ -134,6 +134,8 @@ def create_all(engine: Engine) -> None:
     tables. Evidence rows are protected from UPDATE and DELETE, and the head
     checkpoint is created and backfilled from the last event.
     """
+    from sqlalchemy import inspect
+    backfill_taint = not inspect(engine).has_table('_agent_taint')
     SQLModel.metadata.create_all(engine)
     if engine.dialect.name != "sqlite":
         return
@@ -158,6 +160,20 @@ def create_all(engine: Engine) -> None:
             connection.exec_driver_sql(statement)
         for statement in (*_EVIDENCE_HEAD, *EVIDENCE_GUARD_TRIGGERS):
             connection.exec_driver_sql(statement)
+
+    if backfill_taint:
+        # Existing provenance must survive the first deployment of sticky taint.
+        # This scan runs only at schema creation, never on the request path.
+        from sqlmodel import select
+        from kognita.models import RunRecord
+        from kognita.tools import _load_run
+        from kognita._fleet import _remember_taint
+        with Session(engine) as session:
+            ids = session.exec(select(RunRecord.id).where(
+                (RunRecord.external == True) | (RunRecord.client_data == True))).all()  # noqa: E712
+            for run_id in ids:
+                _remember_taint(session, _load_run(session, run_id))
+            session.commit()
 
 
 @contextmanager

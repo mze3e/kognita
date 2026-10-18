@@ -21,8 +21,17 @@ def _run_checks(session, run, envelope, evidence):
             or run is None and _external_agent(session, envelope.agent_name)):
         return [Check(check='S6B-RUN-ISOLATION', citation='S6B-RUN-ISOLATION',
                       regime='INTERNAL', result=CheckResult.FAIL)]
+    from kognita.models import _AgentTaint, Agent
+    from kognita.canonical import canonical_hash
+    from sqlalchemy import update
+    if envelope.agent_name:
+        # Serialize run rotation with provenance updates for the same workload.
+        session.execute(update(Agent).where(Agent.name == envelope.agent_name).values(name=Agent.name))
+    key = canonical_hash([envelope.agent_name, envelope.delegation_id])
+    taint = session.get(_AgentTaint, key, populate_existing=True) if envelope.agent_name else None
     if run is None:
-        return []
+        return [Check(check='S5-RUN-REQUIRED', citation='S5-RUN-REQUIRED',
+                      regime='INTERNAL', result=CheckResult.FAIL)] if taint and (taint.external or taint.client_data) else []
     from kognita.tools import _save_run
     _restore(session, run)
     identity = dict(agent=envelope.agent_name, human=envelope.principal,
@@ -36,8 +45,34 @@ def _run_checks(session, run, envelope, evidence):
         emit(session, evidence, run.id, 'RUN_BOUND', citation='S6B-RUN-ISOLATION',
              run_id=run.id, **identity)
     ok = all(run._authority_scope.get(k) == v for k, v in identity.items())
+    if ok and (taint or run.external or run.client_data):
+        from kognita.tools import _refresh_run
+        _refresh_run(session, run)
+        run.external |= bool(taint and taint.external)
+        run.client_data |= bool(taint and taint.client_data)
+        _save_run(session, run)
     return [Check(check='S6B-RUN-ISOLATION', citation='S6B-RUN-ISOLATION',
                   regime='INTERNAL', result=CheckResult.PASS if ok else CheckResult.FAIL)]
+
+
+def _remember_taint(session, run):
+    from kognita.models import _AgentTaint, Agent
+    from kognita.canonical import canonical_hash
+    from sqlalchemy import update
+    scope = run._authority_scope
+    if not scope:
+        _restore(session, run)
+        scope = run._authority_scope
+    name = scope.get('agent')
+    if not name or not (run.external or run.client_data):
+        return
+    session.execute(update(Agent).where(Agent.name == name).values(name=Agent.name))
+    key = canonical_hash([name, scope.get('delegation_id')])
+    taint = session.get(_AgentTaint, key, populate_existing=True) or _AgentTaint(id=key)
+    taint.external |= run.external
+    taint.client_data |= run.client_data
+    session.add(taint)
+    session.flush()
 
 
 def _delegate(session, run, name, scope, evidence, at):

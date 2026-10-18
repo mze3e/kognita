@@ -53,7 +53,7 @@ from kognita.tools import (
     _with_checks,
     record_run_decision,
 )
-from kognita.vocabulary import ActorType, Classification, Outcome
+from kognita.vocabulary import ActorType, Classification, Outcome, CheckResult
 
 
 @dataclass(frozen=True)
@@ -291,6 +291,14 @@ def ask(
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
+    from kognita._fleet import _run_checks
+    from kognita.tools import _refresh_run
+    if run is not None:
+        _refresh_run(session, run)
+    isolation = _run_checks(session, run, routed, evidence)
+    evaluation = _with_checks(evaluation, isolation)
+    if any(c.result == CheckResult.FAIL for c in isolation):
+        run = None
     from kognita._isolation import _ingest, _tool_checks
     _ingest(session, run, evidence, text=question, correlation_id=evaluation.request_id,
         _agent_name=routed.agent_name, client_data='client' in routed.all_subjects()
@@ -387,14 +395,14 @@ def ask(
         run=run,
     )
     record_run_decision(session, interaction_id, evaluation, evidence, now=at)
-    return _compose_answer(
+    return _minimized_answer(session, evidence, routed, _compose_answer(
         evaluation,
         route.name,
         results,
         routed,
         subgraph=subgraph,
         session=session,
-    )
+    ))
 
 
 def _resume_retrieval(
@@ -411,6 +419,11 @@ def _resume_retrieval(
     """Fetch entitled sources for a continuation that was held before retrieval."""
     if embedder is None:
         raise ApprovalError("continuing a retrieval requires an embedder")
+    from kognita._fleet import _run_checks
+    isolation = _run_checks(session, run, envelope, evidence)
+    evaluation = _with_checks(evaluation, isolation)
+    if not evaluation.allowed:
+        return _refused_answer(evaluation, str(payload.get("route") or KNOWLEDGE))
     results, evaluation = _retrieve_for(
         session,
         str(payload["question"]),
@@ -421,14 +434,44 @@ def _resume_retrieval(
         top_k=int(payload.get("top_k") or 5),
         run=run,
     )
-    return _compose_answer(
+    return _minimized_answer(session, evidence, envelope, _compose_answer(
         evaluation,
         str(payload.get("route") or KNOWLEDGE),
         results,
         envelope,
         subgraph=subgraph,
         session=session,
-    )
+    ))
+
+
+def _minimized_answer(session, evidence, envelope, answer):
+    if not envelope.agent_name:
+        return answer
+    from kognita._limits import _minimize
+    from dataclasses import fields
+    data = _minimize(session, envelope, answer.to_dict(), evidence,
+                     _request_id=answer.request_id)
+    answer.summary = [v for v in data.get('summary', []) if v is not None]
+    answer.citations = [v for v in data.get('citations', []) if v]
+    answer.graph = data.get('graph')
+    baseline = Retrieved(0, '', '', '', Classification.C0, '', None, 0)
+    names = {f.name for f in fields(Retrieved)}
+    answer.results = []
+    for item in data.get('results', []):
+        if not item:
+            continue
+        values = {k: v for k, v in item.items() if k in names}
+        if 'document' in item:
+            values['document_ref'] = item['document']
+        if 'section_path' in values:
+            values['section_path'] = tuple(v for v in values['section_path'] if v is not None)
+        for key, start, end in [('charspan', 'char_start', 'char_end'),
+                                ('block_charspan', 'block_char_start', 'block_char_end')]:
+            span = item.get(key)
+            if isinstance(span, list) and len(span) == 2:
+                values[start], values[end] = span
+        answer.results.append(replace(baseline, **values))
+    return answer
 
 
 __all__ = [
