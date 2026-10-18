@@ -34,9 +34,10 @@ an interaction that names a client, or evidence on the run at classification
 C2 or above. A run that is not recorded is a denial. External-content taint
 and every other public-content tool stay a later slice.
 
-A complaint is an ``OUTCOME`` event of kind ``complaint``. It is recorded
-only when the output hash, the model version, and the approver are already
-on the interaction.
+A complaint is recorded by delegating to ``kognita.outcomes.record_outcome``
+with kind ``client complaint``. That is the one ``OUTCOME`` event and the
+one complaint payload. A client send is held when ``review_blocks_delivery``
+returns a citation.
 """
 
 from __future__ import annotations
@@ -64,8 +65,9 @@ from kognita.models import (
     utcnow,
 )
 from kognita.origination import do_not_contact_reasons
+from kognita.outcomes import record_outcome
 from kognita.retention import RetentionStore
-from kognita.review import PROVENANCE
+from kognita.review import CITE_HOLD, PROVENANCE, review_blocks_delivery
 from kognita.rules import CORE_RULES
 from kognita.usecases import load_register
 from kognita.vocabulary import (
@@ -425,67 +427,27 @@ def record_complaint(
     evidence: EvidenceWriter,
     output_hash: str,
     summary: str,
+    actor_id: str,
+    citation: str,
     now: datetime | None = None,
 ) -> dict[str, Any]:
-    """Record a complaint linked to the output, the model version, and the approver.
+    """Record a complaint by delegating to the outcome register.
 
-    A hash that is not an output on this interaction, a missing model version,
-    or a missing approver is refused and not recorded.
+    The event and the payload are the ones ``record_outcome`` writes for
+    kind ``client complaint``. A complaint that cannot name the output, the
+    model version, and the approver is refused and nothing is appended.
     """
-    at = now or utcnow()
-    interaction = require_interaction(session, interaction_id)
-    digest = output_hash.strip()
-    text = summary.strip()
-    if not digest or not text:
-        raise CommunicationError(
-            "a complaint names the output hash and what the complaint says "
-            "(Governed client communication: complaint)"
-        )
-    link = _complaint_link(session, interaction.id, digest)
-    if link is None:
-        raise CommunicationError(
-            "a complaint links to the output, the model version, and the approver "
-            "on this interaction (Governed client communication: complaint)"
-        )
-    payload: dict[str, Any] = {
-        "kind": "complaint",
-        "interaction_id": interaction.id,
-        "client_id": interaction.client_id,
-        "output_hash": digest,
-        "model_version": link["model_version"],
-        "model": link["model"],
-        "provider": link["provider"],
-        "approver": link["approver"],
-        "model_call_sequence": link["model_call_sequence"],
-        "final_decision_sequence": link["final_decision_sequence"],
-        "summary": text,
-        "recorded_at": at.isoformat(),
-        "citation": (
-            "Governed client communication: a complaint links to the output, "
-            "the model version, and the approver"
-        ),
-        "checks": [
-            {
-                "check": "COMPLAINT",
-                "regime": "COMMUNICATION",
-                "result": CheckResult.PASS.value,
-                "citation": (
-                    "Governed client communication: a complaint links to the "
-                    f"output {digest}, model version {link['model_version']}, "
-                    f"approver {link['approver']}"
-                ),
-            }
-        ],
-    }
-    evidence.emit(
+    return record_outcome(
         session,
-        correlation_id=interaction.id,
-        event_type=EventType.OUTCOME,
-        actor_type=ActorType.HUMAN,
-        actor_id=link["approver"],
-        payload=payload,
+        interaction_id,
+        kind="client complaint",
+        summary=summary,
+        evidence=evidence,
+        actor_id=actor_id,
+        citation=citation,
+        output_hash=output_hash,
+        now=now,
     )
-    return payload
 
 
 def _emit_send(
@@ -604,6 +566,25 @@ def _client_checks(
                 True,
                 "Origination: do not contact",
                 "do not contact is not in force",
+            )
+        )
+    hold = review_blocks_delivery(session, interaction_id)
+    if hold:
+        checks.append(
+            _structural(
+                "REVIEW_HOLD",
+                False,
+                hold,
+                "a before-delivery review holds this send",
+            )
+        )
+    else:
+        checks.append(
+            _structural(
+                "REVIEW_HOLD",
+                True,
+                CITE_HOLD,
+                "no before-delivery review holds this send",
             )
         )
     checks.append(_channel_check(session, channel_key, channel_label, public=False))
@@ -1221,112 +1202,6 @@ def _recommendation_link(session: Session, interaction_id: str) -> dict[str, Any
         latest = max(reviews, key=lambda row: row.id or 0)
         link["recommendation_hash"] = latest.rendered_hash
     return link
-
-
-def _complaint_link(
-    session: Session, interaction_id: str, output_hash: str
-) -> dict[str, Any] | None:
-    model = _model_for_output(session, interaction_id, output_hash)
-    if model is None:
-        return None
-    body = _payload(model)
-    version = str(body.get("model_version") or "").strip()
-    if not version:
-        return None
-    approver, sequence = _approver_before(session, interaction_id, model.sequence)
-    if not approver or sequence is None:
-        return None
-    return {
-        "model_version": version,
-        "model": str(body.get("model") or ""),
-        "provider": str(body.get("provider") or ""),
-        "approver": approver,
-        "model_call_sequence": model.sequence,
-        "final_decision_sequence": sequence,
-    }
-
-
-def _model_for_output(
-    session: Session, interaction_id: str, output_hash: str
-) -> EvidenceEvent | None:
-    matches = [
-        event
-        for event in _models(session, interaction_id)
-        if str(_payload(event).get("response_hash") or "") == output_hash
-    ]
-    if matches:
-        return matches[-1]
-    sends = _sent_communications(session, interaction_id)
-    for event in reversed(sends):
-        payload = _payload(event)
-        if payload.get("content_hash") != output_hash and payload.get("response_hash") != output_hash:
-            continue
-        sequence = payload.get("model_call_sequence")
-        for model in _models(session, interaction_id):
-            if model.sequence == sequence:
-                return model
-        response = str(payload.get("response_hash") or "")
-        if response:
-            linked = [
-                model
-                for model in _models(session, interaction_id)
-                if str(_payload(model).get("response_hash") or "") == response
-            ]
-            if linked:
-                return linked[-1]
-    return None
-
-
-def _sent_communications(session: Session, interaction_id: str) -> list[EvidenceEvent]:
-    ids = linked_correlation_ids(session, interaction_id)
-    rows = session.exec(
-        select(EvidenceEvent)
-        .where(EvidenceEvent.event_type == EventType.CLIENT_COMMUNICATION)
-        .order_by(EvidenceEvent.sequence)
-    ).all()
-    found: list[EvidenceEvent] = []
-    for event in rows:
-        payload = _payload(event)
-        if event.correlation_id not in ids and payload.get("interaction_id") != interaction_id:
-            continue
-        if payload.get("lane", "client") != "client":
-            continue
-        found.append(event)
-    return found
-
-
-def _approver_before(
-    session: Session, interaction_id: str, sequence: int
-) -> tuple[str, int | None]:
-    ids = linked_correlation_ids(session, interaction_id)
-    rows = session.exec(
-        select(EvidenceEvent)
-        .where(EvidenceEvent.event_type == EventType.FINAL_DECISION)
-        .order_by(EvidenceEvent.sequence)
-    ).all()
-    chosen: EvidenceEvent | None = None
-    for event in rows:
-        payload = _payload(event)
-        if event.correlation_id not in ids and payload.get("interaction_id") != interaction_id:
-            continue
-        if payload.get("outcome") not in _ACCEPTING:
-            continue
-        if event.sequence <= sequence:
-            chosen = event
-    if chosen is None:
-        for event in rows:
-            payload = _payload(event)
-            if event.correlation_id not in ids and payload.get("interaction_id") != interaction_id:
-                continue
-            if payload.get("outcome") in _ACCEPTING:
-                chosen = event
-    if chosen is None:
-        return "", None
-    payload = _payload(chosen)
-    approver = str(
-        payload.get("approver") or payload.get("rm") or payload.get("actor_id") or ""
-    ).strip()
-    return approver, chosen.sequence
 
 
 def _structural(check: str, ok: bool, citation: str, detail: str) -> Check:

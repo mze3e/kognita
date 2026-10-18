@@ -43,14 +43,18 @@ from kognita.models import (
     RunRecord,
 )
 from kognita.origination import originate
+from kognita.outcomes import OutcomeError
 from kognita.policy import parse_rule
 from kognita.reconstruct import QUESTIONS, reconstruct, render_reconstruction
 from kognita.registry import get as get_agent
 from kognita.retrieval import index_item, retrieve
 from kognita.review import (
+    CITE_HOLD,
     confirm_review,
     define_human_boundary,
+    enqueue_for_review,
     record_final_decision,
+    record_review_finding,
     review,
 )
 from kognita.tools import Run, ToolRegistry, continue_run, run_governed
@@ -1033,32 +1037,136 @@ def test_a_complaint_links_the_output_model_version_and_approver(harness):
             select(EvidenceEvent).where(EvidenceEvent.event_type == EventType.MODEL_CALL)
         ).one()
         response_hash = model_call.payload["response_hash"]
-        model_sequence = model_call.sequence
-        with pytest.raises(CommunicationError, match="complaint links"):
+        with pytest.raises(OutcomeError, match="does not link"):
             record_complaint(
                 session,
                 interaction.id,
                 evidence=harness.evidence,
                 output_hash="0" * 64,
                 summary="The note named the wrong client.",
-                now=FROZEN_NOW,
+                actor_id="RM",
+                citation="Complaint: the note named the wrong client",
             )
+        assert _events(session, EventType.OUTCOME) == []
         complaint = record_complaint(
             session,
             interaction.id,
             evidence=harness.evidence,
             output_hash=response_hash,
             summary="The note named the wrong client.",
-            now=FROZEN_NOW,
+            actor_id="RM",
+            citation="Complaint: the note named the wrong client",
         )
+        stored = _events(session, EventType.OUTCOME)
+        assert len(stored) == 1
+        recorded = dict(stored[0].payload)
         session.commit()
-        assert _events(session, EventType.OUTCOME)
 
-    assert complaint["kind"] == "complaint"
+    assert complaint["action"] == "RECORDED"
+    assert complaint["kind"] == "client complaint"
     assert complaint["output_hash"] == response_hash
     assert complaint["model_version"] == "gateway-model-2026-06-01"
     assert complaint["approver"] == "RM"
-    assert complaint["model_call_sequence"] == model_sequence
+    assert complaint["sequence"]
+    assert recorded["kind"] == "client complaint"
+    assert recorded["action"] == "RECORDED"
+    assert recorded["output_hash"] == response_hash
+    assert recorded["rule"].startswith("Outcomes: a complaint links")
+    assert "checks" not in recorded
+
+
+def test_a_before_delivery_review_holds_the_client_send(harness):
+    with harness.session() as session:
+        _content_policy(session)
+        _channel(session, harness.evidence)
+        held_interaction = _open(session, harness.evidence)
+        _allow(session, harness.evidence, held_interaction.id)
+        enqueue_for_review(
+            session,
+            held_interaction.id,
+            evidence=harness.evidence,
+            reasons=["the response was screened high"],
+            risk="high",
+            citation="Risk-based review: high risk",
+            actor_id="RM",
+            timing="before delivery",
+            now=FROZEN_NOW,
+        )
+        held = _send(session, harness.evidence, held_interaction.id)
+        record_review_finding(
+            session,
+            held_interaction.id,
+            reviewer="RM",
+            outcome="cleared",
+            finding="The draft is clear.",
+            evidence=harness.evidence,
+            now=FROZEN_NOW,
+        )
+        released = _send(session, harness.evidence, held_interaction.id)
+        confirmed = _open(session, harness.evidence, client_id="client-2")
+        _allow(session, harness.evidence, confirmed.id)
+        enqueue_for_review(
+            session,
+            confirmed.id,
+            evidence=harness.evidence,
+            reasons=["the response was screened high"],
+            risk="high",
+            citation="Risk-based review: high risk",
+            actor_id="RM",
+            timing="before delivery",
+            now=FROZEN_NOW,
+        )
+        record_review_finding(
+            session,
+            confirmed.id,
+            reviewer="RM",
+            outcome="confirmed problem",
+            finding="The draft names the wrong client.",
+            evidence=harness.evidence,
+            now=FROZEN_NOW,
+        )
+        blocked = _send(
+            session,
+            harness.evidence,
+            confirmed.id,
+            recipient_ref="client-2-ref",
+        )
+        later = _open(session, harness.evidence, client_id="client-3")
+        _allow(session, harness.evidence, later.id)
+        enqueue_for_review(
+            session,
+            later.id,
+            evidence=harness.evidence,
+            reasons=["reviewed after the note went out"],
+            risk="high",
+            citation="Risk-based review: high risk",
+            actor_id="RM",
+            timing="after delivery",
+            now=FROZEN_NOW,
+        )
+        after = _send(
+            session,
+            harness.evidence,
+            later.id,
+            recipient_ref="client-3-ref",
+        )
+        session.commit()
+
+    assert held["outcome"] == "DENY"
+    assert held["sent"] is False
+    assert any(
+        check["check"] == "REVIEW_HOLD" and check["result"] == "fail" and CITE_HOLD in check["citation"]
+        for check in held["checks"]
+    )
+    assert released["outcome"] == "ALLOW"
+    assert released["sent"] is True
+    assert any(
+        check["check"] == "REVIEW_HOLD" and check["result"] == "pass"
+        for check in released["checks"]
+    )
+    assert blocked["outcome"] == "DENY"
+    assert any(CITE_HOLD in check["citation"] for check in blocked["checks"])
+    assert after["outcome"] == "ALLOW"
 
 
 def test_one_interaction_answers_all_ten_questions(harness):
