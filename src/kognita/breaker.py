@@ -819,6 +819,8 @@ def _is_flag(event: EvidenceEvent, payload: dict[str, Any]) -> bool:
     if event.event_type == EventType.NEAR_MISS and payload.get("action") == "RECORDED":
         return True
     if event.event_type == EventType.POLICY_DECISION and payload.get("outcome") == Outcome.DENY.value:
+        if any(c.get('check') == 'S6-QUARANTINE' for c in payload.get('checks', []) if isinstance(c, dict)):
+            return False
         return not _containment_only(payload)
     if event.event_type == EventType.EGRESS and payload.get("decision") == "DENY":
         return True

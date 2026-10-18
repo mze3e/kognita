@@ -154,6 +154,7 @@ source_modules = [
     "kognita._isolation",
     "kognita.approvals",
     "kognita.autonomy",
+    "kognita.anomaly",
     "kognita.authority",
     "kognita.breaker",
     "kognita.broker",

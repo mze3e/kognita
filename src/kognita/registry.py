@@ -106,6 +106,13 @@ def set_kill_switch(
         raise LookupError(f"agent '{name}' is not registered")
     when = now or utcnow()
     if not engaged:
+        from kognita.models import _AnomalyDay
+        latest = session.exec(select(_AnomalyDay).where(_AnomalyDay.agent_name == name)
+                              .order_by(_AnomalyDay.day.desc()).limit(1)
+                              .execution_options(populate_existing=True)).first()
+        if latest and latest.body.get('quarantined') and (
+                actor_id != agent.owner_exec or get(session, actor_id) is not None):
+            raise ValueError("S6-RELEASE: accountable human owner required")
         _refuse_release_while_revoked(session, name, when)
     agent.kill_switch = engaged
     session.add(agent)
@@ -118,6 +125,7 @@ def set_kill_switch(
         actor_id=actor_id,
         payload={
             "action": "KILL_SWITCH_ENGAGED" if engaged else "KILL_SWITCH_RELEASED",
+            "citation": "KILL_SWITCH" if engaged else "S6-RELEASE",
             "agent": name,
             "owner_exec": agent.owner_exec,
             "reason": reason,

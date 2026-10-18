@@ -627,6 +627,8 @@ def record(
     at = now or utcnow()
     from kognita._limits import _recheck
     evaluation = _recheck(session, evaluation, at)
+    from kognita.anomaly import _observe
+    evaluation = _observe(session, evaluation, evidence, at, _classification=classification)
     envelope = evaluation.envelope
 
     decision = GovernanceDecision(
@@ -681,6 +683,11 @@ def record(
         classification=classification,
         payload=payload,
     )
+
+    if any(c.check.startswith('S6-') and c.check != 'S6-QUARANTINE'
+           and c.result == CheckResult.FAIL for c in evaluation.checks):
+        from kognita.breaker import evaluate_breakers
+        evaluate_breakers(session, evidence=evidence, now=at)
 
     if evaluation.outcome == Outcome.HUMAN_APPROVAL and create_approval:
         subjects = envelope.all_subjects()
