@@ -6,6 +6,7 @@ approval is actually granted.
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import timedelta
 
 import pytest
@@ -542,6 +543,9 @@ def test_continue_run_retrieves_only_after_grant(harness):
             select(EvidenceEvent).where(EvidenceEvent.event_type == EventType.RETRIEVAL)
         ).all()
 
+    # A rejected exact request cannot reopen its one-use approval. A new
+    # request has distinct arguments and can be presented for approval.
+    envelope = replace(envelope, arguments={"request": "second release"})
     run = Run()
     with harness.session() as session:
         ask(
