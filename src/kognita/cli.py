@@ -24,6 +24,24 @@ from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration, Gateway
 from kognita.vocabulary import FailureMode
 from kognita.mcp import McpProxy, load_root_config
+from kognita.policy import (
+    PolicyLanguageError,
+    apply_change,
+    blocking_findings,
+    compile_rules,
+    diff_sets,
+    explain,
+    format_finding,
+    is_change_path,
+    policies_from_session,
+    read_change,
+    read_envelope,
+    read_policy_set,
+    render_change,
+    render_explanation,
+    run_scenarios,
+    validate,
+)
 from kognita.reconstruct import reconstruct, render_reconstruction
 
 
@@ -340,6 +358,159 @@ def cmd_usecase_validate(args: argparse.Namespace) -> int:
     return 1
 
 
+def _print_findings(findings: list[Any]) -> None:
+    for finding in findings:
+        print(format_finding(finding), file=sys.stderr)
+
+
+def _policy_error(exc: PolicyLanguageError) -> int:
+    _print_findings(exc.findings)
+    return 1
+
+
+def cmd_policy_load(args: argparse.Namespace) -> int:
+    """Parse a policy set, or merge a change, and compile the rules to rows.
+
+    A change file needs ``--policy``, the current policy set. Loading a change
+    runs the strict checks and, when they pass, merges the delta into that
+    directory, archives the change with the date, and compiles the result.
+    """
+    path = Path(args.path)
+    try:
+        if is_change_path(path):
+            if not args.policy:
+                print(
+                    "a change file needs --policy, the current policy set",
+                    file=sys.stderr,
+                )
+                return 2
+            policy_path = Path(args.policy)
+            current = read_policy_set(policy_path)
+            change = read_change(path)
+            findings = blocking_findings(validate(current, change), strict=True)
+            if findings:
+                _print_findings(findings)
+                return 1
+            directory = policy_path if policy_path.is_dir() else policy_path.parent
+            merged = apply_change(
+                current, change, directory=directory, when=datetime.now(timezone.utc)
+            )
+            written = _compile_policy(args.db, merged)
+            print(f"applied {path} into {directory}")
+            print(f"compiled {written} rules into {args.db}")
+            return 0
+        policies = read_policy_set(path)
+        findings = blocking_findings(validate(policies), strict=False)
+        if findings:
+            _print_findings(findings)
+            return 1
+        written = _compile_policy(args.db, policies)
+        print(f"compiled {written} rules into {args.db}")
+        return 0
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+
+
+def cmd_policy_diff(args: argparse.Namespace) -> int:
+    """Show the ADDED, MODIFIED and REMOVED delta between two policy sets."""
+    try:
+        change = diff_sets(read_policy_set(args.before), read_policy_set(args.after))
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+    text = render_change(change)
+    if args.output:
+        Path(args.output).write_text(text, encoding="utf-8")
+        print(f"wrote {args.output}")
+    else:
+        print(text, end="")
+    return 0
+
+
+def cmd_policy_validate(args: argparse.Namespace) -> int:
+    """Type-check a policy set or a change.
+
+    ``--strict`` also fails on an uncited rule, an untested rule, a dangling
+    reference, and an unresolved ``[NEEDS CLARIFICATION: ...]`` marker.
+    """
+    path = Path(args.path)
+    try:
+        if is_change_path(path):
+            if not args.policy:
+                print(
+                    "a change file needs --policy, the current policy set",
+                    file=sys.stderr,
+                )
+                return 2
+            findings = validate(read_policy_set(args.policy), read_change(path))
+        else:
+            findings = validate(read_policy_set(path))
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+    blocking = blocking_findings(findings, strict=args.strict)
+    if blocking:
+        _print_findings(blocking)
+        return 1
+    print("valid")
+    return 0
+
+
+def cmd_policy_explain(args: argparse.Namespace) -> int:
+    """Show which rules engage for an envelope, and the citation of each check."""
+    if not args.policy and not args.db:
+        print("explain needs --policy or --db", file=sys.stderr)
+        return 2
+    try:
+        envelope, attributes, purposes, as_of = read_envelope(args.envelope)
+        if args.policy:
+            policies = read_policy_set(args.policy)
+        else:
+            policies = _policies_in(args.db, as_of)
+        report = explain(
+            policies,
+            envelope,
+            attributes=attributes,
+            purposes=purposes,
+            as_of=as_of,
+        )
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+    print(render_explanation(report), end="")
+    return 0
+
+
+def cmd_policy_test(args: argparse.Namespace) -> int:
+    """Run the scenarios colocated with a policy set."""
+    try:
+        results = run_scenarios(read_policy_set(args.path))
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+    if not results:
+        print("no scenarios")
+        return 0
+    failed = 0
+    for result in results:
+        if result.passed:
+            print(f"PASS {result.rule_id}: {result.name}")
+            continue
+        failed += 1
+        print(f"FAIL {result.rule_id}: {result.name}: {result.detail}", file=sys.stderr)
+    return 1 if failed else 0
+
+
+def _compile_policy(db: str, policies: Any) -> int:
+    engine = make_engine(db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        return compile_rules(session, policies)
+
+
+def _policies_in(db: str, as_of: datetime | None) -> Any:
+    engine = make_engine(db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        return policies_from_session(session, at=as_of)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
@@ -480,6 +651,64 @@ def build_parser() -> argparse.ArgumentParser:
     )
     usecase_validate.add_argument("--db", default="kognita.db", help="store path or URL")
     usecase_validate.set_defaults(func=cmd_usecase_validate)
+
+    policy = sub.add_parser("policy", help="author, diff, and test policy files")
+    policy_sub = policy.add_subparsers(dest="policy_command", required=True)
+
+    load = policy_sub.add_parser(
+        "load", help="parse, type-check, and compile rules to rows"
+    )
+    load.add_argument("path", help="policy file, policy directory, or change file")
+    load.add_argument("--db", default="kognita.db", help="policy store")
+    load.add_argument(
+        "--policy",
+        help="current policy set; required when path is a change file",
+    )
+    load.set_defaults(func=cmd_policy_load)
+
+    diff = policy_sub.add_parser("diff", help="show the delta between two policy sets")
+    diff.add_argument("before", help="policy file or directory")
+    diff.add_argument("after", help="policy file or directory")
+    diff.add_argument("-o", "--output", help="write the change document to a file")
+    diff.set_defaults(func=cmd_policy_diff)
+
+    validate_cmd = policy_sub.add_parser(
+        "validate",
+        help="fail on a broken policy set or change",
+    )
+    validate_cmd.add_argument(
+        "path", help="policy file, policy directory, or change file"
+    )
+    validate_cmd.add_argument(
+        "--policy",
+        help="current policy set; required when path is a change file",
+    )
+    validate_cmd.add_argument(
+        "--strict",
+        action="store_true",
+        help=(
+            "also fail on an uncited rule, an untested rule, a dangling "
+            "reference, and an unresolved [NEEDS CLARIFICATION: ...] marker"
+        ),
+    )
+    validate_cmd.set_defaults(func=cmd_policy_validate)
+
+    explain_cmd = policy_sub.add_parser(
+        "explain",
+        help="show which rules engage for an envelope, and why",
+    )
+    explain_cmd.add_argument(
+        "--envelope",
+        required=True,
+        help="JSON file or JSON object. Optional keys: attributes, purposes, as_of",
+    )
+    explain_cmd.add_argument("--policy", help="policy file or directory")
+    explain_cmd.add_argument("--db", help="policy store, when --policy is omitted")
+    explain_cmd.set_defaults(func=cmd_policy_explain)
+
+    test_cmd = policy_sub.add_parser("test", help="run colocated policy scenarios")
+    test_cmd.add_argument("path", help="policy file, scenario file, or directory")
+    test_cmd.set_defaults(func=cmd_policy_test)
 
     return parser
 
