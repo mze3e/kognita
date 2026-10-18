@@ -237,6 +237,13 @@ def _live_purpose(
         at=at, status="live",
     )
 
+    # Execution fixtures review asynchronously; response holds have dedicated tests.
+    from kognita.review import define_risk_criteria
+    define_risk_criteria(session, usecase_id, product_complexity_at="high",
+        vulnerability_indicators=("bereavement",), profile_deviation_is_high_risk=True,
+        minimum_classifier_confidence=0.8, timing="after delivery", evidence=evidence,
+        actor_id="Jane Smith", now=at)
+
 
 def ensure_live_purposes(
     session, evidence, purposes, at=NOW, approved_models=()

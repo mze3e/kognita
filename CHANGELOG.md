@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 0.5 DoD item 21: Abort default MCP HTTP connections on kill switches and deadlines, with per-call cancellation and completion evidence.
 - 0.5 DoD item 17: Run nine adversarial scenarios through both HTTP ingresses for every shipped pack, checking attack-specific controls and evidence; cite exhausted gateway budgets even alongside policy denials.
+- Feed retained gateway and governed tool responses into risk review and withhold before-delivery holds (#18).
+- Withhold model responses that cross token or cost budgets while retaining usage evidence (#30).
+- Persist served-model card denials as the delivered decision and replay the response restriction (#35).
 
 - Deny conflicting primary and additional subjects with S3-SUBJECT-CONFLICT and consistently prefer the primary subject when resolving references.
 - Per-tool subject mapping: Enforce private `_subject_paths` declarations against delegated data scopes; deny missing, malformed, or ambiguous argument paths before execution.

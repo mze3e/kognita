@@ -280,6 +280,12 @@ def _register_purposes(session: Session, evidence: EvidenceWriter, *, at) -> Non
             at=at,
             status="live",
         )
+        # Queue response review after delivery in this execution fixture.
+        from kognita.review import define_risk_criteria
+        define_risk_criteria(session, purpose, product_complexity_at="high",
+            vulnerability_indicators=("bereavement",), profile_deviation_is_high_risk=True,
+            minimum_classifier_confidence=0.8, timing="after delivery", evidence=evidence,
+            actor_id="Jane Smith", now=at)
 
 
 def seed_store(db_path: str) -> None:

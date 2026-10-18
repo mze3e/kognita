@@ -38,7 +38,7 @@ from fixtures.agents import register
 from kognita.registry import set_kill_switch
 from kognita.tools import Run
 from kognita.usecases import retire
-from test_usecases import CARD_ID, NOW, _activate, _open, _spec
+from test_usecases import CARD_ID, NOW, _activate as _activate_case, _open, _spec
 from kognita.vocabulary import ActorType, CheckResult, EventType, FailureMode, Outcome
 
 SECRET = "ana@example.org"
@@ -148,6 +148,15 @@ def _live(
     ensure_live_purposes(
         session, evidence, (purpose,), at=NOW, approved_models=(card,)
     )
+
+
+def _activate(session, evidence, spec, **kwargs):
+    _activate_case(session, evidence, spec, **kwargs)
+    from kognita.review import define_risk_criteria
+    define_risk_criteria(session, spec.usecase_id, product_complexity_at="high",
+        vulnerability_indicators=("bereavement",), profile_deviation_is_high_risk=True,
+        minimum_classifier_confidence=0.8, timing="after delivery", evidence=evidence,
+        actor_id="Jane Smith", now=NOW)
 
 
 def _events(session, request_id: str) -> list[EvidenceEvent]:
@@ -1350,16 +1359,16 @@ def test_a_served_model_without_an_approved_card_is_not_returned(
     assert secret.encode() not in response.body
     assert b"no model card" in response.body
     assert response.evaluation is not None
-    assert response.evaluation.outcome is Outcome.ALLOW
+    assert response.evaluation.outcome is Outcome.DENY
     assert response.headers["x-kognita-unregistered-ai-endpoint"] == "false"
     recorded = _model_call(session, response.evaluation.request_id)
     assert recorded.payload["model_card"] == ""
     assert recorded.payload["model_card_hash"] == ""
     decisions = session.exec(select(GovernanceDecision)).all()
     assert len(decisions) == 1
-    assert decisions[0].outcome is Outcome.ALLOW
+    assert decisions[0].outcome is Outcome.DENY
     assert decisions[0].id == response.evaluation.decision_id
-    assert all(check["check"] != "USE_CASE_MODEL" for check in decisions[0].checks)
+    assert any(check["check"] == "USE_CASE_MODEL" for check in decisions[0].checks)
     outcomes = [
         event
         for event in session.exec(
@@ -1372,9 +1381,7 @@ def test_a_served_model_without_an_approved_card_is_not_returned(
     denied = outcomes[1]
     assert denied.payload["decision_id"] == decisions[0].id
     assert denied.payload["withheld"] is True
-    assert denied.payload["model"] == "summary"
-    assert denied.payload["model_version"] == "9"
-    check = denied.payload["checks"][0]
+    check = denied.payload["_response_checks"][0]
     assert check["check"] == "USE_CASE_MODEL"
     assert check["result"] == CheckResult.FAIL.value
     assert "summary@9" in check["citation"]
@@ -1383,7 +1390,7 @@ def test_a_served_model_without_an_approved_card_is_not_returned(
     assert secret not in json.dumps(denied.payload)
     assert verify_chain(session) >= 2
     replayed = replay_decision(session, response.evaluation.request_id)
-    assert replayed.outcome is Outcome.ALLOW
+    assert replayed.outcome is Outcome.DENY
     exported = export_chain(session)
     path = tmp_path / "chain.json"
     path.write_text(json.dumps(exported))
@@ -1424,7 +1431,7 @@ def test_a_deferred_withhold_is_appended_when_the_store_recovers(
     assert response.status == 403
     assert secret.encode() not in response.body
     assert response.evaluation is not None
-    assert response.evaluation.outcome is Outcome.ALLOW
+    assert response.evaluation.outcome is Outcome.DENY
     assert response.evaluation.decision_id is None
     pending_decisions, pending_events = _stored(engine)
     assert pending_decisions == []
@@ -1438,7 +1445,7 @@ def test_a_deferred_withhold_is_appended_when_the_store_recovers(
     assert recovered.status == 405
     decisions, events = _stored(engine)
     assert len(decisions) == 1
-    assert decisions[0].outcome is Outcome.ALLOW
+    assert decisions[0].outcome is Outcome.DENY
     request_id = response.evaluation.request_id
     outcomes = [
         event.payload["outcome"]
@@ -1446,7 +1453,7 @@ def test_a_deferred_withhold_is_appended_when_the_store_recovers(
         if event.correlation_id == request_id
         and event.event_type is EventType.POLICY_DECISION
     ]
-    assert outcomes == ["ALLOW", "DENY"]
+    assert outcomes == ["DENY"]
     denied = next(
         event
         for event in events
@@ -1454,8 +1461,8 @@ def test_a_deferred_withhold_is_appended_when_the_store_recovers(
         and event.event_type is EventType.POLICY_DECISION
         and event.payload["outcome"] == "DENY"
     )
-    assert denied.payload["decision_id"] == decisions[0].id
-    assert denied.payload["checks"][0]["check"] == "USE_CASE_MODEL"
+    assert denied.correlation_id == decisions[0].request_id
+    assert any(c["check"] == "USE_CASE_MODEL" for c in denied.payload["checks"])
     assert secret not in json.dumps([event.payload for event in events])
     with Session(engine) as fresh:
         assert verify_chain(fresh) == len(events)

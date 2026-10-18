@@ -52,7 +52,7 @@ from kognita.approvals import (
 )
 from kognita.interaction import attach, require_interaction
 from kognita.origination import OriginationError, contact_refusal
-from kognita.canonical import canonical_hash, canonical_json
+from kognita.canonical import canonical_hash, canonical_json, hash_text
 from kognita.envelope import Check, Envelope, Evaluation, envelope_hash
 from kognita.evidence import EvidenceWriter
 from kognita.governance import (
@@ -834,6 +834,35 @@ def _release_tool(
     return data
 
 
+def _response_outcome(session, evaluation, checks, evidence):
+    """Persist a delivery restriction without repeating admission side effects."""
+    from dataclasses import replace
+    from kognita.models import GovernanceDecision
+    final = _with_checks(evaluation, checks)
+    final = replace(final, decision_id=evaluation.decision_id)
+    row = session.get(GovernanceDecision, evaluation.decision_id)
+    if row is not None:
+        row.outcome = final.outcome
+        row.checks = [c.to_dict() for c in final.checks]
+        row.envelope_hash = final.envelope_hash
+        session.add(row)
+        session.flush()
+    from kognita.models import EvidenceEvent
+    original = session.exec(select(EvidenceEvent).where(
+        EvidenceEvent.correlation_id == final.request_id,
+        EvidenceEvent.event_type == EventType.POLICY_DECISION).order_by(EvidenceEvent.sequence)).first()
+    evidence.emit(session, correlation_id=final.request_id,
+        event_type=EventType.POLICY_DECISION, actor_type=ActorType.SYSTEM,
+        actor_id="governance-pdp", payload={
+            **(dict(original.payload) if original is not None else {}),
+            "_response_checks": [c.to_dict() for c in checks],
+            "withheld": True,
+            "outcome": final.outcome.value, "checks": [c.to_dict() for c in final.checks],
+            "attributes": final.attributes, "envelope_hash": final.envelope_hash,
+            "decision_id": final.decision_id})
+    return final
+
+
 def _argument_text(envelope: Envelope) -> str:
     """String arguments, in insertion order. Non-strings are not prose to classify."""
     parts: list[str] = []
@@ -1016,6 +1045,14 @@ def run_governed(
     _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
 
     data = _release_tool(session, envelope, evaluation, spec, evidence, run, _at=at)
+    from kognita.review import _screen_retained_response
+    held = _screen_retained_response(session, evaluation, evidence=evidence,
+        response_text=canonical_json(data), output_hash=hash_text(canonical_json(data)),
+        interaction_id=interaction_id, now=evidence.clock())
+    if held:
+        evaluation = _response_outcome(session, evaluation, [Check(check="REVIEW", regime="INTERNAL",
+            result=CheckResult.FAIL, citation=held)], evidence)
+        data = None
     record_run_decision(session, interaction_id, evaluation, evidence, now=at)
     return ToolRun(
         evaluation=evaluation,

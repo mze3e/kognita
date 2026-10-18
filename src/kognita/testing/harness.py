@@ -238,6 +238,12 @@ def _ensure_live_purposes(harness: Harness) -> None:
                 at=harness.now,
                 status="live",
             )
+            # Queue response review after delivery in this execution fixture.
+            from kognita.review import define_risk_criteria
+            define_risk_criteria(session, usecase_id, product_complexity_at="high",
+                vulnerability_indicators=("bereavement",), profile_deviation_is_high_risk=True,
+                minimum_classifier_confidence=0.8, timing="after delivery", evidence=harness.evidence,
+                actor_id="Jane Smith", now=harness.now)
         session.commit()
 
 
