@@ -279,7 +279,12 @@ def test_l4_hold_rechecks_current_authority_before_execution(session, evidence, 
     calls = []
     registry.register("read", lambda *_: calls.append(True), verb="queue", required_level=4)
     run = Run()
-    held = run_governed(session, _env(), registry=registry, pack=dp.DemoPack(),
+    from kognita._isolation import _step_up
+    authenticated = replace(_env(), assurance_level=2)
+    _step_up(session, authenticated, evidence=evidence, actor_id=authenticated.principal,
+        authenticated_workflow=True, transaction_context={"task": "test"},
+        independent_authorization="independent", expires_at=NOW + timedelta(hours=1))
+    held = run_governed(session, authenticated, registry=registry, pack=dp.DemoPack(),
                         evidence=evidence, purposes=("research-summary",), run=run, now=NOW, as_of=NOW)
     assert held.outcome is Outcome.HUMAN_APPROVAL
     assert not calls

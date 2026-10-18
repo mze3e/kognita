@@ -902,6 +902,7 @@ class Gateway:
             arguments["model_version"] = headers["model_version"]
         if template_version:
             arguments["prompt_template_version"] = template_version
+        from kognita._isolation import _assurance
         envelope = Envelope(
             principal=principal,
             purpose=purpose,
@@ -909,6 +910,7 @@ class Gateway:
             actor_location=self.client.actor_location,
             agent_name=agent_name,
             delegation_id=headers.get("delegation_id"),
+            assurance_level=_assurance(headers),
             subject_type="model",
             subject_id=payload["model"],
             arguments=arguments,
@@ -938,6 +940,11 @@ class Gateway:
                 classifier=self.classifier,
             )
         classification = Classification(attributes.get("classification") or Classification.C1)
+        from kognita._isolation import _ingest
+        self._store(lambda: _ingest(session, bound_run, self.evidence,
+            client_data=_client_data(classification), text=prompt,
+            correlation_id='content:' + (bound_run.id if bound_run else canonical_hash(envelope.to_dict())),
+            _agent_name=agent_name))
         provider_name = self.provider or (urlparse(self.upstream).hostname or self.upstream)
         if provider_name and not attributes.get("provider"):
             attributes["provider"] = provider_name
@@ -977,6 +984,8 @@ class Gateway:
             engages=getattr(self.pack, "engages", None),
             as_of=now,
         )
+        from kognita._isolation import _assurance_checks
+        identity_checks += self._store(lambda: _assurance_checks(session, envelope, bound_run))
         evaluation = _with_checks(evaluation, identity_checks)
         if bound_run is not None and evaluation.outcome is Outcome.ALLOW:
             self._store(lambda: _refresh_run(session, bound_run))
@@ -1179,6 +1188,9 @@ class Gateway:
         restored_payload = _json_object(restored)
         response_source = _response_text(restored_payload) if restored_payload else restored
         response_record = classifier_record(self.classifier, response_source)
+        self._store(lambda: _ingest(session, bound_run, self.evidence,
+            client_data=_client_data(Classification(response_record['label'])),
+            text=response_source, correlation_id=evaluation.request_id, _agent_name=agent_name))
         tokens, cost_usd = _usage(restored_payload) if restored_payload else (None, None)
         if bound_run is not None and (tokens is not None or cost_usd is not None):
             _apply_usage(bound_run, tokens=tokens, cost_usd=cost_usd)

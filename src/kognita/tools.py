@@ -87,7 +87,12 @@ class ToolNotRegistered(LookupError):
 
 @dataclass
 class ToolSpec:
-    """A registered capability and the classification its output carries."""
+    """A registered capability and the classification its output carries.
+
+    ``external`` and ``client_data`` label results before release.
+    ``public_content`` selects the public lane, which client-tainted runs
+    cannot enter. These flags must match the approved agent tool manifest.
+    """
 
     name: str
     fn: ToolFn
@@ -95,6 +100,9 @@ class ToolSpec:
     description: str = ""
     required_level: int = 0
     verb: str = "read"
+    external: bool = False
+    client_data: bool = False
+    public_content: bool = False
 
 
 class ToolRegistry:
@@ -116,13 +124,19 @@ class ToolRegistry:
         description: str = "",
         required_level: int = 0,
         verb: str = "read",
+        external: bool = False,
+        client_data: bool = False,
+        public_content: bool = False,
     ) -> ToolSpec:
         from kognita.autonomy import _VERBS
         if verb not in _VERBS or type(required_level) is not int or not _VERBS[verb] <= required_level <= 6:
             raise ValueError("S1-TOOL: invalid verb or required level")
+        if any(type(value) is not bool for value in (external, client_data, public_content)):
+            raise ValueError("S5-TOOL-LABELS: content flags must be booleans")
         spec = ToolSpec(
             name=name, fn=fn, classification=classification, description=description,
-            required_level=required_level, verb=verb
+            required_level=required_level, verb=verb, external=external,
+                client_data=client_data, public_content=public_content
         )
         self._tools[name] = spec
         return spec
@@ -135,13 +149,17 @@ class ToolRegistry:
         description: str = "",
         required_level: int = 0,
         verb: str = "read",
+        external: bool = False,
+        client_data: bool = False,
+        public_content: bool = False,
     ) -> Callable[[ToolFn], ToolFn]:
         """Decorator form of :meth:`register`."""
 
         def decorate(fn: ToolFn) -> ToolFn:
             self.register(
                 name, fn, classification=classification, description=description,
-                required_level=required_level, verb=verb
+                required_level=required_level, verb=verb, external=external,
+                client_data=client_data, public_content=public_content
             )
             return fn
 
@@ -195,6 +213,11 @@ class Run:
     payload it names is not kept on the run.
     """
 
+    #: Content labels only accumulate over the lifetime of this task.
+    external: bool = False
+    client_data: bool = False
+    #: Authentication ceiling inherited from the first instruction.
+    assurance_level: int | None = None
     max_calls: int | None = None
     max_tokens: int | None = None
     max_cost_usd: float | None = None
@@ -319,10 +342,14 @@ def _deny_for_budgets(evaluation: Evaluation, budgets: Sequence[str]) -> Evaluat
 
 
 def _refresh_run(session: Session, run: Run) -> None:
-    """Load counters from the store so a later step sees what earlier steps spent."""
-    row = session.get(RunRecord, run.id)
+    """Load counters and sticky controls, including changes by another session."""
+    row = session.get(RunRecord, run.id, populate_existing=True)
     if row is None:
         return
+    run.external = run.external or bool(row.external)
+    run.client_data = run.client_data or bool(row.client_data)
+    if row.assurance_level is not None:
+        run.assurance_level = min(run.assurance_level, row.assurance_level) if run.assurance_level is not None else row.assurance_level
     run.calls_used = row.calls_used
     run.tokens_used = row.tokens_used
     run.cost_usd_used = row.cost_usd_used
@@ -341,6 +368,11 @@ def _save_run(session: Session, run: Run) -> None:
     if row is None:
         row = RunRecord(id=run.id, approvals_pending=[])
         session.add(row)
+    row.external = bool(row.external) or run.external
+    row.client_data = bool(row.client_data) or run.client_data
+    if row.assurance_level is not None:
+        run.assurance_level = min(row.assurance_level, run.assurance_level) if run.assurance_level is not None else row.assurance_level
+    row.assurance_level = run.assurance_level
     ceiling = run.classification_ceiling
     row.max_calls = run.max_calls
     row.max_tokens = run.max_tokens
@@ -369,6 +401,8 @@ def _load_run(session: Session, run_id: str) -> Run:
     ceiling = row.classification_ceiling
     return Run(
         id=row.id,
+        external=bool(row.external), client_data=bool(row.client_data),
+        assurance_level=row.assurance_level,
         max_calls=row.max_calls,
         max_tokens=row.max_tokens,
         max_cost_usd=row.max_cost_usd,
@@ -615,6 +649,7 @@ def _envelope_from_continuation(payload: Mapping[str, Any]) -> Envelope:
         actor_location=data.get("actor_location") or "",
         agent_name=data.get("agent_name"),
         delegation_id=data.get("delegation_id"),
+        assurance_level=data.get("assurance_level", 0),
         subject_type=data.get("subject_type"),
         subject_id=data.get("subject_id"),
         subjects=dict(data.get("subjects") or {}),
@@ -704,6 +739,11 @@ def _release_tool(
     from kognita._limits import _released
     _released(session, evaluation, evidence, _at or evaluation.as_of)
     data = spec.fn(envelope, evaluation, session)
+    from kognita._isolation import _ingest
+    _ingest(session, run, evidence, external=spec.external,
+            client_data=spec.client_data or spec.classification in (Classification.C2, Classification.C3)
+            or "client" in envelope.all_subjects(), text=canonical_json(data),
+            correlation_id=evaluation.request_id, _agent_name=envelope.agent_name)
     from kognita._limits import _minimize
     data = _minimize(session, envelope, data, evidence, _request_id=evaluation.request_id)
     actor_type, actor_id = _call_actor(envelope)
@@ -829,9 +869,17 @@ def run_governed(
     if envelope.agent_name:
         agent = snap.agents.get(envelope.agent_name)
         permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
-        if not isinstance(permission, dict) or permission.get("verb") != spec.verb or permission.get("required_level") != spec.required_level:
+        if not isinstance(permission, dict) or permission.get("verb") != spec.verb or permission.get("required_level") != spec.required_level or any(
+                bool(permission.get(key, False)) != getattr(spec, key)
+                for key in ('external', 'client_data', 'public_content')):
             evaluation = _with_checks(evaluation, [Check(check="S1-TOOL-DECLARATION",
                 regime="INTERNAL", result=CheckResult.FAIL, citation="S1-TOOL-DECLARATION")])
+    from kognita._isolation import _tool_checks, _ingest
+    if run is not None:
+        _refresh_run(session, run)
+    _ingest(session, run, evidence, client_data="client" in envelope.all_subjects() or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
+            text=argument_text, correlation_id=evaluation.request_id, _agent_name=envelope.agent_name)
+    evaluation = _with_checks(evaluation, _tool_checks(session, envelope, spec, run, evidence, at=at))
     evaluation = _with_checks(evaluation, extra_checks)
     evaluation = _with_checks(
         evaluation,
@@ -1044,10 +1092,15 @@ def continue_run(
         usecases = _governing_register(session, as_of=at)
         if registry is not None and payload.get("kind") == "tool":
             current_spec = registry.get(envelope.tool)
+            from kognita._isolation import _tool_checks
+            _refresh_run(session, run)
+            recheck += _tool_checks(session, envelope, current_spec, run, evidence, at=at)
             current_agent = snapshot.agents.get(envelope.agent_name)
             permission = (current_agent.tool_allowlist or {}).get(envelope.tool, {}) if current_agent else {}
             if envelope.agent_name and (permission.get("verb") != current_spec.verb or
-                    permission.get("required_level") != current_spec.required_level):
+                    permission.get("required_level") != current_spec.required_level or any(
+                        bool(permission.get(key, False)) != getattr(current_spec, key)
+                        for key in ('external', 'client_data', 'public_content'))):
                 execute = False
                 recheck.append(Check(check="S1-TOOL-DECLARATION", regime="INTERNAL",
                     result=CheckResult.FAIL, citation="S1-TOOL-DECLARATION"))
@@ -1169,6 +1222,7 @@ def continue_run(
             embedder=embedder,
             evidence=evidence,
             subgraph=subgraph,
+            run=run,
         )
 
     if registry is None:

@@ -10,6 +10,8 @@ from kognita.vocabulary import CheckResult, Outcome, EventType, ActorType
 
 
 def _validate(agent):
+    from kognita._isolation import _validate
+    _validate(agent)
     if agent.blast_radius is not None:
         # JSON timestamps are decoded separately to keep numeric fields strict.
         _radius(agent.blast_radius)

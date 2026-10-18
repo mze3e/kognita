@@ -572,6 +572,7 @@ class McpProxy:
         identity_checks = identity_checks + principal_checks + _credential_checks(session, agent_name, headers)
         if admitted:
             context["system_trigger"] = admitted
+        from kognita._isolation import _assurance
         envelope = Envelope(
             principal=principal,
             purpose=purpose,
@@ -579,6 +580,7 @@ class McpProxy:
             actor_location=self.client.actor_location,
             agent_name=agent_name,
             delegation_id=headers.get("delegation_id"),
+            assurance_level=_assurance(headers),
             arguments=dict(envelope_arguments),
             context=context,
         )
@@ -590,7 +592,17 @@ class McpProxy:
             del env, evaluation, sess
             return self._invoke(rpc_method, params, rpc_id, headers, state)
 
-        registry.register(envelope.tool, invoke)
+        from kognita.registry import get
+        agent = get(session, agent_name) if agent_name else None
+        permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
+        registry.register(envelope.tool, invoke,
+            required_level=permission.get('required_level', 0), verb=permission.get('verb', 'read'),
+            external=permission.get('external', False), client_data=permission.get('client_data', False),
+            public_content=permission.get('public_content', False))
+        from kognita.tools import Run, _refresh_run
+        bound_run = Run(id=headers['run_id']) if headers.get('run_id') else None
+        if bound_run is not None:
+            _refresh_run(session, bound_run)
         now = self.evidence.clock()
         try:
             result = run_governed(
@@ -603,6 +615,7 @@ class McpProxy:
                 as_of=now,
                 now=now,
                 classifier=self.classifier,
+                run=bound_run,
                 extra_checks=identity_checks,
             )
         except _BackendUnavailable:
