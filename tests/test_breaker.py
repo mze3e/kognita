@@ -1623,3 +1623,109 @@ def test_gateway_denies_a_principal_header_that_differs_from_the_bound_client(
     )
     assert same.evaluation.outcome is Outcome.ALLOW
     assert len(upstream_calls) == 1
+
+
+def test_a_gateway_bound_to_a_run_refuses_a_foreign_run_id(session, evidence):
+    """A run_id header cannot move a bound client onto another budget."""
+    from kognita.tools import Run
+
+    register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    session.commit()
+    upstream_calls: list[bytes] = []
+
+    def transport(method, url, headers, body):
+        upstream_calls.append(body)
+        return 200, {"content-type": "application/json"}, b'{"choices":[{"message":{"content":"ok"}}]}'
+
+    bound = Run(max_calls=5)
+    gateway = Gateway(
+        engine=session.get_bind(),
+        evidence=evidence,
+        upstream="https://api.openai.com",
+        client=ClientConfiguration(
+            principal="alice",
+            purpose="COLLABORATION",
+            agent_names=frozenset({"dossier-agent"}),
+            actor_location="SG",
+        ),
+        purposes=("COLLABORATION",),
+        transport=transport,
+        run=bound,
+    )
+    body = json.dumps(
+        {"model": "summary", "messages": [{"role": "user", "content": "market hours are public"}]}
+    ).encode()
+    foreign = gateway.handle(
+        "POST",
+        "/v1/chat/completions",
+        {"agent_name": "dossier-agent", "run_id": "someone-elses-run"},
+        body,
+        session=session,
+    )
+    assert foreign.status == 403
+    assert b"not bound" in foreign.body
+    assert upstream_calls == []
+    own = gateway.handle(
+        "POST",
+        "/v1/chat/completions",
+        {"agent_name": "dossier-agent", "run_id": bound.id},
+        body,
+        session=session,
+    )
+    assert own.status == 200
+    assert len(upstream_calls) == 1
+
+
+def test_gateway_output_with_no_interaction_is_listed_as_client_unknown(session, evidence):
+    """A gateway call has no interaction; the query says so instead of omitting it."""
+    from datetime import datetime, timezone
+
+    register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    session.commit()
+
+    def transport(method, url, headers, body):
+        return (
+            200,
+            {"content-type": "application/json"},
+            b'{"model":"summary","model_version":"1","choices":[{"message":{"content":"ok"}}]}',
+        )
+
+    gateway = Gateway(
+        engine=session.get_bind(),
+        evidence=evidence,
+        upstream="https://api.openai.com",
+        client=ClientConfiguration(
+            principal="alice",
+            purpose="COLLABORATION",
+            agent_names=frozenset({"dossier-agent"}),
+            actor_location="SG",
+        ),
+        purposes=("COLLABORATION",),
+        transport=transport,
+    )
+    response = gateway.handle(
+        "POST",
+        "/v1/chat/completions",
+        {"agent_name": "dossier-agent"},
+        json.dumps(
+            {"model": "summary", "messages": [{"role": "user", "content": "market hours are public"}]}
+        ).encode(),
+        session=session,
+    )
+    session.commit()
+    assert response.status == 200
+    calls = [
+        event
+        for event in session.exec(select(EvidenceEvent)).all()
+        if event.event_type == EventType.MODEL_CALL
+    ]
+    assert calls, "the gateway recorded a model call"
+    at = calls[-1].recorded_at
+    at = at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+    window = dict(start=at - timedelta(days=1), end=at + timedelta(days=1))
+    by_model = affected_clients(session, model="summary", **window)
+    assert by_model["clients"] == []
+    assert [row["client"] for row in by_model["unlinked"]] == ["client unknown"]
+    by_usecase = affected_clients(session, usecase="COLLABORATION", **window)
+    assert len(by_usecase["unlinked"]) == 1
+    assert affected_clients(session, usecase="OTHER", **window)["unlinked"] == []

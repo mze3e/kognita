@@ -2,7 +2,7 @@
 
 **Vision:** Transform Kognita from a policy decision engine into a complete agent harness: a framework anyone can adopt to build governed AI agents with proof of permission and tamper-evident audit logs.
 
-**Current Status:** v0.3.0 is shipped (0.3 done). Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
+**Current Status:** v0.3.0 is the latest release. Every 0.4 item below is implemented on main and not yet released; the package version stays 0.3.0 until 0.4.0 is released. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
 
 **Last revised:** September 2026. See [Decision Log](#decision-log) for what changed and why.
 
@@ -173,6 +173,15 @@ Q4 2026     Q1 2027     Q2 2027     Q3 2027     Q4 2027     Q1 2028
   Replay      Client      & Fleets                            examinable
               Lifecycle
 ```
+
+---
+
+## Releases 0.1 and 0.2
+
+These releases predate this roadmap and have no definition of done in it. They are tracked only in [CHANGELOG.md](../CHANGELOG.md).
+
+- **0.1.0** (19 April 2026) was a PDF-to-knowledge-graph library built on Graphiti and Kuzu. That graph engine was removed in 0.4 ([ADR 0008](decisions/0008-remove-the-graph-engine.md)).
+- **0.2.0** (4 September 2026) made Kognita a decision engine: `decide()` and `Envelope`, recorded evidence for every decision, two-signature approvals, the proposal-then-apply pattern, import-layering contracts, and the `kognita` command line. The core depends only on pydantic, sqlmodel, numpy and python-dotenv.
 
 ---
 

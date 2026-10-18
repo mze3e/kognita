@@ -8,6 +8,9 @@ copied into the public chapter above it.
 
 from __future__ import annotations
 
+import bisect
+import html
+import re
 from dataclasses import dataclass
 
 from kognita.exceptions import KognitaError
@@ -75,6 +78,65 @@ def _locator(
     )
 
 
+_ENTITY = re.compile(r"&(#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);")
+_MD_ESCAPE = re.compile(r"\\([!-/:-@\[-`{-~])")
+
+
+@dataclass(frozen=True)
+class _SourceView:
+    """The source with entities and escapes decoded and whitespace folded.
+
+    ``starts[i]`` and ``ends[i]`` are the source offsets that produced
+    character ``i`` of ``text``, so a match in ``text`` maps back to an exact
+    source range.
+    """
+
+    text: str
+    starts: tuple[int, ...]
+    ends: tuple[int, ...]
+
+    @classmethod
+    def of(cls, source: str) -> "_SourceView":
+        chars: list[str] = []
+        starts: list[int] = []
+        ends: list[int] = []
+        index = 0
+        length = len(source)
+        while index < length:
+            entity = _ENTITY.match(source, index) if source[index] == "&" else None
+            escape = _MD_ESCAPE.match(source, index) if source[index] == "\\" else None
+            if entity is not None:
+                decoded = html.unescape(entity.group(0))
+                end = entity.end()
+            elif escape is not None:
+                decoded = escape.group(1)
+                end = escape.end()
+            else:
+                decoded = source[index]
+                end = index + 1
+            for char in decoded:
+                if char.isspace():
+                    if chars and chars[-1] == " ":
+                        ends[-1] = end
+                        continue
+                    char = " "
+                chars.append(char)
+                starts.append(index)
+                ends.append(end)
+            index = end
+        return cls("".join(chars), tuple(starts), tuple(ends))
+
+    def find(self, needle: str, cursor: int) -> tuple[int, int] | None:
+        folded = " ".join(needle.split())
+        if not folded:
+            return None
+        begin = bisect.bisect_left(self.starts, cursor)
+        at = self.text.find(folded, begin)
+        if at < 0:
+            return None
+        return self.starts[at], self.ends[at + len(folded) - 1]
+
+
 def _block_spans(root: ParsedBlock, source: str) -> dict[int, tuple[int, int]]:
     """Locate every block in ``source``, in reading order.
 
@@ -83,19 +145,29 @@ def _block_spans(root: ParsedBlock, source: str) -> dict[int, tuple[int, int]]:
     """
     spans: dict[int, tuple[int, int]] = {}
     cursor = 0
+    view: _SourceView | None = None
 
     def walk(node: ParsedBlock) -> None:
-        nonlocal cursor
+        nonlocal cursor, view
         needle = node.text.strip()
         if needle and node.label != "document":
             at = source.find(needle, cursor)
-            if at < 0:
+            if at >= 0:
+                span = (at, at + len(needle))
+            else:
+                # The parser decodes entities and escapes (``&amp;`` is ``&``)
+                # and folds whitespace. Search the decoded view and map the
+                # match back to source offsets; still never a guess.
+                if view is None:
+                    view = _SourceView.of(source)
+                span = view.find(needle, cursor)
+            if span is None:
                 raise KognitaError(
                     "a passage was not found in the source text; "
                     "ingestion does not invent a character span and indexes nothing"
                 )
-            spans[id(node)] = (at, at + len(needle))
-            cursor = at + len(needle)
+            spans[id(node)] = span
+            cursor = span[1]
         for child in node.children:
             walk(child)
 

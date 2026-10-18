@@ -802,3 +802,42 @@ def test_docling_parses_markdown_html_and_docx(session, tmp_path):
         )
         session.commit()
         _assert_handbook(items, source_text(path))
+
+
+def test_a_decoded_entity_or_escape_is_located_in_the_raw_source():
+    """``Tom &amp; Jerry`` parses to ``Tom & Jerry``; the span is the raw range."""
+    from kognita.ingest.tree import ParsedBlock
+
+    for source, raw in (
+        ("<h1>Cartoons</h1>\n<p>Tom &amp; Jerry\n   chase</p>", "Tom &amp; Jerry\n   chase"),
+        ("# Cartoons\n\nTom \\& Jerry chase \\*daily\\*\n", "Tom \\& Jerry chase \\*daily\\*"),
+    ):
+        body = "Tom & Jerry chase" if "&amp;" in source else "Tom & Jerry chase *daily*"
+        root = ParsedBlock(
+            text="",
+            label="document",
+            children=(
+                ParsedBlock(
+                    text="Cartoons",
+                    label="section_header",
+                    level=1,
+                    children=(ParsedBlock(text=body, label="text"),),
+                ),
+            ),
+        )
+        passages = chunk(root, document="Guide", source=source)
+        start, end = passages[0].locator.charspan
+        assert source[start:end].endswith(raw)
+        assert source[start:end].startswith("Cartoons")
+
+
+def test_a_passage_absent_from_the_source_is_still_refused():
+    from kognita.ingest.tree import ParsedBlock
+
+    root = ParsedBlock(
+        text="",
+        label="document",
+        children=(ParsedBlock(text="Not in the file", label="text"),),
+    )
+    with pytest.raises(KognitaError, match="not found in the source text"):
+        chunk(root, document="Guide", source="<p>Something else &amp; more</p>")
