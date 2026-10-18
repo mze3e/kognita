@@ -687,23 +687,23 @@ The kill switch and revocation take effect on the next decision. A tool call alr
 
 ### Definition of Done
 - [ ] Every agent has a full identity; agents past review date and changed deployment versions are denied until re-approved
-- [ ] Dual check enforced: a human's entitlement alone never authorizes their agent
-- [ ] Autonomy levels enforced; L4 always routes to approval
+- [x] Dual check enforced: a human's entitlement alone never authorizes their agent
+- [x] Autonomy levels enforced; L4 always routes to approval
 - [ ] Blast-radius limits enforced per agent
-- [ ] Per-agent tool allow-lists and field-level minimization
-- [ ] Injection test: a tainted run cannot call a write tool
-- [ ] Impersonation test: a high-risk instruction from a channel message without step-up evidence is denied
-- [ ] Anomaly test: a volume spike blocks the agent and raises an incident
-- [ ] Delegation, grants, fleet controls, sandbox constraints
-- [ ] Agents authenticate with their own credentials; a spoofed agent name is denied
-- [ ] Recommend and execute are separate permissions; an agent with only recommend cannot act
-- [ ] A burst above the per-minute rate limit is denied
-- [ ] A run that has touched client data cannot reach a public-content tool
+- [x] Per-agent tool allow-lists and field-level minimization
+- [x] Injection test: a tainted run cannot call a write tool
+- [x] Impersonation test: a high-risk instruction from a channel message without step-up evidence is denied
+- [x] Anomaly test: a volume spike blocks the agent and raises an incident
+- [x] Delegation, grants, fleet controls, sandbox constraints
+- [x] Agents authenticate with their own credentials; a spoofed agent name is denied
+- [x] Recommend and execute are separate permissions; an agent with only recommend cannot act
+- [x] A burst above the per-minute rate limit is denied
+- [x] A run that has touched client data cannot reach a public-content tool
 - [ ] Containment quarantines, revokes and stops an agent without a human in the loop, then alerts
-- [ ] Authority lineage reconstructs the full chain for a delegated action
-- [ ] Recover runs compensating actions in reverse order
+- [x] Authority lineage reconstructs the full chain for a delegated action
+- [x] Recover runs compensating actions in reverse order
 - [ ] Adversarial suite passes; threat model published
-- [ ] A promotion request below its evidence thresholds cannot be approved
+- [x] A promotion request below its evidence thresholds cannot be approved
 - [ ] A sustained metric decline steps the agent down one level automatically, evidenced and alerted
 - [ ] A tier 2 use case registered in library mode fails validation; an agent holding a provider credential directly is flagged
 - [ ] Engaging the kill switch cancels an in-flight tool call at the proxy and records which calls were cancelled; a tool call past its maximum duration times out with evidence
