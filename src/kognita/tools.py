@@ -235,6 +235,18 @@ class Run:
     control_state: str = "live"
     tool_denylist: list[str] = field(default_factory=list)
     override_outcome: str = ""
+    _authority_scope: dict = field(default_factory=dict, repr=False)
+
+    def delegate_to(self, agent_name, attenuated_scope=None, *, session, evidence, now=None):
+        """Reserve a bounded child task from this run's authenticated authority.
+
+        The host supplies session/evidence. The scope must explicitly state why,
+        tools, allowed_data, allowed_actions, valid_until and all child budgets.
+        The returned Run carries its delegation in ``_authority_scope``.
+        """
+        from kognita._fleet import _delegate
+        return _delegate(session, self, agent_name, attenuated_scope,
+                         evidence, now or evidence.clock())
 
 
 def _budget_payload(run: Run) -> dict[str, Any]:
@@ -346,6 +358,12 @@ def _refresh_run(session: Session, run: Run) -> None:
     row = session.get(RunRecord, run.id, populate_existing=True)
     if row is None:
         return
+    from kognita._fleet import _restore
+    _restore(session, run)
+    run.max_calls = row.max_calls
+    run.max_tokens = row.max_tokens
+    run.max_cost_usd = row.max_cost_usd
+    run.wall_clock_seconds = row.wall_clock_seconds
     run.external = run.external or bool(row.external)
     run.client_data = run.client_data or bool(row.client_data)
     if row.assurance_level is not None:
@@ -877,9 +895,12 @@ def run_governed(
     from kognita._isolation import _tool_checks, _ingest
     if run is not None:
         _refresh_run(session, run)
-    _ingest(session, run, evidence, client_data="client" in envelope.all_subjects() or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
+    from kognita._fleet import _external_agent
+    _ingest(session, run, evidence, external=_external_agent(session, envelope.agent_name), client_data="client" in envelope.all_subjects() or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
             text=argument_text, correlation_id=evaluation.request_id, _agent_name=envelope.agent_name)
     evaluation = _with_checks(evaluation, _tool_checks(session, envelope, spec, run, evidence, at=at))
+    from kognita._fleet import _run_checks
+    evaluation = _with_checks(evaluation, _run_checks(session, run, envelope, evidence))
     evaluation = _with_checks(evaluation, extra_checks)
     evaluation = _with_checks(
         evaluation,

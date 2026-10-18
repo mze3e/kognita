@@ -1238,3 +1238,10 @@ class _AnomalyDay(SQLModel, table=True):
     agent_name: str
     day: str
     body: dict = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class _RunScope(SQLModel, table=True):
+    """Trusted host bindings; never populated from message content."""
+    __tablename__ = "_run_scopes"
+    id: str = Field(primary_key=True, foreign_key="runs.id")
+    body: dict = Field(default_factory=dict, sa_column=Column(JSON))

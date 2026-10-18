@@ -406,6 +406,8 @@ def _with_checks(evaluation: Evaluation, extra: Sequence[Check]) -> Evaluation:
     )
 
 
+from kognita._fleet import _external_agent
+
 def _credential_checks(session: Session, name: str | None, headers: Mapping[str, str]) -> list[Check]:
     from kognita.credentials import verify
 
@@ -942,6 +944,7 @@ class Gateway:
         classification = Classification(attributes.get("classification") or Classification.C1)
         from kognita._isolation import _ingest
         self._store(lambda: _ingest(session, bound_run, self.evidence,
+            external=_external_agent(session, agent_name),
             client_data=_client_data(classification), text=prompt,
             correlation_id='content:' + (bound_run.id if bound_run else canonical_hash(envelope.to_dict())),
             _agent_name=agent_name))
@@ -984,6 +987,8 @@ class Gateway:
             engages=getattr(self.pack, "engages", None),
             as_of=now,
         )
+        from kognita._fleet import _run_checks
+        identity_checks += self._store(lambda: _run_checks(session, bound_run, envelope, self.evidence))
         from kognita._isolation import _assurance_checks
         identity_checks += self._store(lambda: _assurance_checks(session, envelope, bound_run))
         evaluation = _with_checks(evaluation, identity_checks)

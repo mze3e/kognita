@@ -145,6 +145,20 @@ def _load(session, agent_name, at, evidence):
                 session.add(row)
         else:
             result.append((row.id, row.kind, row.grantee, dict(row.body)))
+    # Follow primary keys only; bounded depth also rejects cycles and missing links.
+    pending = list(result)
+    seen = {r[0] for r in result}
+    for _ in range(32):
+        parents = {r[3].get('_parent') for r in pending} - seen - {None}
+        if not parents:
+            break
+        pending = []
+        for identity in sorted(parents):
+            row = session.get(_Authority, identity, populate_existing=True)
+            if row is not None and not row.ended and _live(row.body, at):
+                pending.append((row.id, row.kind, row.grantee, dict(row.body)))
+                seen.add(row.id)
+        result.extend(pending)
     return tuple(result)
 
 
@@ -168,11 +182,16 @@ def _checks(envelope, snapshot, at):
     permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
     verb = permission.get("verb") if isinstance(permission, dict) else None
     subjects = {k: [v] for k, v in envelope.all_subjects().items()}
-    valid = (_live(selected[3], at) and d.agent == envelope.agent_name
+    valid = (_lineage_valid(selected[0], rows, at) and _live(selected[3], at) and d.agent == envelope.agent_name
         and d.human == envelope.principal and d.purpose == envelope.purpose
         and d.jurisdiction == envelope.actor_location and verb in d.allowed_actions
         and _covers(d.allowed_data, subjects)
         and subjects.get("client", [d.client]) == [d.client])
+    if '_parent' in selected[3]:
+        valid = valid and envelope.tool in selected[3].get('_tools', [])
+        valid = valid and permission.get('required_level', 7) <= selected[3].get('_level', -1)
+    if agent and agent.environment == 'external':
+        valid = valid and verb == 'read' and permission.get('required_level') == 0 and envelope.assurance_level == 0
     event = d.limits.get("_event_at")
     window = d.limits.get("_access_window", 86400)
     if event is not None:
@@ -218,3 +237,70 @@ def _grant_ids(envelope, snapshot, at):
         and r[2] == envelope.principal and _live(r[3], at)
         and r[3]["capability"] == verb
         and _covers(r[3]["subject_scope"], selected[3]["allowed_data"]))[:1]
+
+
+def _lineage_valid(identity, rows, at):
+    mapping = {r[0]: r for r in rows}
+    seen = set()
+    while identity:
+        if identity in seen or len(seen) >= 32:
+            return False
+        seen.add(identity)
+        row = mapping.get(identity)
+        if row is None or row[1] != 'delegation' or not _live(row[3], at):
+            return False
+        body = row[3]
+        parent = body.get('_parent')
+        if parent:
+            ancestor = mapping.get(parent)
+            if ancestor is None:
+                return False
+            a = ancestor[3]
+            if (any(body.get(k) != a.get(k) for k in ('human', 'purpose', 'client', 'jurisdiction', 'task_ref'))
+                or not set(body['allowed_actions']) <= set(a['allowed_actions'])
+                or not _covers(a['allowed_data'], body['allowed_data'])
+                or _utc(_datetime.fromisoformat(body['valid_until'])) > _utc(_datetime.fromisoformat(a['valid_until']))
+                or body.get('_level', 7) > a.get('_level', 6)
+                or ('_tools' in a and not set(body.get('_tools', [])) <= set(a['_tools']))):
+                return False
+        identity = parent
+    return bool(seen)
+
+
+def _lineage(session, action_id):
+    """Reconstruct historical authority from immutable decision/issuance evidence."""
+    from kognita.models import EvidenceEvent
+    events = session.exec(_select(EvidenceEvent).where(
+        EvidenceEvent.correlation_id == str(action_id)).order_by(EvidenceEvent.sequence).limit(1001)).all()
+    decision = next((e for e in events if 'envelope' in e.payload), None)
+    if decision is None:
+        raise ValueError('S6B-LINEAGE: no evidenced action for request id')
+    identity = decision.payload['envelope'].get('delegation_id')
+    chain, seen = [], set()
+    while identity:
+        if identity in seen or len(seen) >= 32:
+            raise ValueError('S6B-LINEAGE: cyclic or excessive authority depth')
+        seen.add(identity)
+        issued = session.exec(_select(EvidenceEvent).where(
+            EvidenceEvent.correlation_id == 'authority:' + identity,
+            EvidenceEvent.sequence < decision.sequence).order_by(EvidenceEvent.sequence).limit(1001)).all()
+        event = next((e for e in issued if e.payload.get('action') in ('DELEGATION_ISSUED', 'AUTHORITY_TRANSFERRED')), None)
+        if event is None:
+            raise ValueError('S6B-LINEAGE: missing authority issuance evidence')
+        chain.append({'id': identity, 'actor': event.actor_id, 'body': event.payload['body'],
+                      'event_hash': event.event_hash})
+        identity = event.payload['body'].get('_parent')
+    grants = decision.payload.get('attributes', {}).get('_authority_grants', [])
+    entitlement = []
+    for identity in grants:
+        events = session.exec(_select(EvidenceEvent).where(
+            EvidenceEvent.correlation_id == 'authority:' + identity,
+            EvidenceEvent.sequence < decision.sequence).order_by(EvidenceEvent.sequence).limit(1001)).all()
+        event = next((e for e in events if e.payload.get('action') == 'GRANT_ISSUED'), None)
+        if event is None:
+            raise ValueError('S6B-LINEAGE: missing entitlement evidence')
+        entitlement.append({'id': identity, 'body': event.payload['body'], 'event_hash': event.event_hash})
+    return {'action_id': str(action_id), 'outcome': decision.payload['outcome'],
+            'human': decision.payload['envelope']['principal'], 'grants': entitlement,
+            'chain': list(reversed(chain)), 'action': decision.payload['envelope'],
+            'event_hash': decision.event_hash}
