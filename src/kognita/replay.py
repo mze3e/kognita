@@ -41,6 +41,7 @@ def replay_decision(
     *,
     rules: dict[str, Any] | None = None,
     purposes: tuple[str, ...] | list[str] = (),
+    usecases: Any = None,
     engages: Any = None,
     subjects: dict[str, Any] | None = None,
 ) -> Evaluation:
@@ -55,6 +56,10 @@ def replay_decision(
     Pass the original ``envelope`` to decide again. The chain stores a hash of
     the tool arguments, not the arguments, so a replay without the envelope
     returns the recorded evaluation after the pins have been checked.
+
+    ``usecases`` is the register snapshot the original decision used. Omit it
+    and the replay keeps the purpose list, which is what a decision without a
+    register was checked against.
     """
     verify_chain(session)
     decision = session.exec(
@@ -82,6 +87,7 @@ def replay_decision(
         subjects=subjects or {},
         rules=rules,
         purposes=purposes,
+        usecases=usecases,
         engages=engages,
         as_of=at,
         request_id=request_id,

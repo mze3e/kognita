@@ -285,6 +285,61 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_usecase_list(args: argparse.Namespace) -> int:
+    """Print the use cases effective now."""
+    from kognita.usecases import list_usecases
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        entries = list_usecases(session)
+    if not entries:
+        print("no registered use cases")
+        return 0
+    for entry in entries:
+        status = entry.status or "not activated"
+        owner = entry.business_owner or "(none)"
+        print(
+            f"{entry.usecase_id}  v{entry.version}  {status}  "
+            f"tier {entry.proposed_tier}  accountable owner: {owner}"
+        )
+    return 0
+
+
+def cmd_usecase_show(args: argparse.Namespace) -> int:
+    """Print one use case as JSON."""
+    from kognita.usecases import show_usecase
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        entry = show_usecase(session, args.usecase_id)
+    if entry is None:
+        print(
+            f"Use-case register — '{args.usecase_id}' is not registered",
+            file=sys.stderr,
+        )
+        return 2
+    print(json.dumps(entry.record, indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_usecase_validate(args: argparse.Namespace) -> int:
+    """Fail when a use case is outside the register's rules."""
+    from kognita.usecases import validate_usecase
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        findings = validate_usecase(session, args.usecase_id)
+    if not findings:
+        print("valid")
+        return 0
+    for citation in findings:
+        print(citation)
+    return 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
@@ -401,6 +456,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="directory to create (default: governed-agent)",
     )
     scaffold.set_defaults(func=cmd_scaffold)
+
+    usecase = sub.add_parser("usecase", help="use-case register")
+    usecase_sub = usecase.add_subparsers(dest="usecase_command", required=True)
+
+    usecase_list = usecase_sub.add_parser("list", help="list registered use cases")
+    usecase_list.add_argument("--db", default="kognita.db", help="store path or URL")
+    usecase_list.set_defaults(func=cmd_usecase_list)
+
+    usecase_show = usecase_sub.add_parser("show", help="show one registered use case")
+    usecase_show.add_argument("usecase_id", help="use case id")
+    usecase_show.add_argument("--db", default="kognita.db", help="store path or URL")
+    usecase_show.set_defaults(func=cmd_usecase_show)
+
+    usecase_validate = usecase_sub.add_parser(
+        "validate",
+        help="fail when a use case is outside the register rules",
+    )
+    usecase_validate.add_argument(
+        "usecase_id",
+        nargs="?",
+        help="one use case; omit to validate every use case",
+    )
+    usecase_validate.add_argument("--db", default="kognita.db", help="store path or URL")
+    usecase_validate.set_defaults(func=cmd_usecase_validate)
 
     return parser
 
