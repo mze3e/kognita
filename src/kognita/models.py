@@ -1229,6 +1229,12 @@ class _ApprovalContinuation(SQLModel, table=True):
     consumed: bool = False
     agent_name: str | None = None
     expires_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+class _ProposalBinding(SQLModel, table=True):
+    """The exact diff a proposal was reviewed against, with a one-use apply claim."""
+    __tablename__ = "_proposal_bindings"
+    proposal_id: int = Field(primary_key=True, foreign_key="proposals.id")
+    diff_hash: str
+    applied: bool = False
 
 
 class _BlastUsage(SQLModel, table=True):

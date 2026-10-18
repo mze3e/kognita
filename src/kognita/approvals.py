@@ -520,3 +520,82 @@ __all__ = [
     "pending",
     "find_granted",
 ]
+
+
+def _proposal_hash(proposal):
+    from kognita.canonical import canonical_hash
+    return canonical_hash({key: getattr(proposal, key) for key in (
+        'kind', 'before_snapshot', 'change', 'rationale', 'subject_type',
+        'subject_id', 'proposer_id',
+    )})
+
+
+def _propose(session, proposal, *, evidence, correlation_id):
+    """Persist a held change and its exact review binding; caller owns commit."""
+    from kognita.models import Proposal, _ProposalBinding
+    if not isinstance(proposal, Proposal) or proposal.id is not None:
+        raise ApprovalError('PROPOSAL-BINDING: expected a new proposal')
+    proposal.proposer_id = _identity(proposal.proposer_id)
+    if not proposal.change or not set(proposal.change) <= set(proposal.before_snapshot):
+        raise ApprovalError('PROPOSAL-BINDING: changed fields require before-state')
+    digest = _proposal_hash(proposal)
+    with session.begin_nested():
+        session.add(proposal)
+        session.flush()
+        session.add(_ProposalBinding(proposal_id=proposal.id, diff_hash=digest))
+        session.flush()
+        evidence.emit(session, correlation_id=correlation_id,
+                      event_type=EventType.APPROVAL, actor_type=ActorType.AGENT,
+                      actor_id=proposal.proposer_id,
+                      payload={'action': 'PROPOSED', 'proposal_id': proposal.id,
+                               '_diff_hash': digest, 'rule_id': 'PROPOSAL-BINDING',
+                               'outcome': 'HUMAN_APPROVAL'})
+    return proposal
+
+
+def _apply_proposal(session, proposal, target, *, diff_hash, approver_id,
+                    actor_type, evidence, correlation_id):
+    """Human applies a reviewed diff to a local model in the same transaction."""
+    from sqlalchemy import inspect, update
+    from kognita.models import Proposal, _ProposalBinding
+    approver = _identity(approver_id)
+    if actor_type != ActorType.HUMAN:
+        raise ApprovalError('PROPOSAL-HUMAN: a human must apply the change')
+    with session.begin_nested():
+        # Claim before reading: concurrent apply attempts cannot both succeed.
+        claimed = session.execute(update(_ProposalBinding).where(
+            _ProposalBinding.proposal_id == proposal.id,
+            _ProposalBinding.diff_hash == diff_hash,
+            _ProposalBinding.applied == False,  # noqa: E712
+        ).values(applied=True).execution_options(synchronize_session=False))
+        if claimed.rowcount != 1:
+            raise ApprovalError('PROPOSAL-BINDING: unknown, changed or already applied diff')
+        session.refresh(proposal)
+        if not isinstance(proposal, Proposal) or _proposal_hash(proposal) != diff_hash:
+            raise ApprovalError('PROPOSAL-BINDING: diff changed since proposal')
+        if approver == _identity(proposal.proposer_id):
+            raise ApprovalError('PROPOSAL-HUMAN: proposer and approver must differ')
+        state = inspect(target)
+        if not state.persistent or state.session is not session:
+            raise ApprovalError('PROPOSAL-TARGET: target must belong to this transaction')
+        session.refresh(target)
+        fields = {column.key for column in state.mapper.columns
+                  if not column.primary_key}
+        if (proposal.subject_type != target.__tablename__
+                or proposal.subject_id != str(target.id)
+                or not set(proposal.change) <= fields
+                or not set(proposal.change) <= set(proposal.before_snapshot)
+                or any(getattr(target, key, object()) != value
+                       for key, value in proposal.before_snapshot.items())):
+            raise ApprovalError('PROPOSAL-TARGET: target or before-state changed')
+        for key, value in proposal.change.items():
+            setattr(target, key, value)
+        session.add(target)
+        session.flush()
+        evidence.emit(session, correlation_id=correlation_id,
+                      event_type=EventType.APPROVAL, actor_type=ActorType.HUMAN,
+                      actor_id=approver,
+                      payload={'action': 'APPLIED', 'proposal_id': proposal.id,
+                               '_diff_hash': diff_hash, 'rule_id': 'PROPOSAL-BINDING',
+                               'outcome': 'ALLOW'})
+    return proposal

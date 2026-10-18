@@ -256,17 +256,10 @@ def test_approval_carries_proposal_payload(harness):
 
 # ── Test shape: propose-then-apply (Tier 1.4) ────────────────────────────────
 
-def test_proposal_must_bind_to_diff(harness):
-    """A proposal carries the before-state and the change, not just a request.
-
-    Agent proposes: change document title from "Old Title" to "New Title"
-    Owner receives: the proposal with both versions visible
-    Owner applies: the change is atomic
-
-    The approval must bind to the specific diff, not just "apply proposal".
-    """
-    # This is a structural gap: Approval has no payload field
-    pass
+def test_proposal_must_bind_to_diff(session, evidence):
+    """Exercise exact diff binding instead of the former placeholder."""
+    from test_proposal_apply import test_proposal_must_bind_to_diff as check_binding
+    check_binding(session, evidence)
 
 
 def test_data_held_until_second_signature(harness):
