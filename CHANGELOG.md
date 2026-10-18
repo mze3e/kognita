@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extracted private model transport to keep the shared adapter binding within 200 lines.
 - Gateway model calls enforce live-run pause, override, restriction and recovery controls before forwarding.
 - Gateway model calls enforce approved-tool isolation and deny detected prompt injection before forwarding.
+- Replay reconstructs child delegations (AUTHORITY_TRANSFERRED) and the assurance level, so recorded 0.5 decisions replay to the same outcome; missing authority evidence fails replay closed.
 
 ## [0.5.0] - 2026-10-19
 
