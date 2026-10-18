@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Security: an MCP delegation scoped to one client no longer authorises a tool call whose arguments (`client`, `client_id`, `clientId`, or a matching `allowed_data` dimension) name a different or conflicting client; `S3-DELEGATION` now fails closed on that mismatch.
 - Provision the governed-agent scaffold with an approved behavior manifest and explicit read-only model-call permissions matching its gateway request.
 - Stop the gateway from consuming run budget and forwarding to the upstream once `record()` flips an allowed decision to DENY (quota recheck, S6-VOLUME anomaly quarantine); the denial is now returned immediately instead of a 200 response.
 

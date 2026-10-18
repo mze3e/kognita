@@ -44,6 +44,7 @@ from typing import Any
 
 from sqlmodel import Session
 
+from kognita.authority import _argument_values
 from kognita.classify import PatternClassifier
 from kognita.db import create_all, make_engine, session_scope
 from kognita.envelope import Check, Envelope, Evaluation
@@ -573,6 +574,14 @@ class McpProxy:
         if admitted:
             context["system_trigger"] = admitted
         from kognita._isolation import _assurance
+        # A single client named in the tool arguments becomes the envelope's
+        # client subject, so authority._checks sees the call's real target
+        # rather than defaulting to the delegation's own client. Conflicting,
+        # unresolved (too deeply nested) or absent names are left to
+        # authority._checks, which reads the arguments directly and fails
+        # closed on a mismatch.
+        argument_clients = _argument_values(envelope_arguments, "client")
+        subjects = {"client": next(iter(argument_clients))} if argument_clients and len(argument_clients) == 1 else {}
         envelope = Envelope(
             principal=principal,
             purpose=purpose,
@@ -581,6 +590,7 @@ class McpProxy:
             agent_name=agent_name,
             delegation_id=headers.get("delegation_id"),
             assurance_level=_assurance(headers),
+            subjects=subjects,
             arguments=dict(envelope_arguments),
             context=context,
         )
