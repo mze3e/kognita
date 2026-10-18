@@ -530,7 +530,7 @@ Do not wait for client harm.
 - [ ] A complaint links back to the exact output, model version and approver
 - [ ] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
 - [x] Graph extra removed from the package (ADR 0008)
-- [ ] Policy language: load, diff, validate, explain, test
+- [x] Policy language: load, diff, validate, explain, test
 - [ ] Five starter packs with scenarios
 - [ ] hermes-agent adapter plus at least three others
 - [ ] Flight recorder with export

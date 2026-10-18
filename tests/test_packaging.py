@@ -5,6 +5,7 @@ that the package no longer ships a graph engine. Both are claims about
 *imports* and files, so both are testable here rather than being left to
 reviewer discipline.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -22,14 +23,12 @@ PACKAGE_ROOT = REPO_ROOT / "src" / "kognita"
 #: Top-level modules that are deliberately outside the engine contract.
 #: ``config`` and ``exceptions`` have their own, stricter contract; ``cli`` sits
 #: above the engine and may import anything.
-_NOT_ENGINE = {"__init__", "config", "exceptions", "cli"}
+_NOT_ENGINE = {"__init__", "__main__", "config", "exceptions", "cli", "policy"}
 
 
 def _engine_modules_on_disk() -> set[str]:
     return {
-        path.stem
-        for path in PACKAGE_ROOT.glob("*.py")
-        if path.stem not in _NOT_ENGINE
+        path.stem for path in PACKAGE_ROOT.glob("*.py") if path.stem not in _NOT_ENGINE
     }
 
 
@@ -37,7 +36,9 @@ def _engine_modules_in_contract() -> set[str]:
     config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
     contracts = config["tool"]["importlinter"]["contracts"]
     engine = next(
-        c for c in contracts if c["name"] == "the decision engine reaches nothing optional"
+        c
+        for c in contracts
+        if c["name"] == "the decision engine reaches nothing optional"
     )
     return {name.removeprefix("kognita.") for name in engine["source_modules"]}
 
@@ -85,17 +86,77 @@ def test_importing_kognita_loads_no_optional_dependency():
 
 def test_the_engine_is_what_the_top_level_namespace_exports():
     """The names the pitch is about must be reachable as ``from kognita import ...``."""
-    for name in ("Envelope", "decide", "record", "EvidenceWriter", "EgressGuard",
-                 "retrieve", "ToolRegistry", "verify_chain", "PolicySnapshot"):
+    for name in (
+        "Envelope",
+        "decide",
+        "record",
+        "EvidenceWriter",
+        "EgressGuard",
+        "retrieve",
+        "ToolRegistry",
+        "verify_chain",
+        "PolicySnapshot",
+    ):
         assert hasattr(kognita, name), f"{name} should be exported from kognita"
         assert name in kognita.__all__
 
 
 def test_no_graph_name_is_exported_from_the_top_level():
-    for name in ("GraphEngine", "GraphConfig", "KuzuSession", "Kognita", "Node", "Edge"):
-        assert name not in kognita.__all__, (
-            f"{name!r} is a graph name and must not appear in kognita.__all__"
-        )
+    for name in (
+        "GraphEngine",
+        "GraphConfig",
+        "KuzuSession",
+        "Kognita",
+        "Node",
+        "Edge",
+    ):
+        assert (
+            name not in kognita.__all__
+        ), f"{name!r} is a graph name and must not appear in kognita.__all__"
+
+
+def test_the_policy_language_is_outside_the_engine_and_still_constrained():
+    """``kognita.policy`` sits above ``decide`` and stays on the core dependencies.
+
+    The engine must not import it. The policy module must not import the CLI,
+    the conformance kit, an adapter, or a YAML package. It reaches the use-case
+    register only because ``decide`` does; the policy file does not name it.
+    """
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
+    contracts = config["tool"]["importlinter"]["contracts"]
+    engine = next(
+        c
+        for c in contracts
+        if c["name"] == "the decision engine reaches nothing optional"
+    )
+    policy = next(
+        c
+        for c in contracts
+        if c["name"] == "the policy language reaches nothing optional"
+    )
+    assert "kognita.policy" in engine["forbidden_modules"]
+    assert "kognita.policy" not in engine["source_modules"]
+    assert "kognita.__main__" not in engine["source_modules"]
+    assert policy["source_modules"] == ["kognita.policy"]
+    entry = next(
+        c for c in contracts if c["name"] == "the module entry reaches nothing optional"
+    )
+    assert entry["source_modules"] == ["kognita.__main__"]
+    for name in ("kognita.cli", "kognita.testing", "kognita.adapters", "yaml"):
+        assert name in policy["forbidden_modules"]
+    assert "kognita.usecases" not in (PACKAGE_ROOT / "policy.py").read_text()
+
+
+def test_importing_kognita_does_not_load_the_policy_language():
+    """The top-level import stays the decision engine."""
+    probe = (
+        "import sys; import kognita; "
+        "print('yes' if 'kognita.policy' in sys.modules else 'no')"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", probe], capture_output=True, text=True, check=True
+    )
+    assert result.stdout.strip() == "no"
 
 
 def test_the_package_ships_no_graph_engine():
@@ -110,7 +171,9 @@ def test_the_package_ships_no_graph_engine():
     assert not [req for req in pinned if req.startswith(("graphiti", "kuzu"))]
 
 
-@pytest.mark.parametrize("removed", ["Kognita", "KognitaConfig", "KuzuSession", "GraphEngine"])
+@pytest.mark.parametrize(
+    "removed", ["Kognita", "KognitaConfig", "KuzuSession", "GraphEngine"]
+)
 def test_removed_graph_names_explain_the_removal(removed):
     """A clean break still has to be navigable.
 

@@ -18,12 +18,32 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
+from kognita.canonical import canonical_json
 from kognita.db import create_all, make_engine, session_scope
 from kognita.evidence import ChainBreak, EvidenceWriter, export_chain, verify_chain
 from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration, Gateway
-from kognita.vocabulary import FailureMode
+from kognita.vocabulary import ActorType, EventType, FailureMode
 from kognita.mcp import McpProxy, load_root_config
+from kognita.policy import (
+    PolicyLanguageError,
+    apply_change,
+    blocking_findings,
+    compile_rules,
+    diff_sets,
+    explain,
+    format_finding,
+    is_change_path,
+    policies_from_session,
+    read_change,
+    read_envelope,
+    read_policy_set,
+    render_change,
+    render_explanation,
+    run_scenarios,
+    source_hash,
+    validate,
+)
 from kognita.reconstruct import reconstruct, render_reconstruction
 
 
@@ -340,6 +360,242 @@ def cmd_usecase_validate(args: argparse.Namespace) -> int:
     return 1
 
 
+def _print_findings(findings: list[Any]) -> None:
+    for finding in findings:
+        print(format_finding(finding), file=sys.stderr)
+
+
+def _policy_error(exc: PolicyLanguageError) -> int:
+    _print_findings(exc.findings)
+    return 1
+
+
+def _findings_that_block_a_load(findings: list[Any], *, strict: bool) -> list[Any]:
+    """What stops a load.
+
+    A plain load blocks type and referential errors, and an uncited rule.
+    Untested rules, dangling references, and clarification markers block only
+    when ``strict`` is set, which is how a change load runs.
+    """
+    blocked = blocking_findings(findings, strict=strict)
+    if strict:
+        return blocked
+    seen = {(item.code, item.message, item.rule_id) for item in blocked}
+    for item in findings:
+        if item.code != "uncited":
+            continue
+        key = (item.code, item.message, item.rule_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        blocked.append(item)
+    return blocked
+
+
+def cmd_policy_load(args: argparse.Namespace) -> int:
+    """Parse a policy set, or merge a change, and compile the rules to rows.
+
+    A change file needs ``--policy``, the current policy set. Loading a change
+    runs the strict checks and, when they pass, merges the delta into that
+    directory, archives the change with the date, and compiles the result.
+
+    A plain load refuses an uncited rule. An untested rule does not stop a
+    plain load. A load that changes stored rows appends one POLICY_CHANGE
+    evidence event in the same transaction.
+    """
+    path = Path(args.path)
+    try:
+        if is_change_path(path):
+            if not args.policy:
+                print(
+                    "a change file needs --policy, the current policy set",
+                    file=sys.stderr,
+                )
+                return 2
+            policy_path = Path(args.policy)
+            current = read_policy_set(policy_path)
+            change = read_change(path)
+            findings = _findings_that_block_a_load(
+                validate(current, change), strict=True
+            )
+            if findings:
+                _print_findings(findings)
+                return 1
+            directory = policy_path if policy_path.is_dir() else policy_path.parent
+            merged = apply_change(
+                current, change, directory=directory, when=datetime.now(timezone.utc)
+            )
+            written = _compile_policy(args.db, merged, source=path, close_absent=True)
+            print(f"applied {path} into {directory}")
+            print(f"compiled {written} rules into {args.db}")
+            return 0
+        policies = read_policy_set(path)
+        findings = _findings_that_block_a_load(validate(policies), strict=False)
+        if findings:
+            _print_findings(findings)
+            return 1
+        written = _compile_policy(
+            args.db, policies, source=path, close_absent=path.is_dir()
+        )
+        print(f"compiled {written} rules into {args.db}")
+        return 0
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+
+
+def cmd_policy_diff(args: argparse.Namespace) -> int:
+    """Show the ADDED, MODIFIED and REMOVED delta between two policy sets."""
+    try:
+        change = diff_sets(read_policy_set(args.before), read_policy_set(args.after))
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+    text = render_change(change)
+    if args.output:
+        Path(args.output).write_text(text, encoding="utf-8")
+        print(f"wrote {args.output}")
+    else:
+        print(text, end="")
+    return 0
+
+
+def cmd_policy_validate(args: argparse.Namespace) -> int:
+    """Type-check a policy set or a change.
+
+    ``--strict`` also fails on an uncited rule, an untested rule, a dangling
+    reference, and an unresolved ``[NEEDS CLARIFICATION: ...]`` marker.
+    """
+    path = Path(args.path)
+    try:
+        if is_change_path(path):
+            if not args.policy:
+                print(
+                    "a change file needs --policy, the current policy set",
+                    file=sys.stderr,
+                )
+                return 2
+            findings = validate(read_policy_set(args.policy), read_change(path))
+        else:
+            findings = validate(read_policy_set(path))
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+    blocking = blocking_findings(findings, strict=args.strict)
+    if blocking:
+        _print_findings(blocking)
+        return 1
+    print("valid")
+    return 0
+
+
+def cmd_policy_explain(args: argparse.Namespace) -> int:
+    """Show which rules engage for an envelope, and the citation of each check."""
+    if not args.policy and not args.db:
+        print("explain needs --policy or --db", file=sys.stderr)
+        return 2
+    try:
+        envelope, attributes, purposes, as_of = read_envelope(args.envelope)
+        if args.policy:
+            policies = read_policy_set(args.policy)
+        else:
+            policies = _policies_in(args.db, as_of)
+        report = explain(
+            policies,
+            envelope,
+            attributes=attributes,
+            purposes=purposes,
+            as_of=as_of,
+        )
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+    print(render_explanation(report), end="")
+    return 0
+
+
+def cmd_policy_test(args: argparse.Namespace) -> int:
+    """Run the scenarios colocated with a policy set."""
+    try:
+        results = run_scenarios(read_policy_set(args.path))
+    except PolicyLanguageError as exc:
+        return _policy_error(exc)
+    if not results:
+        print("no scenarios")
+        return 0
+    failed = 0
+    for result in results:
+        if result.passed:
+            print(f"PASS {result.rule_id}: {result.name}")
+            continue
+        failed += 1
+        print(f"FAIL {result.rule_id}: {result.name}: {result.detail}", file=sys.stderr)
+    return 1 if failed else 0
+
+
+def _rule_body(rule: Any) -> str:
+    """The rule body a load compares. Effective dates are not part of it."""
+    return canonical_json(
+        {
+            "id": rule.id,
+            "regime": rule.regime,
+            "rule_type": rule.rule_type,
+            "applies_to": rule.applies_to,
+            "citation": rule.citation,
+            "rule": rule.rule,
+        }
+    )
+
+
+def _changed_ids(before: Any, after: Any) -> tuple[list[str], list[str], list[str]]:
+    previous = {rule.id: rule for rule in before.rules}
+    current = {rule.id: rule for rule in after.rules}
+    added = sorted(current.keys() - previous.keys())
+    removed = sorted(previous.keys() - current.keys())
+    modified = sorted(
+        rule_id
+        for rule_id in previous.keys() & current.keys()
+        if _rule_body(previous[rule_id]) != _rule_body(current[rule_id])
+    )
+    return added, modified, removed
+
+
+def _compile_policy(db: str, policies: Any, *, source: Path, close_absent: bool) -> int:
+    """Compile rows and, when any stored row changes, append POLICY_CHANGE.
+
+    The event is written in the same transaction as the rows. A load that
+    writes nothing appends nothing.
+    """
+    engine = make_engine(db)
+    create_all(engine)
+    moment = datetime.now(timezone.utc)
+    digest = source_hash(source)
+    with session_scope(engine) as session:
+        before = policies_from_session(session, at=moment)
+        written = compile_rules(session, policies, at=moment, close_absent=close_absent)
+        after = policies_from_session(session, at=moment)
+        added, modified, removed = _changed_ids(before, after)
+        if added or modified or removed:
+            EvidenceWriter(engine).emit(
+                session,
+                correlation_id="policy-load",
+                event_type=EventType.POLICY_CHANGE,
+                actor_type=ActorType.SYSTEM,
+                actor_id="kognita policy load",
+                payload={
+                    "action": "LOAD",
+                    "added": added,
+                    "modified": modified,
+                    "removed": removed,
+                    "source_hash": digest,
+                },
+            )
+        return written
+
+
+def _policies_in(db: str, as_of: datetime | None) -> Any:
+    engine = make_engine(db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        return policies_from_session(session, at=as_of)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
@@ -480,6 +736,69 @@ def build_parser() -> argparse.ArgumentParser:
     )
     usecase_validate.add_argument("--db", default="kognita.db", help="store path or URL")
     usecase_validate.set_defaults(func=cmd_usecase_validate)
+
+    policy = sub.add_parser("policy", help="author, diff, and test policy files")
+    policy_sub = policy.add_subparsers(dest="policy_command", required=True)
+
+    load = policy_sub.add_parser(
+        "load",
+        help=(
+            "parse, type-check, and compile rules to rows. Refuses an uncited "
+            "rule. A load that changes stored rows appends a POLICY_CHANGE "
+            "evidence event"
+        ),
+    )
+    load.add_argument("path", help="policy file, policy directory, or change file")
+    load.add_argument("--db", default="kognita.db", help="policy store")
+    load.add_argument(
+        "--policy",
+        help="current policy set; required when path is a change file",
+    )
+    load.set_defaults(func=cmd_policy_load)
+
+    diff = policy_sub.add_parser("diff", help="show the delta between two policy sets")
+    diff.add_argument("before", help="policy file or directory")
+    diff.add_argument("after", help="policy file or directory")
+    diff.add_argument("-o", "--output", help="write the change document to a file")
+    diff.set_defaults(func=cmd_policy_diff)
+
+    validate_cmd = policy_sub.add_parser(
+        "validate",
+        help="fail on a broken policy set or change",
+    )
+    validate_cmd.add_argument(
+        "path", help="policy file, policy directory, or change file"
+    )
+    validate_cmd.add_argument(
+        "--policy",
+        help="current policy set; required when path is a change file",
+    )
+    validate_cmd.add_argument(
+        "--strict",
+        action="store_true",
+        help=(
+            "also fail on an uncited rule, an untested rule, a dangling "
+            "reference, and an unresolved [NEEDS CLARIFICATION: ...] marker"
+        ),
+    )
+    validate_cmd.set_defaults(func=cmd_policy_validate)
+
+    explain_cmd = policy_sub.add_parser(
+        "explain",
+        help="show which rules engage for an envelope, and why",
+    )
+    explain_cmd.add_argument(
+        "--envelope",
+        required=True,
+        help="JSON file or JSON object. Optional keys: attributes, purposes, as_of",
+    )
+    explain_cmd.add_argument("--policy", help="policy file or directory")
+    explain_cmd.add_argument("--db", help="policy store, when --policy is omitted")
+    explain_cmd.set_defaults(func=cmd_policy_explain)
+
+    test_cmd = policy_sub.add_parser("test", help="run colocated policy scenarios")
+    test_cmd.add_argument("path", help="policy file, scenario file, or directory")
+    test_cmd.set_defaults(func=cmd_policy_test)
 
     return parser
 

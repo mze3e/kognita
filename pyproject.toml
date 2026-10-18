@@ -132,6 +132,7 @@ source_modules = [
 ]
 forbidden_modules = [
     "kognita.adapters",
+    "kognita.policy",
     "kognita.testing",
     "kognita.cli",
     "graphiti_core",
@@ -139,6 +140,42 @@ forbidden_modules = [
     "openai",
     "anthropic",
     "streamlit",
+]
+
+[[tool.importlinter.contracts]]
+name = "the module entry reaches nothing optional"
+type = "forbidden"
+source_modules = ["kognita.__main__"]
+forbidden_modules = [
+    "kognita.adapters",
+    "kognita.testing",
+    "graphiti_core",
+    "kuzu",
+    "openai",
+    "anthropic",
+    "streamlit",
+    "yaml",
+    "ruamel",
+]
+
+# The policy language calls decide(). governance imports the use-case register,
+# so forbidding kognita.usecases here would forbid that call. policy.py does
+# not name the register; tests/test_packaging.py checks the source.
+[[tool.importlinter.contracts]]
+name = "the policy language reaches nothing optional"
+type = "forbidden"
+source_modules = ["kognita.policy"]
+forbidden_modules = [
+    "kognita.adapters",
+    "kognita.testing",
+    "kognita.cli",
+    "graphiti_core",
+    "kuzu",
+    "openai",
+    "anthropic",
+    "streamlit",
+    "yaml",
+    "ruamel",
 ]
 
 [[tool.importlinter.contracts]]
