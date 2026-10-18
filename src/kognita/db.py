@@ -110,11 +110,12 @@ _EVIDENCE_HEAD: tuple[str, ...] = (
     # last event could append a new one under the same number. The head now
     # only moves strictly forward; that trigger is replaced on older stores.
     "DROP TRIGGER IF EXISTS evidence_head_forward_only",
+    # RAISE's message must be a string literal on SQLite before 3.47; an
+    # expression with || is a syntax error on GitHub Actions runners.
     """CREATE TRIGGER IF NOT EXISTS evidence_head_strictly_forward
     BEFORE UPDATE ON evidence_head
     WHEN NEW.sequence <= OLD.sequence
-    BEGIN SELECT RAISE(ABORT, 'the evidence head only moves forward: sequence '
-        || NEW.sequence || ' is not after ' || OLD.sequence); END""",
+    BEGIN SELECT RAISE(ABORT, 'the evidence head only moves forward'); END""",
     """CREATE TRIGGER IF NOT EXISTS evidence_head_no_delete
     BEFORE DELETE ON evidence_head
     BEGIN SELECT RAISE(ABORT, 'the evidence head cannot be deleted'); END""",

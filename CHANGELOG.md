@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-18
+
+### Fixed
+
+- The SQLite `evidence_head_strictly_forward` trigger uses a plain string in `RAISE`. An expression with `||` was a syntax error on SQLite before 3.47 (including the library linked into CPython on GitHub Actions), so `create_all` failed and every store open was refused.
+
+
 ## [0.4.0] - 2026-10-18
 
 ### Added
