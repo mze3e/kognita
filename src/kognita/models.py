@@ -465,6 +465,10 @@ class RunRecord(SQLModel, table=True):
 
     __tablename__ = "runs"
 
+    external: bool | None = None
+    client_data: bool | None = None
+    assurance_level: int | None = None
+
     id: str = Field(primary_key=True)
     max_calls: int | None = None
     max_tokens: int | None = None

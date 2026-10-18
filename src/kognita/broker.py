@@ -42,6 +42,7 @@ from kognita.retrieval import Retrieved, ceiling_for, retrieve
 from kognita.interaction import require_interaction
 from kognita.tools import (
     Run,
+    ToolSpec,
     _admit,
     _approval_for_decision,
     _bind_interaction,
@@ -49,6 +50,7 @@ from kognita.tools import (
     _checkpoint,
     _remember_pack,
     _save_run,
+    _with_checks,
     record_run_decision,
 )
 from kognita.vocabulary import ActorType, Classification, Outcome
@@ -211,6 +213,7 @@ def _retrieve_for(
     embedder: Embedder,
     evidence: EvidenceWriter,
     top_k: int,
+    run: Run | None = None,
 ) -> list[Retrieved]:
     return retrieve(
         session,
@@ -224,6 +227,7 @@ def _retrieve_for(
         is_admin=envelope.is_admin,
         top_k=top_k,
         use_case=envelope.purpose,
+        run=run,
     )
 
 
@@ -284,6 +288,21 @@ def ask(
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
+    from kognita._isolation import _ingest, _tool_checks
+    _ingest(session, run, evidence, text=question, correlation_id=evaluation.request_id,
+        _agent_name=routed.agent_name, client_data='client' in routed.all_subjects()
+        or attributes.get('classification') in (Classification.C2, Classification.C3, 'C2', 'C3'))
+    agent = snap.agents.get(routed.agent_name)
+    permission = (agent.tool_allowlist or {}).get(routed.tool, {}) if agent else {}
+    permission = permission if isinstance(permission, dict) else {}
+    level = permission.get('required_level', 0)
+    retrieval_spec = ToolSpec(routed.tool, lambda *_: None,
+        required_level=level if type(level) is int else 0,
+        verb=permission.get('verb', 'read'),
+        external=permission.get('external', False),
+        client_data=permission.get('client_data', False),
+        public_content=permission.get('public_content', False))
+    evaluation = _with_checks(evaluation, _tool_checks(session, routed, retrieval_spec, run, evidence, at=at))
     # The ceiling the caller would otherwise search at. A run that sits below
     # it is a budget breach, not a silent narrowing of the result set.
     evaluation, _breaches = _admit(
@@ -362,6 +381,7 @@ def ask(
         embedder=embedder,
         evidence=evidence,
         top_k=top_k,
+        run=run,
     )
     record_run_decision(session, interaction_id, evaluation, evidence, now=at)
     return _compose_answer(
@@ -383,6 +403,7 @@ def _resume_retrieval(
     embedder: Embedder | None,
     evidence: EvidenceWriter,
     subgraph: Callable[[Envelope, Session], dict[str, int]] | None,
+    run: Run | None = None,
 ) -> BrokerAnswer:
     """Fetch entitled sources for a continuation that was held before retrieval."""
     if embedder is None:
@@ -395,6 +416,7 @@ def _resume_retrieval(
         embedder=embedder,
         evidence=evidence,
         top_k=int(payload.get("top_k") or 5),
+        run=run,
     )
     return _compose_answer(
         evaluation,

@@ -84,6 +84,13 @@ class PatternClassifier:
             (re.compile(p), c) for p, c in self.indicators
         ]
 
+    def _injection(self, text: str) -> bool:
+        return bool(re.search(
+            r"ignore\s+(?:all\s+)?(?:previous|prior|system)\s+instructions|"
+            r"(?:override|bypass)\s+(?:the\s+)?(?:policy|permissions|system)|"
+            r"you are now\s+(?:the\s+)?(?:system|administrator)|"
+            r"reveal\s+(?:the\s+)?system\s+prompt", text, re.IGNORECASE))
+
     def classify(
         self, text: str, *, hint: Classification | None = None
     ) -> Classification:
@@ -150,6 +157,7 @@ class PatternClassifier:
         ]
         return {
             "classification": Classification(self.classify(text)).value,
+            "injection": self._injection(text),
             "markings": marks,
             "indicators": indicators,
             "floor": Classification(self.floor).value,

@@ -147,6 +147,10 @@ def create_all(engine: Engine) -> None:
         }.items():
             if name not in columns:
                 connection.exec_driver_sql(f'ALTER TABLE agents ADD COLUMN "{name}" {kind}')
+        run_columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(runs)")}
+        for name, kind in {"external": "BOOLEAN", "client_data": "BOOLEAN", "assurance_level": "INTEGER"}.items():
+            if name not in run_columns:
+                connection.exec_driver_sql(f'ALTER TABLE runs ADD COLUMN "{name}" {kind}')
         use_columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(use_cases)")}
         if "deployment_mode" not in use_columns:
             connection.exec_driver_sql("ALTER TABLE use_cases ADD COLUMN deployment_mode TEXT")

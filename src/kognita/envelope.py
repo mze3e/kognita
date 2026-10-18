@@ -26,6 +26,7 @@ class Envelope:
     actor_location: str = ""
     agent_name: str | None = None
     delegation_id: str | None = None
+    assurance_level: int = 0
     #: The subject of the request, by reference. ``("client", "1")`` and so on.
     subject_type: str | None = None
     subject_id: str | None = None
@@ -42,6 +43,10 @@ class Envelope:
     #: Free-form request context. Never trusted for authorisation decisions.
     context: dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        if type(self.assurance_level) is not int or not 0 <= self.assurance_level <= 3:
+            raise ValueError("S5-ASSURANCE: expected integer level 0 through 3")
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "principal": self.principal,
@@ -50,6 +55,7 @@ class Envelope:
             "actor_location": self.actor_location,
             "agent_name": self.agent_name,
             "delegation_id": self.delegation_id,
+            "assurance_level": self.assurance_level,
             "subject_type": self.subject_type,
             "subject_id": self.subject_id,
             "subjects": dict(self.subjects),

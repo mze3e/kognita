@@ -180,8 +180,14 @@ def retrieve(
     top_k: int = TOP_K,
     min_score: float = MIN_SCORE,
     use_case: str = "",
+    run: Any = None,
+    external: bool = True,
 ) -> list[Retrieved]:
     """Search the knowledge store within the caller's entitlement.
+
+    Pass the task's ``run`` to retain content provenance across later tools.
+    Documents are external by default; only a trusted internal corpus should
+    set ``external=False``. C2/C3 results always mark client data.
 
     Items whose ``document_ref``, ``source_label`` or id is under an open
     ``source`` revocation are never candidates.
@@ -285,6 +291,13 @@ def retrieve(
                 "embedder": embedder.model,
             },
         )
+    if run is not None and hits:
+        from kognita._isolation import _ingest
+        writer = evidence or EvidenceWriter(session.get_bind())
+        _ingest(session, run, writer, external=external,
+                client_data=any(h.classification in (Classification.C2, Classification.C3) for h in hits),
+                text="\n".join(item.body for item, _ in ranked[:top_k]),
+                correlation_id=correlation_id)
     return hits
 
 
