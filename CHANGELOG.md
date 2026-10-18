@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Evidence truncation is now detected: `verify_export` checks the export's advertised `event_count` and `head_hash` against what it actually verified, and `verify_chain` treats a missing or unreadable head checkpoint as a chain break (not a pass) whenever events exist.
+- #5: Serialize quota recheck and reservation in the decision transaction.
+- #6: Lock parent run capacity before checking and reserving child budgets.
+- #27: Serialize daily anomaly row creation and counter updates across workers.
+- 0.5 DoD item 4 (concurrency): Enforce atomic per-minute and daily quota admission.
 
 ## [0.5.0] - 2026-10-19
 

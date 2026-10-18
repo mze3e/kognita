@@ -16,6 +16,10 @@ def _observe(session, evaluation, evidence, at, *, _documents=None, _classificat
     env = evaluation.envelope
     if not env.agent_name:
         return evaluation
+    # Take a database write lock before reading counters; hold through commit.
+    from sqlalchemy import update as _update
+    session.execute(_update(_Agent).where(_Agent.name == env.agent_name)
+                    .values(name=_Agent.name).execution_options(synchronize_session=False))
     agent = session.exec(_select(_Agent).where(_Agent.name == env.agent_name)
                          .execution_options(populate_existing=True)).first()
     if agent is None:
