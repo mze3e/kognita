@@ -77,7 +77,6 @@ class PolicySnapshot:
     drill_dues: tuple[OpenDrill, ...] = ()
     _authority: tuple = ()
     _usage: dict = field(default_factory=dict)
-    _credentials: dict = field(default_factory=dict)
 
     def effective(self, at: datetime) -> tuple[Policy, ...]:
         return tuple(p for p in self.policies if p.is_effective(at))
@@ -102,23 +101,7 @@ def load_snapshot(session: Session, *, as_of: datetime | None = None,
             _step_down(session, agent.name, evidence=_evidence, now=at)
     from kognita.authority import _load
     from kognita._limits import _load_usage
-    from kognita.models import _WorkloadCredential
-    # Bounded by the registered agents in this snapshot: which agents hold any
-    # issued credential (revoked ones count, so revoking all still denies), and
-    # the live digests to compare against.
-    names = list(agents)
-    issued = {}
-    if names:
-        held = session.exec(select(_WorkloadCredential.agent_name).where(
-            _WorkloadCredential.agent_name.in_(names)).distinct()).all()
-        issued = {name: [] for name in held}
-        live = session.exec(select(_WorkloadCredential.agent_name, _WorkloadCredential.digest).where(
-            _WorkloadCredential.agent_name.in_(names), _WorkloadCredential.revoked == False  # noqa: E712
-        ).execution_options(populate_existing=True)).all()
-        for name, digest in live:
-            issued.setdefault(name, []).append(digest)
     return PolicySnapshot(
-        _credentials=issued,
         _usage=_load_usage(session, agents, at),
         _authority=_load(session, _agent_name, at, _evidence),
         policies=policies,
@@ -294,15 +277,6 @@ def decide(
     registry = rules if rules is not None else build_registry()
 
     checks: list[Check] = []
-    if envelope.agent_name in snapshot._credentials:
-        from kognita.credentials import _digest
-        import hmac
-        secret = envelope.context.get('_agent_credential')
-        valid = (isinstance(secret, str) and 0 < len(secret) <= 256 and any(
-            hmac.compare_digest(_digest(secret), digest)
-            for digest in snapshot._credentials[envelope.agent_name]))
-        checks.append(Check(check='S2-CREDENTIAL', citation='S2-CREDENTIAL',
-                            regime='INTERNAL', result=CheckResult.PASS if valid else CheckResult.FAIL))
     from kognita.authority import _checks as _authority_checks
     from kognita._limits import _checks as _limit_checks
     checks.extend(_limit_checks(envelope, snapshot, at))

@@ -161,7 +161,7 @@ def test_23_library_requires_issued_credential(session, evidence):
                             pack=_Pack(), now=NOW, as_of=NOW, snapshot=snapshot)
     snap = load_snapshot(session, as_of=NOW)
     register = load_register(session, as_of=NOW)
-    assert decide(replace(env, context={}), snap, usecases=register, as_of=NOW).outcome == Outcome.DENY
+    # decide() stays a pure, replayable PDP; the credential gate is at execution.
     assert decide(env, snap, usecases=register, as_of=NOW).allowed
     result = call(replace(env, context={}))
     assert result.outcome == Outcome.DENY
