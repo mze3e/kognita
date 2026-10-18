@@ -1,4 +1,4 @@
-name = "time-gated access"
+name = "time-gated-access"
 version = "1.0.0"
 purposes = ["ACCESS"]
 files = [

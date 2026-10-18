@@ -1,4 +1,4 @@
-name = "role-based access"
+name = "role-based-access"
 version = "1.0.0"
 purposes = ["ACCESS"]
 files = [

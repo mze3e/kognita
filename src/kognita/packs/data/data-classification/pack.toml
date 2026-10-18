@@ -1,4 +1,4 @@
-name = "data classification"
+name = "data-classification"
 version = "1.0.0"
 purposes = ["ACCESS"]
 files = [

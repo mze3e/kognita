@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kognita"
-version = "0.3.0"
+version = "0.4.0"
 description = "Prove an AI answer was permitted — and evidence it. A governed decision, retrieval and evidence library with an AI gateway and MCP proxy."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -117,7 +117,6 @@ packages = ["src/kognita"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "examples/governed-agent" = "kognita/_templates/governed-agent"
-"src/kognita/packs/data" = "kognita/packs/data"
 
 [tool.hatch.build.targets.sdist]
 include = [

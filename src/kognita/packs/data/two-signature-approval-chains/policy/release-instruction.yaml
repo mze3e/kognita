@@ -1,7 +1,7 @@
 id: release-instruction
 regime: APPROVAL
 rule_type: TWO_SIGNATURE_APPROVAL
-citation: "Releasing an instruction is a separate two-signature approval from payment release. Source: Kognita starter pack two-signature approval chains. See ADR 0006."
+citation: "Releasing an instruction is a separate two-signature approval from payment release. Source: Kognita starter pack two-signature-approval-chains. See ADR 0006."
 effective_from: "2020-01-01T00:00:00+00:00"
 rule:
   tools:

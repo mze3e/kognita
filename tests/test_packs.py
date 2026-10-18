@@ -120,11 +120,11 @@ def _context(principal: str, **attributes) -> RuleContext:
 
 def test_pack_names_match_the_roadmap():
     assert STARTER_PACKS == (
-        "role-based access",
+        "role-based-access",
         "geo-fencing",
-        "data classification",
-        "time-gated access",
-        "two-signature approval chains",
+        "data-classification",
+        "time-gated-access",
+        "two-signature-approval-chains",
     )
     assert PRIVATE_BANKING_PACK == "private-banking"
     assert PACK_NAMES == STARTER_PACKS + (PRIVATE_BANKING_PACK,)
@@ -415,7 +415,7 @@ def test_update_installs_when_the_pin_or_the_signature_matches(tmp_path, monkeyp
 def test_time_gate_uses_the_injected_clock_and_not_context():
     moment = datetime(2026, 6, 2, 10, 30, tzinfo=timezone.utc)
     pack = resolve_pack(
-        "time-gated access",
+        "time-gated-access",
         user_root=Path("/no/user"),
         managed_root=Path("/no/managed"),
         clock=lambda: moment,
@@ -751,7 +751,7 @@ def test_merge_policy_sets_keeps_a_base_rule_the_overlay_does_not_replace():
         user_root=Path("/no/user"),
         managed_root=Path("/no/managed"),
     ).policies
-    overlay_dir = ROOT / "role-based access" / "policy"
+    overlay_dir = ROOT / "role-based-access" / "policy"
     from kognita.policy import read_policy_set
 
     merged = merge_policy_sets(base, read_policy_set(overlay_dir))

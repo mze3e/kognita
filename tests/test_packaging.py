@@ -413,3 +413,16 @@ def test_importing_ingest_does_not_load_docling():
     )
     leaked = [name for name in result.stdout.strip().split(",") if name]
     assert not leaked, f"import kognita.ingest pulled in Docling: {leaked}"
+
+
+def test_wheel_force_include_does_not_duplicate_package_files():
+    """Hatch already ships every file under ``src/kognita``.
+
+    Force-including a path inside the package adds those files a second time,
+    and the wheel build refuses the duplicate archive entry.
+    """
+    data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    wheel = data["tool"]["hatch"]["build"]["targets"]["wheel"]
+    for source in wheel.get("force-include", {}):
+        assert not source.startswith("src/kognita"), source
+    assert (PACKAGE_ROOT / "packs" / "data" / "pins.toml").is_file()

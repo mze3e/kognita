@@ -231,9 +231,10 @@ The test every release is measured against:
 
 **0.3 "Gateways, the Run and Replay" is shipped** in v0.3.0: the AI gateway, the MCP proxy, classifier-derived envelopes, run budgets, suspend and resume, pinned evidence, `kognita evidence reconstruct`, degraded gateway mode, and the Tier 0 defect closures.
 
+**0.4 "Ingestion, Policy Language and the Client Lifecycle" is shipped** in v0.4.0: structured ingestion with passage-level citations, the policy language, the use-case register, the client interaction record, outcomes and the review queue, communication and intervention controls, the circuit breaker and revocation, starter packs, the flight recorder, and the hermes-agent, openai-agents, langgraph and pydantic-ai adapters.
+
 Planned, not yet built:
 
-- **0.4 "Ingestion, Policy Language and the Client Lifecycle".** Make citations real down to the passage, let non-engineers author and review policy, record a client interaction from origination to communication, and meet developers in the frameworks they already use. The roadmap places this in Q1 2027.
 - **0.5: Agents, authority and fleets.** Authenticated agent identity, delegated authority, autonomy levels, evidence-gated promotion and automatic step-down on drift, blast-radius limits, containment.
 - **0.6: Claims and institutional memory.** Typed, sourced, current claims checked before an RM relies on them; approved-source grounding; supervised memory that turns lessons into shared standards; governed business definitions.
 - **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
@@ -268,6 +269,6 @@ kognita.adapters   provider-backed embedders                 [openai]
 
 ## Status
 
-**Alpha.** v0.3.0 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+**Alpha.** v0.4.0 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 MIT licensed.

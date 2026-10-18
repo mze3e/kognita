@@ -1,7 +1,7 @@
 id: named-role
 regime: ACCESS
 rule_type: ATTRIBUTE_ALLOWLIST
-citation: "A request may carry only a role this pack lists: reader, reviewer, or approver. Source: Kognita starter pack role-based access."
+citation: "A request may carry only a role this pack lists: reader, reviewer, or approver. Source: Kognita starter pack role-based-access."
 effective_from: "2020-01-01T00:00:00+00:00"
 rule:
   allow:

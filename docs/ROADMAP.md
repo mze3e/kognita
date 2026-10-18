@@ -2,7 +2,7 @@
 
 **Vision:** Transform Kognita from a policy decision engine into a complete agent harness: a framework anyone can adopt to build governed AI agents with proof of permission and tamper-evident audit logs.
 
-**Current Status:** v0.3.0 is the latest release. Every 0.4 item below is implemented on main and not yet released; the package version stays 0.3.0 until 0.4.0 is released. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
+**Current Status:** v0.4.0 is the latest release, and every 0.4 item below shipped in it. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
 
 **Last revised:** September 2026. See [Decision Log](#decision-log) for what changed and why.
 
@@ -396,7 +396,7 @@ scenarios:
 
 ### 5. Starter Policy Packs
 
-Templates: role-based access, geo-fencing, data classification, time-gated access, two-signature approval chains. Each pack is policy files, scenarios, and a fixture pack.
+Templates: `role-based-access`, `geo-fencing`, `data-classification`, `time-gated-access`, `two-signature-approval-chains`. Each pack is policy files, scenarios, and a fixture pack.
 
 **Private-banking pack.** A pack built on real RM workflows: meeting transcript to suitability report, onboarding and KYC with human approval, pre-call preparation, portfolio review, and client communication. It encodes the rules that make private banking different: client domicile, RM location and booking centre; cross-border solicitation and research-distribution restrictions; product eligibility and suitability; mandate and concentration limits. The question it answers is not only "is product X suitable?" but "may this RM discuss product X with this client, from this location, today?"
 
