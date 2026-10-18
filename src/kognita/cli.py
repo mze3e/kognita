@@ -47,14 +47,14 @@ from kognita.policy import (
 from kognita.reconstruct import reconstruct, render_reconstruction
 
 
-def _probe(module: str) -> str:
+def _probe(module: str, distribution: str | None = None) -> str:
     """Report an optional dependency's version, or why it is unavailable."""
     try:
         import_module(module)
     except ImportError:
         return "not installed"
     try:
-        return version(module.replace("_", "-"))
+        return version(distribution or module.replace("_", "-"))
     except PackageNotFoundError:
         return "installed"
 
@@ -93,12 +93,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         print(f"  {module:<22} {_probe(module)}")
     print()
     print("optional extras")
-    for label, module in (
-        ("openai", "openai"),
-        ("vec", "sqlite_vec"),
-        ("docling", "docling"),
+    for label, module, distribution in (
+        ("openai", "openai", "openai"),
+        ("vec", "sqlite_vec", "sqlite-vec"),
+        ("docling", "docling", "docling"),
+        ("hermes-agent", "hermes_cli", "hermes-agent"),
+        ("openai-agents", "agents", "openai-agents"),
+        ("langgraph", "langgraph", "langgraph"),
+        ("pydantic-ai", "pydantic_ai", "pydantic-ai"),
     ):
-        print(f"  {label:<22} {_probe(module)}")
+        print(f"  {label:<22} {_probe(module, distribution)}")
     print()
     print(f"vector backend           {_vector_backend()}")
 

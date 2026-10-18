@@ -76,7 +76,9 @@ def test_importing_kognita_loads_no_optional_dependency():
         "import sys; import kognita; "
         "leaked = sorted(m for m in sys.modules "
         "if m.split('.')[0] in {'graphiti_core', 'kuzu', 'openai', 'anthropic', "
-        "'docling', 'docling_core', 'docling_parse', 'docling_ibm_models'} "
+        "'docling', 'docling_core', 'docling_parse', 'docling_ibm_models', "
+        "'hermes_cli', 'hermes_bootstrap', 'run_agent', 'agents', 'langgraph', "
+        "'langchain_core', 'pydantic_ai'} "
         "or m == 'kognita.ingest' or m.startswith('kognita.ingest.')); "
         "print(','.join(leaked))"
     )
@@ -85,6 +87,26 @@ def test_importing_kognita_loads_no_optional_dependency():
     )
     leaked = [name for name in result.stdout.strip().split(",") if name]
     assert not leaked, f"import kognita pulled in optional dependencies: {leaked}"
+
+
+def test_importing_an_adapter_does_not_import_its_framework():
+    """The adapter module is importable with no framework installed."""
+    probe = (
+        "import sys; "
+        "import kognita.adapters.hermes; "
+        "import kognita.adapters.openai_agents; "
+        "import kognita.adapters.langgraph; "
+        "import kognita.adapters.pydantic_ai; "
+        "banned = {'hermes_cli', 'hermes_bootstrap', 'run_agent', 'agents', "
+        "'langgraph', 'langchain_core', 'pydantic_ai', 'openai'}; "
+        "leaked = sorted(m for m in sys.modules if m.split('.')[0] in banned); "
+        "print(','.join(leaked))"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", probe], capture_output=True, text=True, check=True
+    )
+    leaked = [name for name in result.stdout.strip().split(",") if name]
+    assert not leaked, f"importing an adapter pulled in a framework: {leaked}"
 
 
 def test_the_engine_is_what_the_top_level_namespace_exports():
@@ -172,6 +194,58 @@ def test_the_package_ships_no_graph_engine():
     assert "graph" not in extras
     pinned = [req for reqs in extras.values() for req in reqs]
     assert not [req for req in pinned if req.startswith(("graphiti", "kuzu"))]
+
+
+_FRAMEWORK_EXTRAS = ("hermes-agent", "openai-agents", "langgraph", "pydantic-ai")
+_ADAPTER_MODULES = {
+    "hermes-agent": "kognita.adapters.hermes",
+    "openai-agents": "kognita.adapters.openai_agents",
+    "langgraph": "kognita.adapters.langgraph",
+    "pydantic-ai": "kognita.adapters.pydantic_ai",
+}
+
+
+def test_framework_extras_are_one_per_adapter_and_stay_out_of_core():
+    """Each approved framework is its own extra. The core dependencies do not move."""
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
+    dependencies = config["project"]["dependencies"]
+    extras = config["project"]["optional-dependencies"]
+    assert dependencies == [
+        "pydantic>=2.7.0",
+        "sqlmodel>=0.0.22",
+        "numpy>=1.26.0",
+        "python-dotenv>=1.0.0",
+    ]
+    for name in _FRAMEWORK_EXTRAS:
+        assert name in extras, name
+        assert extras[name], name
+    all_extra = " ".join(extras["all"])
+    for name in _FRAMEWORK_EXTRAS:
+        assert name not in all_extra
+
+
+def test_only_the_owning_adapter_may_import_a_framework():
+    """The import-linter ignore list is the allow-list, and it names adapters only."""
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
+    contracts = config["tool"]["importlinter"]["contracts"]
+    contract = next(
+        c for c in contracts if c["name"] == "the core never imports a framework"
+    )
+    assert contract["source_modules"] == ["kognita"]
+    ignored = contract["ignore_imports"]
+    allowed = set(_ADAPTER_MODULES.values())
+    for chain in ignored:
+        source = chain.split("->", 1)[0].strip()
+        assert source in allowed, chain
+
+
+@pytest.mark.parametrize(
+    "module", ["hermes", "openai_agents", "langgraph", "pydantic_ai"]
+)
+def test_each_framework_adapter_is_under_200_lines(module):
+    path = PACKAGE_ROOT / "adapters" / f"{module}.py"
+    lines = path.read_text().splitlines()
+    assert len(lines) < 200, f"{path.name} is {len(lines)} lines"
 
 
 @pytest.mark.parametrize(

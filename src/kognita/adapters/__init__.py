@@ -6,10 +6,14 @@ is permitted, and must stay installable without the machinery that answers it.
 
 :class:`~kognita.adapters.embeddings.OpenAICompatibleEmbedder` speaks the
 ``/v1/embeddings`` contract over :mod:`urllib`, so it costs no dependency and is
-imported eagerly. Adapters that need a provider SDK will be bound lazily here
-and raise :class:`~kognita.exceptions.ConfigError` naming the extra that
-supplies them.
+imported eagerly.
+
+Framework adapters are not imported here. Each one is its own module and its
+own extra — ``hermes-agent``, ``openai-agents``, ``langgraph``, ``pydantic-ai``
+— and importing it does not import the framework. The decision engine never
+imports them.
 """
+
 from kognita.adapters.embeddings import OpenAICompatibleEmbedder
 
 __all__ = ["OpenAICompatibleEmbedder"]

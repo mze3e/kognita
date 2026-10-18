@@ -57,12 +57,44 @@ local-embeddings = [
 docling = [
     "docling-slim[format-docx,format-html,format-markdown]==2.140.0",
 ]
+# One extra per framework adapter. They are not part of `all`: hermes-agent
+# pins its own openai and pydantic, and the others pull their SDKs.
+hermes-agent = ["hermes-agent>=0.19.0"]
+openai-agents = ["openai-agents>=0.2.0"]
+langgraph = ["langgraph>=0.2.0"]
+pydantic-ai = ["pydantic-ai>=0.1.0"]
 all = [
     "kognita[openai,vec,local-embeddings]",
 ]
 dev = [
     "pytest>=8.0.0",
     "import-linter>=2.0",
+]
+
+# hermes-agent pins openai, pydantic and requests exactly. It cannot share an
+# environment with the other framework extras, the openai extra, or docling.
+[tool.uv]
+conflicts = [
+    [
+        { extra = "hermes-agent" },
+        { extra = "openai-agents" },
+    ],
+    [
+        { extra = "hermes-agent" },
+        { extra = "langgraph" },
+    ],
+    [
+        { extra = "hermes-agent" },
+        { extra = "pydantic-ai" },
+    ],
+    [
+        { extra = "hermes-agent" },
+        { extra = "openai" },
+    ],
+    [
+        { extra = "hermes-agent" },
+        { extra = "docling" },
+    ],
 ]
 
 [project.scripts]
@@ -204,6 +236,30 @@ forbidden_modules = [
     "docling_core",
     "docling_parse",
     "docling_ibm_models",
+]
+
+# Framework SDKs are imported only by the adapter that owns them, and only
+# inside the method that needs the type. The Hermes adapter does not import
+# Hermes: Hermes calls the hook. `import kognita` never reaches a framework.
+# The ignore list is the allow-list for the packages that are imported.
+[[tool.importlinter.contracts]]
+name = "the core never imports a framework"
+type = "forbidden"
+source_modules = ["kognita"]
+forbidden_modules = [
+    "hermes_cli",
+    "hermes_bootstrap",
+    "run_agent",
+    "agents",
+    "langgraph",
+    "langchain_core",
+    "pydantic_ai",
+]
+ignore_imports = [
+    "kognita.adapters.openai_agents -> agents",
+    "kognita.adapters.openai_agents -> openai",
+    "kognita.adapters.langgraph -> langchain_core",
+    "kognita.adapters.pydantic_ai -> pydantic_ai",
 ]
 
 [[tool.importlinter.contracts]]
