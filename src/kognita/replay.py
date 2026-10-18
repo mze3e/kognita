@@ -125,11 +125,11 @@ def _pinned_registry(session: Session, snapshot: Any, cutoff: int) -> Any:
     identities = {}
     authority = {}
     for change in changes:
-        body = change.payload if isinstance(change.payload, dict) else {}
+        body = _trusted_payload(change)
         action = body.get("action")
-        if body.get("citation") == "S3-AUTHORITY" and isinstance(body.get("body"), dict):
+        if body.get("citation") in ("S3-AUTHORITY", "S6B-DELEGATION") and isinstance(body.get("body"), dict):
             identity = body["id"]
-            if action in ("GRANT_ISSUED", "DELEGATION_ISSUED"):
+            if action in ("GRANT_ISSUED", "DELEGATION_ISSUED", "AUTHORITY_TRANSFERRED"):
                 value = body["body"]
                 grantee = value.get("agent")
                 if body["kind"] == "grant":
@@ -354,6 +354,7 @@ def _envelope_from_evidence(data: dict[str, Any]) -> Envelope:
         actor_location=data.get("actor_location") or "",
         agent_name=data.get("agent_name"),
         delegation_id=data.get("delegation_id"),
+        assurance_level=data.get("assurance_level", 0),
         subject_type=data.get("subject_type"),
         subject_id=data.get("subject_id"),
         subjects=dict(data.get("subjects") or {}),
