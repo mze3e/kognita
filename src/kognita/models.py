@@ -460,7 +460,9 @@ class UseCase(SQLModel, table=True):
     )
     content_hash: str = Field(default="")
     effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
-    effective_to: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    effective_to: datetime | None = Field(
+        default=None, sa_column=_nullable_utc_column()
+    )
 
     def is_effective(self, at: datetime) -> bool:
         """Whether this version is in force at ``at`` (half-open interval)."""
@@ -486,7 +488,9 @@ class RiskAppetite(SQLModel, table=True):
     )
     content_hash: str = Field(default="")
     effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
-    effective_to: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    effective_to: datetime | None = Field(
+        default=None, sa_column=_nullable_utc_column()
+    )
 
     def is_effective(self, at: datetime) -> bool:
         start = as_utc(self.effective_from)
@@ -595,6 +599,78 @@ class EvidenceItem(SQLModel, table=True):
         ),
     )
     item_id: int = Field(foreign_key="knowledge_items.id", primary_key=True)
+
+
+class Interaction(SQLModel, table=True):
+    """One client journey, from trigger through final decision.
+
+    Runs and correlation ids attach to this row. ``reconstruct`` reads the
+    journey by this id, not by a single request id.
+    """
+
+    __tablename__ = "interactions"
+
+    id: str = Field(primary_key=True)
+    client_id: str = Field(index=True)
+    use_case: str = Field(default="", index=True)
+    #: The stricter of the gate named at open and the gate on the register.
+    approval_gate: str = ""
+    opened_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+
+
+class InteractionLink(SQLModel, table=True):
+    """A run or a correlation id that belongs to one interaction."""
+
+    __tablename__ = "interaction_links"
+
+    id: int | None = Field(default=None, primary_key=True)
+    interaction_id: str = Field(index=True, foreign_key="interactions.id")
+    correlation_id: str = Field(default="", index=True)
+    run_id: str | None = Field(default=None, foreign_key="runs.id")
+
+
+class HumanBoundary(SQLModel, table=True):
+    """Where a human must intervene, recorded before a review can approve.
+
+    Stored beside the use-case register. The register already names decision
+    points as a list of strings; this row is who reviews, what they see, and
+    what a rejection does.
+    """
+
+    __tablename__ = "human_boundaries"
+
+    usecase_id: str = Field(primary_key=True)
+    intervention: str = ""
+    who: str = ""
+    must_review: str = ""
+    evidence_seen: str = ""
+    on_reject: str = ""
+    minimum_review_seconds: int = 0
+
+
+class RmReview(SQLModel, table=True):
+    """The recommendation an RM was shown, and the decision still open on it.
+
+    The rendered text, the diff and the packet live in the retention store.
+    This row holds their hashes and, for a two-signature gate, the marked
+    state that is not yet a final decision.
+    """
+
+    __tablename__ = "rm_reviews"
+
+    id: int | None = Field(default=None, primary_key=True)
+    interaction_id: str = Field(index=True, foreign_key="interactions.id")
+    status: str = Field(default="marked", index=True)
+    rm: str = ""
+    confirmer: str = ""
+    outcome: str = ""
+    packet_hash: str = ""
+    rendered_hash: str = ""
+    diff_hash: str = ""
+    provenance: str = ""
+    prior_provenance: str = ""
+    requested_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+    decided_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
 
 
 class EntityEdge(SQLModel, table=True):
@@ -711,13 +787,17 @@ def _refuse_closed_window(row: Any) -> None:
 
 
 @event.listens_for(UseCase, "before_insert")
-def _stamp_usecase_content_hash(_mapper: Any, _connection: Any, target: UseCase) -> None:
+def _stamp_usecase_content_hash(
+    _mapper: Any, _connection: Any, target: UseCase
+) -> None:
     """The stamp is the row's content. A caller-supplied hash is not kept."""
     target.content_hash = usecase_content_hash(target)
 
 
 @event.listens_for(UseCase, "before_update")
-def _reject_in_place_usecase_edit(_mapper: Any, _connection: Any, target: UseCase) -> None:
+def _reject_in_place_usecase_edit(
+    _mapper: Any, _connection: Any, target: UseCase
+) -> None:
     """Closing the window is the only rewrite an effective use case accepts."""
     _refuse_closed_window(target)
     fresh = usecase_content_hash(target)
@@ -792,6 +872,10 @@ __all__ = [
     "Entity",
     "EntityEdge",
     "UseCase",
+    "Interaction",
+    "InteractionLink",
+    "HumanBoundary",
+    "RmReview",
     "RiskAppetite",
     "ModelCard",
     "RetentionPolicy",

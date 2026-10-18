@@ -520,11 +520,11 @@ Do not wait for client harm.
 - [ ] Circuit breaker trips automatically in a test scenario, and the affected-client query lists exactly the clients who received output in the window
 - [ ] Revocation by each dimension takes effect on the next decision without affecting other use cases
 - [x] Risk tiers enforce minimum controls; a tier 3 use case cannot be activated by its own builder
-- [ ] An incomplete approval packet cannot be approved; rubber-stamp approvals are flagged
+- [x] An incomplete approval packet cannot be approved; rubber-stamp approvals are flagged
 - [ ] Private-banking starter pack with scenarios, including cross-border and booking-centre denials
 - [ ] OpenTelemetry export
 - [x] A use case outside the risk appetite cannot be registered; a use case past its review date is denied
-- [ ] "Do not contact" outcomes recorded with reasons; a bare score is rejected as rationale
+- [x] "Do not contact" outcomes recorded with reasons; a bare score is rejected as rationale
 - [ ] Every communication carries a communication level and content provenance label; unregistered channels are denied
 - [ ] Pause, override, restrict and recover work on a live run and are evidenced
 - [ ] A complaint links back to the exact output, model version and approver

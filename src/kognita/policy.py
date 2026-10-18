@@ -104,6 +104,11 @@ _SCHEMAS: dict[str, dict[str, Any]] = {
         "optional_lists": (),
         "optional": ("min_confidence", "description"),
     },
+    "CONTACT_FREQUENCY": {
+        "required_maps": (),
+        "optional_lists": ("tools",),
+        "optional": ("max_contacts", "window_days", "description"),
+    },
     "PROHIBITED": {
         "required_maps": (),
         "optional_lists": (),
@@ -828,6 +833,24 @@ def _payload_messages(rule_type: str, rule: Any) -> list[str]:
         or not isinstance(rule["min_confidence"], (int, float))
     ):
         messages.append("min_confidence must be a number")
+    if rule_type == "CONTACT_FREQUENCY":
+        messages.extend(_frequency_messages(rule))
+    return messages
+
+
+def _frequency_messages(rule: dict[str, Any]) -> list[str]:
+    """A contact-frequency rule that cannot be counted does not validate."""
+    messages: list[str] = []
+    limit = rule.get("max_contacts")
+    window = rule.get("window_days")
+    if "max_contacts" not in rule:
+        messages.append("max_contacts is required")
+    elif isinstance(limit, bool) or not isinstance(limit, int) or limit < 0:
+        messages.append("max_contacts must be a non-negative integer")
+    if "window_days" not in rule:
+        messages.append("window_days is required")
+    elif isinstance(window, bool) or not isinstance(window, int) or window < 1:
+        messages.append("window_days must be a positive integer")
     return messages
 
 

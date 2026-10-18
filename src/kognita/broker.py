@@ -16,6 +16,7 @@ usual case: a question about a subject *and* a related object is an eligibility
 question, one about a subject alone is a context question, and one about neither
 is a knowledge question.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
@@ -37,13 +38,16 @@ from kognita.governance import (
 from kognita.models import utcnow
 from kognita.protocols import Embedder
 from kognita.retrieval import Retrieved, ceiling_for, retrieve
+from kognita.interaction import require_interaction
 from kognita.tools import (
     Run,
     _admit,
     _approval_for_decision,
+    _bind_interaction,
     _budget_payload,
     _checkpoint,
     _save_run,
+    record_run_decision,
 )
 from kognita.vocabulary import ActorType, Classification, Outcome
 
@@ -122,9 +126,9 @@ def _policy_citations(evaluation: Evaluation) -> list[dict[str, str]]:
 def _refused_answer(evaluation: Evaluation, route_name: str) -> BrokerAnswer:
     """The basis for refusing, and nothing retrieved."""
     verb = "denied" if evaluation.outcome == Outcome.DENY else "escalated"
-    summary = [
-        f"Request {verb} by governance before any data was retrieved."
-    ] + [f"{c.regime}: {c.check} — {c.citation}" for c in evaluation.basis()]
+    summary = [f"Request {verb} by governance before any data was retrieved."] + [
+        f"{c.regime}: {c.check} — {c.citation}" for c in evaluation.basis()
+    ]
     return BrokerAnswer(
         request_id=evaluation.request_id,
         outcome=evaluation.outcome,
@@ -153,7 +157,9 @@ def _compose_answer(
     if route_name == ELIGIBILITY:
         human = evaluation.human_reviews()
         if human:
-            summary.append("Permitted subject to human review before any communication:")
+            summary.append(
+                "Permitted subject to human review before any communication:"
+            )
             summary.extend(f"{c.regime} — {c.citation}" for c in human)
         else:
             summary.append("Permitted under all engaged regimes. Citations below.")
@@ -175,7 +181,10 @@ def _compose_answer(
         )
 
     citations.extend(
-        {"label": r.source_label, "classification": Classification(r.classification).value}
+        {
+            "label": r.source_label,
+            "classification": Classification(r.classification).value,
+        }
         for r in results
         if r.source_label
     )
@@ -234,6 +243,7 @@ def ask(
     cost_usd: float | None = None,
     tokens: int | None = None,
     now: datetime | None = None,
+    interaction_id: str | None = None,
 ) -> BrokerAnswer:
     """Authorise a question, then answer it from entitled sources only.
 
@@ -245,6 +255,8 @@ def ask(
     route = resolver(question, envelope)
     routed = envelope if envelope.tool else replace(envelope, tool=route.tool)
     at = now or utcnow()
+    if interaction_id is not None:
+        require_interaction(session, interaction_id)
 
     subjects = pack.load_subjects(routed, session)
     attributes = pack.resolve_attributes(routed, subjects)
@@ -305,20 +317,25 @@ def ask(
             evidence=evidence,
             kind="retrieval",
             extra={"question": question, "route": route.name, "top_k": top_k},
+            interaction_id=interaction_id,
         )
     elif run is not None:
         _save_run(session, run)
 
     if not evaluation.allowed:
+        _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
+        record_run_decision(session, interaction_id, evaluation, evidence, now=at)
         # Fail closed, but never silently: the basis for refusing is itself the
         # answer, and it is the part a user can act on.
         return _refused_answer(evaluation, route.name)
 
+    _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
     if holding:
         # Same rule as the tool runner: prepare the decision, release nothing.
-        summary = [
-            "Request held for human approval before any data was retrieved."
-        ] + [f"{c.regime}: {c.check} — {c.citation}" for c in evaluation.basis()]
+        # The final decision waits until the approval is resolved.
+        summary = ["Request held for human approval before any data was retrieved."] + [
+            f"{c.regime}: {c.check} — {c.citation}" for c in evaluation.basis()
+        ]
         return BrokerAnswer(
             request_id=evaluation.request_id,
             outcome=evaluation.outcome,
@@ -338,6 +355,7 @@ def ask(
         evidence=evidence,
         top_k=top_k,
     )
+    record_run_decision(session, interaction_id, evaluation, evidence, now=at)
     return _compose_answer(
         evaluation,
         route.name,

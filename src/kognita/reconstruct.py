@@ -4,15 +4,16 @@
 from the evidence chain and the retention store. It does not decide again, and
 it does not call a classifier, a model, or a tool.
 
-There is no interaction table in this release. The identifier is the
-``correlation_id`` already written on evidence events, which is the decision's
-``request_id``. An interaction record that groups several of those ids is a
-later release; this report does not invent one.
+An interaction record groups the correlation ids attached to one journey.
+``reconstruct`` reads that span. An id that is not an interaction is still
+the ``correlation_id`` on the evidence events, which is the decision's
+``request_id``.
 
-Questions answered by origination, RM review capture, or governed client
-communication are present and marked ``not recorded``. Approval events can
-exist on the chain when a policy forced one. That is not a final decision on
-every path, so "Who made the final decision?" stays ``not recorded``.
+Origination answers why this client and why this product, when an
+``ORIGINATION`` event is on the span. RM review answers what the RM saw and
+changed. ``FINAL_DECISION`` answers who decided. Governed client communication
+is not recorded yet, so that question stays ``not recorded``. A question with
+no event for it stays ``not recorded`` as well.
 
 Pin checks follow replay, including two residuals left as they are:
 
@@ -22,6 +23,7 @@ Pin checks follow replay, including two residuals left as they are:
 
 A mismatch is a finding. The report still lists the row and the other questions.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -59,18 +61,11 @@ QUESTIONS: tuple[str, ...] = (
     "Can the bank reproduce that evidence later?",
 )
 
-#: Delivered by 0.4: origination, RM review capture, governed client communication.
-_NOT_RECORDED_QUESTIONS = frozenset(
-    {
-        "Why this client?",
-        "Why this insight or product?",
-        "What did the RM see and change?",
-        "Who made the final decision?",
-        "What was communicated to the client?",
-    }
-)
+#: Governed client communication is a later slice. The question stays present.
+_NOT_RECORDED_QUESTIONS = frozenset({"What was communicated to the client?"})
 
 _PIN_HASH_KEYS = ("prompt_hash", "response_hash")
+_RETAINED_HASH_KEYS = ("rendered_hash", "diff_hash", "packet_hash")
 _OK_PIN_STATUSES = frozenset({"matches", "retained", "erased", "empty", "recorded"})
 
 
@@ -85,7 +80,7 @@ def reconstruct(session: Session, interaction_id: str) -> dict[str, Any]:
         session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
     )
     findings, checked = _chain_findings(events)
-    selected = [event for event in events if event.correlation_id == interaction_id]
+    selected = _events_for(session, interaction_id, events)
     if not selected:
         findings.append(
             {
@@ -94,10 +89,34 @@ def reconstruct(session: Session, interaction_id: str) -> dict[str, Any]:
             }
         )
 
-    decisions = [_decision_view(event) for event in selected if _is(event, EventType.POLICY_DECISION)]
-    retrievals = [_retrieval_view(session, event) for event in selected if _is(event, EventType.RETRIEVAL)]
-    models = [_model_view(session, event) for event in selected if _is(event, EventType.MODEL_CALL)]
-    findings.extend(_policy_findings(session, decisions))
+    decisions = [
+        _decision_view(event)
+        for event in selected
+        if _is(event, EventType.POLICY_DECISION)
+    ]
+    retrievals = [
+        _retrieval_view(session, event)
+        for event in selected
+        if _is(event, EventType.RETRIEVAL)
+    ]
+    models = [
+        _model_view(session, event)
+        for event in selected
+        if _is(event, EventType.MODEL_CALL)
+    ]
+    originations = [
+        _payload(event) for event in selected if _is(event, EventType.ORIGINATION)
+    ]
+    reviews = [
+        _payload(event)
+        for event in selected
+        if _is(event, EventType.INTERACTION)
+        and _payload(event).get("action") == "RM_REVIEW"
+    ]
+    finals = [
+        _final_view(event) for event in selected if _is(event, EventType.FINAL_DECISION)
+    ]
+    findings.extend(_policy_findings(session, decisions + _pinned_decisions(selected)))
     findings.extend(_retrieval_findings(session, selected))
     findings.extend(_retained_findings(session, selected))
     findings.extend(_response_hash_findings(selected))
@@ -116,6 +135,10 @@ def reconstruct(session: Session, interaction_id: str) -> dict[str, Any]:
             pins=pins,
             chain_intact=chain_intact,
             events_checked=checked,
+            originations=originations,
+            reviews=reviews,
+            finals=finals,
+            session=session,
         ),
     }
     return report
@@ -130,7 +153,9 @@ def render_reconstruction(report: dict[str, Any]) -> str:
     ]
     chain = report.get("chain") or {}
     if chain.get("intact"):
-        lines.append(f"Evidence chain: intact, {chain.get('events_checked', 0)} events checked.")
+        lines.append(
+            f"Evidence chain: intact, {chain.get('events_checked', 0)} events checked."
+        )
     else:
         lines.append(
             f"Evidence chain: not intact, {chain.get('events_checked', 0)} events checked."
@@ -154,6 +179,82 @@ def render_reconstruction(report: dict[str, Any]) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _events_for(
+    session: Session, interaction_id: str, events: list[EvidenceEvent]
+) -> list[EvidenceEvent]:
+    """Events on this journey.
+
+    An id that was never opened as an interaction matches ``correlation_id``
+    only, which is how a single request was reconstructed before the record
+    existed.
+    """
+    from kognita.interaction import linked_correlation_ids
+    from kognita.models import Interaction
+
+    known = session.get(Interaction, interaction_id) is not None or any(
+        _is(event, EventType.INTERACTION)
+        and _payload(event).get("interaction_id") == interaction_id
+        for event in events
+    )
+    if not known:
+        return [event for event in events if event.correlation_id == interaction_id]
+    ids = linked_correlation_ids(session, interaction_id)
+    for event in events:
+        payload = _payload(event)
+        if payload.get("interaction_id") != interaction_id:
+            continue
+        if payload.get("action") == "ATTACHED":
+            correlation_id = payload.get("correlation_id")
+            if isinstance(correlation_id, str) and correlation_id:
+                ids.add(correlation_id)
+    return [
+        event
+        for event in events
+        if event.correlation_id in ids
+        or _payload(event).get("interaction_id") == interaction_id
+    ]
+
+
+def _final_view(event: EvidenceEvent) -> dict[str, Any]:
+    payload = _payload(event)
+    decided = payload.get("decided_at")
+    if not isinstance(decided, str) or not decided:
+        decided = event.recorded_at.isoformat()
+    rm = payload.get("rm") or payload.get("actor_id") or ""
+    return {
+        "rm": rm,
+        "actor_id": payload.get("actor_id") or "",
+        "outcome": payload.get("outcome"),
+        "decided_at": decided,
+        "citation": payload.get("citation") or "",
+        "kind": payload.get("kind") or "",
+        "rendered_hash": payload.get("rendered_hash") or "",
+        "diff_hash": payload.get("diff_hash") or "",
+        "provenance": payload.get("provenance") or "",
+        "prior_provenance": payload.get("prior_provenance") or "",
+        "rubber_stamp": payload.get("rubber_stamp") or None,
+        "sequence": event.sequence,
+    }
+
+
+def _pinned_decisions(events: list[EvidenceEvent]) -> list[dict[str, Any]]:
+    """Origination and final-decision checks that pin a policy hash."""
+    extra: list[dict[str, Any]] = []
+    for event in events:
+        if not (
+            _is(event, EventType.ORIGINATION) or _is(event, EventType.FINAL_DECISION)
+        ):
+            continue
+        checks = _checks(_payload(event).get("checks"))
+        if not any(
+            isinstance(item.get("policy_hash"), str) and item.get("policy_hash")
+            for item in checks
+        ):
+            continue
+        extra.append({"as_of": event.recorded_at.isoformat(), "checks": checks})
+    return extra
+
+
 def _questions(
     *,
     decisions: list[dict[str, Any]],
@@ -162,6 +263,10 @@ def _questions(
     pins: list[dict[str, Any]],
     chain_intact: bool,
     events_checked: int,
+    originations: list[dict[str, Any]] | None = None,
+    reviews: list[dict[str, Any]] | None = None,
+    finals: list[dict[str, Any]] | None = None,
+    session: Session | None = None,
 ) -> list[dict[str, Any]]:
     answers: dict[str, Any] = {
         "What information did the AI use?": {
@@ -180,10 +285,21 @@ def _questions(
             "pins": pins,
         },
     }
+    if originations:
+        answers["Why this client?"] = {"originations": originations}
+        answers["Why this insight or product?"] = {"originations": originations}
+    if reviews and session is not None:
+        answers["What did the RM see and change?"] = {
+            "reviews": [_review_view(session, item) for item in reviews]
+        }
+    if finals:
+        answers["Who made the final decision?"] = {"decisions": finals}
     return [
         {
             "question": question,
-            "answer": NOT_RECORDED if question in _NOT_RECORDED_QUESTIONS else answers[question],
+            "answer": NOT_RECORDED
+            if question in _NOT_RECORDED_QUESTIONS or question not in answers
+            else answers[question],
         }
         for question in QUESTIONS
     ]
@@ -196,11 +312,12 @@ def _chain_findings(events: list[EvidenceEvent]) -> tuple[list[dict[str, Any]], 
     for index, event in enumerate(events, start=1):
         sequence = event.sequence
         if sequence != index:
-            findings.append(
-                _chain(sequence, f"expected sequence {index}")
-            )
+            findings.append(_chain(sequence, f"expected sequence {index}"))
         payload = event.payload if isinstance(event.payload, dict) else event.payload
-        if not isinstance(payload, dict) or canonical_hash(payload) != event.payload_hash:
+        if (
+            not isinstance(payload, dict)
+            or canonical_hash(payload) != event.payload_hash
+        ):
             findings.append(_chain(sequence, "payload does not match its hash"))
         if event.prev_hash != expected_prev:
             findings.append(
@@ -209,10 +326,14 @@ def _chain_findings(events: list[EvidenceEvent]) -> tuple[list[dict[str, Any]], 
         try:
             recomputed = recompute_event_hash(event)
         except (TypeError, ValueError) as exc:
-            findings.append(_chain(sequence, f"event hash does not match its contents ({exc})"))
+            findings.append(
+                _chain(sequence, f"event hash does not match its contents ({exc})")
+            )
         else:
             if recomputed != event.event_hash:
-                findings.append(_chain(sequence, "event hash does not match its contents"))
+                findings.append(
+                    _chain(sequence, "event hash does not match its contents")
+                )
         expected_prev = event.event_hash
     return findings, len(events)
 
@@ -242,7 +363,9 @@ def _decision_view(event: EvidenceEvent) -> dict[str, Any]:
         "tool": envelope.get("tool") or "",
         "roles": list(envelope.get("roles") or []),
         "scopes": dict(envelope.get("scopes") or {}),
-        "arguments": envelope.get("arguments") if isinstance(envelope.get("arguments"), dict) else {},
+        "arguments": envelope.get("arguments")
+        if isinstance(envelope.get("arguments"), dict)
+        else {},
         "checks": _checks(payload.get("checks")),
         "registry_citation": _registry_citation(payload.get("checks")),
     }
@@ -360,7 +483,9 @@ def _argument_hashes(decisions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return found
 
 
-def _policy_findings(session: Session, decisions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _policy_findings(
+    session: Session, decisions: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     seen: set[tuple[Any, str]] = set()
     for decision in decisions:
@@ -431,7 +556,9 @@ def _window_covers(policy: Policy, at: datetime) -> bool:
     return True
 
 
-def _retrieval_findings(session: Session, events: list[EvidenceEvent]) -> list[dict[str, Any]]:
+def _retrieval_findings(
+    session: Session, events: list[EvidenceEvent]
+) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     for event in events:
         if not _is(event, EventType.RETRIEVAL):
@@ -474,7 +601,10 @@ def _retrieval_findings(session: Session, events: list[EvidenceEvent]) -> list[d
                     }
                 )
             recorded_model = entry.get("embedding_model")
-            if isinstance(recorded_model, str) and item.embedding_model != recorded_model:
+            if (
+                isinstance(recorded_model, str)
+                and item.embedding_model != recorded_model
+            ):
                 findings.append(
                     {
                         "kind": "embedding_model",
@@ -489,7 +619,9 @@ def _retrieval_findings(session: Session, events: list[EvidenceEvent]) -> list[d
     return findings
 
 
-def _retained_findings(session: Session, events: list[EvidenceEvent]) -> list[dict[str, Any]]:
+def _retained_findings(
+    session: Session, events: list[EvidenceEvent]
+) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     seen: set[str] = set()
     for digest in _content_hashes(events):
@@ -643,7 +775,9 @@ def _item_pin(session: Session, sequence: int, entry: dict[str, Any]) -> dict[st
             status = "missing"
             model_status = "missing"
         else:
-            status = "matches" if item_content_hash(item) == content_hash else "mismatch"
+            status = (
+                "matches" if item_content_hash(item) == content_hash else "mismatch"
+            )
             if isinstance(recorded_model, str):
                 model_status = (
                     "matches" if item.embedding_model == recorded_model else "mismatch"
@@ -668,7 +802,7 @@ def _content_hashes(events: list[EvidenceEvent]) -> list[str]:
     seen: set[str] = set()
     for event in events:
         payload = _payload(event)
-        for key in _PIN_HASH_KEYS:
+        for key in _PIN_HASH_KEYS + _RETAINED_HASH_KEYS:
             value = payload.get(key)
             if isinstance(value, str) and value and value not in seen:
                 seen.add(value)
@@ -805,7 +939,136 @@ def _render_answer(question: str, answer: Any) -> list[str]:
         return _render_controls(answer)
     if question == "Can the bank reproduce that evidence later?":
         return _render_reproduce(answer)
+    if question == "Why this client?":
+        return _render_client(answer)
+    if question == "Why this insight or product?":
+        return _render_product(answer)
+    if question == "What did the RM see and change?":
+        return _render_review(answer)
+    if question == "Who made the final decision?":
+        return _render_decision(answer)
     return [str(answer)]
+
+
+def _review_view(session: Session, payload: dict[str, Any]) -> dict[str, Any]:
+    rendered = _content_record(session, str(payload.get("rendered_hash") or ""))
+    diff = _content_record(session, str(payload.get("diff_hash") or ""))
+    return {
+        "rm": payload.get("rm") or "",
+        "outcome": payload.get("outcome") or "",
+        "provenance": payload.get("provenance") or "",
+        "prior_provenance": payload.get("prior_provenance") or "",
+        "rendered_hash": payload.get("rendered_hash") or "",
+        "rendered_status": rendered.get("status"),
+        "rendered": rendered.get("body"),
+        "diff_hash": payload.get("diff_hash") or "",
+        "diff_status": diff.get("status"),
+        "diff": diff.get("body"),
+    }
+
+
+def _render_client(answer: Any) -> list[str]:
+    if not isinstance(answer, dict):
+        return []
+    lines: list[str] = []
+    for item in answer.get("originations") or []:
+        lines.append(
+            f"Client {item.get('client_id')}, trigger {item.get('trigger')}, "
+            f"candidate set {item.get('candidate_set_size')}."
+        )
+        criteria = item.get("criteria") or []
+        if criteria:
+            lines.append(
+                "Criteria: " + "; ".join(str(value) for value in criteria) + "."
+            )
+        if item.get("outcome") == "do not contact":
+            reasons = item.get("do_not_contact_reasons") or []
+            lines.append(
+                "Do not contact: " + ", ".join(str(value) for value in reasons) + "."
+            )
+        else:
+            for reason in item.get("reasons") or []:
+                lines.append(
+                    f"{reason.get('fact')}: {reason.get('detail')} "
+                    f"({reason.get('citation')})."
+                )
+    return lines or ["No origination was recorded."]
+
+
+def _render_product(answer: Any) -> list[str]:
+    if not isinstance(answer, dict):
+        return []
+    lines: list[str] = []
+    for item in answer.get("originations") or []:
+        product = item.get("product_id") or ""
+        if item.get("outcome") == "do not contact":
+            reasons = ", ".join(
+                str(value) for value in (item.get("do_not_contact_reasons") or [])
+            )
+            if product:
+                lines.append(
+                    f"Product {product} was not proposed. Do not contact: {reasons}."
+                )
+            else:
+                lines.append(f"No product was proposed. Do not contact: {reasons}.")
+            continue
+        if not product:
+            lines.append("No product was selected.")
+            continue
+        lines.append(f"Product {product}.")
+        for reason in item.get("reasons") or []:
+            lines.append(
+                f"{reason.get('fact')}: {reason.get('detail')} ({reason.get('citation')})."
+            )
+    return lines or ["No origination was recorded."]
+
+
+def _render_review(answer: Any) -> list[str]:
+    if not isinstance(answer, dict):
+        return []
+    lines: list[str] = []
+    reviews = answer.get("reviews") or []
+    if not reviews:
+        lines.append("No RM review was recorded.")
+    for item in reviews:
+        lines.append(
+            f"RM {item.get('rm')} saw recommendation {item.get('rendered_hash')} "
+            f"({item.get('rendered_status')})."
+        )
+        if item.get("rendered_status") == "retained" and item.get("rendered"):
+            lines.append(str(item["rendered"]))
+        if item.get("rendered_status") == "erased":
+            lines.append(f"Content erased; hash {item.get('rendered_hash')} kept.")
+        prior = item.get("prior_provenance")
+        label = item.get("provenance")
+        lines.append(f"Content provenance: {label}.")
+        if prior and prior != label:
+            lines.append(f"Provenance before the edit: {prior}.")
+        lines.append(f"Diff {item.get('diff_hash')} ({item.get('diff_status')}).")
+        if item.get("diff_status") == "retained" and item.get("diff"):
+            lines.append(str(item["diff"]))
+    return lines
+
+
+def _render_decision(answer: Any) -> list[str]:
+    if not isinstance(answer, dict):
+        return []
+    lines: list[str] = []
+    decisions = answer.get("decisions") or []
+    if not decisions:
+        lines.append("No final decision was recorded.")
+    for item in decisions:
+        lines.append(
+            f"{item.get('rm')} decided {item.get('outcome')} at {item.get('decided_at')}."
+        )
+        if item.get("citation"):
+            lines.append(str(item["citation"]))
+        stamp = item.get("rubber_stamp") or {}
+        if isinstance(stamp, dict) and stamp.get("flagged"):
+            reasons = ", ".join(str(value) for value in (stamp.get("reasons") or []))
+            owner = stamp.get("accountable_owner") or "the accountable owner"
+            lines.append(f"Rubber-stamp flag ({reasons}) for {owner}.")
+    return lines
 
 
 def _render_information(answer: Any) -> list[str]:
@@ -832,9 +1095,7 @@ def _render_information(answer: Any) -> list[str]:
             if item.get("content_status") == "retained" and item.get("body"):
                 lines.append(str(item["body"]))
             if item.get("content_status") == "erased":
-                lines.append(
-                    f"Content erased; hash {item.get('content_hash')} kept."
-                )
+                lines.append(f"Content erased; hash {item.get('content_hash')} kept.")
     for argument in answer.get("argument_hashes") or []:
         lines.append(
             f"Tool arguments hash {argument.get('sha256')} "
@@ -869,7 +1130,9 @@ def _render_model(answer: Any) -> list[str]:
         if model.get("prompt_status") == "retained" and model.get("prompt"):
             lines.append(str(model["prompt"]))
         if model.get("prompt_status") == "erased":
-            lines.append(f"Prompt content erased; hash {model.get('prompt_hash')} kept.")
+            lines.append(
+                f"Prompt content erased; hash {model.get('prompt_hash')} kept."
+            )
         lines.append(
             f"Response hash {model.get('response_hash')}: {model.get('response_status')}."
         )
@@ -924,7 +1187,9 @@ def _render_check_lines(checks: list[dict[str, Any]]) -> list[str]:
     for check in checks:
         policy = ""
         if check.get("policy_id") is not None:
-            policy = f" Policy {check.get('policy_id')}, hash {check.get('policy_hash')}."
+            policy = (
+                f" Policy {check.get('policy_id')}, hash {check.get('policy_hash')}."
+            )
         lines.append(
             f"- {check.get('result')} {check.get('check')} ({check.get('regime')}): "
             f"{check.get('citation')}.{policy}"

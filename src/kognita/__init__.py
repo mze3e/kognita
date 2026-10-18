@@ -36,9 +36,11 @@ from typing import Any
 
 from kognita.approvals import (
     ApprovalError,
+    confirm,
     expire_stale,
     find_granted,
     grant,
+    mark,
     reject,
 )
 from kognita.broker import BrokerAnswer, ask, default_route_resolver
@@ -197,6 +199,8 @@ __all__ = [
     # approvals
     "grant",
     "reject",
+    "mark",
+    "confirm",
     "expire_stale",
     "find_granted",
     "ApprovalError",

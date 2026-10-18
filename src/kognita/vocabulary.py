@@ -5,6 +5,7 @@ the registry, or an outcome nobody defined, is the kind of thing that turns an
 audit into an argument. Domain packs supply their own *values* for regimes and
 rule types, but never new members of these enums.
 """
+
 from __future__ import annotations
 
 from enum import Enum
@@ -98,6 +99,11 @@ class EventType(str, Enum):
     EGRESS = "EGRESS"
     POLICY_CHANGE = "POLICY_CHANGE"
     ERASURE = "ERASURE"
+    #: The span of one client journey: opened, and runs or correlation ids attached.
+    #: The roadmap names the interaction record; this member is the chain event for it.
+    INTERACTION = "INTERACTION"
+    ORIGINATION = "ORIGINATION"
+    FINAL_DECISION = "FINAL_DECISION"
 
 
 class ApprovalStatus(str, Enum):
