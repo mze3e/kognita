@@ -116,6 +116,24 @@ def in_force(session: Any, model: type[Any], at: datetime) -> list[Any]:
     return [row for row in rows if row.is_effective(when)]
 
 
+from pydantic import BaseModel as _BaseModel, ConfigDict as _ConfigDict, Field as _PField
+from typing import Literal as _Literal
+
+
+class BlastRadius(_BaseModel):
+    """Independent agent limits; ttl is an absolute UTC expiry."""
+    model_config = _ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
+    max_clients: int | None = _PField(default=None, ge=0)
+    max_value: float | None = _PField(default=None, ge=0)
+    max_daily_actions: int | None = _PField(default=None, ge=0)
+    per_minute: int | None = _PField(default=None, ge=0)
+    per_hour: int | None = _PField(default=None, ge=0)
+    channels: list[str] | None = None
+    jurisdictions: list[str] | None = None
+    execution_authority: _Literal["none", "propose", "execute"] = "none"
+    ttl: datetime | None = None
+
+
 class Agent(SQLModel, table=True):
     """A registered non-human actor, with a named accountable owner.
 
@@ -138,6 +156,8 @@ class Agent(SQLModel, table=True):
     purpose: str | None = None
     use_cases: list[str] | None = Field(default=None, sa_column=Column(JSON, nullable=True))
     permitted_systems: list[str] | None = Field(default=None, sa_column=Column(JSON, nullable=True))
+    blast_radius: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
+    field_allowlist: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
     tool_allowlist: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
     autonomy_level: int | None = Field(default=0, ge=0, le=6, nullable=True)
     review_date: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
@@ -1194,3 +1214,14 @@ class _Authority(SQLModel, table=True):
     kind: str = Field(index=True)
     body: dict = Field(default_factory=dict, sa_column=Column(JSON))
     ended: bool = Field(default=False, index=True)
+
+
+class _BlastUsage(SQLModel, table=True):
+    """Admission reservations; release moves the reservation to execution time."""
+    __tablename__ = "_blast_usage"
+    __table_args__ = (Index("ix_blast_usage_agent_time", "agent_name", "at"),)
+    request_id: str = Field(primary_key=True)
+    agent_name: str
+    at: datetime = Field(sa_column=_utc_column())
+    clients: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+    value: float = 0

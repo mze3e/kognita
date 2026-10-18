@@ -85,6 +85,9 @@ def delegate(session, delegation: Delegation, *, evidence, actor_id, now=None):
         or d.approval_threshold not in _VERBS or not _scope_valid(d.allowed_data)
         or d.allowed_data.get("client") != [d.client]
         or _utc(d.valid_until) <= _utc(d.valid_from) or _utc(d.valid_until) <= _utc(at)
+        or any(k.startswith("_") and k not in ("_event_at", "_access_window") for k in d.limits)
+        or ("_access_window" in d.limits and "_event_at" not in d.limits)
+        or d.limits.get("_access_window", 86400) > 86400
         or any(not isinstance(v, (int, float)) or isinstance(v, bool) or v < 0 or not _isfinite(v) for v in d.limits.values())):
         raise ValueError("S3-DELEGATION: invalid bounded authority")
     grants = session.exec(_select(_Authority).where(_Authority.grantee == d.human,
@@ -170,9 +173,13 @@ def _checks(envelope, snapshot, at):
         and d.jurisdiction == envelope.actor_location and verb in d.allowed_actions
         and _covers(d.allowed_data, subjects)
         and subjects.get("client", [d.client]) == [d.client])
+    event = d.limits.get("_event_at")
+    window = d.limits.get("_access_window", 86400)
+    if event is not None:
+        valid = valid and 0 <= event - _utc(at).timestamp() <= window <= 86400
     # Numeric arguments are bound into the envelope hash; missing values deny.
     valid = valid and all(type(envelope.arguments.get(k)) in (int, float)
-        and 0 <= envelope.arguments[k] <= v for k, v in d.limits.items())
+        and 0 <= envelope.arguments[k] <= v for k, v in d.limits.items() if k not in ("_event_at", "_access_window"))
     grants = [r for r in rows if r[1] == "grant" and r[2] == envelope.principal
         and _live(r[3], at) and r[3]["capability"] == verb
         and _covers(r[3]["subject_scope"], d.allowed_data)]

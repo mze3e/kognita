@@ -20,6 +20,9 @@ def register(session, **kwargs):
 
 
 def configure(agent, session=None):
+    agent.field_allowlist = {purpose: ["$", "marked", "content.text", "content.type",
+        "tools.name", "tools.description", "tools.inputSchema", "protocolVersion",
+        "serverInfo.name", "serverInfo.version", "capabilities.tools"] for purpose in PURPOSES}
     agent.purpose = "policy regression fixture"
     agent.use_cases = PURPOSES
     agent.permitted_systems = ["fixture"]

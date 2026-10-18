@@ -76,6 +76,7 @@ class PolicySnapshot:
     revocations: tuple[OpenRevocation, ...] = ()
     drill_dues: tuple[OpenDrill, ...] = ()
     _authority: tuple = ()
+    _usage: dict = field(default_factory=dict)
 
     def effective(self, at: datetime) -> tuple[Policy, ...]:
         return tuple(p for p in self.policies if p.is_effective(at))
@@ -99,7 +100,9 @@ def load_snapshot(session: Session, *, as_of: datetime | None = None,
         if _evidence is not None and agent.autonomy_level:
             _step_down(session, agent.name, evidence=_evidence, now=at)
     from kognita.authority import _load
+    from kognita._limits import _load_usage
     return PolicySnapshot(
+        _usage=_load_usage(session, agents, at),
         _authority=_load(session, _agent_name, at, _evidence),
         policies=policies,
         agents=agents,
@@ -260,18 +263,28 @@ def decide(
     circuit breaker are applied even when ``engages`` would skip them.
     """
     at = as_of or utcnow()
+    request_id = request_id or str(uuid.uuid4())
     attrs = dict(attributes or {})
     agent = snapshot.agents.get(envelope.agent_name)
     if agent is not None:
         attrs["deployment_hash"] = agent.deployment_hash
+        if agent.blast_radius is not None:
+            attrs["_s4_usage"] = [[t.isoformat(), cs, v, req] for t, cs, v, req in snapshot._usage.get(agent.name, ())]
     from kognita.authority import _grant_ids
     if envelope.agent_name:
         attrs["_authority_grants"] = _grant_ids(envelope, snapshot, at)
+    if envelope.agent_name:
+        attrs["_s4_clients"] = [envelope.all_subjects()["client"]] if "client" in envelope.all_subjects() else []
+    value = envelope.arguments.get("value", 0)
+    from math import isfinite
+    attrs["_s4_value"] = value if type(value) in (int, float) and isfinite(value) and value >= 0 else 0
     subject_rows = dict(subjects or {})
     registry = rules if rules is not None else build_registry()
 
     checks: list[Check] = []
     from kognita.authority import _checks as _authority_checks
+    from kognita._limits import _checks as _limit_checks
+    checks.extend(_limit_checks(envelope, snapshot, at))
     checks.extend(_authority_checks(envelope, snapshot, at))
     checks.extend(registry_checks(envelope, snapshot, at=at, usecases=usecases))
     if usecases is not None:
@@ -340,6 +353,7 @@ def _standing_checks(
     attributes: dict[str, Any] | None = None,
     usecases: UseCaseRegister | None = None,
     at: datetime,
+    _request_id: str | None = None,
 ) -> list[Check]:
     """The gates that can close after a decision, as they stand at ``at``.
 
@@ -356,6 +370,8 @@ def _standing_checks(
         checks.append(Check(check="S1-DEPLOYMENT-HOLD", regime="INTERNAL",
                             result=CheckResult.FAIL, citation="S1-DEPLOYMENT-HOLD"))
     from kognita.authority import _checks as _authority_checks
+    from kognita._limits import _checks as _limit_checks
+    checks.extend(_limit_checks(envelope, snapshot, at, _exclude=_request_id))
     checks.extend(_authority_checks(envelope, snapshot, at))
     checks.extend(registry_checks(envelope, snapshot, at=at, usecases=usecases))
     if usecases is not None:
@@ -609,6 +625,8 @@ def record(
     a decision was made.
     """
     at = now or utcnow()
+    from kognita._limits import _recheck
+    evaluation = _recheck(session, evaluation, at)
     envelope = evaluation.envelope
 
     decision = GovernanceDecision(
@@ -628,6 +646,8 @@ def record(
     )
     session.add(decision)
     session.flush()
+    from kognita._limits import _reserve
+    _reserve(session, evaluation, at)
     from kognita.authority import _record_use
     _record_use(session, evaluation, evidence)
 
