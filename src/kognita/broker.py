@@ -310,7 +310,9 @@ def ask(
     retrieval_spec = ToolSpec(routed.tool, lambda *_: None,
         required_level=level if type(level) is int else 0,
         verb=permission.get('verb', 'read'),
-        external=permission.get('external', False),
+        # Retrieved sources carry external provenance; delegated retrieval
+        # requires a run before releasing content.
+        external=permission.get('external', False) or bool(routed.delegation_id and run is None),
         client_data=permission.get('client_data', False),
         public_content=permission.get('public_content', False))
     evaluation = _with_checks(evaluation, _tool_checks(session, routed, retrieval_spec, run, evidence, at=at))

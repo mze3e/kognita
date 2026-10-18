@@ -19,6 +19,7 @@ from conftest import NOW
 from fixtures.agents import register as _register_agent
 from kognita.authority import Delegation, delegate, grant_to
 from kognita.credentials import issue
+from kognita.tools import Run
 from kognita.vocabulary import Outcome
 
 from test_gateway import BENIGN, MODEL, PATH, SECRET, _body, _gateway, _live
@@ -72,7 +73,8 @@ def test_gateway_header_floor_does_not_suppress_the_classifier(session, evidence
     upstream = _GatewayUpstream(
         json.dumps({"model": MODEL, "choices": [{"message": {"content": "noted"}}]}).encode()
     )
-    gateway = _gateway(session.get_bind(), evidence, upstream)
+    # Sensitive prompts require a run so this test reaches the egress guard.
+    gateway = _gateway(session.get_bind(), evidence, upstream, run=Run())
     response = gateway.handle(
         "POST",
         PATH,
@@ -112,7 +114,8 @@ def test_gateway_header_raises_a_benign_prompt(session, evidence):
     upstream = _GatewayUpstream(
         json.dumps({"model": MODEL, "choices": [{"message": {"content": "noted"}}]}).encode()
     )
-    gateway = _gateway(session.get_bind(), evidence, upstream)
+    # Sensitive prompts require a run so this test reaches the egress guard.
+    gateway = _gateway(session.get_bind(), evidence, upstream, run=Run())
     response = gateway.handle(
         "POST",
         PATH,
