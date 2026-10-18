@@ -9,14 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Deny conflicting primary and additional subjects with S3-SUBJECT-CONFLICT and consistently prefer the primary subject when resolving references.
+- Per-tool subject mapping: Enforce private `_subject_paths` declarations against delegated data scopes; deny missing, malformed, or ambiguous argument paths before execution.
+
 - Evidence truncation is now detected: `verify_export` checks the export's advertised `event_count` and `head_hash` against what it actually verified, and `verify_chain` treats a missing or unreadable head checkpoint as a chain break (not a pass) whenever events exist.
-- #5: Serialize quota recheck and reservation in the decision transaction.
-- #6: Lock parent run capacity before checking and reserving child budgets.
-- #27: Serialize daily anomaly row creation and counter updates across workers.
+- Serialize quota recheck and reservation in the decision transaction.
+- Lock parent run capacity before checking and reserving child budgets.
+- Serialize daily anomaly row creation and counter updates across workers.
 - 0.5 DoD item 4 (concurrency): Enforce atomic per-minute and daily quota admission.
-- #20: Require non-blank, stripped approval signers and distinct requester, marker, and confirmer identities.
-- #21: Escalate checks with blank citations using CITATION-REQUIRED, preserving denials.
-- #31: Require approval packet text fields and list members to contain non-blank text.
+- Require non-blank, stripped approval signers and distinct requester, marker, and confirmer identities.
+- Escalate checks with blank citations using CITATION-REQUIRED, preserving denials.
+- Require approval packet text fields and list members to contain non-blank text.
 - Framework bindings carry workload credentials and delegation IDs through model and tool authorization; missing tool credentials fail closed.
 - Extracted private model transport to keep the shared adapter binding within 200 lines.
 - Gateway model calls enforce live-run pause, override, restriction and recovery controls before forwarding.
