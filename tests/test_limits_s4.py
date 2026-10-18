@@ -1,4 +1,5 @@
 """Blast radius is shared across tasks and projection is purpose-specific."""
+from fixtures.agents import _usecases
 from dataclasses import replace
 from datetime import timedelta
 
@@ -86,7 +87,7 @@ def test_result_projection_recurses_without_leaking_whole_objects(session, evide
 def test_missing_usage_snapshot_denies(session, evidence):
     from kognita.governance import PolicySnapshot
     agent, env = _configure(session, evidence, per_minute=2)
-    result = decide(env, PolicySnapshot(agents={agent.name: agent}), purposes=['READ'], as_of=NOW)
+    result = decide(env, PolicySnapshot(agents={agent.name: agent}), purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
     assert any(c.check == 'S4-USAGE' and c.result.value == 'fail' for c in result.checks)
 
 
@@ -106,8 +107,8 @@ def test_event_window_uses_delegated_authority(session, evidence):
 def test_stale_snapshot_cannot_spend_twice(session, evidence):
     _, env = _configure(session, evidence, per_minute=1)
     snap = load_snapshot(session, as_of=NOW, _agent_name='worker')
-    a = decide(env, snap, purposes=['READ'], as_of=NOW)
-    b = decide(env, snap, purposes=['READ'], as_of=NOW)
+    a = decide(env, snap, purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
+    b = decide(env, snap, purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
     assert record(session, a, evidence=evidence, now=NOW).outcome == Outcome.ALLOW
     assert record(session, b, evidence=evidence, now=NOW).outcome == Outcome.DENY
 
@@ -117,7 +118,7 @@ def test_replay_uses_pinned_usage_before_admission(session, evidence):
     _, env = _configure(session, evidence, per_minute=1)
     result = record(session, _decide(session, env), evidence=evidence, now=NOW)
     assert _decide(session, env).outcome == Outcome.DENY
-    replayed = replay_decision(session, result.request_id, envelope=env, purposes=['READ'])
+    replayed = replay_decision(session, result.request_id, envelope=env, purposes=['READ'], usecases=_usecases(['READ']))
     assert replayed.outcome == Outcome.ALLOW
     assert replayed.envelope_hash == result.envelope_hash
 
@@ -163,7 +164,7 @@ def test_usage_cap_fails_closed(session, evidence):
     agent, env = _configure(session, evidence, per_minute=20000)
     snap = load_snapshot(session, as_of=NOW, _agent_name=agent.name)
     rows = ((NOW, ['123'], 0, 'prior'),) * 10001
-    result = decide(env, replace(snap, _usage={agent.name: rows}), purposes=['READ'], as_of=NOW)
+    result = decide(env, replace(snap, _usage={agent.name: rows}), purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
     assert result.outcome == Outcome.DENY
     assert any(c.check == 'S4-USAGE' and c.result.value == 'fail' for c in result.checks)
 

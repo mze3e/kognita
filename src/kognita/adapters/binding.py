@@ -144,6 +144,7 @@ class Binding:
             subject_id=self.subject_id,
             arguments=dict(arguments),
             delegation_id=self.delegation_id,
+            context={"_agent_credential": self.agent_credential},
         )
         try:
             result = run_governed(

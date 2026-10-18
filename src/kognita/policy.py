@@ -2210,6 +2210,12 @@ def _run_one(
         as_of=as_of,
         request_id=f"policy-test:{rule_id}:{scenario.name}",
     )
+    # Colocated scenarios test policy rules in a hypothetical purpose context;
+    # they never admit a workload or persist a governance decision. Execution
+    # callers must pass the actual use-case register to decide().
+    from kognita.governance import resolve_outcome
+    checks = tuple(c for c in evaluation.checks if c.check != "USE_CASE_REGISTERED")
+    evaluation = replace(evaluation, checks=checks, outcome=resolve_outcome(checks))
     expected = str(scenario.then["decision"])
     actual = evaluation.outcome.value
     problems: list[str] = []

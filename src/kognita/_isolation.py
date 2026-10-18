@@ -5,7 +5,7 @@ from sqlmodel import select
 
 from kognita.canonical import canonical_hash
 from kognita.envelope import Check
-from kognita.models import EvidenceEvent, RunRecord, as_utc
+from kognita.models import EvidenceEvent, RunRecord, _StepUpBinding, as_utc
 from kognita.vocabulary import ActorType, CheckResult, Classification, EventType
 
 
@@ -79,11 +79,13 @@ def _step_up(session, envelope, *, evidence, actor_id, authenticated_workflow,
         or actor_id != envelope.principal or type(envelope.assurance_level) is not int
         or envelope.assurance_level < 2 or as_utc(expires_at) <= as_utc(evidence.clock())):
         raise ValueError('S5-STEP-UP: authenticated workflow and independent authorization required')
-    _emit(session, evidence, 'step-up:' + canonical_hash(envelope.to_dict()), 'STEP_UP',
+    row = _emit(session, evidence, 'step-up:' + canonical_hash(envelope.to_dict()), 'STEP_UP',
           citation='S5-STEP-UP', principal=actor_id, authenticated_workflow=True,
           transaction_context=transaction_context,
           independent_authorization=independent_authorization,
           expires_at=expires_at.isoformat())
+    session.add(_StepUpBinding(event_hash=row.event_hash))
+    session.flush()
 
 
 def _tool_checks(session, envelope, spec, run, evidence, *, at=None):
@@ -104,7 +106,8 @@ def _tool_checks(session, envelope, spec, run, evidence, *, at=None):
         row = session.exec(select(EvidenceEvent).where(
             EvidenceEvent.correlation_id == 'step-up:' + canonical_hash(envelope.to_dict())
         ).order_by(EvidenceEvent.sequence.desc()).limit(1)).first()
-        if not _step_up_valid(row, envelope, at or evidence.clock()):
+        if (not _step_up_valid(row, envelope, at or evidence.clock())
+                or session.get(_StepUpBinding, row.event_hash) is None):
             deny('S5-STEP-UP')
     return checks
 
@@ -118,7 +121,9 @@ def _assurance(headers):
 def _assurance_checks(session, envelope, run):
     from kognita.tools import _refresh_run, _save_run
     if run is None:
-        return []
+        # No persisted relay floor exists to authenticate a raised claim.
+        return [Check(check='S5-ASSURANCE-RELAY', citation='S5-ASSURANCE-RELAY',
+                      regime='INTERNAL', result=CheckResult.FAIL)] if envelope.assurance_level else []
     _refresh_run(session, run)
     raised = run.assurance_level is not None and envelope.assurance_level > run.assurance_level
     run.assurance_level = min(run.assurance_level, envelope.assurance_level) if run.assurance_level is not None else envelope.assurance_level

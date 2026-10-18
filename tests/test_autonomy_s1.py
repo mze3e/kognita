@@ -1,4 +1,5 @@
 """S1 identity, deployment integrity, explicit verbs and governed autonomy."""
+from fixtures.agents import _usecases
 from dataclasses import replace
 from datetime import timedelta
 import json
@@ -49,6 +50,7 @@ def _env(**kwargs):
 
 
 def _decide(agent, envelope=None, **kwargs):
+    kwargs.setdefault("usecases", _usecases(("research-summary",)))
     return decide(envelope or _env(), PolicySnapshot(agents={agent.name: agent}),
                   purposes=("research-summary",), as_of=NOW, **kwargs)
 
@@ -137,7 +139,8 @@ def test_approval_requires_owner_and_complete_manifest(session, evidence):
     ("draft", 3), ("queue", 4), ("send", 4), ("execute", 4), ("execute", 5), ("execute", 6)])
 def test_explicit_verbs_and_levels(session, evidence, verb, level):
     agent = _agent(session, evidence, level=level, verb=verb, required=level)
-    expected = Outcome.HUMAN_APPROVAL if level == 4 or verb in ('draft', 'queue', 'send', 'execute') else Outcome.ALLOW
+    # The explicit tier-1 register caps autonomy at L1.
+    expected = Outcome.DENY if level > 1 else Outcome.ALLOW
     assert _decide(agent).outcome is expected
     if level:
         agent.autonomy_level = level - 1
@@ -361,7 +364,7 @@ def test_replay_pins_identity_before_a_later_deployment_approval(session, eviden
     record(session, original, evidence=evidence, now=NOW)
     approve_deployment(session, "agent", deployment={**_DEPLOYMENT, "instructions": "changed"},
                        evidence=evidence, actor_id="owner")
-    replayed = replay_decision(session, original.request_id, _env(), purposes=("research-summary",))
+    replayed = replay_decision(session, original.request_id, _env(), purposes=("research-summary",), usecases=_usecases(("research-summary",)))
     assert replayed.outcome is Outcome.ALLOW
     assert replayed.envelope_hash == original.envelope_hash
 

@@ -1,4 +1,5 @@
 """S3 exercises real grants, delegation, snapshots and evidence without shims."""
+from fixtures.agents import _usecases
 from dataclasses import replace
 from datetime import timedelta
 
@@ -38,14 +39,16 @@ def _setup(session, evidence, *, verb="read", threshold="read"):
         valid_from=NOW, valid_until=NOW + timedelta(hours=1), jurisdiction="SG",
         approval_threshold=threshold, task_ref="meeting")
     did = delegate(session, d, evidence=evidence, actor_id="alice", now=NOW)
-    env = Envelope(principal="alice", agent_name="worker", purpose="READ", tool="read_note",
+    from test_usecases import ensure_live_purposes
+    ensure_live_purposes(session, evidence, ["READ"], at=NOW)
+    env = Envelope(context={"_agent_credential": session.get_bind()._test_workload_credentials["worker"]}, principal="alice", agent_name="worker", purpose="READ", tool="read_note",
         actor_location="SG", subject_type="client", subject_id="123", delegation_id=did)
     return gid, did, d, env
 
 
 def _decide(session, env, at=NOW):
     return decide(env, load_snapshot(session, as_of=at, _agent_name="worker"),
-                  purposes=["READ"], as_of=at)
+                  purposes=["READ"], as_of=at, usecases=_usecases(["READ"]))
 
 
 def test_live_dual_check_and_pinned_evidence(session, evidence):
@@ -79,7 +82,7 @@ def test_revocation_is_fresh_next_decision_and_blocks_release(session, evidence,
     revoke(session, gid if grant else did, evidence=evidence,
            actor_id="admin" if grant else "alice")
     snapshot = load_snapshot(session, as_of=NOW, _agent_name="worker")
-    assert decide(env, snapshot, purposes=["READ"], as_of=NOW).outcome is Outcome.DENY
+    assert decide(env, snapshot, purposes=["READ"], as_of=NOW, usecases=_usecases(["READ"])).outcome is Outcome.DENY
     assert _standing_checks(env, snapshot, attributes={"deployment_hash": snapshot.agents["worker"].deployment_hash}, at=NOW)
 
 
@@ -135,7 +138,9 @@ def test_wider_or_invalid_delegation_rejected(session, evidence, update):
 
 def test_approval_threshold_and_deny_precedence(session, evidence):
     _, _, _, env = _setup(session, evidence, verb="draft")
-    assert _decide(session, env).outcome is Outcome.HUMAN_APPROVAL, _decide(session, env).failures()
+    # A tier-1 use case cannot authorize this draft even when delegation asks for approval.
+    assert _decide(session, env).outcome is Outcome.DENY
+    assert any(c.result.value == 'requires_human' for c in _decide(session, env).checks)
     assert _decide(session, replace(env, subject_id="wrong")).outcome is Outcome.DENY
 
 
@@ -167,7 +172,7 @@ def test_replay_uses_evidenced_authority_after_revocation(session, evidence):
     original = record(session, _decide(session, env), evidence=evidence, now=NOW)
     revoke(session, did, evidence=evidence, actor_id="alice")
     assert _decide(session, env).outcome is Outcome.DENY
-    replayed = replay_decision(session, original.request_id, env, purposes=["READ"])
+    replayed = replay_decision(session, original.request_id, env, purposes=["READ"], usecases=_usecases(["READ"]))
     assert replayed.outcome is Outcome.ALLOW
     assert replayed.envelope_hash == original.envelope_hash
 
@@ -265,14 +270,14 @@ def test_oversized_authority_set_denies_instead_of_truncating(session, evidence)
     session.flush()
     snapshot = load_snapshot(session, as_of=NOW, _agent_name="worker")
     assert snapshot._authority == ()
-    assert decide(env, snapshot, purposes=["READ"], as_of=NOW).outcome is Outcome.DENY
+    assert decide(env, snapshot, purposes=["READ"], as_of=NOW, usecases=_usecases(["READ"])).outcome is Outcome.DENY
 
 
 def test_snapshot_and_continuation_keep_delegation_binding(session, evidence):
     from kognita.tools import _envelope_from_continuation
     _, _, _, env = _setup(session, evidence)
     restored = _envelope_from_continuation({"envelope": env.to_dict()})
-    assert restored == env
+    assert restored == replace(env, context={})
     original = _decide(session, env)
     changed = _decide(session, replace(env, delegation_id="different"))
     assert original.envelope_hash != changed.envelope_hash

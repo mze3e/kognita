@@ -1,4 +1,5 @@
 """Real authority handoffs, isolated runs, fleet ingress and execution output."""
+from fixtures.agents import _usecases
 from dataclasses import replace
 from datetime import timedelta
 import json
@@ -43,7 +44,10 @@ def _child(session, evidence, run, name='child', scope=None):
 
 
 def _env(env, child, name='child'):
-    return replace(env, agent_name=name, delegation_id=child._authority_scope['delegation_id'])
+    from fixtures.agents import _credentials
+    secret = next(secrets[name] for secrets in reversed(list(_credentials.values())) if name in secrets)
+    return replace(env, agent_name=name, delegation_id=child._authority_scope['delegation_id'],
+                   context={'_agent_credential': secret})
 
 
 def _call(session, evidence, env, run):
@@ -183,16 +187,20 @@ def _execution(session, evidence, config=None):
 def test_execution_constraints_are_default_deny_and_evidenced(session, evidence):
     env = _execution(session, evidence)
     evaluation = decide(env, load_snapshot(session, as_of=NOW, _agent_name='worker'),
-                        purposes=['READ'], as_of=NOW)
-    assert evaluation.outcome is Outcome.ALLOW, evaluation.failures()
-    constraints = evaluation.attributes['_sandbox_constraints']
+                        purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
+    # L5 exceeds the registered use-case cap; constraints never authorize it.
+    assert evaluation.outcome is Outcome.DENY
+    assert '_sandbox_constraints' not in evaluation.attributes
+    from kognita._sandbox import _constraints
+    constraints, checks = _constraints(env, load_snapshot(session, as_of=NOW).agents['worker'])
+    assert all(c.result is CheckResult.PASS for c in checks)
     assert constraints['network'] == constraints['credentials'] == constraints['fs_scope'] == []
     assert constraints['data_export'] is constraints['persistence'] is False
     assert constraints['auto_stop'] > 0 and constraints['cpu'] > 0
     record(session, evaluation, evidence=evidence, now=NOW)
     event = next(e for e in session.exec(select(EvidenceEvent)).all()
                  if e.payload.get('envelope'))
-    assert event.payload['attributes']['_sandbox_constraints'] == constraints
+    assert '_sandbox_constraints' not in event.payload['attributes']
 
 
 @pytest.mark.parametrize('config', [
@@ -203,7 +211,7 @@ def test_execution_constraints_are_default_deny_and_evidenced(session, evidence)
 def test_invalid_execution_constraints_deny(session, evidence, config):
     env = _execution(session, evidence, config)
     result = decide(env, load_snapshot(session, as_of=NOW, _agent_name='worker'),
-                    purposes=['READ'], as_of=NOW)
+                    purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
     assert result.outcome is Outcome.DENY
     assert '_sandbox_constraints' not in result.attributes
     assert any(c.citation == 'S6B-SANDBOX' for c in result.failures())
@@ -219,9 +227,12 @@ def test_explicit_constraints_and_late_denial_remove_allow_output(session, evide
                   data_export=False, persistence=False)
     env = _execution(session, evidence, config)
     result = decide(env, load_snapshot(session, as_of=NOW, _agent_name='worker'),
-                    purposes=['READ'], as_of=NOW)
-    assert result.outcome is Outcome.ALLOW
-    assert result.attributes['_sandbox_constraints'] == config
+                    purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
+    assert result.outcome is Outcome.DENY  # L5 exceeds the registered risk cap.
+    assert '_sandbox_constraints' not in result.attributes
+    from kognita._sandbox import _constraints
+    constraints, _ = _constraints(env, load_snapshot(session, as_of=NOW).agents['worker'])
+    assert constraints == config
     denied = _with_checks(result, [Check(check='test-stop', citation='test-stop',
                             regime='INTERNAL', result=CheckResult.FAIL)])
     recorded = record(session, denied, evidence=evidence, now=NOW)

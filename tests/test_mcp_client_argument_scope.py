@@ -6,6 +6,7 @@ outside the ``tests/conftest.py`` ``_legacy_authority_prerequisites``
 allowlist so its tests run against real credentials and real delegations,
 not the autouse fixture authority/credential shims other modules get.
 """
+from fixtures.agents import _usecases
 from datetime import timedelta
 
 from conftest import NOW
@@ -132,18 +133,18 @@ def test_subject_type_subject_id_client_argument_is_denied_and_backend_not_calle
 
 
 def test_authority_checks_denies_delegation_on_mismatched_client_argument(session, evidence):
-    did, _ = _delegated(session, evidence)
-    envelope = Envelope(principal="alice", agent_name="dossier-agent", purpose="COLLABORATION",
+    did, credential = _delegated(session, evidence)
+    envelope = Envelope(context={"_agent_credential": credential},principal="alice", agent_name="dossier-agent", purpose="COLLABORATION",
         tool="read_note", actor_location="SG", delegation_id=did, arguments={"client_id": "456"})
     snapshot = load_snapshot(session, as_of=NOW, _agent_name="dossier-agent")
-    evaluation = decide(envelope, snapshot, purposes=["COLLABORATION"], as_of=NOW)
+    evaluation = decide(envelope, snapshot, purposes=["COLLABORATION"], as_of=NOW, usecases=_usecases(["COLLABORATION"]))
 
     assert evaluation.outcome is Outcome.DENY
     assert "S3-DELEGATION" in [check.citation for check in evaluation.failures()]
 
-    matching = Envelope(principal="alice", agent_name="dossier-agent", purpose="COLLABORATION",
+    matching = Envelope(context={"_agent_credential": credential}, principal="alice", agent_name="dossier-agent", purpose="COLLABORATION",
         tool="read_note", actor_location="SG", delegation_id=did, arguments={"client_id": "123"})
-    assert decide(matching, snapshot, purposes=["COLLABORATION"], as_of=NOW).outcome is Outcome.ALLOW
+    assert decide(matching, snapshot, purposes=["COLLABORATION"], as_of=NOW, usecases=_usecases(["COLLABORATION"])).outcome is Outcome.ALLOW
 
 
 def test_structured_value_under_client_key_is_denied(session, evidence, engine):

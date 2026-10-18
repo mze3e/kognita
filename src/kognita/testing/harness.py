@@ -93,6 +93,7 @@ class Harness:
             subjects=subjects,
             rules=self.pack.rules(),
             purposes=self.purposes,
+            usecases=load_register(session, as_of=at),
             engages=getattr(self.pack, "engages", None),
             as_of=at,
         )

@@ -8,6 +8,7 @@ ATTRIBUTE_DENYLIST of the other client's id.
 
 from __future__ import annotations
 
+from fixtures.agents import _usecases
 import hashlib
 import json
 import subprocess
@@ -431,7 +432,7 @@ def test_explain_reports_a_rule_outside_its_window_as_not_engaged(tmp_path):
     text = render_explanation(report)
     assert "not engaged client-email-isolation" in text
     assert "outside the effective window" in text
-    assert report.outcome is Outcome.ALLOW
+    assert report.outcome is Outcome.DENY  # No deployment use-case register was supplied.
 
 
 def test_applies_to_does_not_skip_a_rule_decide_would_evaluate(tmp_path):
@@ -484,6 +485,7 @@ def test_compile_inserts_rows_and_a_later_change_closes_the_old_row(tmp_path, se
         purposes=("READ",),
         as_of=AT,
         request_id="before",
+        usecases=_usecases(("READ",)),
     )
     after = decide(
         Envelope(principal="a", purpose="READ", tool="read_email", subject_id="bob"),
@@ -491,6 +493,7 @@ def test_compile_inserts_rows_and_a_later_change_closes_the_old_row(tmp_path, se
         purposes=("READ",),
         as_of=later,
         request_id="after",
+        usecases=_usecases(("READ",)),
     )
     assert any(
         check.citation == "A client may read only their own mailbox"
@@ -591,6 +594,7 @@ def test_cli_load_compiles_rows_a_decision_can_cite(tmp_path, capsys):
             purposes=("READ",),
             as_of=AT,
             request_id="loaded",
+            usecases=_usecases(("READ",)),
         )
     assert evaluation.outcome is Outcome.DENY
     assert any(

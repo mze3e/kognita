@@ -48,12 +48,12 @@ def test_empty_purpose_list_does_not_pass():
 
 
 def test_configured_list_allows_a_listed_purpose():
-    """A purpose the deployment listed is still allowed, and cites the principal."""
+    """A listed purpose still needs a use-case register; the diagnostic cites the principal."""
     listed = dp.PURPOSES[0]
     evaluation = decide(_envelope(listed), PolicySnapshot(), purposes=(listed,))
     check = _purpose(evaluation)
     assert check.result is CheckResult.PASS
-    assert evaluation.outcome is Outcome.ALLOW
+    assert evaluation.outcome is Outcome.DENY
     assert "accountable owner: alice" in check.citation
 
 

@@ -111,7 +111,7 @@ def in_force(session: Any, model: type[Any], at: datetime) -> list[Any]:
         select(model).where(
             model.effective_from <= when,
             or_(model.effective_to.is_(None), model.effective_to > when),
-        )
+        ).execution_options(populate_existing=True)
     ).all()
     return [row for row in rows if row.is_effective(when)]
 
@@ -1253,3 +1253,13 @@ class _AgentTaint(SQLModel, table=True):
     id: str = Field(primary_key=True)
     external: bool = False
     client_data: bool = False
+
+class _StepUpBinding(SQLModel, table=True):
+    __tablename__ = "_step_up_bindings"
+    event_hash: str = Field(primary_key=True)
+
+
+class _AnomalyWindow(SQLModel, table=True):
+    __tablename__ = "_anomaly_windows"
+    agent_name: str = Field(primary_key=True)
+    body: list = Field(default_factory=list, sa_column=Column(JSON))

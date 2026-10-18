@@ -1,4 +1,5 @@
 """Approval and citation regressions, outside the legacy authority allowlist."""
+from fixtures.agents import _usecases
 from dataclasses import replace
 
 import pytest
@@ -17,7 +18,7 @@ from test_interaction import _boundary, _open, _packet
 def _approval(session, evidence, requester="alice"):
     _, _, _, envelope = _setup(session, evidence)
     issue(session, "worker", evidence=evidence, actor_id="owner")
-    evaluation = decide(envelope, load_snapshot(session, as_of=NOW), purposes=["READ"], as_of=NOW)
+    evaluation = decide(envelope, load_snapshot(session, as_of=NOW), purposes=["READ"], as_of=NOW, usecases=_usecases(["READ"]))
     decision = record(session, evaluation, evidence=evidence, now=NOW)
     return open_approval(session, decision_id=decision.decision_id, envelope_hash="reviewed", scope="LOCAL",
                          requester_id=requester, confirmation_required=True,
@@ -71,21 +72,21 @@ def test_signature_identities_are_stripped(session, evidence):
 def test_blank_policy_citation_fails_closed(session, evidence, citation, result, expected):
     _, _, _, envelope = _setup(session, evidence)
     issue(session, "worker", evidence=evidence, actor_id="owner")
-    baseline = decide(envelope, load_snapshot(session, as_of=NOW), purposes=["READ"], as_of=NOW)
+    baseline = decide(envelope, load_snapshot(session, as_of=NOW), purposes=["READ"], as_of=NOW, usecases=_usecases(["READ"]))
     assert baseline.outcome is Outcome.ALLOW
     policy = Policy(regime="INTERNAL", rule_type="PROHIBITED", citation=citation,
                     rule={"on_violation": result}, effective_from=NOW)
     session.add(policy)
     session.flush()
     snapshot = load_snapshot(session, as_of=NOW)
-    evaluation = decide(envelope, snapshot, purposes=["READ"], as_of=NOW)
+    evaluation = decide(envelope, snapshot, purposes=["READ"], as_of=NOW, usecases=_usecases(["READ"]))
     assert evaluation.outcome is expected
     check = next(c for c in evaluation.checks if c.policy_id == policy.id)
     assert check.citation == "CITATION-REQUIRED"
     assert check.result is (CheckResult.FAIL if result == "fail" else CheckResult.ESCALATE)
     assert check.policy_hash
     assert decide(replace(envelope, delegation_id=None), snapshot,
-                  purposes=["READ"], as_of=NOW).outcome is Outcome.DENY
+                  purposes=["READ"], as_of=NOW, usecases=_usecases(["READ"])).outcome is Outcome.DENY
 
 
 @pytest.mark.parametrize("field", [f for f in PACKET_FIELDS if f not in {"agent_confidence", "policy_checks"}])

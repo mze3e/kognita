@@ -7,7 +7,7 @@ containment evidence share the decision transaction. No background release.
 from dataclasses import replace as _replace
 
 from sqlmodel import select as _select
-from kognita.models import Agent as _Agent, _AnomalyDay, as_utc as _utc
+from kognita.models import Agent as _Agent, _AnomalyDay, _AnomalyWindow, as_utc as _utc
 from kognita.envelope import Check as _Check, envelope_hash as _hash
 from kognita.vocabulary import ActorType as _Actor, EventType as _Event, CheckResult as _Result, Outcome as _Outcome
 
@@ -58,11 +58,25 @@ def _observe(session, evaluation, evidence, at, *, _documents=None, _classificat
         body['sequences'] = sequences[:1001]
         if _documents is None:
             body['last_tool'] = env.tool
+        window = session.get(_AnomalyWindow, agent.name, populate_existing=True)
+        cutoff = _utc(at).timestamp() - 86400
+        recent = [r for r in (window.body if window else []) if r[0] > cutoff]
+        client = env.all_subjects().get('client')
+        if _documents is None or _documents or client and client not in {r[3] for r in recent}:
+            recent.append([_utc(at).timestamp(), int(_documents is None), len(_documents or []), client])
+        if window is None:
+            window = _AnomalyWindow(agent_name=agent.name)
+        window.body = recent[-2001:]
+        session.add(window)
+        if len(recent) > 2000:
+            rule = 'S6-VOLUME'
         for key, ceiling in [('actions', 1000), ('documents', 1000), ('clients', 100)]:
             size = len(body[key]) if key == 'clients' else body[key]
             baseline = max((len(b.get(key, [])) if key == 'clients' else b.get(key, 0) for b in old), default=0)
             limit = min(ceiling, max(10, baseline * 3)) if len(old) >= 3 else ceiling
-            if size > limit:
+            rolling = (len({r[3] for r in recent if r[3]}) if key == 'clients'
+                       else sum(r[1 if key == 'actions' else 2] for r in recent))
+            if max(size, rolling) > limit:
                 rule = 'S6-VOLUME'
         if body['denials'] >= 10 or body['probing'] >= 3:
             rule = 'S6-PRIVILEGE-PROBING'

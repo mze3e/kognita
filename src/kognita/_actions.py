@@ -107,7 +107,7 @@ def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(),
 def _register_compensation(session, run_id, spec, envelope, evaluation, evidence):
     from kognita.models import CompensatingAction
     from kognita.retention import RetentionStore
-    digest = RetentionStore().retain_value(session, {**evaluation.to_dict(), 'context': envelope.context}, kind='compensation',
+    digest = RetentionStore().retain_value(session, {**evaluation.to_dict(), 'context': {k: v for k, v in envelope.context.items() if k != '_agent_credential'}}, kind='compensation',
                 use_case=envelope.purpose, correlation_id=evaluation.request_id)
     row = CompensatingAction(run_id=run_id, name=spec.name, citation='S6C-RECOVER:' + digest)
     session.add(row)
