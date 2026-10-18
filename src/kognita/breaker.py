@@ -486,9 +486,11 @@ def affected_clients(
 ) -> dict[str, Any]:
     """Clients who received model or released tool output in ``[start, end)``.
 
-    Receipt is a ``MODEL_CALL`` or a released ``TOOL_CALL`` linked to an
-    interaction. A denial is not receipt. An output with no interaction is
-    not given a client id.
+    Receipt is a ``MODEL_CALL`` or a released ``TOOL_CALL``. A denial is not
+    receipt. Output linked to an interaction is listed under ``clients``.
+    Output with no interaction, such as a gateway or MCP call, is not given a
+    client id; it is listed under ``unlinked`` as "client unknown" so the
+    query does not read as complete when it is not.
     """
     opened = _aware(start)
     closed = _aware(end)
@@ -508,6 +510,7 @@ def affected_clients(
     for event in events:
         by_correlation.setdefault(event.correlation_id, []).append(event)
     rows: list[dict[str, Any]] = []
+    unlinked: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
     for event in events:
         if event.event_type not in (EventType.MODEL_CALL, EventType.TOOL_CALL):
@@ -520,6 +523,18 @@ def affected_clients(
             continue
         interaction = _interaction_for(event.correlation_id, interactions, links)
         if interaction is None or not interaction.client_id:
+            same = by_correlation.get(event.correlation_id, [])
+            if _unlinked_matches(selector, target, payload, same):
+                unlinked.append(
+                    {
+                        "client_id": None,
+                        "client": "client unknown",
+                        "correlation_id": event.correlation_id,
+                        "received_at": recorded.isoformat(),
+                        "model_version": str(payload.get("model_version") or ""),
+                        "usecase_id": _decided_purpose(same),
+                    }
+                )
             continue
         if not _output_matches(
             selector,
@@ -550,6 +565,7 @@ def affected_clients(
         "from": opened.isoformat(),
         "to": closed.isoformat(),
         "clients": rows,
+        "unlinked": unlinked,
         "citation": (
             f"{CITE_AFFECTED}: output received under {label} {target} "
             f"from {opened.isoformat()} until {closed.isoformat()}"
@@ -876,6 +892,30 @@ def _output_matches(
         for event in same_correlation
         if event.event_type == EventType.POLICY_DECISION
     )
+
+
+def _decided_purpose(same_correlation: Sequence[EvidenceEvent]) -> str:
+    """The purpose on the decision that released this output, if recorded."""
+    for event in same_correlation:
+        if event.event_type != EventType.POLICY_DECISION:
+            continue
+        envelope = _payload(event).get("envelope")
+        if isinstance(envelope, dict) and isinstance(envelope.get("purpose"), str):
+            return envelope["purpose"]
+    return ""
+
+
+def _unlinked_matches(
+    selector: str,
+    target: str,
+    payload: dict[str, Any],
+    same_correlation: Sequence[EvidenceEvent],
+) -> bool:
+    """Whether output with no interaction falls under the selector."""
+    if selector == "usecase":
+        return _decided_purpose(same_correlation) == target
+    stand_in = Interaction(id="", client_id="", use_case="")
+    return _output_matches(selector, target, payload, stand_in, same_correlation)
 
 
 def _released(event_type: EventType, payload: dict[str, Any]) -> bool:

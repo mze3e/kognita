@@ -905,8 +905,11 @@ class Gateway:
         prompt = _prompt_text(payload)
         try:
             bound_run = self._bind_run(session, headers, run)
-        except _RunNotFound:
-            return _json_response(403, {"error": "run not found"})
+        except _RunNotFound as exc:
+            unbound = "not bound" in str(exc)
+            return _json_response(
+                403, {"error": "run is not bound to this client" if unbound else "run not found"}
+            )
 
         domain = envelope
         if envelope.subject_type == "model":
@@ -1524,9 +1527,14 @@ class Gateway:
     def _bind_run(
         self, session: Session, headers: Mapping[str, str], run: Run | None
     ) -> Run | None:
-        if run is not None:
-            return run
+        bound = run if run is not None else self.run
         run_id = headers.get("run_id")
+        if bound is not None:
+            # A client bound to a run cannot name another one: that would move
+            # its spend onto, or draw on, a budget it was not given.
+            if run_id and run_id != bound.id:
+                raise _RunNotFound("run is not bound to this client")
+            return bound
         if run_id:
             try:
                 return _load_run(session, run_id)
@@ -1534,7 +1542,7 @@ class Gateway:
                 raise _RunNotFound(str(exc)) from exc
             except Exception as exc:
                 raise _EvidenceStoreUnavailable(str(exc)) from exc
-        return self.run
+        return None
 
     def _record(
         self,
