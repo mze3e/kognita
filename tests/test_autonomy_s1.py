@@ -35,6 +35,7 @@ def _agent(session, evidence, *, level=0, verb="read", required=0):
     agent.autonomy_level = 0
     agent.review_date = NOW + timedelta(days=90)
     agent.principal = "alice"
+    agent.environment = "test"
     approve_deployment(session, agent.name, deployment=dict(_DEPLOYMENT),
                        evidence=evidence, actor_id="owner")
     if level:

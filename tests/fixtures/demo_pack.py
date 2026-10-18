@@ -368,7 +368,7 @@ def envelope(
     subject: str | None = None,
     dataset: str | None = None,
     agent: str | None = None,
-    principal: str = "test-principal",
+    principal: str = "alice",
     is_admin: bool = False,
     arguments: dict | None = None,
 ) -> Envelope:

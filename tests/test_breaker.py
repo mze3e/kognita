@@ -1695,7 +1695,7 @@ def test_gateway_denies_a_principal_header_that_differs_from_the_bound_client(
     session, evidence
 ):
     """A caller cannot borrow another principal's name through a header."""
-    register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops", _principal="bob")
     _live(session, model="summary", version="1")
     session.commit()
     upstream_calls: list[bytes] = []

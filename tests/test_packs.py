@@ -528,7 +528,7 @@ def test_a_pack_cannot_skip_a_breaker_or_a_revocation(session, evidence: Evidenc
             effective_from=AS_OF,
         )
     )
-    register(session, name="rm-assistant", owner_exec="Head of Research Ops")
+    register(session, name="rm-assistant", owner_exec="Head of Research Ops", _principal="rm.lee")
     revoke(
         session,
         "tool",

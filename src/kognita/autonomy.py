@@ -25,8 +25,13 @@ def _checks(envelope, agent, at, usecases=None):
                                     CheckResult.PASS if ok else CheckResult.FAIL)))
 
     gate("S1-REVIEW", agent.review_date is not None and as_utc(agent.review_date) >= as_utc(at))
-    gate("S1-IDENTITY", bool(agent.purpose) and isinstance(agent.use_cases, list) and envelope.purpose in agent.use_cases
-         and (not agent.principal or envelope.principal == agent.principal))
+    gate("S1-IDENTITY", isinstance(agent.purpose, str) and bool(agent.purpose.strip())
+         and isinstance(agent.use_cases, list) and envelope.purpose in agent.use_cases
+         and isinstance(agent.permitted_systems, list) and bool(agent.permitted_systems)
+         and bool(permissions) and type(agent.autonomy_level) is int
+         and isinstance(agent.environment, str) and bool(agent.environment.strip())
+         and isinstance(agent.principal, str) and bool(agent.principal.strip())
+         and envelope.principal == agent.principal)
     # Context cannot grant permissions. It supplies the behaviour being checked,
     # whose digest must match an owner-approved manifest.
     try:
