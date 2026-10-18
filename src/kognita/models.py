@@ -135,6 +135,16 @@ class Agent(SQLModel, table=True):
     kill_switch: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
 
+    purpose: str | None = None
+    use_cases: list[str] | None = Field(default=None, sa_column=Column(JSON, nullable=True))
+    permitted_systems: list[str] | None = Field(default=None, sa_column=Column(JSON, nullable=True))
+    tool_allowlist: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
+    autonomy_level: int | None = Field(default=0, ge=0, le=6, nullable=True)
+    review_date: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    deployment_hash: str | None = None
+    environment: str | None = None
+    principal: str | None = None
+
 
 class Policy(SQLModel, table=True):
     """One effective-dated rule, owned by whoever owns the regime it cites.

@@ -93,6 +93,8 @@ class ToolSpec:
     fn: ToolFn
     classification: Classification = Classification.C2
     description: str = ""
+    required_level: int = 0
+    verb: str = "read"
 
 
 class ToolRegistry:
@@ -112,9 +114,15 @@ class ToolRegistry:
         *,
         classification: Classification = Classification.C2,
         description: str = "",
+        required_level: int = 0,
+        verb: str = "read",
     ) -> ToolSpec:
+        from kognita.autonomy import _VERBS
+        if verb not in _VERBS or type(required_level) is not int or not _VERBS[verb] <= required_level <= 6:
+            raise ValueError("S1-TOOL: invalid verb or required level")
         spec = ToolSpec(
-            name=name, fn=fn, classification=classification, description=description
+            name=name, fn=fn, classification=classification, description=description,
+            required_level=required_level, verb=verb
         )
         self._tools[name] = spec
         return spec
@@ -125,12 +133,15 @@ class ToolRegistry:
         *,
         classification: Classification = Classification.C2,
         description: str = "",
+        required_level: int = 0,
+        verb: str = "read",
     ) -> Callable[[ToolFn], ToolFn]:
         """Decorator form of :meth:`register`."""
 
         def decorate(fn: ToolFn) -> ToolFn:
             self.register(
-                name, fn, classification=classification, description=description
+                name, fn, classification=classification, description=description,
+                required_level=required_level, verb=verb
             )
             return fn
 
@@ -784,7 +795,7 @@ def run_governed(
     attributes = pack.resolve_attributes(envelope, subjects)
     # A call held in an earlier process resumes with this pack once it is seen again.
     _remember_pack(pack)
-    snap = snapshot if snapshot is not None else load_snapshot(session, as_of=as_of)
+    snap = snapshot if snapshot is not None else load_snapshot(session, as_of=as_of or at, _evidence=evidence, _agent_name=envelope.agent_name or "")
     argument_text = _argument_text(envelope)
     if argument_text:
         # Free-text arguments have no typed classification. A caller-supplied
@@ -807,6 +818,12 @@ def run_governed(
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
+    if envelope.agent_name:
+        agent = snap.agents.get(envelope.agent_name)
+        permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
+        if not isinstance(permission, dict) or permission.get("verb") != spec.verb or permission.get("required_level") != spec.required_level:
+            evaluation = _with_checks(evaluation, [Check(check="S1-TOOL-DECLARATION",
+                regime="INTERNAL", result=CheckResult.FAIL, citation="S1-TOOL-DECLARATION")])
     evaluation = _with_checks(evaluation, extra_checks)
     evaluation = _with_checks(
         evaluation,
@@ -1014,10 +1031,19 @@ def continue_run(
     # is kept; the recheck is appended.
     recheck: list[Check] = []
     if execute:
-        snapshot = load_snapshot(session, as_of=at)
+        snapshot = load_snapshot(session, as_of=at, _evidence=evidence, _agent_name=envelope.agent_name or "")
         attributes = dict(evaluation.attributes)
         usecases = _governing_register(session, as_of=at)
-        recheck = _standing_checks(
+        if registry is not None and payload.get("kind") == "tool":
+            current_spec = registry.get(envelope.tool)
+            current_agent = snapshot.agents.get(envelope.agent_name)
+            permission = (current_agent.tool_allowlist or {}).get(envelope.tool, {}) if current_agent else {}
+            if envelope.agent_name and (permission.get("verb") != current_spec.verb or
+                    permission.get("required_level") != current_spec.required_level):
+                execute = False
+                recheck.append(Check(check="S1-TOOL-DECLARATION", regime="INTERNAL",
+                    result=CheckResult.FAIL, citation="S1-TOOL-DECLARATION"))
+        recheck += _standing_checks(
             envelope,
             snapshot,
             attributes=attributes,

@@ -63,6 +63,7 @@ def make_engine(
 # create_all does not add an index to a table that already exists. These
 # statements cover a store created before the effective-window indexes.
 _WINDOW_INDEXES: tuple[str, ...] = (
+    "CREATE UNIQUE INDEX IF NOT EXISTS ix_agents_name ON agents (name)",
     "CREATE INDEX IF NOT EXISTS ix_policies_effective_window ON policies (effective_from, effective_to)",
     "CREATE INDEX IF NOT EXISTS ix_use_cases_effective_window ON use_cases (effective_from, effective_to)",
     "CREATE INDEX IF NOT EXISTS ix_risk_appetites_effective_window ON risk_appetites (effective_from, effective_to)",
@@ -70,6 +71,7 @@ _WINDOW_INDEXES: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS ix_revocations_effective_window ON revocations (effective_from, effective_to)",
     "CREATE INDEX IF NOT EXISTS ix_breaker_thresholds_effective_window ON breaker_thresholds (effective_from, effective_to)",
     "CREATE INDEX IF NOT EXISTS ix_drill_dues_effective_window ON drill_dues (effective_from, effective_to)",
+    "CREATE INDEX IF NOT EXISTS ix_evidence_events_correlation_window ON evidence_events (correlation_id, recorded_at, sequence)",
     "CREATE INDEX IF NOT EXISTS ix_evidence_events_recorded_at ON evidence_events (recorded_at)",
 )
 
@@ -135,6 +137,14 @@ def create_all(engine: Engine) -> None:
     if engine.dialect.name != "sqlite":
         return
     with engine.begin() as connection:
+        columns = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(agents)")}
+        for name, kind in {
+            "purpose": "TEXT", "use_cases": "JSON", "permitted_systems": "JSON",
+            "tool_allowlist": "JSON", "autonomy_level": "INTEGER", "review_date": "DATETIME",
+            "deployment_hash": "TEXT", "environment": "TEXT", "principal": "TEXT",
+        }.items():
+            if name not in columns:
+                connection.exec_driver_sql(f'ALTER TABLE agents ADD COLUMN "{name}" {kind}')
         for statement in _WINDOW_INDEXES:
             connection.exec_driver_sql(statement)
         for statement in (*_EVIDENCE_HEAD, *EVIDENCE_GUARD_TRIGGERS):

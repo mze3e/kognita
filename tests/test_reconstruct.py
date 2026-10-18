@@ -30,7 +30,7 @@ from kognita.evidence import EvidenceWriter
 from kognita.exceptions import ReplayMismatch
 from kognita.governance import decide, load_snapshot, record
 from kognita.models import EvidenceEvent, Policy
-from kognita.registry import register
+from fixtures.agents import register
 from kognita.replay import replay_decision
 from kognita.reconstruct import QUESTIONS, reconstruct, render_reconstruction
 from kognita.retention import RetentionStore

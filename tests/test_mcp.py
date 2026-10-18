@@ -29,7 +29,7 @@ from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration
 from kognita.mcp import BackendServer, McpProxy, load_root_config
 from kognita.models import Approval, EvidenceEvent, GovernanceDecision, Policy
-from kognita.registry import register
+from fixtures.agents import register
 from kognita.rules import build_registry
 from kognita.vocabulary import ActorType, CheckResult, EventType, Outcome
 

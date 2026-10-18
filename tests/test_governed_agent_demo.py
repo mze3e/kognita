@@ -29,6 +29,7 @@ from kognita import (
     session_scope,
 )
 from kognita.cli import build_parser
+from kognita.registry import _deployment_hash
 
 SECRET = "ana@example.org"
 CITATION = "Data Sharing Charter s4, Schedule 1"
@@ -86,7 +87,24 @@ def test_four_scenarios_run_from_scaffold(tmp_path: Path):
     engine = make_engine(db)
     with session_scope(engine) as session:
         assert session.exec(select(Policy)).all()
-        assert session.exec(select(Agent).where(Agent.name == "dossier-agent")).first()
+        agent = session.exec(select(Agent).where(Agent.name == "dossier-agent")).one()
+        deployment = agent.tool_allowlist["_deployment"]
+        assert agent.deployment_hash == _deployment_hash(agent, deployment)
+        for component in ("system_prompt", "instructions", "permissions", "data_sources",
+                          "orchestration", "memory_behaviour"):
+            assert deployment[component]
+        assert deployment["tools"] == []
+        assert agent.autonomy_level == 0
+        assert agent.principal == "alice"
+        assert agent.environment == "local-demo"
+        assert set(agent.tool_allowlist) == {
+            "get_subject_profile", "query", "model_call", "_deployment",
+        }
+        permission = agent.tool_allowlist["model_call"]
+        assert permission["system"] in agent.permitted_systems
+        assert permission["verb"] == "read"
+        assert permission["permissions"] == ["read"]
+        assert permission["required_level"] == 0
         assert session.exec(select(KnowledgeItem)).all()
         seeded = session.exec(select(EvidenceEvent)).all()
         assert seeded
@@ -123,6 +141,17 @@ def test_four_scenarios_run_from_scaffold(tmp_path: Path):
             check["result"] == CheckResult.FAIL.value and check["citation"] == CITATION
             for check in denied[0].checks
         )
+
+        model_decisions = [row for row in decisions if row.tool == "model_call"]
+        assert len(model_decisions) == 1
+        assert model_decisions[0].outcome is Outcome.ALLOW
+        identity_checks = {
+            check["citation"]: check["result"]
+            for check in model_decisions[0].checks
+            if check["citation"].startswith("S1-")
+        }
+        for rule in ("S1-DEPLOYMENT", "S1-TOOL", "S1-VERB", "S1-LEVEL", "S1-RISK-CAP"):
+            assert identity_checks[rule] == CheckResult.PASS.value
 
         events = list(
             session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()

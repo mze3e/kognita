@@ -1199,6 +1199,13 @@ def build_parser() -> argparse.ArgumentParser:
         description="Prove an AI answer was permitted — and evidence it.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
+    agent = sub.add_parser("agent")
+    agent_sub = agent.add_subparsers(dest="agent_command", required=True)
+    deploy = agent_sub.add_parser("deploy")
+    deploy.add_argument("--manifest", required=True)
+    deploy.add_argument("--db", default="kognita.db")
+    deploy.add_argument("--actor", default="", help="local operator identity; defaults to the manifest owner")
+    deploy.set_defaults(func=_agent_deploy)
 
     doctor = sub.add_parser("doctor", help="report installed extras and store health")
     doctor.add_argument("--db", help="optional store to check the evidence chain of")
@@ -1645,6 +1652,46 @@ def build_parser() -> argparse.ArgumentParser:
     packs_diff.set_defaults(func=cmd_packs_diff)
 
     return parser
+
+
+def _agent_deploy(args):
+    from kognita.registry import register, approve_deployment, get
+    from kognita.policy import parse_yaml
+
+    text = Path(args.manifest).read_text()
+    try:
+        manifest = json.loads(text)
+    except json.JSONDecodeError:
+        manifest = parse_yaml(text)
+    if not isinstance(manifest, dict):
+        raise ValueError("S1-DEPLOYMENT: manifest must be an object")
+    args.actor = args.actor or manifest.get("owner_exec", "")
+    level = manifest.get("autonomy_level", 0)
+    if type(level) is not int or level != 0:
+        raise ValueError("S1-PROMOTION: deploy at L0; raise autonomy through promote()")
+    engine = make_engine(args.db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        current = get(session, manifest["name"])
+        if current is not None and (current.owner_exec != args.actor or
+                                    manifest["owner_exec"] != current.owner_exec):
+            raise ValueError("S1-DEPLOYMENT: existing accountable owner required")
+        agent = register(session, name=manifest["name"], owner_exec=manifest["owner_exec"],
+                         version=manifest.get("version", "0.1.0"),
+                         risk_class=manifest.get("risk_class", "MEDIUM"),
+                         materiality_tier=manifest.get("materiality_tier", "T2"))
+        for key in ("purpose", "use_cases", "permitted_systems", "tool_allowlist",
+                    "review_date", "environment", "principal"):
+            value = manifest.get(key)
+            if key == "review_date" and value is not None:
+                value = datetime.fromisoformat(str(value))
+            setattr(agent, key, value)
+        type(agent).model_validate(agent.model_dump())
+        approve_deployment(session, agent.name, deployment=manifest["deployment"],
+                           evidence=EvidenceWriter(engine), actor_id=args.actor)
+        session.flush()
+        _print_json({"name": agent.name, "deployment_hash": agent.deployment_hash})
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

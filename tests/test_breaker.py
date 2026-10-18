@@ -33,7 +33,7 @@ from kognita.models import EvidenceEvent, InteractionLink, Policy, Revocation
 from kognita.outcomes import record_near_miss
 from kognita.policy import parse_rule
 from kognita.registry import get as get_agent
-from kognita.registry import register as register_agent
+from fixtures.agents import register as register_agent
 from kognita.registry import set_kill_switch
 from kognita.review import enqueue_for_review, record_review_finding
 from kognita.revocation import RevocationError, reinstate, revoke

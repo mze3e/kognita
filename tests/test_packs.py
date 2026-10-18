@@ -28,7 +28,7 @@ from kognita.evidence import EvidenceWriter
 from kognita.gateway import ClientConfiguration
 from kognita.governance import decide, load_snapshot
 from kognita.models import EvidenceEvent, Policy
-from kognita.registry import register
+from fixtures.agents import register
 from kognita.revocation import revoke
 from kognita.packs import (
     PACK_NAMES,

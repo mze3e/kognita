@@ -26,7 +26,7 @@ from kognita.testing.harness import FROZEN_NOW, Harness
 
 def _seed(session):
     dp.seed_policies(session, now=FROZEN_NOW)
-    from kognita.registry import register
+    from fixtures.agents import register
 
     register(session, name="eligibility-assistant", owner_exec="Head of Data Governance")
     register(session, name="dossier-agent", owner_exec="Head of Research Ops")
@@ -643,7 +643,7 @@ def test_continue_run_refuses_self_approval_by_the_requester(harness):
 def test_resume_withholds_a_call_revoked_while_it_waited(harness):
     """A revocation recorded after the hold wins over the later grant."""
     from kognita.models import Agent
-    from kognita.registry import register
+    from fixtures.agents import register
     from kognita.revocation import revoke
 
     registry, executed = _registry()
@@ -682,7 +682,8 @@ def test_resume_withholds_a_call_revoked_while_it_waited(harness):
 def test_resume_withholds_a_call_after_the_agent_kill_switch(harness):
     """Engaging the agent's kill switch after the hold stops the release."""
     from kognita.models import Agent
-    from kognita.registry import register, set_kill_switch
+    from fixtures.agents import register
+    from kognita.registry import set_kill_switch
 
     registry, executed = _registry()
     run = Run()
@@ -737,7 +738,7 @@ def test_resume_withholds_a_call_after_the_agent_kill_switch(harness):
 def test_retrieval_excludes_a_revoked_source_the_request_never_named(harness):
     """Revoking a source removes it from the candidates, not only from named requests."""
     from kognita.models import Agent
-    from kognita.registry import register
+    from fixtures.agents import register
     from kognita.retrieval import retrieve
     from kognita.revocation import revoke
 

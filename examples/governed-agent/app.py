@@ -26,7 +26,7 @@ from kognita import (
     utcnow,
 )
 from kognita.evidence import EvidenceWriter
-from kognita.registry import register
+from kognita.registry import approve_deployment, register
 from kognita.usecases import (
     ACCOUNTABILITY,
     Appetite,
@@ -57,6 +57,10 @@ OTHER_SUBJECT = "1"
 QUESTION = "cohort methodology house guidance"
 MODEL = "gateway-model"
 PROMPT = "Email ana@example.org about the notes"
+_SYSTEM_PROMPT = (
+    "Retrieve the supplied research notes for the assigned subject. "
+    "Return information only; do not send messages or take actions."
+)
 
 RESTRICTED_REGIONS = frozenset({"EU", "DE", "FR", "NL"})
 
@@ -367,7 +371,27 @@ def seed_store(db_path: str) -> None:
                 ),
             ]
         )
-        register(session, name=AGENT_NAME, owner_exec=OWNER_EXEC)
+        agent = register(session, name=AGENT_NAME, owner_exec=OWNER_EXEC)
+        agent.purpose = "Governed research demonstration"
+        agent.use_cases = list(PURPOSES)
+        agent.environment = "local-demo"
+        agent.principal = PRINCIPAL
+        agent.permitted_systems = ["demo"]
+        agent.tool_allowlist = {name: {"verb": "read", "required_level": 0,
+            "permissions": ["read"], "system": "demo"}
+            for name in ("get_subject_profile", "query", "model_call")}
+        agent.review_date = utcnow() + timedelta(days=30)
+        approve_deployment(session, agent.name, evidence=EvidenceWriter(engine),
+            actor_id=OWNER_EXEC, deployment={
+                "system_prompt": _SYSTEM_PROMPT,
+                "instructions": "Retrieve supplied notes for the assigned subject only.",
+                # No model-callable tools; library retrieval is governed separately.
+                "tools": [],
+                "permissions": agent.tool_allowlist,
+                "data_sources": ["assigned subject profile", "internal research index"],
+                "orchestration": "Governed retrieval followed by a redacted gateway call.",
+                "memory_behaviour": "No persistent model memory; evidence retained locally.",
+            })
         _register_purposes(session, EvidenceWriter(engine), at=utcnow())
         index_item(
             session,

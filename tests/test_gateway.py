@@ -34,7 +34,8 @@ from kognita.evidence import EvidenceWriter, export_chain, verify_chain
 from kognita.gateway import ClientConfiguration, Gateway, _prompt_text
 from kognita.models import EvidenceEvent, GovernanceDecision, Policy, RunRecord
 from kognita.replay import replay_decision
-from kognita.registry import register, set_kill_switch
+from fixtures.agents import register
+from kognita.registry import set_kill_switch
 from kognita.tools import Run
 from kognita.usecases import retire
 from test_usecases import CARD_ID, NOW, _activate, _open, _spec
@@ -563,7 +564,8 @@ def test_evidence_store_unavailable_refuses_the_call(session, engine):
     assert response.status == 503
     assert upstream.calls == []
     assert json.loads(response.body)["error"] == "evidence store unavailable"
-    assert session.exec(select(EvidenceEvent)).all() == []
+    assert all(event.payload.get("action") in ("AGENT_REGISTERED", "DEPLOYMENT_APPROVED")
+               for event in session.exec(select(EvidenceEvent)).all())
     assert session.exec(select(GovernanceDecision)).all() == []
 
 

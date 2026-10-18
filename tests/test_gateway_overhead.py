@@ -31,7 +31,7 @@ from kognita.classify import PatternClassifier
 from kognita.cli import build_parser, cmd_serve
 from kognita.db import create_all, make_engine
 from kognita.gateway import Gateway, _urllib_transport
-from kognita.registry import register
+from fixtures.agents import register
 from kognita.vocabulary import Classification
 
 SECRET = "ana@example.org"
@@ -208,7 +208,9 @@ def _fill_store(path: Path) -> None:
     """Evidence plus closed decision history. None of it is in force."""
     connection = sqlite3.connect(path)
     evidence = []
-    previous = "0" * 64
+    head = connection.execute("SELECT sequence, event_hash FROM evidence_events ORDER BY sequence DESC LIMIT 1").fetchone()
+    base = head[0] if head else 0
+    previous = head[1] if head else "0" * 64
     payload = json.dumps(
         {
             "outcome": "ALLOW",
@@ -223,7 +225,7 @@ def _fill_store(path: Path) -> None:
             "envelope_hash": "ab" * 32,
         }
     )
-    for sequence in range(1, FILLED_EVIDENCE + 1):
+    for sequence in range(base + 1, base + FILLED_EVIDENCE + 1):
         event_hash = f"{sequence:064x}"
         evidence.append(
             (

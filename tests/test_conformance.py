@@ -13,7 +13,8 @@ from sqlmodel import select
 from fixtures import demo_pack as dp
 
 from kognita.models import Approval, EvidenceEvent, KnowledgeItem
-from kognita.registry import register, set_kill_switch
+from fixtures.agents import register
+from kognita.registry import set_kill_switch
 from kognita.vocabulary import (
     ApprovalStatus,
     CheckResult,

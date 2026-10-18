@@ -352,6 +352,8 @@ class UseCaseSpec:
     approval_gate: str = "none"
     review_sampling_rate: float = 0.0
     maximum_autonomy: int = 0
+    _autonomy_gates: Mapping[str, Any] = field(default_factory=dict)
+    _autonomy_step_down: Mapping[str, Any] = field(default_factory=dict)
     monitoring: bool = False
     explanation_depth: str = "citation"
     validators: tuple[str, ...] = ()
@@ -637,6 +639,27 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
         add("maximum autonomy must be an autonomy level from 0 to 6")
     elif not 0 <= spec.maximum_autonomy <= 6:
         add(f"maximum autonomy L{spec.maximum_autonomy} is outside L0 to L6")
+    def _validate_gate(gate):
+        if not isinstance(gate, Mapping):
+            add("S1-AUTONOMY: metric gate must be a mapping")
+            return
+        for key in ("minimum_sample", "window_days"):
+            if type(gate.get(key)) is not int or gate[key] <= 0:
+                add(f"S1-AUTONOMY: {key} must be a positive integer")
+        for key in ("quality", "reliability", "exception_rate"):
+            value = gate.get(key, .05 if key == "exception_rate" else None)
+            if type(value) not in (int, float) or not 0 <= value <= 1:
+                add(f"S1-AUTONOMY: {key} must be a threshold between 0 and 1")
+
+    if not isinstance(spec._autonomy_gates, Mapping):
+        add("S1-AUTONOMY: transition gates must be a mapping")
+    else:
+        for level, gate in spec._autonomy_gates.items():
+            if level not in {str(value) for value in range(1, 7)}:
+                add("S1-AUTONOMY: transition must name a destination level 1 to 6")
+            _validate_gate(gate)
+    if spec._autonomy_step_down:
+        _validate_gate(spec._autonomy_step_down)
     if not 0 <= float(spec.review_sampling_rate) <= 1:
         add("review sampling rate must be between 0 and 1")
     for factor, allowed in COMPLEXITY_FACTORS.items():
@@ -946,6 +969,8 @@ def build_record(
         "approval_gate": spec.approval_gate,
         "review_sampling_rate": float(spec.review_sampling_rate),
         "maximum_autonomy": int(spec.maximum_autonomy),
+        "_autonomy_gates": dict(spec._autonomy_gates),
+        "_autonomy_step_down": dict(spec._autonomy_step_down),
         "monitoring": bool(spec.monitoring),
         "explanation_depth": spec.explanation_depth,
         "validators": _sorted_texts(spec.validators),
@@ -1964,6 +1989,8 @@ def revise(
     material = any(
         getattr(proposed, name) != getattr(entry, name) for name in _MATERIAL_FIELDS
     )
+    material = material or any(entry.record.get(key, {}) != proposed.record.get(key, {})
+                               for key in ("_autonomy_gates", "_autonomy_step_down"))
     if material:
         status = ""
         rating_approved = False

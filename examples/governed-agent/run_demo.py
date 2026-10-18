@@ -187,7 +187,10 @@ def _gateway(engine, pack, evidence) -> None:
             json.dumps(
                 {
                     "model": app.MODEL,
-                    "messages": [{"role": "user", "content": app.PROMPT}],
+                    "messages": [
+                        {"role": "system", "content": app._SYSTEM_PROMPT},
+                        {"role": "user", "content": app.PROMPT},
+                    ],
                 }
             ).encode(),
         )
