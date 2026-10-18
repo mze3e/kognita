@@ -2,9 +2,10 @@
 
 ``ingest`` parses a markdown, HTML or DOCX file into one knowledge item per
 section. Classification is per section: a nested section cannot be lower
-than the heading it sits under. The chunker is Kognita's. Docling is
+than the heading it sits under, and text before the first heading is a
+floor for every later section. The chunker is Kognita's. Docling is
 imported only while a file is being parsed, and only when the ``docling``
-extra is installed.
+extra is installed. PDF is refused until headings can be read without torch.
 """
 
 from __future__ import annotations
@@ -17,8 +18,9 @@ from sqlmodel import Session
 from kognita.classify import PatternClassifier
 from kognita.exceptions import ConfigError, KognitaError
 from kognita.ingest.chunker import Passage, chunk
-from kognita.ingest.locator import SectionLocator
+from kognita.ingest.locator import SectionLocator, source_text
 from kognita.ingest.sections import classify_section
+from kognita.vocabulary import Classification, classification_rank
 from kognita.models import KnowledgeItem
 from kognita.protocols import Embedder
 from kognita.retrieval import index_item
@@ -29,6 +31,7 @@ __all__ = [
     "chunk",
     "classify_section",
     "ingest",
+    "source_text",
 ]
 
 
@@ -82,14 +85,17 @@ def ingest(
     from kognita.ingest.docling_backend import convert_path
 
     root = convert_path(path)
-    passages = chunk(root, document=reference)
+    text = source_text(path)
+    passages = chunk(root, document=reference, source=text)
     chosen = classifier if classifier is not None else PatternClassifier()
     decided: list[tuple[Passage, Any, str]] = []
-    by_path: dict[tuple[str, ...], Any] = {}
+    by_path: dict[tuple[str, ...], Classification] = {}
+    preamble_label: Classification | None = None
     for passage in passages:
         parent = None
         parent_section = ""
         section_path = passage.locator.section_path
+        is_preamble = len(section_path) == 0
         if len(section_path) >= 2:
             parent_path = section_path[:-1]
             parent = by_path.get(parent_path)
@@ -98,12 +104,18 @@ def ingest(
             passage.text,
             parent=parent,
             parent_section=parent_section,
+            preamble=None if is_preamble else preamble_label,
             classifier=chosen,
         )
         if not rule.strip():
             raise KognitaError(
                 "section classification produced no rule; ingestion indexes nothing"
             )
+        if is_preamble and (
+            preamble_label is None
+            or classification_rank(label) > classification_rank(preamble_label)
+        ):
+            preamble_label = label
         by_path[section_path] = label
         decided.append((passage, label, rule))
 
@@ -113,6 +125,9 @@ def ingest(
         start = end = None
         if locator.charspan is not None:
             start, end = locator.charspan
+        block_start = block_end = None
+        if locator.block_charspan is not None:
+            block_start, block_end = locator.block_charspan
         items.append(
             index_item(
                 session,
@@ -130,6 +145,8 @@ def ingest(
                 section_path=locator.section_path,
                 char_start=start,
                 char_end=end,
+                block_char_start=block_start,
+                block_char_end=block_end,
                 bbox=_bbox(locator),
             )
         )

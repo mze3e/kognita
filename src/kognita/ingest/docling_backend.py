@@ -4,10 +4,10 @@ The import sits inside a function. Importing ``kognita.ingest`` does not
 import Docling, and a missing extra raises ``ConfigError`` naming
 ``kognita[docling]`` rather than a bare import error.
 
-PDF files are refused. ``docling-parse`` is MIT and the extra pins
-``format-pdf``, but the headings a PDF section tree needs come from
-Docling's layout model, and that model pulls torch. This module does not
-guess headings and does not download weights.
+PDF files are refused. The headings a PDF section tree needs come from
+Docling's layout model, and that model pulls torch. This extra does not
+install ``format-pdf``. This module does not guess headings and does not
+download weights.
 """
 
 from __future__ import annotations
@@ -29,11 +29,11 @@ from kognita.ingest.tree import (
 _SIMPLE_SUFFIXES = frozenset({".md", ".markdown", ".html", ".htm", ".docx"})
 
 PDF_REFUSAL = (
-    "PDF section structure comes from Docling's layout model, which is not "
-    "part of kognita[docling]. That model ships in docling-ibm-models and "
-    "pulls torch. format-pdf is pinned because docling-parse is MIT, but "
-    "ingestion does not guess headings from a PDF and does not download "
-    "model weights. Markdown, HTML, and DOCX are parsed into sections."
+    "PDF is refused until section headings can be read without torch. "
+    "Docling's layout model ships in docling-ibm-models and pulls torch, "
+    "and kognita[docling] does not install it. Ingestion does not guess "
+    "headings from a PDF and does not download model weights. "
+    "Markdown, HTML, and DOCX are parsed into sections."
 )
 
 

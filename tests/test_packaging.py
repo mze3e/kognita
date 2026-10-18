@@ -239,11 +239,10 @@ def test_docling_extra_pins_format_extras_only():
     """The extra is an exact docling-slim pin, not the torch metapackage."""
     config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
     extra = config["project"]["optional-dependencies"]["docling"]
-    assert extra == [
-        "docling-slim[format-docx,format-html,format-markdown,format-pdf]==2.140.0"
-    ]
+    assert extra == ["docling-slim[format-docx,format-html,format-markdown]==2.140.0"]
     requirement = extra[0]
     assert "feat-chunking" not in requirement
+    assert "format-pdf" not in requirement
     assert not requirement.startswith("docling==")
     assert "torch" not in requirement
 

@@ -335,8 +335,9 @@ class KnowledgeItem(SQLModel, table=True):
     is never compared, never ranked, and cannot leak through a relevance score.
 
     A section ingested from a document also carries a locator: the document
-    reference, page, section path, character span and bounding box the parser
-    reported. ``source_label`` remains the readable citation.
+    reference, page, section path, a document-global character range, the
+    parser's block span and bounding box. ``source_label`` remains the
+    readable citation and quotes the document-global range.
     """
 
     __tablename__ = "knowledge_items"
@@ -354,9 +355,12 @@ class KnowledgeItem(SQLModel, table=True):
         default_factory=list, sa_column=Column(JSON, nullable=False)
     )
     source_label: str = ""
-    #: Structural locator. Provenance the parser supplied, not a guess.
-    #: ``char_start`` and ``char_end`` are that parser's character span.
-    #: ``bbox`` uses the parser's keys ``l``, ``t``, ``r`` and ``b``.
+    #: Structural locator. A missing span stays empty; it is not guessed.
+    #: ``char_start`` and ``char_end`` are a document-global range into the
+    #: source text (the file for markdown and HTML, the extracted paragraph
+    #: text for DOCX). ``block_char_start`` and ``block_char_end`` are the
+    #: parser's span for the opening block. ``bbox`` uses the parser's keys
+    #: ``l``, ``t``, ``r`` and ``b``.
     document_ref: str = ""
     page: int | None = Field(default=None)
     section_path: list[str] = Field(
@@ -364,6 +368,8 @@ class KnowledgeItem(SQLModel, table=True):
     )
     char_start: int | None = Field(default=None)
     char_end: int | None = Field(default=None)
+    block_char_start: int | None = Field(default=None)
+    block_char_end: int | None = Field(default=None)
     bbox: dict[str, Any] | None = Field(
         default=None, sa_column=Column(JSON, nullable=True)
     )

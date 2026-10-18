@@ -21,6 +21,7 @@ from kognita.ingest.docling_backend import (
     require_success,
     tree_from_document,
 )
+from kognita.ingest.locator import source_text
 from kognita.ingest.tree import (
     BoundingBox,
     ParsedBlock,
@@ -71,9 +72,24 @@ def _handbook() -> ParsedBlock:
     )
 
 
+def _handbook_source() -> str:
+    return "\n\n".join(
+        [
+            "Public chapter",
+            "This chapter is public and explains the review process.",
+            "Steps",
+            "An analyst reads the file and writes a note.",
+            "Restricted annex",
+            "Restricted. The client file names ana@example.org.",
+            "Public note",
+            "This note is public.",
+        ]
+    )
+
+
 def _write(tmp_path: Path, name: str = "handbook.md") -> Path:
     path = tmp_path / name
-    path.write_text("# placeholder\n", encoding="utf-8")
+    path.write_text(_handbook_source(), encoding="utf-8")
     return path
 
 
@@ -111,11 +127,13 @@ def test_chunk_splits_on_section_boundaries_and_keeps_nested_text_out():
     )
     assert public_locator.document == "Handbook"
     assert public_locator.page == 1
-    assert public_locator.charspan == (0, 20)
+    assert public_locator.charspan is None
+    assert public_locator.block_charspan == (0, 20)
     assert public_locator.bbox == (1.0, 2.0, 30.0, 4.0)
     assert "Handbook" in public_locator.as_source_label()
     assert "Public chapter" in public_locator.as_source_label()
     assert "p. 1" in public_locator.as_source_label()
+    assert "chars" not in public_locator.as_source_label()
 
     steps_locator = next(
         passage.locator
@@ -124,6 +142,7 @@ def test_chunk_splits_on_section_boundaries_and_keeps_nested_text_out():
     )
     assert steps_locator.page is None
     assert steps_locator.charspan is None
+    assert steps_locator.block_charspan is None
     assert steps_locator.bbox is None
 
 
@@ -132,25 +151,119 @@ def test_chunk_refuses_an_empty_document_reference():
         chunk(_handbook(), document="  ")
 
 
-def test_preamble_does_not_raise_later_chapters():
-    """Text before the first heading is its own passage, not a document ceiling."""
+def test_ingestion_markings_cannot_lower_a_section_to_c0():
+    """An explicit public marking stays at the classifier floor."""
+    for text in (
+        "This chapter is public.",
+        "Unclassified.",
+        "For publication.",
+    ):
+        label, rule = classify_section(text)
+        assert label == Classification.C1
+        assert label != Classification.C0
+        assert "floor" in rule
+        assert "does not lower the section" in rule
+
+
+def test_preamble_is_a_document_wide_floor(session, tmp_path, monkeypatch):
+    """Text before the first heading raises every later section to its level."""
     root = blocks_to_tree(
         [
             ParsedBlock("This draft is restricted.", "text"),
             ParsedBlock("Public chapter", "section_header", 1),
             ParsedBlock("This chapter is public.", "text"),
+            ParsedBlock("Steps", "section_header", 2),
+            ParsedBlock("An analyst reads the file.", "text"),
+            ParsedBlock("Restricted annex", "section_header", 1),
+            ParsedBlock("Restricted. The client file is here.", "text"),
         ]
     )
-    passages = chunk(root, document="Handbook")
-    by_path = {passage.locator.section_path: passage for passage in passages}
-    preamble, rule = classify_section(by_path[()].text)
-    chapter, chapter_rule = classify_section(by_path[("Public chapter",)].text)
-    assert preamble == Classification.C3
-    assert "marking" in rule
-    assert chapter == Classification.C1
-    assert "ana@" not in by_path[("Public chapter",)].text
-    assert "restricted" not in by_path[("Public chapter",)].text.lower()
-    assert "floor" in chapter_rule
+    monkeypatch.setattr(
+        "kognita.ingest.docling_backend.convert_path", lambda _path: root
+    )
+    source = "\n\n".join(
+        [
+            "This draft is restricted.",
+            "Public chapter",
+            "This chapter is public.",
+            "Steps",
+            "An analyst reads the file.",
+            "Restricted annex",
+            "Restricted. The client file is here.",
+        ]
+    )
+    path = tmp_path / "handbook.md"
+    path.write_text(source, encoding="utf-8")
+    items = _ingest(session, path)
+    by_path = {tuple(item.section_path): item for item in items}
+    preamble = by_path[()]
+    chapter = by_path[("Public chapter",)]
+    steps = by_path[("Public chapter", "Steps")]
+    annex = by_path[("Restricted annex",)]
+    assert preamble.classification == Classification.C3
+    assert "marking" in preamble.classification_rule
+    assert chapter.classification == Classification.C3
+    assert "preamble" in chapter.classification_rule
+    assert "cannot be classified below the preamble" in chapter.classification_rule
+    assert "restricted" not in chapter.body.lower()
+    assert steps.classification == Classification.C3
+    assert "preamble" in steps.classification_rule
+    assert "Public chapter" in steps.classification_rule
+    assert annex.classification == Classification.C3
+    assert "marking" in annex.classification_rule
+    assert source[chapter.char_start : chapter.char_end].startswith("Public chapter")
+    assert (
+        "This draft is restricted." not in source[chapter.char_start : chapter.char_end]
+    )
+
+
+def test_preamble_floor_does_not_lower_a_later_section(session, tmp_path, monkeypatch):
+    root = blocks_to_tree(
+        [
+            ParsedBlock("This note is public.", "text"),
+            ParsedBlock("Restricted annex", "section_header", 1),
+            ParsedBlock("Restricted. The client file is here.", "text"),
+        ]
+    )
+    monkeypatch.setattr(
+        "kognita.ingest.docling_backend.convert_path", lambda _path: root
+    )
+    path = tmp_path / "handbook.md"
+    path.write_text(
+        "This note is public.\n\nRestricted annex\n\nRestricted. The client file is here.",
+        encoding="utf-8",
+    )
+    items = _ingest(session, path)
+    by_path = {tuple(item.section_path): item for item in items}
+    assert by_path[()].classification == Classification.C1
+    annex = by_path[("Restricted annex",)]
+    assert annex.classification == Classification.C3
+    assert "marking" in annex.classification_rule
+    assert "preamble" not in annex.classification_rule
+
+
+def test_a_passage_missing_from_the_source_indexes_nothing(
+    session, tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        "kognita.ingest.docling_backend.convert_path", lambda _path: _handbook()
+    )
+    path = tmp_path / "handbook.md"
+    path.write_text("this file does not contain the parsed passages", encoding="utf-8")
+    with pytest.raises(KognitaError, match="does not invent a character span"):
+        _ingest(session, path)
+    assert session.exec(select(KnowledgeItem)).all() == []
+
+
+def test_a_non_utf8_document_indexes_nothing(session, tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "kognita.ingest.docling_backend.convert_path", lambda _path: _handbook()
+    )
+    path = tmp_path / "handbook.md"
+    path.write_bytes(b"\xff\xfe not utf-8")
+    with pytest.raises(KognitaError, match="UTF-8"):
+        _ingest(session, path)
+    assert session.exec(select(KnowledgeItem)).all() == []
 
 
 def test_classification_cites_a_rule_and_does_not_fall_below_a_parent():
@@ -250,7 +363,8 @@ def test_ingest_classifies_each_section_and_cites_the_passage(
     monkeypatch.setattr(
         "kognita.ingest.docling_backend.convert_path", lambda _path: _handbook()
     )
-    items = _ingest(session, _write(tmp_path))
+    path = _write(tmp_path)
+    items = _ingest(session, path)
     session.commit()
     by_title = {item.title: item for item in items}
 
@@ -271,18 +385,30 @@ def test_ingest_classifies_each_section_and_cites_the_passage(
     assert "An analyst" not in public.body
     assert "ana@example.org" in annex.body
 
+    source = path.read_text(encoding="utf-8")
     assert public.document_ref == "Handbook"
     assert public.page == 1
     assert public.section_path == ["Public chapter"]
-    assert public.char_start == 0
-    assert public.char_end == 20
+    assert public.block_char_start == 0
+    assert public.block_char_end == 20
+    public_slice = source[public.char_start : public.char_end]
+    assert public_slice.startswith("Public chapter")
+    assert public_slice.endswith("review process.")
+    assert "An analyst" not in public_slice
+    assert f"chars {public.char_start}-{public.char_end}" in public.source_label
     assert public.bbox == {"l": 1.0, "t": 2.0, "r": 30.0, "b": 4.0}
     assert public.source_label.startswith("Handbook, Public chapter")
     assert steps.page is None
-    assert steps.char_start is None
+    assert steps.block_char_start is None
+    assert "An analyst" in source[steps.char_start : steps.char_end]
+    assert "ana@example.org" not in source[steps.char_start : steps.char_end]
     assert annex.page == 4
+    assert annex.block_char_start == 100
+    assert annex.block_char_end == 180
+    assert source[annex.char_start : annex.char_end].startswith("Restricted annex")
     assert annex.section_path == ["Restricted annex"]
     assert note.section_path == ["Restricted annex", "Public note"]
+    assert "This note is public." in source[note.char_start : note.char_end]
 
     visible = retrieve(
         session,
@@ -297,7 +423,10 @@ def test_ingest_classifies_each_section_and_cites_the_passage(
     assert annex_hits[0].snippet == "Restricted. The client file names ana@example.org."
     assert annex_hits[0].section_path == ("Restricted annex",)
     assert annex_hits[0].page == 4
-    assert annex_hits[0].char_start == 100
+    assert annex_hits[0].char_start == annex.char_start
+    assert annex_hits[0].char_end == annex.char_end
+    assert annex_hits[0].block_char_start == 100
+    assert annex_hits[0].block_char_end == 180
     assert annex_hits[0].document_ref == "Handbook"
     assert "Handbook" in annex_hits[0].source_label
 
@@ -339,8 +468,13 @@ def test_retrieval_evidence_records_the_locator(
     ).one()
     assert event.event_type == EventType.RETRIEVAL
     annex = next(item for item in event.payload["items"] if item["page"] == 4)
+    source = _handbook_source()
     assert annex["section_path"] == ["Restricted annex"]
-    assert annex["charspan"] == [100, 180]
+    assert annex["block_charspan"] == [100, 180]
+    start, end = annex["charspan"]
+    assert source[start:end].startswith("Restricted annex")
+    assert "ana@example.org" in source[start:end]
+    assert "This note is public." not in source[start:end]
     assert annex["document"] == "Handbook"
     assert annex["classification"] == "C3"
     assert "marking" in annex["classification_rule"]
@@ -415,7 +549,8 @@ def test_tree_from_document_keeps_only_complete_provenance():
     )
     passages = chunk(root, document="Guide")
     assert passages[0].locator.page == 2
-    assert passages[0].locator.charspan == (8, 16)
+    assert passages[0].locator.block_charspan == (8, 16)
+    assert passages[0].locator.charspan is None
     assert passages[0].locator.bbox == (5.0, 6.0, 7.0, 8.0)
     assert "A paragraph." in passages[0].text
 
@@ -599,7 +734,7 @@ _HANDBOOK = "\n".join(
 )
 
 
-def _assert_handbook(items) -> None:
+def _assert_handbook(items, source: str) -> None:
     assert items
     by_path = {tuple(item.section_path): item for item in items}
     public = by_path[("Public chapter",)]
@@ -614,8 +749,14 @@ def _assert_handbook(items) -> None:
     assert "ana@example.org" in annex.body
     assert public.classification != Classification.C3
     assert steps.classification != Classification.C3
+    assert public.classification != Classification.C0
+    assert steps.classification != Classification.C0
     assert all(item.document_ref == "Handbook" for item in items)
     assert all(item.classification_rule for item in items)
+    for item in (public, steps, annex):
+        window = source[item.char_start : item.char_end]
+        assert item.title in window
+        assert window in source
 
 
 def test_docling_parses_markdown_html_and_docx(session, tmp_path):
@@ -660,4 +801,4 @@ def test_docling_parses_markdown_html_and_docx(session, tmp_path):
             document="Handbook",
         )
         session.commit()
-        _assert_handbook(items)
+        _assert_handbook(items, source_text(path))

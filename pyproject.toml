@@ -51,11 +51,11 @@ local-embeddings = [
     "sentence-transformers>=3.0.0",
 ]
 # Pinned exactly. Named format extras only: not feat-chunking (transformers
-# and tree-sitter grammars) and not the docling metapackage (torch).
-# format-pdf pulls docling-parse, which is MIT. The PDF layout model is a
-# separate extra and pulls torch; ingestion does not install it.
+# and tree-sitter grammars), not format-pdf, and not the docling metapackage
+# (torch). PDF headings come from a layout model that pulls torch, so the
+# extra does not ship a PDF parser it cannot use.
 docling = [
-    "docling-slim[format-docx,format-html,format-markdown,format-pdf]==2.140.0",
+    "docling-slim[format-docx,format-html,format-markdown]==2.140.0",
 ]
 all = [
     "kognita[openai,vec,local-embeddings]",

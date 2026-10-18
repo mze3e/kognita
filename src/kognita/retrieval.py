@@ -42,6 +42,13 @@ MIN_SCORE = 0.08
 TOP_K = 5
 
 
+def _span(start: int | None, end: int | None) -> list[int] | None:
+    """A closed-open range, or nothing when either end is missing."""
+    if start is None or end is None:
+        return None
+    return [start, end]
+
+
 def item_content_hash(item: KnowledgeItem) -> str:
     """Hash of the item text a retrieval returned.
 
@@ -68,6 +75,8 @@ class Retrieved:
     section_path: tuple[str, ...] = ()
     char_start: int | None = None
     char_end: int | None = None
+    block_char_start: int | None = None
+    block_char_end: int | None = None
     classification_rule: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -82,11 +91,8 @@ class Retrieved:
             "document": self.document_ref,
             "page": self.page,
             "section_path": list(self.section_path),
-            "charspan": (
-                [self.char_start, self.char_end]
-                if self.char_start is not None and self.char_end is not None
-                else None
-            ),
+            "charspan": _span(self.char_start, self.char_end),
+            "block_charspan": _span(self.block_char_start, self.block_char_end),
             "score": self.score,
         }
 
@@ -194,6 +200,8 @@ def retrieve(
                 section_path=tuple(item.section_path or ()),
                 char_start=item.char_start,
                 char_end=item.char_end,
+                block_char_start=item.block_char_start,
+                block_char_end=item.block_char_end,
                 classification_rule=item.classification_rule,
             )
             for item, score in ranked[:top_k]
@@ -212,9 +220,6 @@ def retrieve(
                 use_case=use_case,
                 correlation_id=correlation_id,
             )
-            charspan = None
-            if item.char_start is not None and item.char_end is not None:
-                charspan = [item.char_start, item.char_end]
             items.append(
                 {
                     "id": item.id or 0,
@@ -226,7 +231,8 @@ def retrieve(
                     "document": item.document_ref,
                     "page": item.page,
                     "section_path": list(item.section_path or []),
-                    "charspan": charspan,
+                    "charspan": _span(item.char_start, item.char_end),
+                    "block_charspan": _span(item.block_char_start, item.block_char_end),
                     "bbox": item.bbox,
                 }
             )
@@ -268,6 +274,8 @@ def index_item(
     section_path: Sequence[str] = (),
     char_start: int | None = None,
     char_end: int | None = None,
+    block_char_start: int | None = None,
+    block_char_end: int | None = None,
     bbox: dict[str, Any] | None = None,
     classification_rule: str = "",
 ) -> KnowledgeItem:
@@ -292,6 +300,8 @@ def index_item(
         section_path=[str(part) for part in section_path],
         char_start=char_start,
         char_end=char_end,
+        block_char_start=block_char_start,
+        block_char_end=block_char_end,
         bbox=bbox,
         embedding=to_bytes(vector),
         embedding_dim=embedder.dimension,

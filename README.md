@@ -68,7 +68,7 @@ pip install kognita
 
 The core depends on four packages (`pydantic`, `sqlmodel`, `numpy`, `python-dotenv`) and runs with no network and no API key. Deciding whether a request is permitted should not require the machinery that answers it. `import-linter` contracts and a no-extras install test keep it that way.
 
-Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vector index (`kognita[vec]`), local embeddings (`kognita[local-embeddings]`) and structured document ingestion (`kognita[docling]`).
+Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vector index (`kognita[vec]`), local embeddings (`kognita[local-embeddings]`) and structured document ingestion (`kognita[docling]`). `kognita[docling]` parses markdown, HTML and DOCX. PDF is refused until section headings can be read without torch.
 
 ## What it does today
 

@@ -65,32 +65,74 @@ def classify_section(
     *,
     parent: Classification | None = None,
     parent_section: str = "",
+    preamble: Classification | None = None,
     classifier: Any = None,
 ) -> tuple[Classification, str]:
     """Classify ``text`` and cite the rule.
 
     ``parent`` is the classification of the heading this section sits under.
-    It is a floor. ``classifier`` defaults to the pattern classifier already
-    in the core; its own floor still applies when ``parent`` is absent.
+    ``preamble`` is the classification of the text before the first heading.
+    Each is a floor: a section may be more sensitive and cannot be less.
+    The pattern classifier's own floor still applies, so an explicit public
+    marking does not make a section publishable on its own.
     """
     chosen = classifier if classifier is not None else PatternClassifier()
     own = Classification(chosen.classify(text))
-    if parent is None:
-        label = own
-    else:
-        label = Classification(chosen.classify(text, hint=parent))
-    if parent is not None and classification_rank(label) > classification_rank(own):
-        where = parent_section or "parent section"
-        return label, (
-            f"{_name(chosen)}: inherited {label.value} from {where}; "
-            "a section subtree cannot be classified below its parent"
+    bounds: list[tuple[Classification, str, str]] = []
+    if preamble is not None:
+        bounds.append((Classification(preamble), "the preamble", "preamble"))
+    if parent is not None:
+        bounds.append(
+            (Classification(parent), parent_section or "parent section", "parent")
         )
-    rule = _own_rule(chosen, text, label)
+    if bounds:
+        hint = max((floor for floor, _where, _kind in bounds), key=classification_rank)
+        label = Classification(chosen.classify(text, hint=hint))
+    else:
+        label = own
+    for floor, _where, _kind in bounds:
+        if classification_rank(floor) > classification_rank(label):
+            label = floor
+    binding = [
+        (floor, where, kind)
+        for floor, where, kind in bounds
+        if classification_rank(floor) > classification_rank(own)
+    ]
+    if binding:
+        rule = _floor_rule(chosen, label, binding)
+    else:
+        rule = _own_rule(chosen, text, label)
     if not rule.strip():
         raise KognitaError(
             "section classification produced no rule; ingestion indexes nothing"
         )
     return label, rule
+
+
+def _floor_rule(
+    classifier: Any,
+    label: Classification,
+    binding: list[tuple[Classification, str, str]],
+) -> str:
+    """Cite every floor that holds the section above its own reading."""
+    name = _name(classifier)
+    kinds = {kind for _floor, _where, kind in binding}
+    if kinds == {"parent"}:
+        where = binding[0][1]
+        return (
+            f"{name}: inherited {label.value} from {where}; "
+            "a section subtree cannot be classified below its parent"
+        )
+    if kinds == {"preamble"}:
+        return (
+            f"{name}: inherited {label.value} from the preamble; "
+            "a section cannot be classified below the preamble"
+        )
+    parent_where = next(where for _floor, where, kind in binding if kind == "parent")
+    return (
+        f"{name}: inherited {label.value} from the preamble and from {parent_where}; "
+        "a section cannot be classified below the preamble or its parent"
+    )
 
 
 __all__ = ["classify_section"]
