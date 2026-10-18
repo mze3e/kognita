@@ -119,7 +119,8 @@ def test_the_policy_language_is_outside_the_engine_and_still_constrained():
     """``kognita.policy`` sits above ``decide`` and stays on the core dependencies.
 
     The engine must not import it. The policy module must not import the CLI,
-    the conformance kit, an adapter, or a YAML package.
+    the conformance kit, an adapter, or a YAML package. It reaches the use-case
+    register only because ``decide`` does; the policy file does not name it.
     """
     config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
     contracts = config["tool"]["importlinter"]["contracts"]
@@ -143,6 +144,7 @@ def test_the_policy_language_is_outside_the_engine_and_still_constrained():
     assert entry["source_modules"] == ["kognita.__main__"]
     for name in ("kognita.cli", "kognita.testing", "kognita.adapters", "yaml"):
         assert name in policy["forbidden_modules"]
+    assert "kognita.usecases" not in (PACKAGE_ROOT / "policy.py").read_text()
 
 
 def test_importing_kognita_does_not_load_the_policy_language():
