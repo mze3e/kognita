@@ -57,7 +57,7 @@ def revoke(session: _Session, agent_name: str, credential: str | None, *,
             event_type=_EventType.POLICY_CHANGE, actor_type=_ActorType.SYSTEM,
             actor_id=actor_id, payload={"action": "CREDENTIAL_REVOKED",
             "agent": agent_name, "scope": "all", "count": result.rowcount,
-            "citation": "S6-ANOMALY"})
+            "citation": "S2-CREDENTIAL"})
         session.flush()
         from kognita._actions import _stop
         _stop(agent=agent_name)

@@ -40,7 +40,7 @@ class Envelope:
     scopes: dict[str, str] = field(default_factory=dict)
     #: True when the principal holds an elevated entitlement ceiling.
     is_admin: bool = False
-    #: Free-form request context. Never trusted for authorisation decisions.
+    #: Free-form claims confer no authority; private workload proof is verified.
     context: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:

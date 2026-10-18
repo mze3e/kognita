@@ -7,6 +7,7 @@ pack and appends a refusal. Deciding does not fetch.
 
 from __future__ import annotations
 
+from fixtures.agents import _usecases
 import ast
 import hashlib
 import hmac
@@ -469,6 +470,7 @@ def test_private_banking_fixture_denies_cross_border_and_booking_centre(session)
             purposes=pack.purposes,
             engages=pack.engages,
             as_of=AS_OF,
+            usecases=_usecases(pack.purposes),
         )
         return evaluation
 
@@ -562,6 +564,7 @@ def test_a_pack_cannot_skip_a_breaker_or_a_revocation(session, evidence: Evidenc
             purposes=pack.purposes,
             engages=engages,
             as_of=AS_OF,
+            usecases=_usecases(pack.purposes),
         )
 
     denied = evaluate(pack.engages)

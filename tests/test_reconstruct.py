@@ -9,6 +9,7 @@ Erasure keeps the hash and is not a mismatch.
 
 from __future__ import annotations
 
+from fixtures.agents import _usecases
 import contextlib
 import json
 from datetime import timedelta
@@ -492,6 +493,7 @@ def test_cli_writes_json_and_a_readable_document(tmp_path):
             engages=pack.engages,
             as_of=FROZEN_NOW,
             request_id="cli-interaction",
+            usecases=_usecases(dp.PURPOSES),
         )
         record(session, evaluation, evidence=evidence, now=FROZEN_NOW)
         session.commit()

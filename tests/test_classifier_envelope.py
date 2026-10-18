@@ -11,6 +11,7 @@ hint may raise a classification and may not lower it.
 """
 from __future__ import annotations
 
+from fixtures.agents import _usecases
 from fixtures.agents import configure as _approved_identity
 
 from datetime import datetime, timezone
@@ -136,6 +137,7 @@ def test_replay_does_not_call_the_classifier(harness):
         as_of=NOW,
         request_id="replay-1",
         purposes=(envelope.purpose,),
+        usecases=_usecases((envelope.purpose,)),
     )
     second = decide(
         derived,
@@ -144,6 +146,7 @@ def test_replay_does_not_call_the_classifier(harness):
         as_of=NOW,
         request_id="replay-1",
         purposes=(envelope.purpose,),
+        usecases=_usecases((envelope.purpose,)),
     )
     assert first.outcome is Outcome.DENY
     assert second.outcome is first.outcome
@@ -170,6 +173,7 @@ def test_replay_does_not_call_the_classifier(harness):
         as_of=NOW,
         request_id=first.request_id,
         purposes=(envelope.purpose,),
+        usecases=_usecases((envelope.purpose,)),
     )
     assert replay.outcome is first.outcome
     assert replay.envelope_hash == first.envelope_hash
@@ -266,6 +270,7 @@ def test_text_cannot_widen_permission():
             attributes=attributes,
             as_of=NOW,
             purposes=dp.PURPOSES,
+            usecases=_usecases(dp.PURPOSES),
         )
         return derived, attributes, decision
 
@@ -362,6 +367,7 @@ def test_text_cannot_grant_a_purpose():
         attributes=attributes,
         purposes=("COLLABORATION",),
         as_of=NOW,
+        usecases=_usecases(("COLLABORATION",)),
     )
     assert derived.purpose == ""
     assert evaluation.outcome is Outcome.DENY
@@ -392,6 +398,7 @@ def test_low_confidence_escalates():
         attributes=attributes,
         as_of=NOW,
         purposes=(envelope.purpose,),
+        usecases=_usecases((envelope.purpose,)),
     )
     assert attributes["classifier"]["confidence"] == FLOOR_CONFIDENCE
     assert FLOOR_CONFIDENCE < 0.8
@@ -408,6 +415,7 @@ def test_low_confidence_escalates():
         attributes=clear_attributes,
         as_of=NOW,
         purposes=(envelope.purpose,),
+        usecases=_usecases((envelope.purpose,)),
     )
     assert clear_attributes["classifier"]["confidence"] == INDICATOR_CONFIDENCE
     assert allowed.outcome is Outcome.ALLOW

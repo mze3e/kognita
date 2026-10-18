@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reject unknown or foreign MCP runs and preserve workload/delegation taint across omitted or rotated run IDs.
 - Enforce broker run isolation before admission and resumed retrieval; preserve retrieved content's default external taint across runs.
 - Apply field allow-lists to broker summaries, snippets, citations, graph data, and resumed responses.
+- Require a use-case register for public decisions; purpose lists alone cannot authorize calls.
+- Authenticate issued library workload credentials through private envelope context and snapshot state.
+- Bind accepted step-up evidence to hashes recorded only by the private host workflow.
+- Enforce rolling 24-hour volume ceilings across UTC midnight alongside daily baselines.
+- Deny elevated assurance claims without a persisted run floor.
+- Revoke workload credentials on exclusive use-case retirement and run revocation, ending bound run authority with evidence.
+- Cover the inclusive start and exclusive end of the affected-client receipt window.
+- Refresh cached authorization rows when loading snapshots after changes in another session.
 
 - Evidence truncation is now detected: `verify_export` checks the export's advertised `event_count` and `head_hash` against what it actually verified, and `verify_chain` treats a missing or unreadable head checkpoint as a chain break (not a pass) whenever events exist.
 - Serialize quota recheck and reservation in the decision transaction.

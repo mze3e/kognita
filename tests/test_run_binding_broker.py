@@ -1,6 +1,8 @@
 """Real authority regressions; deliberately outside the legacy authority allowlist."""
 import pytest
 
+from fixtures.agents import _usecases
+
 from conftest import NOW
 from kognita.broker import ask, _resume_retrieval
 from kognita.embedding import HashingEmbedder
@@ -76,7 +78,7 @@ def test_broker_resumed_response_is_minimized_and_tainted(session, evidence):
     from kognita.governance import decide, load_snapshot
     _, _, env, run = _family(session, evidence)
     evaluation = decide(env, load_snapshot(session, as_of=NOW, _agent_name='worker'),
-                        purposes=['READ'], as_of=NOW)
+                        purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
     assert evaluation.outcome is Outcome.ALLOW
     answer = _resume_retrieval(session, {'question': 'meeting notes'}, envelope=env,
         evaluation=evaluation, embedder=_index(session), evidence=evidence, subgraph=None, run=run)
@@ -90,7 +92,7 @@ def test_broker_resumed_retrieval_rechecks_run(session, evidence):
     child = _child(session, evidence, parent)
     env = _env(env, child)
     evaluation = decide(env, load_snapshot(session, as_of=NOW, _agent_name='child'),
-                        purposes=['READ'], as_of=NOW)
+                        purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
     assert evaluation.outcome is Outcome.ALLOW
     answer = _resume_retrieval(session, {'question': 'meeting notes'}, envelope=env,
         evaluation=evaluation, embedder=_index(session), evidence=evidence, subgraph=None, run=parent)

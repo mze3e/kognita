@@ -64,6 +64,10 @@ def _decide(
     engages=None,
     with_register: bool = True,
 ):
+    from test_usecases import ensure_live_purposes
+    from kognita.evidence import EvidenceWriter
+    if with_register:
+        ensure_live_purposes(session, EvidenceWriter(session.get_bind(), clock=lambda: NOW), [purpose], at=NOW)
     register = load_register(session, as_of=NOW)
     return decide(
         Envelope(
@@ -1074,7 +1078,7 @@ def test_a_high_materiality_pilot_or_live_use_case_with_no_drill_denies(session,
         purposes=("pilot-summary",),
         as_of=NOW,
     )
-    assert without_register.outcome is Outcome.ALLOW
+    assert without_register.outcome is Outcome.DENY
     assert not _checks(without_register, "KILL_SWITCH_DRILL")
 
     schedule_kill_switch_drill(

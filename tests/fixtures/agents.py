@@ -4,6 +4,7 @@ S1 identity tests use the production register directly and cover legacy denial.
 These fixtures give the older policy tests their declared read capabilities.
 """
 from datetime import datetime, timezone
+from functools import lru_cache as _lru_cache
 
 from kognita.evidence import EvidenceWriter
 from kognita.registry import register as _register, approve_deployment
@@ -119,3 +120,23 @@ def _authority_for(envelope, snapshot):
     rows += [(identity + verb, "grant", envelope.principal, dict(capability=verb,
         subject_scope=scope, valid_from=start, valid_until=end)) for verb in verbs]
     return replace(envelope, delegation_id=identity), replace(snapshot, _authority=tuple(rows))
+
+
+def _usecases(purposes):
+    return _cached_usecases(tuple(purposes))
+
+
+@_lru_cache(maxsize=128)
+def _cached_usecases(purposes):
+    """Explicit live register for older pure policy tests, independent of authority."""
+    from kognita.db import make_engine, create_all
+    from kognita.usecases import load_register
+    from sqlmodel import Session
+    from test_usecases import ensure_live_purposes, NOW
+    engine = make_engine()
+    create_all(engine)
+    with Session(engine) as session:
+        ensure_live_purposes(session, EvidenceWriter(engine, clock=lambda: NOW), purposes)
+        register = load_register(session, as_of=NOW)
+    engine.dispose()
+    return register

@@ -1,6 +1,8 @@
 """Replay real 0.5 authority, outside the legacy authority fixture allowlist."""
 from dataclasses import replace
 
+from fixtures.agents import _usecases
+
 import pytest
 from sqlmodel import select
 
@@ -15,7 +17,7 @@ from test_fleet_s6b import _family, _child, _env
 
 
 def _record(session, evidence, env):
-    evaluation = decide(env, load_snapshot(session, as_of=NOW), purposes=['READ'], as_of=NOW)
+    evaluation = decide(env, load_snapshot(session, as_of=NOW), purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
     assert evaluation.outcome is Outcome.ALLOW, evaluation.checks
     return record(session, evaluation, evidence=evidence, now=NOW)
 
@@ -26,7 +28,7 @@ def test_child_delegated_allow_replays_with_same_checks(session, evidence):
     env = _env(env, child)
     original = _record(session, evidence, env)
     for supplied in (env, None):
-        replayed = replay_decision(session, original.request_id, supplied, purposes=['READ'])
+        replayed = replay_decision(session, original.request_id, supplied, purposes=['READ'], usecases=_usecases(['READ']))
         assert replayed.outcome is original.outcome
         assert replayed.checks == original.checks
         assert replayed.envelope_hash == original.envelope_hash
@@ -37,8 +39,11 @@ def test_assurance_two_replays_identically(session, evidence):
     env = replace(env, assurance_level=2)
     original = _record(session, evidence, env)
     restored = replay_decision(session, original.request_id)
+    # Evidence omits workload secrets; authenticate the restored library envelope.
+    restored = replace(restored, envelope=replace(restored.envelope, context={
+        **restored.envelope.context, '_agent_credential': env.context['_agent_credential']}))
     assert restored.envelope == env
-    replayed = replay_decision(session, original.request_id, restored.envelope, purposes=['READ'])
+    replayed = replay_decision(session, original.request_id, restored.envelope, purposes=['READ'], usecases=_usecases(['READ']))
     assert replayed.outcome is original.outcome
     assert replayed.checks == original.checks
     assert replayed.envelope_hash == original.envelope_hash
@@ -58,7 +63,7 @@ def test_missing_authority_evidence_fails_closed(session, evidence, monkeypatch,
     env = _env(env, child)
     original = _record(session, evidence, env)
     with pytest.raises(ReplayMismatch):
-        replay_decision(session, original.request_id, env if supplied else None, purposes=['READ'])
+        replay_decision(session, original.request_id, env if supplied else None, purposes=['READ'], usecases=_usecases(['READ']))
 
 
 def test_tampered_child_authority_evidence_fails_closed(session, evidence):
@@ -86,7 +91,7 @@ def test_child_replay_pins_identity_and_kill_switch(session, evidence):
     approve_deployment(session, 'child', deployment=deployment,
                        evidence=evidence, actor_id='owner')
     set_kill_switch(session, 'child', True, evidence=evidence, actor_id='owner', now=NOW)
-    replayed = replay_decision(session, original.request_id, env, purposes=['READ'])
+    replayed = replay_decision(session, original.request_id, env, purposes=['READ'], usecases=_usecases(['READ']))
     assert replayed.outcome is original.outcome
     assert replayed.checks == original.checks
     assert replayed.envelope_hash == original.envelope_hash

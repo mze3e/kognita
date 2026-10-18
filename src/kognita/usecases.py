@@ -2628,6 +2628,8 @@ def _retire_agents(
             reason=f"use case {usecase_id} retired",
             now=at,
         )
+        from kognita.credentials import revoke
+        revoke(session, name, None, evidence=evidence, actor_id=actor_id, _automatic=True)
 
 
 def _apply_retention(

@@ -927,6 +927,7 @@ class Gateway:
             arguments["prompt_template_version"] = template_version
         from kognita._isolation import _assurance
         envelope = Envelope(
+            context={"_agent_credential": headers.get("agent_credential")},
             principal=principal,
             purpose=purpose,
             tool="model_call",

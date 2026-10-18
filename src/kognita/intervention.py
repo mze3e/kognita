@@ -264,6 +264,25 @@ def revoke_run(
         raise InterventionError(
             f"{name} is not a registered agent (Intervention: revoke)"
         ) from exc
+    from kognita.credentials import revoke
+    from kognita.models import _Authority, _RunScope
+    from kognita.authority import _emit as _authority_emit
+    revoke(session, name, None, evidence=evidence, actor_id=human.strip(), _automatic=True)
+    scope = session.get(_RunScope, run_id, populate_existing=True)
+    bound_id = scope.body.get('delegation_id') if scope else None
+    # The primary binding must be ended even when the agent has a large history.
+    bound = session.get(_Authority, bound_id, populate_existing=True) if bound_id else None
+    authorities = session.exec(select(_Authority).where(
+        _Authority.kind == "delegation", _Authority.ended == False,
+        _Authority.grantee == name, _Authority.body['_run'].as_string() == run_id)
+        .limit(1001).execution_options(populate_existing=True)).all()
+    if bound is not None and bound not in authorities:
+        authorities.append(bound)
+    for authority in authorities:
+        if not authority.ended:
+            authority.ended = True
+            session.add(authority)
+            _authority_emit(session, evidence, human.strip(), "AUTHORITY_REVOKED", authority)
     run.control_state = "revoked"
     session.add(run)
     session.flush()

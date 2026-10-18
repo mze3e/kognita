@@ -641,7 +641,7 @@ class McpProxy:
             assurance_level=_assurance(headers),
             subjects=subjects,
             arguments=dict(envelope_arguments),
-            context=context,
+            context={**context, "_agent_credential": headers.get("agent_credential")},
         )
 
         state = {"proxied": False}

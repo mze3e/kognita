@@ -6,6 +6,7 @@ removes the bytes, appends an event, and leaves the chain verifiable.
 """
 from __future__ import annotations
 
+from fixtures.agents import _usecases
 import json
 from datetime import datetime, timedelta, timezone
 
@@ -83,6 +84,7 @@ def test_checks_pin_the_policy_row_and_replay_accepts_a_successor(harness):
             purposes=dp.PURPOSES,
             engages=dp.DemoPack().engages,
             subjects=dp.DemoPack().load_subjects(envelope, session),
+            usecases=_usecases(dp.PURPOSES),
         )
         # Read while the session is open. A later decision loads only the
         # rows in force at the decision, so a successor that starts later is
@@ -403,6 +405,7 @@ def test_replay_uses_the_kill_switch_state_the_decision_saw(harness):
             purposes=dp.PURPOSES,
             engages=dp.DemoPack().engages,
             subjects=dp.DemoPack().load_subjects(envelope, session),
+            usecases=_usecases(dp.PURPOSES),
         )
         still_engaged = session.exec(
             select(Agent).where(Agent.name == "dossier-agent")
@@ -427,6 +430,7 @@ def test_replay_that_does_not_reproduce_the_recorded_result_is_a_mismatch(harnes
                 purposes=dp.PURPOSES,
                 engages=dp.DemoPack().engages,
                 subjects=dp.DemoPack().load_subjects(other, session),
+                usecases=_usecases(dp.PURPOSES),
             )
 
 

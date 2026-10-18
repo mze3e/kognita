@@ -94,7 +94,7 @@ def load_snapshot(session: Session, *, as_of: datetime | None = None,
     query = select(Agent)
     if _agent_name is not None:
         query = query.where(Agent.name == _agent_name)
-    agents = {a.name: a for a in session.exec(query).all()}
+    agents = {a.name: a for a in session.exec(query.execution_options(populate_existing=True)).all()}
     from kognita.autonomy import _step_down
     for agent in agents.values():
         if _evidence is not None and agent.autonomy_level:
@@ -246,14 +246,9 @@ def decide(
 ) -> Evaluation:
     """Evaluate an envelope against a policy snapshot. Pure — writes nothing.
 
-    ``purposes`` is the list the deployment declared. Missing or empty fails
-    closed. A purpose on that list passes this check; any other purpose fails it.
-    The check cites an accountable owner: the agent's owner when the envelope
-    names an agent, otherwise the principal. No owner fails closed.
-
-    ``usecases`` is a :class:`~kognita.usecases.UseCaseRegister`. When it is
-    given, it replaces the purpose list: the envelope's purpose must be a
-    registered use case, and a passing check cites the accountable owner.
+    ``usecases`` is the deployment's use-case register. Missing or empty
+    registers deny with USE_CASE_REGISTERED. ``purposes`` is retained for
+    diagnostics and cannot authorize a request without that register.
 
     ``engages`` lets a pack say whether a policy is in scope for this request at
     all. Evaluating a rule from a regime the request never touches produces
@@ -287,14 +282,9 @@ def decide(
     checks.extend(_limit_checks(envelope, snapshot, at))
     checks.extend(_authority_checks(envelope, snapshot, at))
     checks.extend(registry_checks(envelope, snapshot, at=at, usecases=usecases))
-    if usecases is not None:
-        checks.extend(usecase_checks(envelope, usecases, at))
-    else:
-        checks.append(
-            purpose_check(
-                envelope, purposes, owner=_accountable_owner(envelope, snapshot)
-            )
-        )
+    checks.extend(usecase_checks(envelope, usecases or UseCaseRegister(), at))
+    if usecases is None:
+        checks.append(purpose_check(envelope, purposes, owner=_accountable_owner(envelope, snapshot)))
     checks.extend(
         revocation_checks(
             envelope,

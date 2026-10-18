@@ -536,7 +536,7 @@ def _checkpoint(
         {
             "kind": kind,
             "envelope": envelope.to_dict(),
-            "context": dict(envelope.context),
+            "context": {k: v for k, v in envelope.context.items() if k != "_agent_credential"},
             "request_id": evaluation.request_id,
             "outcome": evaluation.outcome.value,
             "checks": [c.to_dict() for c in evaluation.checks],
@@ -863,6 +863,10 @@ def run_governed(
 ) -> ToolRun:
     """Authorise, then execute. The only supported path to a governed tool.
 
+    Agents with issued workload secrets provide proof in
+    ``envelope.context['_agent_credential']``. It is verified against the live
+    store and excluded from persisted checkpoints.
+
     ``cost_usd`` and ``tokens`` are recorded against ``run`` when the call site
     already knows them. Exceeding a budget is a DENY that cites the budget, and
     the tool body does not run.
@@ -907,6 +911,15 @@ def run_governed(
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
+    if envelope.agent_name:
+        from kognita.models import _WorkloadCredential
+        from kognita.credentials import verify
+        issued = session.exec(select(_WorkloadCredential.digest).where(
+            _WorkloadCredential.agent_name == envelope.agent_name).limit(1)).first()
+        if issued is not None and not verify(session, envelope.agent_name,
+                                             evaluation.envelope.context.get('_agent_credential')):
+            extra_checks = tuple(extra_checks) + (Check(check='S2-CREDENTIAL',
+                citation='S2-CREDENTIAL', regime='INTERNAL', result=CheckResult.FAIL),)
     if envelope.agent_name:
         agent = snap.agents.get(envelope.agent_name)
         permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
