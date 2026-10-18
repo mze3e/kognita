@@ -233,12 +233,45 @@ def _argument_values(value, dimension, *, _depth=0):
     return values
 
 
+def _mapped_subjects(arguments, paths):
+    """Resolve required dotted object paths from the approved tool manifest.
+
+    Paths for one dimension must agree. Structured or empty ids fail closed.
+    """
+    if not isinstance(paths, dict):
+        return None
+    resolved = {}
+    for dimension, names in paths.items():
+        if not isinstance(dimension, str) or not dimension or not isinstance(names, list) or not names:
+            return None
+        values = set()
+        for name in names:
+            if not isinstance(name, str) or not name or len(name.split(".")) > _MAX_ARGUMENT_DEPTH:
+                return None
+            value = arguments
+            for part in name.split("."):
+                if not part or not isinstance(value, dict) or part not in value:
+                    return None
+                value = value[part]
+            if type(value) not in (str, int) or not str(value).strip():
+                return None
+            values.add(str(value))
+        if len(values) != 1:
+            return None
+        resolved[dimension] = values
+    return resolved
+
+
 def _checks(envelope, snapshot, at):
-    if not envelope.agent_name:
-        return []
     def check(rule, ok, human=False):
         return _Check(check=rule, regime="INTERNAL", citation=rule,
             result=(_Result.REQUIRES_HUMAN if ok and human else _Result.PASS if ok else _Result.FAIL))
+    if (envelope.subject_type and envelope.subject_id is not None
+            and envelope.subject_type in envelope.subjects
+            and envelope.subjects[envelope.subject_type] != envelope.subject_id):
+        return [check("S3-SUBJECT-CONFLICT", False)]
+    if not envelope.agent_name:
+        return []
     rows = snapshot._authority
     selected = next((r for r in rows if r[0] == envelope.delegation_id and r[1] == "delegation"), None)
     if selected is None:
@@ -253,6 +286,10 @@ def _checks(envelope, snapshot, at):
     permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
     verb = permission.get("verb") if isinstance(permission, dict) else None
     subjects = {k: [v] for k, v in envelope.all_subjects().items()}
+    mapped = _mapped_subjects(envelope.arguments, permission.get("_subject_paths", {})) if isinstance(permission, dict) else None
+    mapping_valid = mapped is not None and _covers(d.allowed_data, mapped)
+    if mapped is not None:
+        mapping_valid = mapping_valid and all(k not in subjects or set(subjects[k]) == v for k, v in mapped.items())
     # A tool argument naming a delegation's own dimension (a client it is
     # scoped to, or any other `allowed_data` dimension) overrides the
     # delegation's implied value only in appearance: it must be covered by
@@ -260,7 +297,7 @@ def _checks(envelope, snapshot, at):
     # else's data and is denied rather than silently rescoped. `client` is
     # always one such dimension (`delegate` requires it), so this alone
     # enforces the exact-match the delegation's own client needs.
-    valid = (_lineage_valid(selected[0], rows, at) and _live(selected[3], at) and d.agent == envelope.agent_name
+    valid = (mapping_valid and _lineage_valid(selected[0], rows, at) and _live(selected[3], at) and d.agent == envelope.agent_name
         and d.human == envelope.principal and d.purpose == envelope.purpose
         and d.jurisdiction == envelope.actor_location and verb in d.allowed_actions
         and _covers(d.allowed_data, subjects)

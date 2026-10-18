@@ -69,7 +69,7 @@ class Envelope:
         """Every referenced subject, including the primary one."""
         merged = dict(self.subjects)
         if self.subject_type and self.subject_id is not None:
-            merged.setdefault(self.subject_type, self.subject_id)
+            merged[self.subject_type] = self.subject_id
         return merged
 
 
