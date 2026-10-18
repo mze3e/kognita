@@ -96,6 +96,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     for label, module in (
         ("openai", "openai"),
         ("vec", "sqlite_vec"),
+        ("docling", "docling"),
     ):
         print(f"  {label:<22} {_probe(module)}")
     print()

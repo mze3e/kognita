@@ -50,6 +50,13 @@ local-embeddings = [
     "uvicorn>=0.30.0",
     "sentence-transformers>=3.0.0",
 ]
+# Pinned exactly. Named format extras only: not feat-chunking (transformers
+# and tree-sitter grammars), not format-pdf, and not the docling metapackage
+# (torch). PDF headings come from a layout model that pulls torch, so the
+# extra does not ship a PDF parser it cannot use.
+docling = [
+    "docling-slim[format-docx,format-html,format-markdown]==2.140.0",
+]
 all = [
     "kognita[openai,vec,local-embeddings]",
 ]
@@ -132,6 +139,7 @@ source_modules = [
 ]
 forbidden_modules = [
     "kognita.adapters",
+    "kognita.ingest",
     "kognita.policy",
     "kognita.testing",
     "kognita.cli",
@@ -140,6 +148,10 @@ forbidden_modules = [
     "openai",
     "anthropic",
     "streamlit",
+    "docling",
+    "docling_core",
+    "docling_parse",
+    "docling_ibm_models",
 ]
 
 [[tool.importlinter.contracts]]
@@ -176,6 +188,22 @@ forbidden_modules = [
     "streamlit",
     "yaml",
     "ruamel",
+]
+
+[[tool.importlinter.contracts]]
+name = "ingestion does not import docling"
+type = "forbidden"
+source_modules = [
+    "kognita.ingest.chunker",
+    "kognita.ingest.locator",
+    "kognita.ingest.sections",
+    "kognita.ingest.tree",
+]
+forbidden_modules = [
+    "docling",
+    "docling_core",
+    "docling_parse",
+    "docling_ibm_models",
 ]
 
 [[tool.importlinter.contracts]]

@@ -22,9 +22,14 @@ an import tells you what a call will actually load:
 ``kognita.adapters``
     Provider-backed embedders and clients — ``pip install kognita[openai]``.
 
+``kognita.ingest``
+    Structured document ingestion — ``pip install kognita[docling]``.
+    The decision engine does not import it, and neither does ``import kognita``.
+
 ``kognita.testing``
     The conformance kit a domain pack runs against itself.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -118,24 +123,26 @@ __version__ = "0.3.0"
 
 #: Names from the Graphiti + Kuzu graph engine, which 0.1.x exported here and
 #: which left the package entirely after 0.3 (ADR 0008).
-_REMOVED: frozenset[str] = frozenset({
-    "Kognita",
-    "KognitaConfig",
-    "KognitaKuzuDriver",
-    "KuzuSession",
-    "make_graphiti",
-    "execute_cypher",
-    "chunk_text",
-    "GraphSnapshot",
-    "save_snapshot",
-    "content_hash",
-    "Node",
-    "Edge",
-    "SearchResult",
-    "EpisodeResult",
-    "GraphEngine",
-    "GraphConfig",
-})
+_REMOVED: frozenset[str] = frozenset(
+    {
+        "Kognita",
+        "KognitaConfig",
+        "KognitaKuzuDriver",
+        "KuzuSession",
+        "make_graphiti",
+        "execute_cypher",
+        "chunk_text",
+        "GraphSnapshot",
+        "save_snapshot",
+        "content_hash",
+        "Node",
+        "Edge",
+        "SearchResult",
+        "EpisodeResult",
+        "GraphEngine",
+        "GraphConfig",
+    }
+)
 
 
 def __getattr__(name: str) -> Any:

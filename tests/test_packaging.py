@@ -8,6 +8,7 @@ reviewer discipline.
 
 from __future__ import annotations
 
+import ast
 import subprocess
 import sys
 import tomllib
@@ -74,7 +75,9 @@ def test_importing_kognita_loads_no_optional_dependency():
     probe = (
         "import sys; import kognita; "
         "leaked = sorted(m for m in sys.modules "
-        "if m.split('.')[0] in {'graphiti_core', 'kuzu', 'openai', 'anthropic'}); "
+        "if m.split('.')[0] in {'graphiti_core', 'kuzu', 'openai', 'anthropic', "
+        "'docling', 'docling_core', 'docling_parse', 'docling_ibm_models'} "
+        "or m == 'kognita.ingest' or m.startswith('kognita.ingest.')); "
         "print(','.join(leaked))"
     )
     result = subprocess.run(
@@ -186,3 +189,103 @@ def test_removed_graph_names_explain_the_removal(removed):
     message = str(excinfo.value)
     assert "ADR 0008" in message
     assert "kognita[graph]==0.3.0" in message
+
+
+def _contracts() -> list[dict]:
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
+    return config["tool"]["importlinter"]["contracts"]
+
+
+def test_the_engine_contract_forbids_docling_and_ingestion():
+    """Core modules stay installable without the docling extra."""
+    engine = next(
+        c
+        for c in _contracts()
+        if c["name"] == "the decision engine reaches nothing optional"
+    )
+    forbidden = set(engine["forbidden_modules"])
+    for name in (
+        "kognita.ingest",
+        "docling",
+        "docling_core",
+        "docling_parse",
+        "docling_ibm_models",
+    ):
+        assert name in forbidden
+
+
+def test_ingest_modules_are_in_the_docling_contract():
+    """A new ingest module is forbidden from importing Docling unless it is the backend."""
+    guard = next(
+        c for c in _contracts() if c["name"] == "ingestion does not import docling"
+    )
+    listed = {name.removeprefix("kognita.ingest.") for name in guard["source_modules"]}
+    on_disk = {
+        path.stem
+        for path in (PACKAGE_ROOT / "ingest").glob("*.py")
+        if path.stem not in {"__init__", "docling_backend"}
+    }
+    assert listed == on_disk
+    forbidden = set(guard["forbidden_modules"])
+    assert {
+        "docling",
+        "docling_core",
+        "docling_parse",
+        "docling_ibm_models",
+    } <= forbidden
+
+
+def test_docling_extra_pins_format_extras_only():
+    """The extra is an exact docling-slim pin, not the torch metapackage."""
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
+    extra = config["project"]["optional-dependencies"]["docling"]
+    assert extra == ["docling-slim[format-docx,format-html,format-markdown]==2.140.0"]
+    requirement = extra[0]
+    assert "feat-chunking" not in requirement
+    assert "format-pdf" not in requirement
+    assert not requirement.startswith("docling==")
+    assert "torch" not in requirement
+
+
+def _imported_modules(path: Path) -> list[tuple[int, str]]:
+    tree = ast.parse(path.read_text())
+    found: list[tuple[int, str]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            found.extend((node.col_offset, alias.name) for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            found.append((node.col_offset, node.module or ""))
+    return found
+
+
+def _is_docling_module(module: str) -> bool:
+    return module == "docling" or module.startswith(
+        ("docling.", "docling_core", "docling_parse", "docling_ibm_models")
+    )
+
+
+def test_only_the_guarded_backend_imports_docling():
+    """Docling imports are indented inside the backend. Nothing else imports it."""
+    for path in (PACKAGE_ROOT / "ingest").glob("*.py"):
+        for offset, module in _imported_modules(path):
+            if path.name == "docling_backend.py" and _is_docling_module(module):
+                assert offset > 0, f"{path.name} imports {module} at module level"
+                continue
+            assert not _is_docling_module(module), f"{path.name} imports {module}"
+            if module.endswith("docling_backend"):
+                assert offset > 0, f"{path.name} imports the backend at module level"
+
+
+def test_importing_ingest_does_not_load_docling():
+    """``import kognita.ingest`` must succeed with Docling absent from sys.modules."""
+    probe = (
+        "import sys; import kognita.ingest; "
+        "leaked = sorted(m for m in sys.modules "
+        "if m == 'docling' or m.startswith('docling.') or m.startswith('docling_')); "
+        "print(','.join(leaked))"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", probe], capture_output=True, text=True, check=True
+    )
+    leaked = [name for name in result.stdout.strip().split(",") if name]
+    assert not leaked, f"import kognita.ingest pulled in Docling: {leaked}"

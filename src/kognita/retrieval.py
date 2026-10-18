@@ -10,8 +10,10 @@ that they exist.
 Every search emits a ``RETRIEVAL`` evidence event recording what was asked, how
 large the entitled candidate set was, and which items came back.
 """
+
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Sequence
@@ -40,6 +42,13 @@ MIN_SCORE = 0.08
 TOP_K = 5
 
 
+def _span(start: int | None, end: int | None) -> list[int] | None:
+    """A closed-open range, or nothing when either end is missing."""
+    if start is None or end is None:
+        return None
+    return [start, end]
+
+
 def item_content_hash(item: KnowledgeItem) -> str:
     """Hash of the item text a retrieval returned.
 
@@ -61,6 +70,14 @@ class Retrieved:
     source_label: str
     published_at: datetime | None
     score: float
+    document_ref: str = ""
+    page: int | None = None
+    section_path: tuple[str, ...] = ()
+    char_start: int | None = None
+    char_end: int | None = None
+    block_char_start: int | None = None
+    block_char_end: int | None = None
+    classification_rule: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -69,7 +86,13 @@ class Retrieved:
             "snippet": self.snippet,
             "kind": self.kind,
             "classification": Classification(self.classification).value,
+            "classification_rule": self.classification_rule,
             "source_label": self.source_label,
+            "document": self.document_ref,
+            "page": self.page,
+            "section_path": list(self.section_path),
+            "charspan": _span(self.char_start, self.char_end),
+            "block_charspan": _span(self.block_char_start, self.block_char_end),
             "score": self.score,
         }
 
@@ -89,9 +112,27 @@ def entitled_items(
     return [
         item
         for item in items
-        if item.zones and zone in item.zones
+        if item.zones
+        and zone in item.zones
         and at_or_below(item.classification, ceiling)
     ]
+
+
+def passage_snippet(body: str, query: str) -> str:
+    """The paragraph the query matched, not a fixed prefix of the body.
+
+    Paragraphs are blank-line separated. The one with the greatest share of
+    the query's tokens wins; a tie keeps the earlier paragraph. A body with
+    no blank line is one passage, returned whole.
+    """
+    paragraphs = [part.strip() for part in re.split(r"\n\s*\n", body) if part.strip()]
+    if not paragraphs:
+        return body.strip()
+    best = min(
+        range(len(paragraphs)),
+        key=lambda index: (-lexical_overlap(query, paragraphs[index]), index),
+    )
+    return paragraphs[best]
 
 
 def ceiling_for(is_admin: bool) -> Classification:
@@ -148,12 +189,20 @@ def retrieve(
             Retrieved(
                 id=item.id or 0,
                 title=item.title,
-                snippet=item.body[:280],
+                snippet=passage_snippet(item.body, query),
                 kind=item.kind,
                 classification=Classification(item.classification),
                 source_label=item.source_label,
                 published_at=as_utc(item.published_at),
                 score=round(score, 4),
+                document_ref=item.document_ref,
+                page=item.page,
+                section_path=tuple(item.section_path or ()),
+                char_start=item.char_start,
+                char_end=item.char_end,
+                block_char_start=item.block_char_start,
+                block_char_end=item.block_char_end,
+                classification_rule=item.classification_rule,
             )
             for item, score in ranked[:top_k]
         ]
@@ -176,6 +225,15 @@ def retrieve(
                     "id": item.id or 0,
                     "content_hash": content_hash,
                     "embedding_model": item.embedding_model,
+                    "classification": Classification(item.classification).value,
+                    "classification_rule": item.classification_rule,
+                    "source_label": item.source_label,
+                    "document": item.document_ref,
+                    "page": item.page,
+                    "section_path": list(item.section_path or []),
+                    "charspan": _span(item.char_start, item.char_end),
+                    "block_charspan": _span(item.block_char_start, item.block_char_end),
+                    "bbox": item.bbox,
                 }
             )
         evidence.emit(
@@ -211,6 +269,15 @@ def index_item(
     source_label: str = "",
     published_at: datetime | None = None,
     index: Any = None,
+    document_ref: str = "",
+    page: int | None = None,
+    section_path: Sequence[str] = (),
+    char_start: int | None = None,
+    char_end: int | None = None,
+    block_char_start: int | None = None,
+    block_char_end: int | None = None,
+    bbox: dict[str, Any] | None = None,
+    classification_rule: str = "",
 ) -> KnowledgeItem:
     """Embed and store one item with the attributes entitlement is decided on.
 
@@ -225,8 +292,17 @@ def index_item(
         body=body,
         kind=kind,
         classification=classification,
+        classification_rule=classification_rule,
         zones=list(zones),
         source_label=source_label,
+        document_ref=document_ref,
+        page=page,
+        section_path=[str(part) for part in section_path],
+        char_start=char_start,
+        char_end=char_end,
+        block_char_start=block_char_start,
+        block_char_end=block_char_end,
+        bbox=bbox,
         embedding=to_bytes(vector),
         embedding_dim=embedder.dimension,
         embedding_model=embedder.model,
@@ -279,6 +355,7 @@ __all__ = [
     "entitled_items",
     "ceiling_for",
     "item_content_hash",
+    "passage_snippet",
     "MIN_SCORE",
     "TOP_K",
 ]

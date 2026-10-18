@@ -513,7 +513,7 @@ Do not wait for client harm.
 
 ### Definition of Done
 
-- [ ] Docling-backed ingestion with per-section classification and passage-level citations
+- [x] Docling-backed ingestion with per-section classification and passage-level citations
 - [ ] Use-case register enforced: unregistered use cases are denied, and every decision cites an accountable owner
 - [ ] Every approved model has a model card linked from each call that used it
 - [ ] Risk-based review queue with coverage reporting per use case and risk tier

@@ -9,6 +9,7 @@ Timestamps are timezone-aware UTC throughout. Effective-dating comparisons on
 naive datetimes fail silently and in the wrong direction, which for a policy
 engine means answering "was this allowed?" incorrectly.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -128,10 +129,14 @@ class Policy(SQLModel, table=True):
     rule_type: str = Field(index=True)
     #: Optional narrowing to one subject kind, e.g. a product type. None = all.
     applies_to: str | None = Field(default=None, index=True)
-    rule: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    rule: dict[str, Any] = Field(
+        default_factory=dict, sa_column=Column(JSON, nullable=False)
+    )
     citation: str = ""
     effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
-    effective_to: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    effective_to: datetime | None = Field(
+        default=None, sa_column=_nullable_utc_column()
+    )
     #: Hash of the rule as stored. The writer stamps it. Replay does not trust it:
     #: a decision pins its own copy of this hash, and an in-place edit is refused
     #: when the recomputed hash no longer matches the stamp.
@@ -228,7 +233,9 @@ class Approval(SQLModel, table=True):
     #: When first signature was granted (status=APPROVED)
     approved_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
     #: When second signature was granted (confirmation_status=APPROVED)
-    confirmed_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    confirmed_at: datetime | None = Field(
+        default=None, sa_column=_nullable_utc_column()
+    )
     created_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
     expires_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
     decided_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
@@ -238,9 +245,7 @@ class Approval(SQLModel, table=True):
     def is_live(self, at: datetime) -> bool:
         """Pending and not yet expired at ``at``."""
         expiry = as_utc(self.expires_at)
-        return self.status == ApprovalStatus.PENDING and (
-            expiry is None or expiry > at
-        )
+        return self.status == ApprovalStatus.PENDING and (expiry is None or expiry > at)
 
 
 class Proposal(SQLModel, table=True):
@@ -309,9 +314,13 @@ class EvidenceEvent(SQLModel, table=True):
     #: the hashed header: the payload already carries them, and the hash covers
     #: that payload. SQLite rejects a value with no target row. Content hashes
     #: are not columns here; erasure removes the bytes and the chain keeps the hash.
-    approval_id: int | None = Field(default=None, index=True, foreign_key="approvals.id")
+    approval_id: int | None = Field(
+        default=None, index=True, foreign_key="approvals.id"
+    )
     policy_id: int | None = Field(default=None, index=True, foreign_key="policies.id")
-    successor_id: int | None = Field(default=None, index=True, foreign_key="policies.id")
+    successor_id: int | None = Field(
+        default=None, index=True, foreign_key="policies.id"
+    )
     run_id: str | None = Field(default=None, index=True, foreign_key="runs.id")
     continuation_hash: str | None = Field(
         default=None, index=True, foreign_key="continuations.content_hash"
@@ -324,6 +333,11 @@ class KnowledgeItem(SQLModel, table=True):
     ``classification`` and ``zones`` are not metadata for display — retrieval
     filters on them *before* scoring, so an item outside the caller's entitlement
     is never compared, never ranked, and cannot leak through a relevance score.
+
+    A section ingested from a document also carries a locator: the document
+    reference, page, section path, a document-global character range, the
+    parser's block span and bounding box. ``source_label`` remains the
+    readable citation and quotes the document-global range.
     """
 
     __tablename__ = "knowledge_items"
@@ -333,9 +347,32 @@ class KnowledgeItem(SQLModel, table=True):
     body: str = ""
     kind: str = Field(default="DOCUMENT", index=True)
     classification: Classification = Field(default=Classification.C1, index=True)
+    #: The rule that set ``classification`` when ingestion decided it.
+    #: Empty when a caller set the classification directly.
+    classification_rule: str = ""
     #: Zones permitted to hold and serve this item.
-    zones: list[str] = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+    zones: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
     source_label: str = ""
+    #: Structural locator. A missing span stays empty; it is not guessed.
+    #: ``char_start`` and ``char_end`` are a document-global range into the
+    #: source text (the file for markdown and HTML, the extracted paragraph
+    #: text for DOCX). ``block_char_start`` and ``block_char_end`` are the
+    #: parser's span for the opening block. ``bbox`` uses the parser's keys
+    #: ``l``, ``t``, ``r`` and ``b``.
+    document_ref: str = ""
+    page: int | None = Field(default=None)
+    section_path: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    char_start: int | None = Field(default=None)
+    char_end: int | None = Field(default=None)
+    block_char_start: int | None = Field(default=None)
+    block_char_end: int | None = Field(default=None)
+    bbox: dict[str, Any] | None = Field(
+        default=None, sa_column=Column(JSON, nullable=True)
+    )
     #: L2-normalised embedding, stored as float32 bytes.
     embedding: bytes | None = Field(default=None)
     embedding_dim: int = 0
@@ -587,7 +624,9 @@ def _stamp_policy_content_hash(_mapper: Any, _connection: Any, target: Policy) -
 
 
 @event.listens_for(Policy, "before_update")
-def _reject_in_place_policy_edit(_mapper: Any, _connection: Any, target: Policy) -> None:
+def _reject_in_place_policy_edit(
+    _mapper: Any, _connection: Any, target: Policy
+) -> None:
     """Refuse to rewrite a policy that is or was in force.
 
     Setting ``effective_to`` once, from empty, closes the window. A second
