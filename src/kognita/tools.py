@@ -802,10 +802,14 @@ def _release_tool(
 ) -> Any:
     from kognita._limits import _released
     _released(session, evaluation, evidence, _at or evaluation.as_of)
-    data = spec.fn(envelope, evaluation, session)
-    if run is not None and spec.reversible:
-        from kognita._actions import _register_compensation
-        _register_compensation(session, run.id, spec, envelope, evaluation, evidence)
+    from kognita._actions import _begin_action, _finish_action
+    action_id = (_begin_action(session, run.id, spec, envelope, evaluation, evidence)
+                 if run is not None else None)
+    try:
+        data = spec.fn(envelope, evaluation, session)
+    finally:
+        if action_id is not None:
+            _finish_action(session, action_id, evidence)
     from kognita._isolation import _ingest
     _ingest(session, run, evidence, external=spec.external,
             client_data=spec.client_data or spec.classification in (Classification.C2, Classification.C3)
