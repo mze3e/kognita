@@ -104,12 +104,36 @@ class EventType(str, Enum):
     INTERACTION = "INTERACTION"
     ORIGINATION = "ORIGINATION"
     FINAL_DECISION = "FINAL_DECISION"
+    #: A send to a client, or a public-lane send. The roadmap names the event.
+    CLIENT_COMMUNICATION = "CLIENT_COMMUNICATION"
+    #: Pause, override, restrict, recover, observe, and revoke on a live run.
+    INTERVENTION = "INTERVENTION"
     #: A client complaint, correction, or other outcome linked to the interaction.
     OUTCOME = "OUTCOME"
     #: An unsafe draft, a verifier block, or other near miss that is not already a decision.
     NEAR_MISS = "NEAR_MISS"
     #: Risk-based review: a screen, a place on the review queue, or a review outcome.
     REVIEW = "REVIEW"
+
+
+#: Communication levels, least consequential first. The roadmap names each one.
+#: The order is the control floor: a higher level keeps every control below it.
+COMMUNICATION_LEVELS: tuple[str, ...] = (
+    "general information",
+    "house view",
+    "contextualised insight",
+    "investment discussion",
+    "product recommendation",
+    "transaction",
+)
+
+#: When a client must be told that AI was involved. The roadmap names each one.
+DISCLOSURE_TRIGGERS: tuple[str, ...] = (
+    "AI generated content",
+    "assisted analysis",
+    "powers a chatbot",
+    "materially contributed to a decision",
+)
 
 
 class ApprovalStatus(str, Enum):

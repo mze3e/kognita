@@ -2,7 +2,7 @@
 
 Roadmap 0.3 item 8. These fixtures do not record origination or RM review,
 so those questions stay ``not recorded``. Client communication stays
-``not recorded`` until that slice exists.
+``not recorded`` until a client send is on the interaction.
 A tampered policy, retrieved item, or retained prompt is a finding.
 Erasure keeps the hash and is not a mismatch.
 """

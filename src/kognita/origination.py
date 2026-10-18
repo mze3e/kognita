@@ -590,10 +590,14 @@ def _recent_recommendations(
     return count
 
 
+authorised_humans = _authorised_humans
+
+
 __all__ = [
     "DO_NOT_CONTACT_REASONS",
     "OriginationError",
     "TRIGGERS",
+    "authorised_humans",
     "contact_refusal",
     "do_not_contact_reasons",
     "originate",

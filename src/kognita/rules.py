@@ -308,6 +308,352 @@ def contact_frequency(policy: Any, context: RuleContext) -> list[Check]:
     ]
 
 
+def _texts(value: Any) -> list[str] | None:
+    """A list of strings, or None when the value is not one."""
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        return None
+    return value
+
+
+def _content_check(
+    policy: Any, name: str, *, ok: bool, detail: str
+) -> Check:
+    citation = policy.citation or "Governed client communication: content policy"
+    if detail:
+        citation = f"{citation} — {detail}"
+    return Check(
+        check=name,
+        regime=policy.regime,
+        result=CheckResult.PASS if ok else CheckResult.FAIL,
+        citation=citation,
+        policy_id=policy.id,
+        policy_hash=policy.content_hash or None,
+    )
+
+
+@rule("CONTENT_POLICY")
+def content_policy(policy: Any, context: RuleContext) -> list[Check]:
+    """Check disclosures, claims, tone, risk language, attribution, and jurisdiction.
+
+    Rule payload, every field optional, at least one substantive constraint::
+
+        {"levels": ["house view"],
+         "lanes": ["client"],
+         "required_disclosures": ["Past performance is not a guide"],
+         "prohibited_claims": ["guaranteed"],
+         "approved_tones": ["neutral"],
+         "permitted_jurisdictions": ["SG"],
+         "permitted_channels": ["secure message"],
+         "require_risk_language": true,
+         "require_research_attribution": true}
+
+    A level or lane list that does not include this send means the rule is not
+    in force for it. An empty allowlist fails closed. A missing content body
+    fails closed. The attributes are ``communication_level``, ``lane``,
+    ``content``, ``tone``, ``channel``, ``recipient_jurisdiction``,
+    ``risk_language``, and ``research_attribution``.
+    """
+    rule = policy.rule if isinstance(policy.rule, dict) else {}
+    substantive = (
+        "required_disclosures",
+        "prohibited_claims",
+        "approved_tones",
+        "permitted_jurisdictions",
+        "permitted_channels",
+        "require_risk_language",
+        "require_research_attribution",
+    )
+    if not any(key in rule for key in substantive):
+        return [
+            _content_check(
+                policy,
+                "CONTENT_POLICY",
+                ok=False,
+                detail="content policy could not be evaluated",
+            )
+        ]
+    levels = rule.get("levels")
+    if levels:
+        parsed = _texts(levels)
+        current = str(context.attributes.get("communication_level") or "")
+        if parsed is None or current not in parsed:
+            return []
+    lanes = rule.get("lanes")
+    if lanes:
+        parsed = _texts(lanes)
+        lane = str(context.attributes.get("lane") or "client")
+        if parsed is None or lane not in parsed:
+            return []
+    content = context.attributes.get("content")
+    if not isinstance(content, str):
+        return [
+            _content_check(
+                policy,
+                "CONTENT_POLICY",
+                ok=False,
+                detail="content policy could not be evaluated",
+            )
+        ]
+    checks: list[Check] = []
+    if "required_disclosures" in rule:
+        required = _texts(rule.get("required_disclosures"))
+        if required is None:
+            checks.append(
+                _content_check(
+                    policy,
+                    "CONTENT_POLICY: disclosures",
+                    ok=False,
+                    detail="content policy could not be evaluated",
+                )
+            )
+        else:
+            missing = [item for item in required if item not in content]
+            checks.append(
+                _content_check(
+                    policy,
+                    "CONTENT_POLICY: disclosures",
+                    ok=not missing,
+                    detail=(
+                        "disclosures present"
+                        if not missing
+                        else "missing disclosure: " + ", ".join(missing)
+                    ),
+                )
+            )
+    if "prohibited_claims" in rule:
+        banned = _texts(rule.get("prohibited_claims"))
+        folded = content.casefold()
+        if banned is None:
+            checks.append(
+                _content_check(
+                    policy,
+                    "CONTENT_POLICY: prohibited claims",
+                    ok=False,
+                    detail="content policy could not be evaluated",
+                )
+            )
+        else:
+            hits = [item for item in banned if item.casefold() in folded]
+            checks.append(
+                _content_check(
+                    policy,
+                    "CONTENT_POLICY: prohibited claims",
+                    ok=not hits,
+                    detail=(
+                        "no prohibited claim"
+                        if not hits
+                        else "prohibited claim: " + ", ".join(hits)
+                    ),
+                )
+            )
+    if "approved_tones" in rule:
+        tones = _texts(rule.get("approved_tones"))
+        tone = str(context.attributes.get("tone") or "")
+        ok = bool(tones) and tone in tones
+        checks.append(
+            _content_check(
+                policy,
+                "CONTENT_POLICY: tone",
+                ok=ok,
+                detail="approved tone" if ok else "tone is not an approved tone",
+            )
+        )
+    if "permitted_channels" in rule:
+        channels = _texts(rule.get("permitted_channels"))
+        channel = str(context.attributes.get("channel") or "")
+        ok = bool(channels) and channel in channels
+        checks.append(
+            _content_check(
+                policy,
+                "CONTENT_POLICY: channel",
+                ok=ok,
+                detail=(
+                    "channel permitted"
+                    if ok
+                    else "channel is not permitted by this rule"
+                ),
+            )
+        )
+    if "permitted_jurisdictions" in rule:
+        places = _texts(rule.get("permitted_jurisdictions"))
+        jurisdiction = str(context.attributes.get("recipient_jurisdiction") or "")
+        ok = bool(places) and jurisdiction in places
+        checks.append(
+            _content_check(
+                policy,
+                "CONTENT_POLICY: jurisdiction",
+                ok=ok,
+                detail=(
+                    f"recipient jurisdiction {jurisdiction}"
+                    if ok
+                    else "cross-border rule was not satisfied"
+                ),
+            )
+        )
+    if "require_risk_language" in rule:
+        required = rule.get("require_risk_language")
+        if not isinstance(required, bool):
+            checks.append(
+                _content_check(
+                    policy,
+                    "CONTENT_POLICY: risk language",
+                    ok=False,
+                    detail="content policy could not be evaluated",
+                )
+            )
+        else:
+            present = context.attributes.get("risk_language") is True
+            ok = present or not required
+            checks.append(
+                _content_check(
+                    policy,
+                    "CONTENT_POLICY: risk language",
+                    ok=ok,
+                    detail=(
+                        "investment-risk language present"
+                        if ok
+                        else "investment-risk language is missing"
+                    ),
+                )
+            )
+    if "require_research_attribution" in rule:
+        required = rule.get("require_research_attribution")
+        attribution = str(context.attributes.get("research_attribution") or "").strip()
+        if not isinstance(required, bool):
+            checks.append(
+                _content_check(
+                    policy,
+                    "CONTENT_POLICY: research attribution",
+                    ok=False,
+                    detail="content policy could not be evaluated",
+                )
+            )
+        else:
+            ok = bool(attribution) or not required
+            checks.append(
+                _content_check(
+                    policy,
+                    "CONTENT_POLICY: research attribution",
+                    ok=ok,
+                    detail=(
+                        "research attribution present"
+                        if ok
+                        else "research attribution is missing"
+                    ),
+                )
+            )
+    return checks
+
+
+@rule("AI_DISCLOSURE")
+def ai_disclosure(policy: Any, context: RuleContext) -> list[Check]:
+    """Decide when the client must be told that AI was involved.
+
+    Rule payload::
+
+        {"triggers": ["AI generated content"],
+         "jurisdictions": ["SG"],
+         "use_cases": ["portfolio-review"],
+         "text": "This message used AI."}
+
+    ``triggers`` and ``text`` are required. An empty jurisdiction or use-case
+    list means every one. A trigger that is not active on this send means the
+    rule is not in force. The active triggers are the attribute
+    ``disclosure_triggers``.
+    """
+    rule = policy.rule if isinstance(policy.rule, dict) else {}
+    citation = policy.citation or "Governed client communication: AI disclosure"
+    triggers = _texts(rule.get("triggers"))
+    text = rule.get("text")
+    if not triggers or not isinstance(text, str) or not text.strip():
+        return [
+            Check(
+                check="AI_DISCLOSURE",
+                regime=policy.regime,
+                result=CheckResult.FAIL,
+                citation=f"{citation} — disclosure rule could not be evaluated",
+                policy_id=policy.id,
+                policy_hash=policy.content_hash or None,
+            )
+        ]
+    active = context.attributes.get("disclosure_triggers") or []
+    if not isinstance(active, (list, tuple, set, frozenset)):
+        active = []
+    if not set(triggers).intersection(str(item) for item in active):
+        return []
+    jurisdictions = rule.get("jurisdictions")
+    if jurisdictions:
+        places = _texts(jurisdictions)
+        jurisdiction = str(context.attributes.get("recipient_jurisdiction") or "")
+        if not places or not jurisdiction:
+            return [
+                Check(
+                    check="AI_DISCLOSURE",
+                    regime=policy.regime,
+                    result=CheckResult.FAIL,
+                    citation=f"{citation} — disclosure rule could not be evaluated",
+                    policy_id=policy.id,
+                    policy_hash=policy.content_hash or None,
+                )
+            ]
+        if jurisdiction not in places:
+            return [
+                Check(
+                    check="AI_DISCLOSURE",
+                    regime=policy.regime,
+                    result=CheckResult.PASS,
+                    citation=(
+                        f"{citation} — disclosure is not required in {jurisdiction}"
+                    ),
+                    policy_id=policy.id,
+                    policy_hash=policy.content_hash or None,
+                )
+            ]
+    use_cases = rule.get("use_cases")
+    if use_cases:
+        named = _texts(use_cases)
+        use_case = str(context.attributes.get("use_case") or "")
+        if named is None:
+            return [
+                Check(
+                    check="AI_DISCLOSURE",
+                    regime=policy.regime,
+                    result=CheckResult.FAIL,
+                    citation=f"{citation} — disclosure rule could not be evaluated",
+                    policy_id=policy.id,
+                    policy_hash=policy.content_hash or None,
+                )
+            ]
+        if use_case not in named:
+            return [
+                Check(
+                    check="AI_DISCLOSURE",
+                    regime=policy.regime,
+                    result=CheckResult.PASS,
+                    citation=(
+                        f"{citation} — disclosure is not required for this use case"
+                    ),
+                    policy_id=policy.id,
+                    policy_hash=policy.content_hash or None,
+                )
+            ]
+    found = text in str(context.attributes.get("content") or "")
+    return [
+        Check(
+            check="AI_DISCLOSURE",
+            regime=policy.regime,
+            result=CheckResult.PASS if found else CheckResult.FAIL,
+            citation=(
+                f"{citation} — disclosure present"
+                if found
+                else f"{citation} — required disclosure is missing"
+            ),
+            policy_id=policy.id,
+            policy_hash=policy.content_hash or None,
+        )
+    ]
+
+
 @rule("PROHIBITED")
 def prohibited(policy: Any, context: RuleContext) -> list[Check]:
     """An unconditional bar, once the policy is engaged at all.

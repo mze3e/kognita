@@ -11,9 +11,9 @@ the ``correlation_id`` on the evidence events, which is the decision's
 
 Origination answers why this client and why this product, when an
 ``ORIGINATION`` event is on the span. RM review answers what the RM saw and
-changed. ``FINAL_DECISION`` answers who decided. Governed client communication
-is not recorded yet, so that question stays ``not recorded``. A question with
-no event for it stays ``not recorded`` as well.
+changed. ``FINAL_DECISION`` answers who decided. A client
+``CLIENT_COMMUNICATION`` event answers what was communicated. A question with
+no event for it stays ``not recorded``.
 
 Pin checks follow replay, including two residuals left as they are:
 
@@ -60,9 +60,6 @@ QUESTIONS: tuple[str, ...] = (
     "What was communicated to the client?",
     "Can the bank reproduce that evidence later?",
 )
-
-#: Governed client communication is a later slice. The question stays present.
-_NOT_RECORDED_QUESTIONS = frozenset({"What was communicated to the client?"})
 
 _PIN_HASH_KEYS = ("prompt_hash", "response_hash")
 _RETAINED_HASH_KEYS = ("rendered_hash", "diff_hash", "packet_hash")
@@ -116,6 +113,12 @@ def reconstruct(session: Session, interaction_id: str) -> dict[str, Any]:
     finals = [
         _final_view(event) for event in selected if _is(event, EventType.FINAL_DECISION)
     ]
+    communications = [
+        _communication_view(session, event)
+        for event in selected
+        if _is(event, EventType.CLIENT_COMMUNICATION)
+        and _payload(event).get("lane", "client") == "client"
+    ]
     findings.extend(_policy_findings(session, decisions + _pinned_decisions(selected)))
     findings.extend(_retrieval_findings(session, selected))
     findings.extend(_retained_findings(session, selected))
@@ -138,6 +141,7 @@ def reconstruct(session: Session, interaction_id: str) -> dict[str, Any]:
             originations=originations,
             reviews=reviews,
             finals=finals,
+            communications=communications,
             session=session,
         ),
     }
@@ -242,7 +246,9 @@ def _pinned_decisions(events: list[EvidenceEvent]) -> list[dict[str, Any]]:
     extra: list[dict[str, Any]] = []
     for event in events:
         if not (
-            _is(event, EventType.ORIGINATION) or _is(event, EventType.FINAL_DECISION)
+            _is(event, EventType.ORIGINATION)
+            or _is(event, EventType.FINAL_DECISION)
+            or _is(event, EventType.CLIENT_COMMUNICATION)
         ):
             continue
         checks = _checks(_payload(event).get("checks"))
@@ -266,6 +272,7 @@ def _questions(
     originations: list[dict[str, Any]] | None = None,
     reviews: list[dict[str, Any]] | None = None,
     finals: list[dict[str, Any]] | None = None,
+    communications: list[dict[str, Any]] | None = None,
     session: Session | None = None,
 ) -> list[dict[str, Any]]:
     answers: dict[str, Any] = {
@@ -294,12 +301,14 @@ def _questions(
         }
     if finals:
         answers["Who made the final decision?"] = {"decisions": finals}
+    if communications:
+        answers["What was communicated to the client?"] = {
+            "communications": communications
+        }
     return [
         {
             "question": question,
-            "answer": NOT_RECORDED
-            if question in _NOT_RECORDED_QUESTIONS or question not in answers
-            else answers[question],
+            "answer": NOT_RECORDED if question not in answers else answers[question],
         }
         for question in QUESTIONS
     ]
@@ -807,6 +816,11 @@ def _content_hashes(events: list[EvidenceEvent]) -> list[str]:
             if isinstance(value, str) and value and value not in seen:
                 seen.add(value)
                 found.append(value)
+        if _is(event, EventType.CLIENT_COMMUNICATION):
+            value = payload.get("content_hash")
+            if isinstance(value, str) and value and value not in seen:
+                seen.add(value)
+                found.append(value)
         items = payload.get("items")
         if isinstance(items, list):
             for entry in items:
@@ -947,6 +961,8 @@ def _render_answer(question: str, answer: Any) -> list[str]:
         return _render_review(answer)
     if question == "Who made the final decision?":
         return _render_decision(answer)
+    if question == "What was communicated to the client?":
+        return _render_communication(answer)
     return [str(answer)]
 
 
@@ -1058,6 +1074,55 @@ def _render_review(answer: Any) -> list[str]:
         lines.append(f"Diff {item.get('diff_hash')} ({item.get('diff_status')}).")
         if item.get("diff_status") == "retained" and item.get("diff"):
             lines.append(str(item["diff"]))
+    return lines
+
+
+def _communication_view(session: Session, event: EvidenceEvent) -> dict[str, Any]:
+    payload = _payload(event)
+    content_hash = str(payload.get("content_hash") or "")
+    retained = _content_record(session, content_hash)
+    return {
+        "sequence": event.sequence,
+        "channel": payload.get("channel") or "",
+        "recipient_ref": payload.get("recipient_ref") or "",
+        "communication_level": payload.get("communication_level") or "",
+        "provenance": payload.get("provenance") or "",
+        "outcome": payload.get("outcome") or "",
+        "sent": bool(payload.get("sent")),
+        "content_hash": content_hash,
+        "content_status": retained.get("status"),
+        "content": retained.get("body"),
+        "final_decision_sequence": payload.get("final_decision_sequence"),
+        "recommendation_hash": payload.get("recommendation_hash") or "",
+        "citation": payload.get("citation") or "",
+    }
+
+
+def _render_communication(answer: Any) -> list[str]:
+    if not isinstance(answer, dict):
+        return []
+    lines: list[str] = []
+    items = answer.get("communications") or []
+    if not items:
+        lines.append("No client communication was recorded.")
+    for item in items:
+        sent = "Sent" if item.get("sent") else "Not sent"
+        lines.append(
+            f"{sent} on {item.get('channel')} to {item.get('recipient_ref')}."
+        )
+        lines.append(
+            f"Communication level: {item.get('communication_level')}. "
+            f"Content provenance: {item.get('provenance')}."
+        )
+        lines.append(
+            f"Content {item.get('content_hash')} ({item.get('content_status')})."
+        )
+        if item.get("content_status") == "retained" and item.get("content"):
+            lines.append(str(item["content"]))
+        if item.get("content_status") == "erased":
+            lines.append(f"Content erased; hash {item.get('content_hash')} kept.")
+        if item.get("citation"):
+            lines.append(str(item["citation"]))
     return lines
 
 

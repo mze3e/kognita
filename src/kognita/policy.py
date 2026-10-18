@@ -27,7 +27,12 @@ from kognita.exceptions import KognitaError
 from kognita.governance import PolicySnapshot, decide
 from kognita.models import Policy, as_utc, utcnow
 from kognita.rules import CORE_RULES
-from kognita.vocabulary import CheckResult, Outcome
+from kognita.vocabulary import (
+    COMMUNICATION_LEVELS,
+    DISCLOSURE_TRIGGERS,
+    CheckResult,
+    Outcome,
+)
 
 #: A rule may carry this marker until the question in it is answered.
 CLARIFICATION_RE = re.compile(r"\[NEEDS CLARIFICATION:\s*([^\]]*)\]")
@@ -113,6 +118,29 @@ _SCHEMAS: dict[str, dict[str, Any]] = {
         "required_maps": (),
         "optional_lists": (),
         "optional": ("on_violation", "description"),
+    },
+    "CONTENT_POLICY": {
+        "required_maps": (),
+        "optional_lists": (
+            "levels",
+            "lanes",
+            "required_disclosures",
+            "prohibited_claims",
+            "approved_tones",
+            "permitted_jurisdictions",
+            "permitted_channels",
+        ),
+        "optional": (
+            "description",
+            "require_risk_language",
+            "require_research_attribution",
+        ),
+    },
+    "AI_DISCLOSURE": {
+        "required_maps": (),
+        "required_lists": ("triggers",),
+        "optional_lists": ("jurisdictions", "use_cases"),
+        "optional": ("text", "description"),
     },
 }
 
@@ -835,6 +863,10 @@ def _payload_messages(rule_type: str, rule: Any) -> list[str]:
         messages.append("min_confidence must be a number")
     if rule_type == "CONTACT_FREQUENCY":
         messages.extend(_frequency_messages(rule))
+    if rule_type == "CONTENT_POLICY":
+        messages.extend(_content_policy_messages(rule))
+    if rule_type == "AI_DISCLOSURE":
+        messages.extend(_disclosure_messages(rule))
     return messages
 
 
@@ -851,6 +883,54 @@ def _frequency_messages(rule: dict[str, Any]) -> list[str]:
         messages.append("window_days is required")
     elif isinstance(window, bool) or not isinstance(window, int) or window < 1:
         messages.append("window_days must be a positive integer")
+    return messages
+
+
+def _content_policy_messages(rule: dict[str, Any]) -> list[str]:
+    """A content policy that checks nothing, or names an unknown level, does not validate."""
+    messages: list[str] = []
+    substantive = (
+        "required_disclosures",
+        "prohibited_claims",
+        "approved_tones",
+        "permitted_jurisdictions",
+        "permitted_channels",
+        "require_risk_language",
+        "require_research_attribution",
+    )
+    if not any(key in rule for key in substantive):
+        messages.append("a content policy names at least one constraint")
+    levels = rule.get("levels")
+    if isinstance(levels, list):
+        unknown = [item for item in levels if item not in COMMUNICATION_LEVELS]
+        if unknown:
+            messages.append(f"unknown communication level {unknown[0]!r}")
+    lanes = rule.get("lanes")
+    if isinstance(lanes, list):
+        unknown = [item for item in lanes if item not in ("client", "public")]
+        if unknown:
+            messages.append(f"unknown lane {unknown[0]!r}")
+    for field in ("require_risk_language", "require_research_attribution"):
+        if field in rule and not isinstance(rule[field], bool):
+            messages.append(f"{field} must be a boolean")
+    for field in ("approved_tones", "permitted_jurisdictions", "permitted_channels"):
+        value = rule.get(field)
+        if isinstance(value, list) and not value:
+            messages.append(f"{field} must name at least one value")
+    return messages
+
+
+def _disclosure_messages(rule: dict[str, Any]) -> list[str]:
+    """A disclosure rule needs the text the client must see, and known triggers."""
+    messages: list[str] = []
+    text = rule.get("text")
+    if not isinstance(text, str) or not text.strip():
+        messages.append("text must be a non-empty string")
+    triggers = rule.get("triggers")
+    if isinstance(triggers, list):
+        unknown = [item for item in triggers if item not in DISCLOSURE_TRIGGERS]
+        if unknown:
+            messages.append(f"unknown disclosure trigger {unknown[0]!r}")
     return messages
 
 
