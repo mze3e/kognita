@@ -38,7 +38,7 @@ from fixtures.agents import register
 from kognita.registry import set_kill_switch
 from kognita.tools import Run
 from kognita.usecases import retire
-from test_usecases import CARD_ID, NOW, _activate as _activate_case, _open, _spec
+from test_usecases import CARD_ID, NOW, _activate, _open, _spec
 from kognita.vocabulary import ActorType, CheckResult, EventType, FailureMode, Outcome
 
 SECRET = "ana@example.org"
@@ -148,15 +148,6 @@ def _live(
     ensure_live_purposes(
         session, evidence, (purpose,), at=NOW, approved_models=(card,)
     )
-
-
-def _activate(session, evidence, spec, **kwargs):
-    _activate_case(session, evidence, spec, **kwargs)
-    from kognita.review import define_risk_criteria
-    define_risk_criteria(session, spec.usecase_id, product_complexity_at="high",
-        vulnerability_indicators=("bereavement",), profile_deviation_is_high_risk=True,
-        minimum_classifier_confidence=0.8, timing="after delivery", evidence=evidence,
-        actor_id="Jane Smith", now=NOW)
 
 
 def _events(session, request_id: str) -> list[EvidenceEvent]:

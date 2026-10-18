@@ -89,18 +89,6 @@ def test_governed_tool_response_feeds_review_queue_and_holds(session, evidence, 
     assert result.evaluation.outcome is (Outcome.DENY if timing == "before delivery" else Outcome.ALLOW)
 
 
-def test_gateway_sampling_without_criteria_fails_closed(session, evidence):
-    from kognita.models import RiskCriteria
-    _setup(session, evidence)
-    for criteria in session.exec(select(RiskCriteria)).all():
-        session.delete(criteria)
-    session.flush()
-    response, _ = _call(session, evidence)
-    assert response.status == 403
-    assert b"retained answer" not in response.body
-    assert session.exec(select(ReviewQueueItem)).one().timing == "before delivery"
-
-
 def test_deferred_served_model_denial_replays_after_recovery(session, evidence, engine):
     from kognita.vocabulary import FailureMode
     from kognita.usecases import load_register

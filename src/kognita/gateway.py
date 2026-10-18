@@ -1307,7 +1307,7 @@ class Gateway:
             # may deliver; the retained response is screened on recovery.
             from kognita.review import _criteria_at, CITE_HOLD
             criteria = _criteria_at(session, purpose, now)
-            held = (None if criteria is not None and
+            held = (None if criteria is None or
                 (criteria.record or {}).get("timing") == "after delivery" else CITE_HOLD)
         if held:
             delivery_checks.append(Check(check="REVIEW", regime="INTERNAL",

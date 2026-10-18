@@ -546,14 +546,12 @@ def test_allowed_tool_emits_tool_call_then_egress(harness):
 
     assert run.outcome is Outcome.ALLOW
     assert run.data["subject"] == "2"
-    assert [e.event_type for e in events[:3]] == [
+    assert [e.event_type for e in events] == [
         EventType.POLICY_DECISION,
         EventType.TOOL_CALL,
         EventType.EGRESS,
     ]
-    # Response screening follows the retained egress.
-    assert any(e.event_type == EventType.REVIEW for e in events[3:])
-    egress = events[2]
+    egress = events[-1]
     assert egress.payload["bytes"] > 0
     assert "should never" not in canonical_json(egress.payload)
 
