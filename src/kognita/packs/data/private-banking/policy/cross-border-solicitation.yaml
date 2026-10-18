@@ -1,0 +1,11 @@
+id: cross-border-solicitation
+regime: PRIVATE_BANKING
+rule_type: ATTRIBUTE_DENYLIST
+citation: "Solicitation marked prohibited is refused. The pack does not decide the legal boundary; it enforces the flag the bank recorded. Source: Kognita private-banking pack, cross-border solicitation."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  deny:
+    solicitation:
+      - prohibited
+  on_violation: fail
+  description: "Cross-border solicitation bar."

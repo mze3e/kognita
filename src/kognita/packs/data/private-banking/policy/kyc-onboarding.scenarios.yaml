@@ -1,0 +1,25 @@
+rule: kyc-onboarding
+scenarios:
+  - name: "KYC onboarding needs a person"
+    given:
+      principal: "rm.lee"
+      purpose: CLIENT_DISCUSSION
+      tool: approve_kyc
+      actor_location: SG
+      attributes:
+        booking_centre: SG
+        rm_location: SG
+        client_domicile: SG
+        solicitation: permitted
+        research_distribution: permitted
+        product_eligible: true
+        suitable: true
+        within_mandate: true
+        within_concentration: true
+        relationship_manager: "rm.lee"
+        contact_count: 0
+    when:
+      tool: approve_kyc
+    then:
+      decision: HUMAN_APPROVAL
+      cites: kyc-onboarding

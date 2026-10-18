@@ -1,0 +1,10 @@
+id: suitability
+regime: PRIVATE_BANKING
+rule_type: REQUIRES_FLAG
+citation: "A product discussion requires the suitability flag. The pack does not compute suitability. Source: Kognita private-banking pack, suitability."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  flags:
+    - suitable
+  on_violation: fail
+  description: "Suitability flag."

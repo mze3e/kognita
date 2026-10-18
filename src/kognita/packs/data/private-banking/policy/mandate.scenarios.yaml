@@ -1,0 +1,25 @@
+rule: mandate
+scenarios:
+  - name: "a discussion outside the mandate is refused"
+    given:
+      principal: "rm.lee"
+      purpose: CLIENT_DISCUSSION
+      tool: discuss_product
+      actor_location: SG
+      attributes:
+        booking_centre: SG
+        rm_location: SG
+        client_domicile: SG
+        solicitation: permitted
+        research_distribution: permitted
+        product_eligible: true
+        suitable: true
+        within_mandate: false
+        within_concentration: true
+        relationship_manager: "rm.lee"
+        contact_count: 0
+    when:
+      tool: discuss_product
+    then:
+      decision: DENY
+      cites: mandate

@@ -1,0 +1,9 @@
+name = "data classification"
+version = "1.0.0"
+purposes = ["ACCESS"]
+files = [
+  "policy/classification-ceiling.yaml",
+  "policy/classification-ceiling.scenarios.yaml",
+  "policy/restricted-classification.yaml",
+  "policy/restricted-classification.scenarios.yaml",
+]

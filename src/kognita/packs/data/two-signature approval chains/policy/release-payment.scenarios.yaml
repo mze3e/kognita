@@ -1,0 +1,21 @@
+rule: release-payment
+scenarios:
+  - name: "releasing a payment needs two signatures"
+    given:
+      principal: alice
+      purpose: PAYMENT
+      tool: release_payment
+    when:
+      tool: release_payment
+    then:
+      decision: HUMAN_APPROVAL
+      cites: release-payment
+  - name: "reading a ledger does not enter the payment chain"
+    given:
+      principal: alice
+      purpose: PAYMENT
+      tool: read_ledger
+    when:
+      tool: read_ledger
+    then:
+      decision: ALLOW

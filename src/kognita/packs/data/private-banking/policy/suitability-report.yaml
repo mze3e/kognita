@@ -1,0 +1,9 @@
+id: suitability-report
+regime: PRIVATE_BANKING
+rule_type: REQUIRES_HUMAN_APPROVAL
+citation: "A suitability report drafted from a meeting transcript needs a person before it is used. Source: Kognita private-banking pack, suitability report."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  tools:
+    - draft_suitability_report
+  description: "Suitability report stays with a person."

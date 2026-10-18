@@ -1,0 +1,12 @@
+id: classification-ceiling
+regime: CLASSIFICATION
+rule_type: ATTRIBUTE_ALLOWLIST
+citation: "Classification C0 and C1 pass. Anything higher escalates. Source: Kognita starter pack data classification, ceiling."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  allow:
+    classification:
+      - C0
+      - C1
+  on_violation: escalate
+  description: "Ceiling for an unattended allow."

@@ -1,0 +1,10 @@
+id: product-eligibility
+regime: PRIVATE_BANKING
+rule_type: REQUIRES_FLAG
+citation: "A product discussion requires the product-eligibility flag. Source: Kognita private-banking pack, product eligibility."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  flags:
+    - product_eligible
+  on_violation: fail
+  description: "Product eligibility flag."

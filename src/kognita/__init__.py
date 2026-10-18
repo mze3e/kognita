@@ -28,6 +28,11 @@ an import tells you what a call will actually load:
 
 ``kognita.testing``
     The conformance kit a domain pack runs against itself.
+
+``kognita.packs``
+    Starter packs and the private-banking pack. Importing ``kognita`` does
+    not load them. ``kognita packs update`` is the only command that fetches,
+    and a failed check leaves the installed pack in place.
 """
 
 from __future__ import annotations

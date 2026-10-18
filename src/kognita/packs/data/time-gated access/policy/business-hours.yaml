@@ -1,0 +1,25 @@
+id: business-hours
+regime: TIME
+rule_type: ATTRIBUTE_ALLOWLIST
+citation: "Access is limited to Monday through Friday, hours 09 through 17, using the decision clock's local_hour and local_weekday. A missing hour or weekday is refused. Source: Kognita starter pack time-gated access."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  allow:
+    local_hour:
+      - "09"
+      - "10"
+      - "11"
+      - "12"
+      - "13"
+      - "14"
+      - "15"
+      - "16"
+      - "17"
+    local_weekday:
+      - Mon
+      - Tue
+      - Wed
+      - Thu
+      - Fri
+  on_violation: fail
+  description: "Business-hours window."

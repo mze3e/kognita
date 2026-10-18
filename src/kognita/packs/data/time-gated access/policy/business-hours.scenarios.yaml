@@ -1,0 +1,41 @@
+rule: business-hours
+scenarios:
+  - name: "Tuesday at 10 is inside the window"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        local_hour: "10"
+        local_weekday: Tue
+    when:
+      tool: read_record
+    then:
+      decision: ALLOW
+      cites: business-hours
+  - name: "Tuesday at 21 is outside the window"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        local_hour: "21"
+        local_weekday: Tue
+    when:
+      tool: read_record
+    then:
+      decision: DENY
+      cites: business-hours
+  - name: "Sunday at 10 is outside the window"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        local_hour: "10"
+        local_weekday: Sun
+    when:
+      tool: read_record
+    then:
+      decision: DENY
+      cites: business-hours

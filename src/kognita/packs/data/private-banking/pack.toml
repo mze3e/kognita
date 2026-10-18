@@ -1,0 +1,72 @@
+name = "private-banking"
+version = "1.0.0"
+purposes = ["CLIENT_DISCUSSION"]
+files = [
+  "policy/booking-centre.yaml",
+  "policy/booking-centre.scenarios.yaml",
+  "policy/rm-location.yaml",
+  "policy/rm-location.scenarios.yaml",
+  "policy/client-domicile.yaml",
+  "policy/client-domicile.scenarios.yaml",
+  "policy/cross-border-solicitation.yaml",
+  "policy/cross-border-solicitation.scenarios.yaml",
+  "policy/research-distribution.yaml",
+  "policy/research-distribution.scenarios.yaml",
+  "policy/product-eligibility.yaml",
+  "policy/product-eligibility.scenarios.yaml",
+  "policy/suitability.yaml",
+  "policy/suitability.scenarios.yaml",
+  "policy/mandate.yaml",
+  "policy/mandate.scenarios.yaml",
+  "policy/concentration.yaml",
+  "policy/concentration.scenarios.yaml",
+  "policy/relationship-manager.yaml",
+  "policy/relationship-manager.scenarios.yaml",
+  "policy/contact-frequency.yaml",
+  "policy/contact-frequency.scenarios.yaml",
+  "policy/kyc-onboarding.yaml",
+  "policy/kyc-onboarding.scenarios.yaml",
+  "policy/suitability-report.yaml",
+  "policy/suitability-report.scenarios.yaml",
+  "policy/client-communication.yaml",
+  "policy/client-communication.scenarios.yaml",
+  "policy/client-communication-content.yaml",
+  "policy/client-communication-content.scenarios.yaml",
+  "policy/client-ai-disclosure.yaml",
+  "policy/client-ai-disclosure.scenarios.yaml",
+]
+[clients.C-100]
+booking_centre = "SG"
+client_domicile = "SG"
+solicitation = "permitted"
+research_distribution = "permitted"
+relationship_manager = "rm.lee"
+contact_count = 0
+
+[clients.C-CROSS]
+booking_centre = "SG"
+client_domicile = "SG"
+solicitation = "prohibited"
+research_distribution = "permitted"
+relationship_manager = "rm.lee"
+contact_count = 0
+
+[clients.C-BOOK]
+booking_centre = "US"
+client_domicile = "SG"
+solicitation = "permitted"
+research_distribution = "permitted"
+relationship_manager = "rm.lee"
+contact_count = 0
+
+[products.note-sg]
+eligible = true
+suitable = true
+within_mandate = true
+within_concentration = true
+
+[products.note-complex]
+eligible = false
+suitable = false
+within_mandate = false
+within_concentration = false

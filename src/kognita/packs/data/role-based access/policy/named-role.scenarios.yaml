@@ -1,0 +1,28 @@
+rule: named-role
+scenarios:
+  - name: "a listed role may act on a subject it owns"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        role: reader
+        subject_owner: alice
+    when:
+      tool: read_record
+    then:
+      decision: ALLOW
+      cites: named-role
+  - name: "an unlisted role is refused"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        role: guest
+        subject_owner: alice
+    when:
+      tool: read_record
+    then:
+      decision: DENY
+      cites: named-role

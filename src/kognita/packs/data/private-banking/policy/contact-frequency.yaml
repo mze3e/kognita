@@ -1,0 +1,14 @@
+id: contact-frequency
+regime: PRIVATE_BANKING
+rule_type: CONTACT_FREQUENCY
+citation: "Contact stays inside the recorded limit for the client. Source: Kognita private-banking pack, contact frequency."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  max_contacts: 3
+  window_days: 30
+  tools:
+    - discuss_product
+    - prepare_call
+    - review_portfolio
+    - release_client_communication
+  description: "Contact-frequency limit."

@@ -1,0 +1,15 @@
+id: client-domicile
+regime: PRIVATE_BANKING
+rule_type: ATTRIBUTE_ALLOWLIST
+citation: "A client discussion may name only a domicile in SG, HK, CH, AE, or GB. Source: Kognita private-banking pack, client domicile list."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  allow:
+    client_domicile:
+      - SG
+      - HK
+      - CH
+      - AE
+      - GB
+  on_violation: fail
+  description: "Recognised client domiciles."

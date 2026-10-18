@@ -1,0 +1,9 @@
+id: relationship-manager
+regime: PRIVATE_BANKING
+rule_type: PRINCIPAL_EQUALITY
+citation: "The acting principal must equal the relationship manager named on the client. Source: Kognita private-banking pack, principal equality."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  equals: relationship_manager
+  on_violation: fail
+  description: "Assigned relationship manager."

@@ -1,0 +1,8 @@
+name = "time-gated access"
+version = "1.0.0"
+purposes = ["ACCESS"]
+files = [
+  "policy/business-hours.yaml",
+  "policy/business-hours.scenarios.yaml",
+]
+stamp_time = true

@@ -1,0 +1,11 @@
+id: release-payment
+regime: APPROVAL
+rule_type: TWO_SIGNATURE_APPROVAL
+citation: "Releasing a payment is a two-signature approval: one person marks, another confirms. Source: Kognita starter pack two-signature approval chains. See ADR 0006."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  tools:
+    - release_payment
+  purposes:
+    - PAYMENT
+  description: "Payment release chain."

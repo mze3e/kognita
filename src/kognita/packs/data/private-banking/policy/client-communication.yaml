@@ -1,0 +1,9 @@
+id: client-communication
+regime: PRIVATE_BANKING
+rule_type: TWO_SIGNATURE_APPROVAL
+citation: "Releasing a client communication takes two signatures. Source: Kognita private-banking pack, client communication. See ADR 0006."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  tools:
+    - release_client_communication
+  description: "Client communication chain."
