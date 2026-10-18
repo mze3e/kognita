@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Evidence truncation is now detected: `verify_export` checks the export's advertised `event_count` and `head_hash` against what it actually verified, and `verify_chain` treats a missing or unreadable head checkpoint as a chain break (not a pass) whenever events exist.
+
 ## [0.5.0] - 2026-10-19
 
 0.5 "Agents, Authority and Fleets". This is an alpha release. Not every 0.5 definition-of-done item is met, and an independent four-way review found open defects. Both are listed below under "Known open items". Read them before you rely on 0.5 controls.
