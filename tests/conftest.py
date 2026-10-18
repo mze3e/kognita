@@ -78,3 +78,66 @@ def _legacy_workload_credentials(request, monkeypatch):
 
     monkeypatch.setattr(Gateway, "handle", wrap(Gateway.handle))
     monkeypatch.setattr(McpProxy, "handle", wrap(McpProxy.handle))
+
+
+@pytest.fixture(autouse=True)
+def _legacy_authority_prerequisites(request, monkeypatch):
+    """Give pre-S3 control-isolation tests explicit snapshot authority.
+
+    Authority lifecycle and integration tests deliberately receive no fixture
+    authority. This fixture never changes production checks or outcomes.
+    """
+    if request.module.__name__ not in {
+        'test_adapter_extras',
+        'test_adapters',
+        'test_autonomy_s1',
+        'test_breaker',
+        'test_classifier_envelope',
+        'test_communication',
+        'test_conformance',
+        'test_core',
+        'test_credentials',
+        'test_effective_window',
+        'test_engages',
+        'test_entitlements',
+        'test_evidence_references',
+        'test_gateway',
+        'test_gateway_overhead',
+        'test_governance_conformance',
+        'test_governed_agent_demo',
+        'test_ingest',
+        'test_interaction',
+        'test_mcp',
+        'test_outcomes',
+        'test_packaging',
+        'test_packs',
+        'test_pinned_evidence',
+        'test_policy',
+        'test_purpose',
+        'test_reconstruct',
+        'test_recorder',
+        'test_register_enforced',
+        'test_review_queue',
+        'test_run',
+        'test_usecases',
+        'test_vectors',
+    }:
+        return
+    from fixtures.agents import _authority_for
+    import kognita.governance as governance
+    original = governance.decide
+    def authorized(envelope, snapshot, **kwargs):
+        envelope, snapshot = _authority_for(envelope, snapshot)
+        return original(envelope, snapshot, **kwargs)
+    # Some tests and core entry points import decide directly.
+    for module in list(sys.modules.values()):
+        if module and getattr(module, "decide", None) is original:
+            monkeypatch.setattr(module, "decide", authorized)
+    standing = governance._standing_checks
+    def standing_authorized(envelope, snapshot, **kwargs):
+        envelope, snapshot = _authority_for(envelope, snapshot)
+        return standing(envelope, snapshot, **kwargs)
+    monkeypatch.setattr(governance, "_standing_checks", standing_authorized)
+    import kognita.tools as tools
+    if hasattr(tools, "_standing_checks"):
+        monkeypatch.setattr(tools, "_standing_checks", standing_authorized)

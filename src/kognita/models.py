@@ -1184,3 +1184,13 @@ class _WorkloadCredential(SQLModel, table=True):
     digest: str = Field(primary_key=True)
     agent_name: str = Field(index=True)
     revoked: bool = False
+
+
+class _Authority(SQLModel, table=True):
+    __tablename__ = "authority"
+    __table_args__ = (Index("ix_authority_grantee_kind_ended", "grantee", "kind", "ended"),)
+    id: str = Field(primary_key=True)
+    grantee: str = Field(index=True)
+    kind: str = Field(index=True)
+    body: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    ended: bool = Field(default=False, index=True)
