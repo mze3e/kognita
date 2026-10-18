@@ -576,6 +576,7 @@ def _release_tool(
     evaluation: Evaluation,
     spec: ToolSpec,
     evidence: EvidenceWriter,
+    run: Run | None = None,
 ) -> Any:
     data = spec.fn(envelope, evaluation, session)
     actor_type, actor_id = _call_actor(envelope)
@@ -586,6 +587,7 @@ def _release_tool(
         use_case=envelope.purpose,
         correlation_id=evaluation.request_id,
     )
+    run_ref = {"run_id": run.id} if run is not None else {}
     evidence.emit(
         session,
         correlation_id=evaluation.request_id,
@@ -599,6 +601,7 @@ def _release_tool(
             "outcome": evaluation.outcome.value,
             "approval_required": evaluation.approval_required,
             "response_hash": response_hash,
+            **run_ref,
         },
     )
     evidence.emit(
@@ -615,6 +618,7 @@ def _release_tool(
             "bytes": len(canonical_json(data)),
             "response_hash": response_hash,
             "note": "Payload content is not copied to the evidence plane.",
+            **run_ref,
         },
     )
     return data
@@ -762,7 +766,7 @@ def run_governed(
         _save_run(session, run)
     _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
 
-    data = _release_tool(session, envelope, evaluation, spec, evidence)
+    data = _release_tool(session, envelope, evaluation, spec, evidence, run)
     record_run_decision(session, interaction_id, evaluation, evidence, now=at)
     return ToolRun(
         evaluation=evaluation,
@@ -972,7 +976,7 @@ def continue_run(
     if registry is None:
         raise ToolNotRegistered("continuing a tool call requires a registry")
     spec = registry.get(envelope.tool)
-    data = _release_tool(session, envelope, evaluation, spec, evidence)
+    data = _release_tool(session, envelope, evaluation, spec, evidence, run)
     return ToolRun(
         evaluation=evaluation,
         data=data,

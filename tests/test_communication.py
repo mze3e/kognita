@@ -57,6 +57,7 @@ from kognita.tools import Run, ToolRegistry, continue_run, run_governed
 from kognita.vocabulary import (
     ApprovalStatus,
     ActorType,
+    CheckResult,
     Classification,
     EventType,
     Outcome,
@@ -830,6 +831,182 @@ def test_public_lane_refuses_a_named_client(harness):
     assert published["outcome"] == "ALLOW"
     assert published["lane"] == "public"
     assert _answer(report, "What was communicated to the client?") == "not recorded"
+
+
+def _publish(session, evidence, **kwargs):
+    values = {
+        "channel": "LinkedIn",
+        "content": "The published house view.",
+        "level": "house view",
+        "provenance": "human",
+        "actor_id": "RM",
+        "approved_research": "house view 2026-10-01",
+        "research_attribution": "house view 2026-10-01",
+        "now": FROZEN_NOW,
+    }
+    values.update(kwargs)
+    return send_public_content(session, evidence=evidence, **values)
+
+
+def test_a_run_that_touched_client_data_cannot_publish(harness):
+    registry, executed = _registry()
+    client_run = Run()
+    identifying = Run()
+    with harness.session() as session:
+        _content_policy(session, lanes=["public"], prohibited_claims=["guaranteed"])
+        _channel(session, harness.evidence, "LinkedIn", public=True)
+        _boundary(session, harness.evidence)
+        interaction = _open(session, harness.evidence)
+        run_governed(
+            session,
+            dp.envelope("get_subject_profile", site="SG", subject="2"),
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+            run=client_run,
+            interaction_id=interaction.id,
+        )
+        run_governed(
+            session,
+            dp.envelope("get_subject_profile", site="SG", subject="2"),
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+            run=identifying,
+        )
+        session.add(
+            RunRecord(id="run-clear", approvals_pending=[], tool_denylist=[])
+        )
+        session.flush()
+        from_client = _publish(session, harness.evidence, run_id=client_run.id)
+        from_class = _publish(session, harness.evidence, run_id=identifying.id)
+        missing = _publish(session, harness.evidence, run_id="run-missing")
+        clear = _publish(session, harness.evidence, run_id="run-clear")
+        session.commit()
+
+    assert from_client["outcome"] == "DENY"
+    assert from_client["sent"] is False
+    assert "touched client data" in from_client["citation"]
+    assert from_class["outcome"] == "DENY"
+    assert "touched client data" in from_class["citation"]
+    assert missing["outcome"] == "DENY"
+    assert "not recorded" in missing["citation"]
+    assert clear["outcome"] == "ALLOW"
+    assert clear["sent"] is True
+    assert executed == ["get_subject_profile", "get_subject_profile"]
+
+
+def test_a_transaction_after_modify_stays_denied(harness):
+    approved = "Buy 10 units of the note. Capital is at risk."
+    with harness.session() as session:
+        _live(session, harness.evidence, _spec(usecase_id="portfolio-review"))
+        _boundary(session, harness.evidence)
+        interaction = _open(session, harness.evidence)
+        _content_policy(session)
+        _content_policy(
+            session,
+            levels=["investment discussion", "product recommendation", "transaction"],
+            permitted_jurisdictions=["SG"],
+            prohibited_claims=["guaranteed return"],
+        )
+        _channel(session, harness.evidence)
+        review(
+            session,
+            interaction.id,
+            rm="RM",
+            outcome="modify",
+            packet=_packet(),
+            rendered=NOTE,
+            approved=approved,
+            provenance="human",
+            evidence=harness.evidence,
+            now=FROZEN_NOW,
+        )
+        sent = _send(
+            session,
+            harness.evidence,
+            interaction.id,
+            level="transaction",
+            content=approved,
+            research_attribution="house view 2026-10-01",
+            recipient_jurisdiction="SG",
+            risk_language=True,
+        )
+        session.commit()
+
+    assert sent["outcome"] == "DENY"
+    assert sent["sent"] is False
+    assert "approved text" in sent["citation"]
+
+
+def test_an_allow_override_does_not_outrank_a_later_policy_denial(harness):
+    registry, executed = _registry()
+    run = Run()
+    with harness.session() as session:
+        _boundary(session, harness.evidence)
+        interaction = _open(session, harness.evidence)
+        allowed = run_governed(
+            session,
+            dp.envelope("get_subject_profile", site="SG", subject="2"),
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+            run=run,
+            interaction_id=interaction.id,
+        )
+        decision = session.exec(
+            select(EvidenceEvent).where(
+                EvidenceEvent.event_type == EventType.POLICY_DECISION
+            )
+        ).one()
+        digest = decision.payload_hash
+        overridden = override_run(
+            session,
+            run.id,
+            evidence=harness.evidence,
+            human="RM",
+            citation="Intervention: override",
+            outcome="allow",
+            now=FROZEN_NOW,
+        )
+        denied = run_governed(
+            session,
+            dp.envelope(
+                "get_subject_profile", purpose="NOT_A_PURPOSE", site="SG", subject="2"
+            ),
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+            run=run,
+            interaction_id=interaction.id,
+        )
+        session.expire_all()
+        stored = session.get(EvidenceEvent, decision.id)
+        stored_outcome = stored.payload["outcome"]
+        stored_hash = stored.payload_hash
+        override_state = session.get(RunRecord, run.id).override_outcome
+        session.commit()
+
+    assert allowed.evaluation.outcome is Outcome.ALLOW
+    assert overridden["outcome"] == "allow"
+    assert denied.evaluation.outcome is Outcome.DENY
+    assert executed == ["get_subject_profile"]
+    assert override_state == "ALLOW"
+    assert stored_outcome == "ALLOW"
+    assert stored_hash == digest
+    assert all(check.result is not CheckResult.PASS or "override" not in check.citation for check in denied.evaluation.checks)
 
 
 def test_a_complaint_links_the_output_model_version_and_approver(harness):

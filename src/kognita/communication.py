@@ -19,7 +19,8 @@ The control floors below are constants.
   approval (approve or modify), and investment-risk language. That is the step
   from insight to recommendation.
 - A transaction is sent only when the final decision is approve and the
-  content is the approved text.
+  content is the approved text. A modify stays a denial: the full approved
+  text is not retained separately from the diff.
 - Tier 3 and above, at investment discussion and above, needs approve or
   modify rather than a plain allow. Tier 4, at product recommendation and
   above, needs a confirmer on that decision.
@@ -28,8 +29,10 @@ The control floors below are constants.
 
 A public send uses the public lane. It carries a level and a provenance
 label, uses a channel registered for that lane, and is denied when a client
-is named. Separating a run that has already touched client data from a
-public tool is a later slice.
+is named. A run that has touched client data is denied too. Client data is
+an interaction that names a client, or evidence on the run at classification
+C2 or above. A run that is not recorded is a denial. External-content taint
+and every other public-content tool stay a later slice.
 
 A complaint is an ``OUTCOME`` event of kind ``complaint``. It is recorded
 only when the output hash, the model version, and the approver are already
@@ -53,8 +56,11 @@ from kognita.models import (
     Agent,
     ApprovedChannel,
     EvidenceEvent,
+    Interaction,
+    InteractionLink,
     Policy,
     RmReview,
+    RunRecord,
     utcnow,
 )
 from kognita.origination import do_not_contact_reasons
@@ -66,8 +72,10 @@ from kognita.vocabulary import (
     COMMUNICATION_LEVELS,
     ActorType,
     CheckResult,
+    Classification,
     EventType,
     Outcome,
+    classification_rank,
 )
 
 #: Channels the roadmap says cannot be registered, compared after normalisation.
@@ -322,10 +330,14 @@ def send_public_content(
     risk_language: bool = False,
     recipient_jurisdiction: str = "",
     chatbot: bool = False,
+    run_id: str = "",
     retention: RetentionStore | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """Authorise a public-lane send. A named client is a denial.
+
+    ``run_id`` is the run the content came from. A run that has touched
+    client data, and a run that is not recorded, are denials.
 
     The event is ``CLIENT_COMMUNICATION`` with ``lane`` ``public``. It does
     not answer what was communicated to a client.
@@ -379,6 +391,7 @@ def send_public_content(
         provenance=provenance,
         client_id=attributes["client_id"],
         approved_research=attributes["approved_research"],
+        run_id=run_id.strip(),
         at=at,
     )
     checks.extend(_policy_checks(session, attributes, at, tool="send_public_content"))
@@ -882,6 +895,7 @@ def _public_checks(
     provenance: str,
     client_id: str,
     approved_research: str,
+    run_id: str,
     at: datetime,
 ) -> list[Check]:
     del at
@@ -926,7 +940,82 @@ def _public_checks(
             "approved research" if approved_research else "approved research is missing",
         )
     )
+    if run_id:
+        checks.append(_public_run_check(session, run_id))
     return checks
+
+
+def _public_run_check(session: Session, run_id: str) -> Check:
+    """A run that has touched client data cannot reach the public lane."""
+    citation = "Governed client communication: public lane"
+    if session.get(RunRecord, run_id) is None:
+        return _structural(
+            "PUBLIC_LANE",
+            False,
+            citation,
+            "the run is not recorded, so the public lane is denied",
+        )
+    if _run_touched_client_data(session, run_id):
+        return _structural(
+            "PUBLIC_LANE",
+            False,
+            citation,
+            "a run that has touched client data cannot reach the public lane",
+        )
+    return _structural(
+        "PUBLIC_LANE",
+        True,
+        citation,
+        "the run has not touched client data",
+    )
+
+
+def _run_touched_client_data(session: Session, run_id: str) -> bool:
+    """Whether evidence shows this run met a client or client-identifying data.
+
+    An interaction names a client, so a run on one has touched client data.
+    Classification C2 and above is client-identifying. An event counts when
+    it names the run or sits on a correlation attached to the run.
+    """
+    links = session.exec(
+        select(InteractionLink).where(InteractionLink.run_id == run_id)
+    ).all()
+    correlations: set[str] = set()
+    for link in links:
+        if link.correlation_id:
+            correlations.add(link.correlation_id)
+        if not link.interaction_id:
+            continue
+        interaction = session.get(Interaction, link.interaction_id)
+        if interaction is not None and interaction.client_id.strip():
+            return True
+    events = session.exec(select(EvidenceEvent)).all()
+    for event in events:
+        named = event.run_id == run_id or event.correlation_id in correlations
+        if not named:
+            continue
+        if _client_classification(event.classification):
+            return True
+        payload = _payload(event)
+        items = payload.get("items")
+        if isinstance(items, list):
+            for item in items:
+                if isinstance(item, dict) and _client_classification(item.get("classification")):
+                    return True
+        client = payload.get("client_id")
+        if isinstance(client, str) and client.strip():
+            return True
+    return False
+
+
+def _client_classification(value: Any) -> bool:
+    """C2 and above identify a client. An unreadable class fails closed."""
+    if value is None or value == "":
+        return False
+    try:
+        return classification_rank(value) >= classification_rank(Classification.C2)
+    except (KeyError, ValueError):
+        return True
 
 
 def _coverage_checks(
