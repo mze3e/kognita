@@ -51,6 +51,8 @@ def _checks(envelope, agent, at, usecases=None):
              level <= min(entry.maximum_autonomy, {1: 2, 2: 3, 3: 4, 4: 4}.get(entry.proposed_tier, 0)))
     if valid and level == 4:
         gate("S1-L4-APPROVAL", True, human=True)
+    if verb in ('draft', 'queue', 'send', 'execute') and permission.get('reversible') is not True:
+        gate("S6C-IRREVERSIBLE", True, human=True)
     return checks
 
 

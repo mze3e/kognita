@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add tool reversibility and compensation, stronger irreversible-action approval, bounded MCP execution and cancellation evidence, reverse recovery, adversarial conformance checks and a published threat model.
+
 - Complete delegated-run isolation, inherited restrictions, bounded authority reads and historical lineage; verify fleet quotas, authenticated MCP agent messages and restrictive sandbox output with S6b regression tests.
 
 - Add bounded agent delegation, reserved child budgets, live authority lineage checks, run isolation, external-agent taint, authority reconstruction CLI, and evidenced sandbox constraints for execution decisions.

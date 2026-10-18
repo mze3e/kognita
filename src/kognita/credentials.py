@@ -59,6 +59,8 @@ def revoke(session: _Session, agent_name: str, credential: str | None, *,
             "agent": agent_name, "scope": "all", "count": result.rowcount,
             "citation": "S6-ANOMALY"})
         session.flush()
+        from kognita._actions import _stop
+        _stop(agent=agent_name)
         return
     row = session.get(_WorkloadCredential, _digest(credential or ""), populate_existing=True)
     if agent is None or actor_id != agent.owner_exec or not actor_id.strip():
@@ -74,6 +76,8 @@ def revoke(session: _Session, agent_name: str, credential: str | None, *,
     row.revoked = True
     session.add(row)
     session.flush()
+    from kognita._actions import _stop
+    _stop(agent=agent_name)
 
 
 __all__ = ["issue", "verify", "revoke"]

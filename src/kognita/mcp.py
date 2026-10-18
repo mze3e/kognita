@@ -589,16 +589,106 @@ class McpProxy:
         registry = ToolRegistry()
 
         def invoke(env: Envelope, evaluation: Evaluation, sess: Session) -> Any:
-            del env, evaluation, sess
-            return self._invoke(rpc_method, params, rpc_id, headers, state)
+            from kognita._actions import _bounded
+            from kognita.vocabulary import ActorType, EventType
+            cancel = getattr(self.transport, '_cancel', None)
+            seconds = permission.get('max_duration', 30.0)
+            if bound_run is not None and bound_run.wall_clock_seconds is not None:
+                from kognita.models import as_utc
+                seconds = min(seconds, max(0, bound_run.wall_clock_seconds -
+                    (as_utc(self.evidence.clock()) - as_utc(bound_run.started_at)).total_seconds()))
+            from kognita.models import _Authority
+            authority_ids = set(evaluation.attributes.get('_authority_grants', []))
+            identity = env.delegation_id
+            for _ in range(32):
+                if not identity or identity in authority_ids:
+                    break
+                authority_ids.add(identity)
+                row = sess.get(_Authority, identity)
+                identity = row.body.get('_parent') if row else None
+            # Persist admission before releasing external work. Holding SQLite's
+            # write transaction during a backend call would block interventions.
+            sess.commit()
+            def live():
+                from kognita.models import Agent, RunRecord
+                from sqlmodel import select
+                from kognita.credentials import verify
+                current = sess.exec(select(Agent).where(Agent.name == agent_name)
+                    .execution_options(populate_existing=True)).first()
+                if not current or current.kill_switch:
+                    return False
+                if not verify(sess, agent_name, headers.get('agent_credential', '')):
+                    return False
+                if bound_run is not None:
+                    row = sess.get(RunRecord, bound_run.id, populate_existing=True)
+                    if row is None or row.control_state != 'live':
+                        return False
+                for identity in authority_ids:
+                    row = sess.get(_Authority, identity, populate_existing=True)
+                    if row is not None and row.ended:
+                        return False
+                return True
+            outcome, value = _bounded(
+                lambda: self._invoke(rpc_method, params, rpc_id, headers, state),
+                seconds=seconds, agent=agent_name,
+                run=headers.get('run_id'), delegation=envelope.delegation_id,
+                cancel=(lambda: cancel(rpc_id)) if callable(cancel) else None,
+                _authority=authority_ids, _check=live)
+            if bound_run is not None:
+                _refresh_run(sess, bound_run)
+            state['_outcome'] = outcome
+            self.evidence.emit(sess, correlation_id=evaluation.request_id,
+                event_type=EventType.TOOL_CALL, actor_type=ActorType.AGENT,
+                actor_id=agent_name, payload={'tool': env.tool, 'outcome': outcome,
+                    'delegation_id': env.delegation_id,
+                    'run_id': headers.get('run_id'), 'citation': 'S6C-IN-FLIGHT'})
+            if outcome == 'failed':
+                raise value
+            if outcome != 'completed':
+                return _BackendPayload(error={'code': -32002, 'message': outcome})
+            return value
 
         from kognita.registry import get
         agent = get(session, agent_name) if agent_name else None
         permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
-        registry.register(envelope.tool, invoke,
-            required_level=permission.get('required_level', 0), verb=permission.get('verb', 'read'),
-            external=permission.get('external', False), client_data=permission.get('client_data', False),
-            public_content=permission.get('public_content', False))
+        # Synchronous transports without confirmed cancellation require rollback
+        # for mutating operations. Read calls have no action to undo.
+        if (permission.get('verb', 'read') in ('draft', 'queue', 'send', 'execute')
+                and not callable(getattr(self.transport, '_cancel', None))
+                and not (permission.get('reversible') is True and isinstance(permission.get('compensation'), str)
+                         and permission['compensation'].strip())):
+            identity_checks.append(Check(check='S6C-UNCANCELLABLE', regime='INTERNAL',
+                result=CheckResult.FAIL, citation='S6C-UNCANCELLABLE'))
+
+        def compensate(env, evaluation, sess):
+            from kognita._actions import _bounded
+            status, outcome = _bounded(lambda: self._invoke('tools/call',
+                {'name': permission['compensation'], 'arguments': dict(env.arguments)},
+                rpc_id, headers, {'proxied': False}), seconds=permission.get('max_duration', 30.0),
+                agent=agent_name, run=None, delegation=None)
+            if status != 'completed':
+                raise _BackendUnavailable('compensation did not complete')
+            if isinstance(outcome, _BackendPayload) and outcome.error is not None:
+                raise _BackendUnavailable('compensation failed')
+            return None
+
+        if permission.get('reversible') and not (
+                isinstance(permission.get('compensation'), str) and permission['compensation'].strip()):
+            identity_checks.append(Check(check='S6C-REVERSIBILITY', regime='INTERNAL',
+                result=CheckResult.FAIL, citation='S6C-REVERSIBILITY'))
+        try:
+            registry.register(envelope.tool, invoke,
+                required_level=permission.get('required_level', 0), verb=permission.get('verb', 'read'),
+                external=permission.get('external', False), client_data=permission.get('client_data', False),
+                public_content=permission.get('public_content', False),
+                reversible=permission.get('reversible', False),
+                compensation=compensate if permission.get('reversible') else None,
+                max_duration=permission.get('max_duration', 30.0))
+        except ValueError:
+            identity_checks.append(Check(check='S6C-TOOL-METADATA', regime='INTERNAL',
+                result=CheckResult.FAIL, citation='S6C-TOOL-METADATA'))
+            registry.register(envelope.tool, invoke)
+        registry.get(envelope.tool)._compensation_name = permission.get('compensation')
         from kognita.tools import Run, _refresh_run
         bound_run = Run(id=headers['run_id']) if headers.get('run_id') else None
         if bound_run is not None:
@@ -637,6 +727,8 @@ class McpProxy:
         released = evaluation.allowed and not result.approval_required
         if not released:
             return self._denied(rpc_id, evaluation)
+        if state.get('_outcome') in ('timeout', 'cancelled', 'cancellation_requested'):
+            return _rpc_error(rpc_id, code=-32002, message=state['_outcome'], status=502, evaluation=evaluation)
         if rpc_method not in _IMPLEMENTED:
             return _rpc_error(
                 rpc_id,
@@ -669,7 +761,7 @@ class McpProxy:
         params: Mapping[str, Any],
         rpc_id: Any,
         headers: Mapping[str, str],
-        state: dict[str, bool],
+        state: dict[str, Any],
     ) -> Any:
         if rpc_method == "initialize":
             return self._initialize_result(params)
@@ -708,7 +800,7 @@ class McpProxy:
         params: Mapping[str, Any],
         rpc_id: Any,
         headers: Mapping[str, str],
-        state: dict[str, bool],
+        state: dict[str, Any],
     ) -> _BackendPayload:
         name = params.get("name")
         arguments = params.get("arguments") or {}
@@ -729,7 +821,7 @@ class McpProxy:
         self,
         rpc_id: Any,
         headers: Mapping[str, str],
-        state: dict[str, bool],
+        state: dict[str, Any],
     ) -> dict[str, Any]:
         tools: list[Any] = []
         several = len(self.servers) > 1
@@ -757,7 +849,7 @@ class McpProxy:
         params: Mapping[str, Any],
         rpc_id: Any,
         headers: Mapping[str, str],
-        state: dict[str, bool],
+        state: dict[str, Any],
     ) -> _BackendPayload:
         body = json.dumps(
             {"jsonrpc": "2.0", "id": rpc_id, "method": method, "params": dict(params)}

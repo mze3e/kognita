@@ -10,14 +10,9 @@ A deny override is a denial of the next call. An allow override is recorded
 and does not outrank a later policy denial. A restrict adds tools to the
 denylist and may lower the classification ceiling; it does not raise either.
 
-Recover records the compensating actions registered for the run, in reverse
-order, and stops the run. A run with none registered is still stopped, and
-the event says so. Tools declaring their own compensating actions is a later
-slice. Autonomy levels are a later slice, so these controls apply to any live
-run that is attached to an interaction.
-
-Revoke engages the per-agent kill switch that already exists. Workload
-credentials are a later slice.
+Recover executes registered compensations in reverse order and records every
+outcome. Missing callbacks and failed rollbacks remain explicit in evidence.
+Revoke engages the per-agent kill switch and signals active proxy calls.
 """
 
 from __future__ import annotations
@@ -94,6 +89,8 @@ def pause_run(
             f"run {run_id} is {run.control_state} and cannot be paused "
             "(Intervention: pause)"
         )
+    from kognita._actions import _stop
+    _stop(run=run_id)
     run.control_state = "paused"
     session.add(run)
     session.flush()
@@ -200,8 +197,9 @@ def recover_run(
     human: str,
     citation: str,
     now: datetime | None = None,
+    _registry=None,
 ) -> dict[str, Any]:
-    """Stop the run and record its compensating actions, latest first."""
+    """Stop the run and execute its compensating actions, latest first."""
     at = now or utcnow()
     run, interaction_id = _ready(session, run_id, human, citation, at)
     if run.control_state == "recovered":
@@ -217,6 +215,9 @@ def recover_run(
     session.add(run)
     session.flush()
     payload = _base(run, interaction_id, human, "recover", citation, at)
+    from kognita._actions import _stop, _recover
+    _stop(run=run_id)
+    _recover(session, steps, evidence, interaction_id, _registry)
     payload["steps"] = steps
     if not steps:
         payload["note"] = (
