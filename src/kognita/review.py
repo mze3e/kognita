@@ -16,8 +16,7 @@ Approvals faster than the human boundary's threshold, or an approver whose
 approval rate reaches 99.9 percent over at least
 :data:`RUBBER_STAMP_MIN_DECISIONS` RM reviews, are flagged to the accountable
 owner named on the use-case register. The flag is evidence. It does not itself
-block the decision. The sample size is not in the roadmap; see the module
-constant.
+block the decision. The sample of 10 is the decided floor.
 
 Content keeps a provenance label. AI-generated content that an RM edits is
 ``AI then human-edited``. Relabelling it as human is refused.
@@ -75,8 +74,8 @@ RUN_OUTCOMES: tuple[str, ...] = ("allow", "deny")
 
 FINAL_OUTCOMES: tuple[str, ...] = REVIEW_OUTCOMES + RUN_OUTCOMES
 
-#: The roadmap names 99.9 percent and not how many decisions that rate needs.
-#: Ten is the floor used here, so one approval is not treated as a rubber stamp.
+#: The roadmap names 99.9 percent. Ten is the decided sample: a rate over fewer
+#: RM reviews is not treated as a rubber stamp.
 RUBBER_STAMP_APPROVAL_RATE = 0.999
 RUBBER_STAMP_MIN_DECISIONS = 10
 

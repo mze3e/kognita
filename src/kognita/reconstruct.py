@@ -986,6 +986,11 @@ def _render_client(answer: Any) -> list[str]:
             lines.append(
                 "Do not contact: " + ", ".join(str(value) for value in reasons) + "."
             )
+        elif item.get("outcome") == "reversal":
+            lines.append(
+                f"Do not contact reversed by {item.get('human')} "
+                f"({item.get('citation')})."
+            )
         else:
             for reason in item.get("reasons") or []:
                 lines.append(
@@ -1001,6 +1006,12 @@ def _render_product(answer: Any) -> list[str]:
     lines: list[str] = []
     for item in answer.get("originations") or []:
         product = item.get("product_id") or ""
+        if item.get("outcome") == "reversal":
+            lines.append(
+                f"Do not contact reversed by {item.get('human')} "
+                f"({item.get('citation')})."
+            )
+            continue
         if item.get("outcome") == "do not contact":
             reasons = ", ".join(
                 str(value) for value in (item.get("do_not_contact_reasons") or [])

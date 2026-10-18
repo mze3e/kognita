@@ -19,8 +19,14 @@ A single-signature hold is granted by ``continue_run`` itself when the
 resolution is true. A two-signature hold is not. ``mark`` records the first
 signature. ``continue_run`` then confirms the second, and only when the
 approval is already marked. A true resolution on an approval that is still
-pending does not grant it and does not resume the run. A missing signature
-fails closed.
+pending does not grant it and does not resume the run. The second
+signature is ``confirmer`` when that argument is given, and ``approver_name``
+otherwise. A blank confirming party, or the same identity as the marker or
+the requester, fails closed and leaves the continuation in place.
+
+A tool call that a contact-frequency policy marks as contacting the client
+is refused while do-not-contact is in force for that client. The refusal is
+a denial on ``run_governed``. ``continue_run`` raises and does not resume.
 
 ``EGRESS`` records that data crossed the boundary, by reference: its size and the
 request it belongs to, never its content.
@@ -45,6 +51,7 @@ from kognita.approvals import (
     reject,
 )
 from kognita.interaction import attach, require_interaction
+from kognita.origination import OriginationError, contact_refusal
 from kognita.canonical import canonical_hash, canonical_json
 from kognita.envelope import Check, Envelope, Evaluation, envelope_hash
 from kognita.evidence import EvidenceWriter
@@ -658,6 +665,10 @@ def run_governed(
         as_of=as_of,
     )
     evaluation = _with_checks(evaluation, extra_checks)
+    evaluation = _with_checks(
+        evaluation,
+        contact_refusal(session, envelope, interaction_id=interaction_id, now=at),
+    )
     evaluation, _breaches = _admit(
         session,
         run,
@@ -741,6 +752,7 @@ def continue_run(
     embedder: Any = None,
     subgraph: Callable[..., Any] | None = None,
     approver_name: str = "Unassigned (duty desk)",
+    confirmer: str | None = None,
     now: datetime | None = None,
 ) -> ToolRun | Any:
     """Resume a run suspended on ``HUMAN_APPROVAL``.
@@ -753,10 +765,18 @@ def continue_run(
     A single-signature approval that is still pending is granted or rejected
     here. A two-signature approval is not. ``mark`` is the first signature.
     When that approval is ``MARKED``, a true resolution confirms it and then
-    resumes. A true resolution while it is still pending raises
+    resumes. The confirming party is ``confirmer`` when passed, including an
+    empty string, which is a missing signature and is refused. When
+    ``confirmer`` is omitted, ``approver_name`` is that party. Either way the
+    party must differ from the requester and the marker. A true resolution
+    while the approval is still pending raises
     :class:`~kognita.approvals.ApprovalError`, leaves the continuation in
-    place, and does not execute. The confirming name is ``approver_name``,
-    and it must differ from the requester and the marker.
+    place, and does not execute.
+
+    A true resolution of a tool that would contact a client under
+    do-not-contact raises :class:`~kognita.origination.OriginationError`
+    before any signature is applied, and the continuation stays where it is.
+    A denial still rejects the hold and does not execute.
 
     Rehydration fetches the continuation by the hash stored on the run. The
     fetch is evidenced; the payload is not copied onto the run or into the
@@ -778,6 +798,17 @@ def continue_run(
         )
 
     correlation_id = str(payload["request_id"])
+    envelope = _envelope_from_continuation(payload)
+    blocked = contact_refusal(
+        session,
+        envelope,
+        interaction_id=payload.get("interaction_id")
+        if isinstance(payload.get("interaction_id"), str)
+        else None,
+        now=at,
+    )
+    if blocked and resolved[approval_id]:
+        raise OriginationError(blocked[0].citation)
     ordered = [approval_id] + [aid for aid in resolved if aid != approval_id]
     for aid in ordered:
         is_granted = resolved[aid]
@@ -789,6 +820,7 @@ def continue_run(
             approval,
             granted=is_granted,
             approver_name=approver_name,
+            confirmer=confirmer,
             evidence=evidence,
             correlation_id=correlation_id,
             now=at,
@@ -799,7 +831,6 @@ def continue_run(
             ]
 
     granted_flag = resolved[approval_id]
-    envelope = _envelope_from_continuation(payload)
     evaluation = _evaluation_from_continuation(payload, envelope)
     clock_hit = _wall_clock_exceeded(run, at)
     live = (
@@ -1025,12 +1056,32 @@ def _record_resume_decision(
     )
 
 
+def _second_signature(confirmer: str | None, approver_name: str) -> str:
+    """Who confirms a marked two-signature approval.
+
+    ``confirmer`` wins when the caller passed it, and a blank value is a
+    missing signature rather than a fall back to ``approver_name``. Omitting
+    ``confirmer`` keeps ``approver_name`` as that party.
+    """
+    if confirmer is not None:
+        party = confirmer.strip()
+    else:
+        party = approver_name.strip()
+    if not party:
+        raise ApprovalError(
+            "the confirming party is missing "
+            "(two-signature approval: second signature)"
+        )
+    return party
+
+
 def _resolve_approval(
     session: Session,
     approval: Approval,
     *,
     granted: bool,
     approver_name: str,
+    confirmer: str | None,
     evidence: EvidenceWriter,
     correlation_id: str,
     now: datetime,
@@ -1071,7 +1122,7 @@ def _resolve_approval(
             confirm(
                 session,
                 approval,
-                approver_id=approver_name,
+                approver_id=_second_signature(confirmer, approver_name),
                 evidence=evidence,
                 correlation_id=correlation_id,
                 now=now,

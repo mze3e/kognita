@@ -16,11 +16,17 @@ from fixtures import governance_pack as gp
 
 from kognita import confirm, mark
 from kognita.approvals import ApprovalError, grant
-from kognita.envelope import Envelope, RuleContext
+from kognita.envelope import Check, Envelope, RuleContext
 from kognita.evidence import verify_chain
 from kognita.interaction import InteractionError, attach, open_interaction
 from kognita.models import Approval, EvidenceEvent, Policy, RunRecord, UseCase
-from kognita.origination import OriginationError, do_not_contact_reasons, originate
+from kognita.origination import (
+    OriginationError,
+    contact_refusal,
+    do_not_contact_reasons,
+    originate,
+    reverse_do_not_contact,
+)
 from kognita.policy import parse_rule
 from kognita.reconstruct import reconstruct, render_reconstruction
 from kognita.review import (
@@ -685,6 +691,487 @@ def test_continue_run_rejects_a_marked_approval_without_executing(gov):
 
     assert resumed.data is None
     assert stored.status is ApprovalStatus.REJECTED
+
+
+def test_do_not_contact_blocks_later_client_contact_until_reversal(harness):
+    executed: list[str] = []
+
+    def _body(envelope, evaluation, session):
+        executed.append(envelope.tool)
+        return {"ok": True}
+
+    harness.registry.register("send_note", _body, classification=Classification.C1)
+    harness.registry.register(
+        "get_subject_profile", _body, classification=Classification.C2
+    )
+    with harness.session() as session:
+        session.add(
+            Policy(
+                regime="ORIGINATION",
+                rule_type="CONTACT_FREQUENCY",
+                rule={"max_contacts": 5, "window_days": 30, "tools": ["send_note"]},
+                citation="Contact frequency: send_note contacts the client",
+                effective_from=FROZEN_NOW - timedelta(days=1),
+            )
+        )
+        session.add(
+            UseCase(
+                usecase_id="portfolio-review",
+                version=1,
+                record={
+                    "usecase_id": "portfolio-review",
+                    "version": 1,
+                    "business_owner": "Ada Owner",
+                    "approval_gate": "human_approval",
+                },
+                effective_from=FROZEN_NOW - timedelta(days=1),
+            )
+        )
+        session.flush()
+        _boundary(session, harness.evidence)
+        barred = _open(session, harness.evidence, interaction_id="int-barred")
+        same = _open(session, harness.evidence, interaction_id="int-same")
+        other = _open(
+            session,
+            harness.evidence,
+            interaction_id="int-other",
+            client_id="client-2",
+        )
+        unnamed = _open(
+            session,
+            harness.evidence,
+            interaction_id="int-unnamed",
+            client_id="client-3",
+            use_case="",
+            approval_gate="human_approval",
+        )
+        originate(
+            session,
+            barred.id,
+            evidence=harness.evidence,
+            trigger="schedule",
+            candidate_set_size=4,
+            criteria=["vulnerability"],
+            do_not_contact=["vulnerability"],
+            now=FROZEN_NOW,
+        )
+        originate(
+            session,
+            unnamed.id,
+            evidence=harness.evidence,
+            trigger="schedule",
+            candidate_set_size=1,
+            criteria=["poor timing"],
+            do_not_contact=["poor timing"],
+            now=FROZEN_NOW,
+        )
+        with pytest.raises(OriginationError, match="do not contact"):
+            originate(
+                session,
+                same.id,
+                evidence=harness.evidence,
+                trigger="RM request",
+                candidate_set_size=4,
+                criteria=["exposure"],
+                reasons=[_reason()],
+                now=FROZEN_NOW,
+            )
+        other_recommendation = originate(
+            session,
+            other.id,
+            evidence=harness.evidence,
+            trigger="event",
+            candidate_set_size=2,
+            criteria=["exposure"],
+            reasons=[_reason()],
+            now=FROZEN_NOW,
+        )
+        with pytest.raises(ReviewError, match="do not contact"):
+            review(
+                session,
+                same.id,
+                rm="rm-1",
+                outcome="approve",
+                packet=_packet(),
+                rendered="Send the banks note.",
+                provenance="human",
+                evidence=harness.evidence,
+                requested_at=FROZEN_NOW - timedelta(minutes=5),
+                now=FROZEN_NOW,
+            )
+        rejected = review(
+            session,
+            same.id,
+            rm="rm-1",
+            outcome="reject",
+            packet=_packet(),
+            rendered="Send the banks note.",
+            provenance="human",
+            evidence=harness.evidence,
+            requested_at=FROZEN_NOW - timedelta(minutes=5),
+            now=FROZEN_NOW,
+        )
+        denied = run_governed(
+            session,
+            Envelope(
+                principal="test-principal",
+                purpose="COLLABORATION",
+                tool="send_note",
+                actor_location="SG",
+            ),
+            registry=harness.registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+            interaction_id=barred.id,
+        )
+        profile = run_governed(
+            session,
+            dp.envelope("get_subject_profile", site="SG", subject="2"),
+            registry=harness.registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+            interaction_id=barred.id,
+        )
+        other_send = run_governed(
+            session,
+            Envelope(
+                principal="test-principal",
+                purpose="COLLABORATION",
+                tool="send_note",
+                actor_location="SG",
+            ),
+            registry=harness.registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+            interaction_id=other.id,
+        )
+        unknown = run_governed(
+            session,
+            Envelope(
+                principal="test-principal",
+                purpose="COLLABORATION",
+                tool="send_note",
+                actor_location="SG",
+            ),
+            registry=harness.registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+        )
+        conflict = contact_refusal(
+            session,
+            Envelope(
+                principal="test-principal",
+                purpose="COLLABORATION",
+                tool="send_note",
+                subject_type="client",
+                subject_id="client-2",
+            ),
+            interaction_id=barred.id,
+            now=FROZEN_NOW,
+        )
+        with pytest.raises(OriginationError, match="cites the basis"):
+            reverse_do_not_contact(
+                session,
+                barred.id,
+                evidence=harness.evidence,
+                human="RM",
+                citation="  ",
+                now=FROZEN_NOW,
+            )
+        with pytest.raises(OriginationError, match="not an authorised human"):
+            reverse_do_not_contact(
+                session,
+                barred.id,
+                evidence=harness.evidence,
+                human="stranger",
+                citation="RM instruction 2026-06-01",
+                now=FROZEN_NOW,
+            )
+        with pytest.raises(OriginationError, match="registered agent"):
+            reverse_do_not_contact(
+                session,
+                barred.id,
+                evidence=harness.evidence,
+                human="eligibility-assistant",
+                citation="RM instruction 2026-06-01",
+                now=FROZEN_NOW,
+            )
+        with pytest.raises(OriginationError, match="no authorised human"):
+            reverse_do_not_contact(
+                session,
+                unnamed.id,
+                evidence=harness.evidence,
+                human="RM",
+                citation="RM instruction 2026-06-01",
+                now=FROZEN_NOW,
+            )
+        assert do_not_contact_reasons(session, same.id) == ("vulnerability",)
+        lifted = reverse_do_not_contact(
+            session,
+            barred.id,
+            evidence=harness.evidence,
+            human="Ada Owner",
+            citation="RM instruction 2026-06-01",
+            now=FROZEN_NOW,
+        )
+        assert do_not_contact_reasons(session, same.id) == ()
+        resumed_recommendation = originate(
+            session,
+            same.id,
+            evidence=harness.evidence,
+            trigger="RM request",
+            candidate_set_size=4,
+            criteria=["exposure"],
+            reasons=[_reason()],
+            now=FROZEN_NOW,
+        )
+        sent = run_governed(
+            session,
+            Envelope(
+                principal="test-principal",
+                purpose="COLLABORATION",
+                tool="send_note",
+                actor_location="SG",
+            ),
+            registry=harness.registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+            interaction_id=barred.id,
+        )
+        session.commit()
+
+    assert other_recommendation["outcome"] == "recommend"
+    assert rejected["outcome"] == "reject"
+    assert denied.evaluation.outcome is Outcome.DENY
+    assert denied.data is None
+    assert any(
+        "vulnerability" in check.citation for check in denied.evaluation.failures()
+    )
+    assert any("send_note" in check.citation for check in denied.evaluation.failures())
+    assert profile.evaluation.outcome is Outcome.ALLOW
+    assert profile.data == {"ok": True}
+    assert other_send.evaluation.outcome is Outcome.ALLOW
+    assert unknown.evaluation.outcome is Outcome.DENY
+    assert any(
+        "could not be determined" in check.citation
+        for check in unknown.evaluation.failures()
+    )
+    assert conflict and "could not be determined" in conflict[0].citation
+    assert lifted["outcome"] == "reversal"
+    assert lifted["citation"] == "RM instruction 2026-06-01"
+    assert resumed_recommendation["outcome"] == "recommend"
+    assert sent.evaluation.outcome is Outcome.ALLOW
+    assert executed == ["get_subject_profile", "send_note", "send_note"]
+
+
+def test_continue_run_leaves_a_barred_contact_held(harness):
+    executed: list[str] = []
+
+    def _body(envelope, evaluation, session):
+        executed.append(envelope.tool)
+        return {"ok": True}
+
+    harness.registry.register("send_note", _body, classification=Classification.C1)
+    run = Run()
+    with harness.session() as session:
+        session.add(
+            Policy(
+                regime="ORIGINATION",
+                rule_type="CONTACT_FREQUENCY",
+                rule={"max_contacts": 5, "window_days": 30, "tools": ["send_note"]},
+                citation="Contact frequency: send_note contacts the client",
+                effective_from=FROZEN_NOW - timedelta(days=1),
+            )
+        )
+        session.flush()
+        _boundary(session, harness.evidence)
+        interaction = _open(session, harness.evidence, interaction_id="int-held")
+        held = run_governed(
+            session,
+            Envelope(
+                principal="test-principal",
+                purpose="COLLABORATION",
+                tool="send_note",
+                actor_location="SG",
+            ),
+            registry=harness.registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=FROZEN_NOW,
+            now=FROZEN_NOW,
+            run=run,
+            interaction_id=interaction.id,
+            extra_checks=[
+                Check(
+                    check="HOLD",
+                    regime="INTERNAL",
+                    result=CheckResult.REQUIRES_HUMAN,
+                    citation="test hold",
+                )
+            ],
+        )
+        approval = session.exec(select(Approval)).one()
+        assert held.data is None
+        assert approval.status is ApprovalStatus.PENDING
+        originate(
+            session,
+            interaction.id,
+            evidence=harness.evidence,
+            trigger="schedule",
+            candidate_set_size=2,
+            criteria=["vulnerability"],
+            do_not_contact=["vulnerability"],
+            now=FROZEN_NOW,
+        )
+        with pytest.raises(OriginationError, match="do not contact"):
+            continue_run(
+                session,
+                run.id,
+                {approval.id: True},
+                evidence=harness.evidence,
+                registry=harness.registry,
+                approver_name="RM",
+                now=FROZEN_NOW,
+            )
+        session.commit()
+        stored = session.get(RunRecord, run.id)
+        assert stored is not None and stored.continuation_hash
+        assert session.get(Approval, approval.id).status is ApprovalStatus.PENDING
+        assert executed == []
+        reverse_do_not_contact(
+            session,
+            interaction.id,
+            evidence=harness.evidence,
+            human="RM",
+            citation="The client asked to be contacted",
+            now=FROZEN_NOW,
+        )
+        resumed = continue_run(
+            session,
+            run.id,
+            {approval.id: True},
+            evidence=harness.evidence,
+            registry=harness.registry,
+            approver_name="RM",
+            now=FROZEN_NOW,
+        )
+        session.commit()
+
+    assert resumed.data == {"ok": True}
+    assert executed == ["send_note"]
+
+
+def test_continue_run_confirmer_must_be_a_different_party(gov):
+    envelope = gp.envelope(
+        "mark_criterion",
+        purpose="MARK_CRITERION",
+        user="marker_alice",
+        criterion="crit_1",
+        principal="marker_alice",
+        agent="marker-agent",
+    )
+    run = Run()
+    with gov.session() as session:
+        held = run_governed(
+            session,
+            envelope,
+            registry=gov.registry,
+            evidence=gov.evidence,
+            pack=gov.pack,
+            purposes=gp.PURPOSES,
+            as_of=FROZEN_NOW,
+            run=run,
+            now=FROZEN_NOW,
+        )
+        approval = session.exec(select(Approval)).one()
+        mark(
+            session,
+            approval,
+            approver_id="reviewer_rm",
+            evidence=gov.evidence,
+            correlation_id=held.evaluation.request_id,
+            now=FROZEN_NOW,
+        )
+        with pytest.raises(ApprovalError, match="confirming party is missing"):
+            continue_run(
+                session,
+                run.id,
+                {approval.id: True},
+                evidence=gov.evidence,
+                registry=gov.registry,
+                approver_name="owner_bob",
+                confirmer="",
+                now=FROZEN_NOW,
+            )
+        with pytest.raises(ApprovalError, match="confirming party is missing"):
+            continue_run(
+                session,
+                run.id,
+                {approval.id: True},
+                evidence=gov.evidence,
+                registry=gov.registry,
+                approver_name="",
+                now=FROZEN_NOW,
+            )
+        with pytest.raises(ApprovalError, match="must differ"):
+            continue_run(
+                session,
+                run.id,
+                {approval.id: True},
+                evidence=gov.evidence,
+                registry=gov.registry,
+                approver_name="owner_bob",
+                confirmer="reviewer_rm",
+                now=FROZEN_NOW,
+            )
+        with pytest.raises(ApprovalError, match="must differ"):
+            continue_run(
+                session,
+                run.id,
+                {approval.id: True},
+                evidence=gov.evidence,
+                registry=gov.registry,
+                confirmer="marker_alice",
+                now=FROZEN_NOW,
+            )
+        session.commit()
+        assert session.get(Approval, approval.id).status is ApprovalStatus.MARKED
+        assert session.get(RunRecord, run.id).continuation_hash
+        resumed = continue_run(
+            session,
+            run.id,
+            {approval.id: True},
+            evidence=gov.evidence,
+            registry=gov.registry,
+            approver_name="reviewer_rm",
+            confirmer="owner_bob",
+            now=FROZEN_NOW,
+        )
+        session.commit()
+        confirmed = session.exec(
+            select(EvidenceEvent)
+            .where(EvidenceEvent.event_type == EventType.APPROVAL)
+            .where(EvidenceEvent.actor_id == "owner_bob")
+        ).all()
+
+    assert resumed.data == {"marked": True}
+    assert any(event.payload.get("action") == "CONFIRMED" for event in confirmed)
 
 
 def test_unknown_interaction_and_unknown_gate_fail_closed(harness):
