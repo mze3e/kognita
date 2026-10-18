@@ -177,6 +177,7 @@ class _DeferredEvidence:
     save_run: bool = False
     model: _DeferredModel | None = None
     model_card_denial: _ModelCardDenial | None = None
+    _minimization: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -1003,8 +1004,7 @@ class Gateway:
                            if message.get("role") in ("system", "developer")]
                 current["system_prompt"] = "\n".join(str(value) for value in systems)
                 current["tools"] = payload.get("tools", [])
-                if "instructions" in payload:
-                    current["instructions"] = payload["instructions"]
+                current["instructions"] = payload.get("instructions", "")
                 envelope = replace(envelope, context={**envelope.context, "deployment": current})
         model_spec = _model_call_spec(agent)
         register = self._store(lambda: load_register(session, as_of=now))
@@ -1301,6 +1301,14 @@ class Gateway:
         from kognita.review import _screen_retained_response
         delivery_checks = []
         if bound_run is not None:
+            from kognita.vocabulary import at_or_below
+            self._store(lambda: _refresh_run(session, bound_run))
+            if (bound_run.classification_ceiling is not None and not at_or_below(
+                response_record["label"], bound_run.classification_ceiling
+            )):
+                delivery_checks.append(Check(check="BUDGET", regime="INTERNAL",
+                    result=CheckResult.FAIL, citation="classification_ceiling"))
+        if bound_run is not None:
             for name, used, cap in (
                 ("max_tokens", bound_run.tokens_used, bound_run.max_tokens),
                 ("max_cost_usd", bound_run.cost_usd_used, bound_run.max_cost_usd),
@@ -1390,10 +1398,22 @@ class Gateway:
             if deferred is not None:
                 deferred.evaluation = evaluation
             return finish(_denied(evaluation))
+        from kognita._limits import _minimize
+        minimization_evidence = self.evidence
+        if deferred is not None:
+            from types import SimpleNamespace
+
+            def _capture_minimization(_session, **event):
+                deferred._minimization = event
+
+            minimization_evidence = SimpleNamespace(emit=_capture_minimization)
+        delivered = self._store(lambda: _minimize(
+            session, envelope, restored_payload if restored_payload is not None else restored,
+            minimization_evidence, _request_id=evaluation.request_id))
         return finish(
             GatewayResponse(
                 status=status,
-                body=restored.encode("utf-8"),
+                body=(delivered if isinstance(delivered, str) else json.dumps(delivered)).encode("utf-8"),
                 headers={"content-type": content_type},
                 evaluation=evaluation,
                 response_classifier=response_record,
@@ -1445,6 +1465,8 @@ class Gateway:
                 run_id=run_id,
             )
         )
+        if item._minimization is not None:
+            self._store(lambda: self.evidence.emit(session, **item._minimization))
         model = item.model
         if model is not None:
             decided_at = item.decided_at

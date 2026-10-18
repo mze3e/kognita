@@ -126,8 +126,11 @@ def test_review_and_deployment_http(session, evidence, engine, kind, change):
         assert any(c['check'] == rule and c['result'] == 'fail' for c in decision.checks)
         agent.review_date = NOW + timedelta(days=90)
         _approve(session, evidence, agent, agent.tool_allowlist['_deployment'])
+        # Approval alone cannot supply instructions missing from the wire request.
+        gateway_body = json.loads(_body('hello'))
+        gateway_body['instructions'] = agent.tool_allowlist['_deployment']['instructions']
         status, raw = _http(ingress, PATH if kind == 'gateway' else '/mcp', headers,
-                            _body('hello') if kind == 'gateway' else _call())
+                            json.dumps(gateway_body).encode() if kind == 'gateway' else _call())
         assert status == 200, raw
         assert _decision(session).outcome is Outcome.ALLOW
         assert len(backend.calls) == 1

@@ -23,7 +23,9 @@ def register(session, **kwargs):
 
 
 def configure(agent, session=None):
+    # Gateway completion content must be explicitly approved for delivery too.
     agent.field_allowlist = {purpose: ["$", "marked", "content.text", "content.type",
+        "choices.message.content",
         "tools.name", "tools.description", "tools.inputSchema", "protocolVersion",
         "serverInfo.name", "serverInfo.version", "capabilities.tools"] for purpose in PURPOSES}
     agent.environment = "test"

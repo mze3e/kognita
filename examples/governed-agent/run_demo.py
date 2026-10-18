@@ -209,6 +209,7 @@ def _gateway(engine, pack, evidence) -> None:
             json.dumps(
                 {
                     "model": app.MODEL,
+                    "instructions": "Retrieve supplied notes for the assigned subject only.",
                     "messages": [
                         {"role": "system", "content": app._SYSTEM_PROMPT},
                         {"role": "user", "content": app.PROMPT},
