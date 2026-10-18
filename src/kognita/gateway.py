@@ -1029,6 +1029,9 @@ class Gateway:
             as_of=now,
         )
         from kognita._isolation import _tool_checks
+        if envelope.delegation_id and bound_run is None and _client_data(classification):
+            identity_checks.append(Check(check="S5-RUN-REQUIRED", citation="S5-RUN-REQUIRED",
+                                         regime="INTERNAL", result=CheckResult.FAIL))
         identity_checks += self._store(
             lambda: _tool_checks(session, envelope, model_spec, bound_run, self.evidence, at=now)
         )

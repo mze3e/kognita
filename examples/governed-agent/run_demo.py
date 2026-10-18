@@ -23,6 +23,8 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from kognita.tools import Run
+
 from sqlalchemy import text
 from sqlmodel import select
 
@@ -96,6 +98,7 @@ def _allowed(session, pack, evidence) -> None:
         embedder=HashingEmbedder(),
         evidence=evidence,
         purposes=app.PURPOSES,
+        run=Run(),
     )
     if answer.outcome is not Outcome.ALLOW or not answer.results:
         raise RuntimeError(
@@ -119,6 +122,7 @@ def _denied(session, pack, evidence) -> None:
         embedder=HashingEmbedder(),
         evidence=evidence,
         purposes=app.PURPOSES,
+        run=Run(),
     )
     citations = [
         check.citation
@@ -194,6 +198,7 @@ def _gateway(engine, pack, evidence) -> None:
             ),
             pack=pack,
             purposes=app.PURPOSES,
+            run=Run(),
             # The stand-in is the provider. Local trust would skip redaction.
             egress=EgressGuard(policy=EgressPolicy(trust_local=False)),
         )
