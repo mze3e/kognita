@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-19
+
+0.5 "Agents, Authority and Fleets". This is an alpha release. Not every 0.5 definition-of-done item is met, and an independent four-way review found open defects. Both are listed below under "Known open items". Read them before you rely on 0.5 controls.
+
+### Known open items
+
+0.5 definition-of-done items still open (partial):
+
+- **1. Full agent identity.** Some identity fields are still optional, and deployment date and model used are not recorded fields. Review-date expiry and changed-deployment denial are not yet shown end to end through both gateways.
+- **4. Blast-radius limits.** There is no daily transaction counter and no allowed-products limit. Quota admission is not atomic, so concurrent calls can exceed a per-minute or daily limit.
+- **14. Automatic containment.** The human alert is an evidence event only, with no delivery. An anomaly does not cancel a backend call that is already running.
+- **17. Adversarial suite.** The suite runs through a test harness, not end to end through the gateway and MCP proxy with a shipped pack.
+- **19. Automatic step-down.** The alert is an evidence event only. Step-down is demonstrated through snapshot loading, not through a gateway or MCP request.
+- **20. Provider credential detection.** Only declared metadata is scanned. An undeclared provider credential held by an agent is not detected.
+- **21. In-flight cancellation.** The default transport has no cancellation hook. A timed-out or killed call's result is withheld and evidenced, but the backend call keeps running.
+
+Known open review findings (fixes are planned for 0.5.1):
+
+- A run's taint and binding can be shed by omitting or rotating `run_id` on the MCP proxy.
+- The agent-to-agent delegation budget check is not atomic.
+- The framework adapters (hermes-agent, openai-agents, langgraph, pydantic-ai) cannot pass an agent credential or a delegation id, so registered-agent calls through them are denied.
+- Gateway model calls do not apply live-run interventions (pause, override, restrict, recover), the tool isolation checks (public-content lane, external authority, step-up, injection), or a human-approval continuation.
+- `broker.ask` skips run isolation and the field allow-list.
+- An envelope whose `subjects` and `subject_id` disagree is authorised on one and executed on the other.
+- Evidence export verification does not detect truncation, and `verify_chain` skips the head check when the head row is missing.
+- After a human approval the envelope hash changes, so the grant is not found, and a rejected hold does not release its quota.
+- Approved system triggers are always denied on the gateway and MCP proxy (a product decision is pending).
+- Proposal-then-apply is not implemented, and the response review-queue screener is not called from any response path.
+- Replay drops child delegations and the assurance level for 0.5 decisions.
+- The first two-signature signer may be blank, and policy citations may be empty.
+- Smaller items: `decide()` without a use-case register, anomaly day buckets and their concurrent update, workload credentials surviving retirement, token and cost caps applied one call late, approval packet text validation, and stale cached agent rows across sessions.
+
+### Changed
+
 - Add tool reversibility and compensation, stronger irreversible-action approval, bounded MCP execution and cancellation evidence, reverse recovery, adversarial conformance checks and a published threat model.
 
 - Complete delegated-run isolation, inherited restrictions, bounded authority reads and historical lineage; verify fleet quotas, authenticated MCP agent messages and restrictive sandbox output with S6b regression tests.
