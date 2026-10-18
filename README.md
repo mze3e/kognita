@@ -68,7 +68,7 @@ pip install kognita
 
 The core depends on four packages (`pydantic`, `sqlmodel`, `numpy`, `python-dotenv`) and runs with no network and no API key. Deciding whether a request is permitted should not require the machinery that answers it. `import-linter` contracts and a no-extras install test keep it that way.
 
-Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vector index (`kognita[vec]`), local embeddings (`kognita[local-embeddings]`) and structured document ingestion (`kognita[docling]`). `kognita[docling]` parses markdown, HTML and DOCX. PDF is refused until section headings can be read without torch. One extra per framework adapter: `kognita[hermes-agent]`, `kognita[openai-agents]`, `kognita[langgraph]` and `kognita[pydantic-ai]`. The core does not import those frameworks.
+Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vector index (`kognita[vec]`), local embeddings (`kognita[local-embeddings]`), structured document ingestion (`kognita[docling]`), and OpenTelemetry export (`kognita[otel]`). `kognita[docling]` parses markdown, HTML and DOCX. PDF is refused until section headings can be read without torch. One extra per framework adapter: `kognita[hermes-agent]`, `kognita[openai-agents]`, `kognita[langgraph]` and `kognita[pydantic-ai]`. The core does not import those frameworks or OpenTelemetry.
 
 ## What it does today
 
@@ -167,6 +167,8 @@ $ kognita serve --provider openai-compatible --upstream https://api.openai.com \
 The [roadmap](docs/ROADMAP.md) schedules this loop after 0.3:
 
 **Outcome metrics per use case (0.4).** Each use case names one primary metric — cycle time, decision quality, or reliability — with a baseline and a target. A Knowledge Lead owns the quality standard. The three metrics are computed from the interaction record. Cycle time is mean seconds from the interaction opening to the final decision. A named primary metric with no measurement is a breach. Autonomy gates that consume those metrics are still 0.5.
+
+**Flight recorder (0.4).** `kognita recorder` lists recent runs from the evidence chain, shows one run's decisions and citations, and exports a run as self-verifying JSON. Alerts cover a budget breach, repeated denials from one actor, a chain break, and classifier confidence drift. RM acceptance, edit, rejection, and wrong-client rates are counted from evidence. A missing measurement is unmeasured. `kognita serve --otel` exports decisions, denials, latency, token use, and tool failures when `kognita[otel]` is installed and `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Injection attempts and entitlement blocks are unmeasured until an event records them. An export failure is reported and does not change the decision.
 
 **Autonomy earns its expansion (0.5).** Raising an agent's autonomy level requires thresholds on those metrics. The evidence is necessary, not sufficient: the accountable owner still approves. If the metrics fall below a lower threshold, the agent's effective level steps down one step.
 

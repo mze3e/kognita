@@ -101,6 +101,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         ("openai-agents", "agents", "openai-agents"),
         ("langgraph", "langgraph", "langgraph"),
         ("pydantic-ai", "pydantic_ai", "pydantic-ai"),
+        ("otel", "opentelemetry", "opentelemetry-api"),
     ):
         print(f"  {label:<22} {_probe(module, distribution)}")
     print()
@@ -221,6 +222,10 @@ def _cmd_serve_mcp(args: argparse.Namespace) -> int:
         print(str(exc), file=sys.stderr)
         return 2
     proxy = McpProxy.from_config(config)
+    if args.otel:
+        failed = _attach_otel(proxy.evidence._inner)
+        if failed:
+            return failed
     proxy.serve(args.host, args.port)
     return 0
 
@@ -274,6 +279,18 @@ def cmd_scaffold(args: argparse.Namespace) -> int:
     return 0
 
 
+def _attach_otel(evidence: EvidenceWriter) -> int | None:
+    """Install OpenTelemetry, or return the exit code when it cannot be."""
+    from kognita.otel import OtelError, attach
+
+    try:
+        print(attach(evidence), file=sys.stderr)
+    except OtelError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    return None
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     """Run the OpenAI-compatible AI gateway, or the MCP proxy.
 
@@ -292,9 +309,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
         return 2
     engine = make_engine(args.db)
     create_all(engine)
+    evidence = EvidenceWriter(engine)
+    if args.otel:
+        failed = _attach_otel(evidence)
+        if failed:
+            return failed
     gateway = Gateway(
         engine=engine,
-        evidence=EvidenceWriter(engine),
+        evidence=evidence,
         upstream=args.upstream,
         client=ClientConfiguration(
             principal=args.principal,
@@ -372,6 +394,100 @@ def cmd_usecase_coverage(args: argparse.Namespace) -> int:
     create_all(engine)
     with session_scope(engine) as session:
         report = coverage_report(session)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
+def _recorder_session(args: argparse.Namespace):
+    engine = make_engine(args.db)
+    create_all(engine)
+    return session_scope(engine)
+
+
+def cmd_recorder_runs(args: argparse.Namespace) -> int:
+    """List recent runs from evidence."""
+    from kognita.recorder import RecorderError, recent_runs
+
+    try:
+        with _recorder_session(args) as session:
+            rows = recent_runs(
+                session,
+                actor=args.actor,
+                tool=args.tool,
+                outcome=args.outcome,
+                limit=args.limit,
+            )
+    except RecorderError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(rows, indent=2, sort_keys=True))
+        return 0
+    if not rows:
+        print("no runs in evidence")
+        return 0
+    for row in rows:
+        actors = ",".join(row["actors"]) or "-"
+        tools = ",".join(row["tools"]) or "-"
+        print(
+            f"{row['run_id']}  {row['latest_outcome'] or '-'}  "
+            f"{actors}  {tools}  decisions {row['decisions']}"
+        )
+    return 0
+
+
+def cmd_recorder_show(args: argparse.Namespace) -> int:
+    """Print one run's decisions, citations, and evidence."""
+    from kognita.recorder import RecorderError, show_run
+
+    try:
+        with _recorder_session(args) as session:
+            report = show_run(session, args.run_id)
+    except RecorderError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_recorder_export(args: argparse.Namespace) -> int:
+    """Write one run as a self-verifying evidence artifact."""
+    from kognita.recorder import RecorderError, export_run
+
+    try:
+        with _recorder_session(args) as session:
+            payload = export_run(session, args.run_id)
+    except RecorderError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    text = json.dumps(payload, indent=2, sort_keys=True)
+    if args.output:
+        Path(args.output).write_text(text + "\n")
+        print(
+            f"wrote {payload['event_count']} events "
+            f"({payload['interest_count']} of interest) to {args.output}"
+        )
+    else:
+        print(text)
+    return 0
+
+
+def cmd_recorder_alerts(args: argparse.Namespace) -> int:
+    """Print flight-recorder alerts from evidence."""
+    from kognita.recorder import alerts
+
+    with _recorder_session(args) as session:
+        report = alerts(session)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_recorder_effectiveness(args: argparse.Namespace) -> int:
+    """Print effectiveness rates from evidence."""
+    from kognita.recorder import effectiveness
+
+    with _recorder_session(args) as session:
+        report = effectiveness(session, usecase_id=args.usecase)
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0
 
@@ -729,7 +845,58 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="approved system trigger this client may present; repeatable",
     )
+    serve.add_argument(
+        "--otel",
+        action="store_true",
+        help=(
+            "export evidence to OpenTelemetry. Requires kognita[otel] and "
+            "OTEL_EXPORTER_OTLP_ENDPOINT. Refuses to start without them"
+        ),
+    )
     serve.set_defaults(func=cmd_serve)
+
+    recorder = sub.add_parser("recorder", help="flight recorder")
+    recorder_sub = recorder.add_subparsers(dest="recorder_command", required=True)
+
+    recorder_runs = recorder_sub.add_parser(
+        "runs", help="recent runs filtered by actor, tool, and outcome"
+    )
+    recorder_runs.add_argument("--db", default="kognita.db", help="store path or URL")
+    recorder_runs.add_argument("--actor", help="actor on the run")
+    recorder_runs.add_argument("--tool", help="tool on the run")
+    recorder_runs.add_argument("--outcome", help="decision outcome on the run")
+    recorder_runs.add_argument("--limit", type=int, default=20)
+    recorder_runs.add_argument("--json", action="store_true", help="print JSON")
+    recorder_runs.set_defaults(func=cmd_recorder_runs)
+
+    recorder_show = recorder_sub.add_parser(
+        "show", help="decisions, citations, and evidence for one run"
+    )
+    recorder_show.add_argument("run_id")
+    recorder_show.add_argument("--db", default="kognita.db", help="store path or URL")
+    recorder_show.set_defaults(func=cmd_recorder_show)
+
+    recorder_export = recorder_sub.add_parser(
+        "export", help="export one run as self-verifying JSON"
+    )
+    recorder_export.add_argument("run_id")
+    recorder_export.add_argument("--db", default="kognita.db", help="store path or URL")
+    recorder_export.add_argument("-o", "--output", help="write to a file instead of stdout")
+    recorder_export.set_defaults(func=cmd_recorder_export)
+
+    recorder_alerts = recorder_sub.add_parser(
+        "alerts", help="budget, denials, chain break, and confidence drift"
+    )
+    recorder_alerts.add_argument("--db", default="kognita.db", help="store path or URL")
+    recorder_alerts.set_defaults(func=cmd_recorder_alerts)
+
+    recorder_rates = recorder_sub.add_parser(
+        "effectiveness",
+        help="RM acceptance, edit, rejection, and wrong-client rates",
+    )
+    recorder_rates.add_argument("--db", default="kognita.db", help="store path or URL")
+    recorder_rates.add_argument("--usecase", help="one use case; omit for every use case")
+    recorder_rates.set_defaults(func=cmd_recorder_effectiveness)
 
     scaffold = sub.add_parser("scaffold", help="create an application from a template")
     scaffold.add_argument(

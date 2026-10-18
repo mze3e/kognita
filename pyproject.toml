@@ -63,6 +63,12 @@ hermes-agent = ["hermes-agent>=0.19.0"]
 openai-agents = ["openai-agents>=0.2.0"]
 langgraph = ["langgraph>=0.2.0"]
 pydantic-ai = ["pydantic-ai>=0.1.0"]
+# OpenTelemetry export. The decision engine does not import it.
+otel = [
+    "opentelemetry-api>=1.27.0",
+    "opentelemetry-sdk>=1.27.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.27.0",
+]
 all = [
     "kognita[openai,vec,local-embeddings]",
 ]
@@ -164,6 +170,7 @@ source_modules = [
     "kognita.registry",
     "kognita.replay",
     "kognita.reconstruct",
+    "kognita.recorder",
     "kognita.review",
     "kognita.retention",
     "kognita.retrieval",
@@ -188,6 +195,23 @@ forbidden_modules = [
     "docling_core",
     "docling_parse",
     "docling_ibm_models",
+    "kognita.otel",
+    "opentelemetry",
+]
+
+# The otel extra is the only place that imports OpenTelemetry. The decision
+# engine, including the flight recorder, is the source list above.
+[[tool.importlinter.contracts]]
+name = "OpenTelemetry is reached only from the otel extra"
+type = "forbidden"
+source_modules = ["kognita"]
+forbidden_modules = [
+    "opentelemetry",
+    "kognita.otel",
+]
+ignore_imports = [
+    "kognita.cli -> kognita.otel",
+    "kognita.otel -> opentelemetry",
 ]
 
 [[tool.importlinter.contracts]]

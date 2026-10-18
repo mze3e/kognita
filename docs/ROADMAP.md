@@ -522,7 +522,7 @@ Do not wait for client harm.
 - [x] Risk tiers enforce minimum controls; a tier 3 use case cannot be activated by its own builder
 - [x] An incomplete approval packet cannot be approved; rubber-stamp approvals are flagged
 - [ ] Private-banking starter pack with scenarios, including cross-border and booking-centre denials
-- [ ] OpenTelemetry export
+- [x] OpenTelemetry export
 - [x] A use case outside the risk appetite cannot be registered; a use case past its review date is denied
 - [x] "Do not contact" outcomes recorded with reasons; a bare score is rejected as rationale
 - [ ] Every communication carries a communication level and content provenance label; unregistered channels are denied
@@ -533,7 +533,7 @@ Do not wait for client harm.
 - [x] Policy language: load, diff, validate, explain, test
 - [ ] Five starter packs with scenarios
 - [x] hermes-agent adapter plus at least three others
-- [ ] Flight recorder with export
+- [x] Flight recorder with export
 - [x] Cycle time, decision quality and reliability reported per use case from evidence, against a registered baseline and target
 - [x] A tier 2 use case with no named Knowledge Lead is denied
 - [x] A materiality rating not approved by the control function cannot be activated; the control function cannot approve a use case it owns

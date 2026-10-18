@@ -426,6 +426,7 @@ def record(
     now: datetime | None = None,
     budget: dict[str, Any] | None = None,
     create_approval: bool = True,
+    run_id: str | None = None,
 ) -> Evaluation:
     """Persist a decision, evidence it, and open an approval if one is required.
 
@@ -468,6 +469,12 @@ def record(
     }
     if budget is not None:
         payload["budget"] = budget
+    named_run = (run_id or "").strip()
+    if named_run:
+        # The run row must already exist: this id is a foreign key, and the
+        # flight recorder reads the run from this event rather than from the
+        # run table.
+        payload["run_id"] = named_run
 
     evidence.emit(
         session,
