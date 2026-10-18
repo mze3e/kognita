@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - #31: Require approval packet text fields and list members to contain non-blank text.
 - Framework bindings carry workload credentials and delegation IDs through model and tool authorization; missing tool credentials fail closed.
 - Extracted private model transport to keep the shared adapter binding within 200 lines.
+- Gateway model calls enforce live-run pause, override, restriction and recovery controls before forwarding.
+- Gateway model calls enforce approved-tool isolation and deny detected prompt injection before forwarding.
 
 ## [0.5.0] - 2026-10-19
 

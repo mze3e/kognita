@@ -93,6 +93,7 @@ from kognita.usecases import (
 )
 from kognita.tools import (
     Run,
+    ToolSpec as _ToolSpec,
     _budget_breaches,
     _budget_payload,
     _consume,
@@ -520,6 +521,25 @@ def _bound_principal(
                 )
             )
     return client.principal, purpose, checks
+
+
+def _model_call_spec(agent: Any | None) -> _ToolSpec:
+    """The approved-tool shape for ``model_call``, from the agent's own manifest.
+
+    Falls back to the least-privileged read defaults when the agent (or its
+    ``model_call`` entry) is missing, so an unconfigured agent gets no extra
+    isolation exemptions.
+    """
+    permission = (agent.tool_allowlist or {}).get("model_call", {}) if agent else {}
+    return _ToolSpec(
+        name="model_call",
+        fn=lambda *_args, **_kwargs: None,
+        required_level=permission.get("required_level", 0),
+        verb=permission.get("verb", "read"),
+        external=bool(permission.get("external", False)),
+        client_data=bool(permission.get("client_data", False)),
+        public_content=bool(permission.get("public_content", False)),
+    )
 
 
 def _budget_block(
@@ -976,6 +996,7 @@ class Gateway:
                 if "instructions" in payload:
                     current["instructions"] = payload["instructions"]
                 envelope = replace(envelope, context={**envelope.context, "deployment": current})
+        model_spec = _model_call_spec(agent)
         register = self._store(lambda: load_register(session, as_of=now))
         # One register for this request. The model-card link and the endpoint
         # flag read it again; loading it a second time would scan the same rows.
@@ -997,14 +1018,38 @@ class Gateway:
             engages=getattr(self.pack, "engages", None),
             as_of=now,
         )
-        from kognita._isolation import _assurance_checks
-        identity_checks += self._store(lambda: _assurance_checks(session, envelope, bound_run))
+        from kognita._isolation import _tool_checks
+        identity_checks += self._store(
+            lambda: _tool_checks(session, envelope, model_spec, bound_run, self.evidence, at=now)
+        )
+        if prompt and PatternClassifier()._injection(prompt):
+            # _tool_checks' own S5-INJECTION only reads envelope.arguments, which
+            # for model_call never carries the prompt (the prompt stays out of
+            # the hashed/evidenced envelope by design). Without this, a prompt
+            # injection is evidenced by _ingest above but never denied, unlike
+            # the same text arriving as a governed tool argument.
+            identity_checks.append(
+                Check(
+                    check="S5-INJECTION",
+                    regime="INTERNAL",
+                    result=CheckResult.FAIL,
+                    citation="S5-INJECTION",
+                )
+            )
         evaluation = _with_checks(evaluation, identity_checks)
-        if bound_run is not None and evaluation.outcome is Outcome.ALLOW:
+        if bound_run is not None:
             self._store(lambda: _refresh_run(session, bound_run))
-            blocked = _budget_block(bound_run, classification=classification, now=now)
-            if blocked:
-                evaluation = _deny_for_budgets(evaluation, blocked)
+            from kognita.intervention import control_checks
+
+            held = self._store(lambda: control_checks(
+                session, bound_run, tool="model_call", classification=classification
+            ))
+            if held:
+                evaluation = _with_checks(evaluation, held)
+            if evaluation.outcome is Outcome.ALLOW:
+                blocked = _budget_block(bound_run, classification=classification, now=now)
+                if blocked:
+                    evaluation = _deny_for_budgets(evaluation, blocked)
 
         local = _is_local(self.upstream)
         egress_decision = (
