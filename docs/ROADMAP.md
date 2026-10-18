@@ -532,7 +532,7 @@ Do not wait for client harm.
 - [x] Graph extra removed from the package (ADR 0008)
 - [x] Policy language: load, diff, validate, explain, test
 - [ ] Five starter packs with scenarios
-- [ ] hermes-agent adapter plus at least three others
+- [x] hermes-agent adapter plus at least three others
 - [ ] Flight recorder with export
 - [ ] Cycle time, decision quality and reliability reported per use case from evidence, against a registered baseline and target
 - [x] A tier 2 use case with no named Knowledge Lead is denied

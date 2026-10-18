@@ -24,14 +24,14 @@ The test suite includes:
 - **Governance conformance** (`test_governance_conformance.py`) — two-signature and proposal-apply patterns
 - **Packaging tests** (`test_packaging.py`) — import layering and architecture contracts
 
-Every test is offline (no network, no API keys). The decision engine imports none of the optional extras. The SqliteVecIndex tests load the existing `[vec]` extra, which is why the sync above installs it.
+Every test is offline (no network, no API keys). The decision engine imports none of the optional extras. The SqliteVecIndex tests load the existing `[vec]` extra, which is why the sync above installs it. Framework-adapter tests do not need `hermes-agent`, `openai-agents`, `langgraph` or `pydantic-ai`; the test that drives each real SDK runs only when that extra is installed.
 
 ## Code architecture
 
 Kognita enforces strict layering via `import-linter` contracts in `pyproject.toml`:
 
 - **The decision engine** (core modules like `governance`, `evidence`, `retrieval`) must stay installable on the four core dependencies alone. These modules are named in the `forbidden_modules` contract.
-- **Optional features** (provider-backed embedders) live in `kognita.adapters`. Structured ingestion lives in `kognita.ingest` and is reached only when the `[docling]` extra is installed; the decision engine does not import it. The package does not ship a graph engine, a document store or connectors (ADR 0008).
+- **Optional features** (provider-backed embedders, and the Hermes, OpenAI Agents, LangGraph and Pydantic AI adapters) live in `kognita.adapters`. Structured ingestion lives in `kognita.ingest` and is reached only when the `[docling]` extra is installed; the decision engine does not import it. The package does not ship a graph engine, a document store or connectors (ADR 0008). The decision engine never imports a framework; only the adapter that owns one may.
 - **CLI and testing** (`kognita.cli`, `kognita.testing`) are loose, not imported by the engine.
 
 To check contracts before committing:
