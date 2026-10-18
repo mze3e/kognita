@@ -12,6 +12,16 @@ deployment strip fields on the way in.
 
 Evidence is written by the infrastructure, never by an agent: nothing in this
 module takes a caller-supplied hash or sequence number.
+
+The append-only guard and the ``evidence_head`` checkpoint (see
+:mod:`kognita.db`) are installed on SQLite only; this project ships no other
+dialect driver. Deploying this store on a dialect where ``create_all`` does
+not install them leaves raw DELETE/UPDATE unguarded at the database layer.
+:func:`verify_chain` still fails closed in that case — a missing or unreadable
+head checkpoint is treated as a chain break whenever events exist, rather than
+as "nothing to compare against" — so truncation is reported instead of passing
+silently, but there is nothing stopping the truncation itself without the
+SQLite triggers.
 """
 from __future__ import annotations
 
@@ -311,8 +321,12 @@ def verify_chain(session: Session) -> int:
     """Verify every event in order; return how many were checked.
 
     Raises :class:`ChainBreak` naming the first sequence that fails and why —
-    a rewritten payload, a recomputed hash that no longer matches, or a link
-    that points at the wrong predecessor.
+    a rewritten payload, a recomputed hash that no longer matches, a link that
+    points at the wrong predecessor, or a head checkpoint that is missing,
+    unreadable, or does not match the chain's tail. A missing or unreadable
+    head is only tolerated when there are no events to check against it —
+    once events exist, the absence of a checkpoint is itself a reason to fail
+    closed rather than silently skip the tail check.
     """
     events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
     expected_prev = GENESIS_HASH
@@ -327,14 +341,21 @@ def verify_chain(session: Session) -> int:
             raise ChainBreak(event.sequence, "event hash does not match its contents")
         expected_prev = event.event_hash
     head = evidence_head(session)
-    if head is not None:
-        sequence, head_hash = head
-        if sequence != len(events) or head_hash != expected_prev:
+    if head is None:
+        if events:
             raise ChainBreak(
-                sequence,
-                f"the chain ends at sequence {len(events)}, but the head checkpoint "
-                f"records sequence {sequence}: events were removed from the end",
+                len(events),
+                "the evidence_head checkpoint is missing or unreadable, but "
+                f"{len(events)} event(s) exist: the tail cannot be verified",
             )
+        return 0
+    sequence, head_hash = head
+    if sequence != len(events) or head_hash != expected_prev:
+        raise ChainBreak(
+            sequence,
+            f"the chain ends at sequence {len(events)}, but the head checkpoint "
+            f"records sequence {sequence}: events were removed from the end",
+        )
     return len(events)
 
 
@@ -411,7 +432,14 @@ def export_chain(
 
 
 def verify_export(export: dict[str, Any]) -> int:
-    """Verify an exported artifact without a database. Returns events checked."""
+    """Verify an exported artifact without a database. Returns events checked.
+
+    Internal chain consistency alone is not enough: dropping trailing rows
+    from ``events`` leaves the remaining prefix internally consistent, so the
+    advertised ``event_count`` and ``head_hash`` are checked against what was
+    actually present and verified, and a mismatch — including a short export
+    whose metadata was left unchanged — is reported as a chain break.
+    """
     expected_prev = GENESIS_HASH
     rows = export.get("events", [])
     for index, row in enumerate(rows, start=1):
@@ -435,6 +463,20 @@ def verify_export(export: dict[str, Any]) -> int:
         if canonical_hash(header) != row["event_hash"]:
             raise ChainBreak(row["sequence"], "event hash does not match its contents")
         expected_prev = row["event_hash"]
+    advertised_count = export.get("event_count")
+    if type(advertised_count) is not int or len(rows) != advertised_count:
+        raise ChainBreak(
+            len(rows),
+            f"the export contains {len(rows)} event(s), but advertises "
+            f"event_count {advertised_count}: events were removed from the end",
+        )
+    advertised_head = export.get("head_hash", GENESIS_HASH)
+    if advertised_head != expected_prev:
+        raise ChainBreak(
+            len(rows),
+            "the export's head_hash does not match the hash of its last "
+            "verified event: events were removed from the end",
+        )
     return len(rows)
 
 
