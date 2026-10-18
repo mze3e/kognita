@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - #20: Require non-blank, stripped approval signers and distinct requester, marker, and confirmer identities.
 - #21: Escalate checks with blank citations using CITATION-REQUIRED, preserving denials.
 - #31: Require approval packet text fields and list members to contain non-blank text.
+- Framework bindings carry workload credentials and delegation IDs through model and tool authorization; missing tool credentials fail closed.
+- Extracted private model transport to keep the shared adapter binding within 200 lines.
 
 ## [0.5.0] - 2026-10-19
 

@@ -12,11 +12,12 @@ from __future__ import annotations
 
 import functools
 import inspect
-import json
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
+from kognita.adapters._binding import _complete
+from kognita.credentials import verify as _verify
 from kognita.envelope import Evaluation
 from kognita.exceptions import KognitaError
 from kognita.gateway import Gateway
@@ -114,6 +115,8 @@ class Binding:
     subject_type: str | None = None
     subject_id: str | None = None
     run: Run | None = None
+    agent_credential: str | None = field(default=None, repr=False)
+    delegation_id: str | None = None
 
     def call_tool(
         self,
@@ -128,6 +131,8 @@ class Binding:
             args = envelope.arguments
             return fn(**args) if args else fn()
 
+        if not _verify(self.session, self.agent_name or "", self.agent_credential):
+            return _refused("S2-CREDENTIAL: agent not registered or credential invalid")
         self.registry.register(name, body)
         envelope = Envelope(
             principal=self.principal,
@@ -138,6 +143,7 @@ class Binding:
             subject_type=self.subject_type,
             subject_id=self.subject_id,
             arguments=dict(arguments),
+            delegation_id=self.delegation_id,
         )
         try:
             result = run_governed(
@@ -178,45 +184,7 @@ class Binding:
         self, *, model: str, messages: Sequence[Mapping[str, Any]]
     ) -> GovernedResult:
         """One chat completion through the gateway. The provider is not called on a refusal."""
-        try:
-            body = json.dumps(
-                {"model": model, "messages": [dict(message) for message in messages]}
-            ).encode()
-        except (TypeError, ValueError) as exc:
-            return _refused(f"the model call was refused before it was sent: {exc}")
-        try:
-            response = self.gateway.handle(
-                "POST",
-                "/v1/chat/completions",
-                {},
-                body,
-                session=self.session,
-                run=self.run,
-            )
-        except Exception as exc:
-            return _refused(f"the model call was refused before it was sent: {exc}")
-        evaluation = response.evaluation
-        released = (
-            response.status == 200
-            and evaluation is not None
-            and evaluation.outcome is Outcome.ALLOW
-        )
-        data = None
-        if released:
-            try:
-                parsed = json.loads(response.body.decode())
-            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-                return _refused(f"the model call was refused before it was sent: {exc}")
-            data = parsed if isinstance(parsed, dict) else None
-            released = data is not None
-        outcome = evaluation.outcome if evaluation is not None else Outcome.DENY
-        return GovernedResult(
-            released=released,
-            outcome=outcome,
-            citations=citations_of(evaluation),
-            data=data,
-            evaluation=evaluation,
-        )
+        return _complete(self, model, messages)
 
     def require_completion(
         self, *, model: str, messages: Sequence[Mapping[str, Any]]
