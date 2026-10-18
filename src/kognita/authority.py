@@ -169,6 +169,70 @@ def _load(session, agent_name, at, evidence):
     return tuple(result)
 
 
+#: How deep into nested tool arguments a dimension's value is still resolved.
+_MAX_ARGUMENT_DEPTH = 8
+
+
+def _dimension_keys(dimension):
+    keys = {dimension, dimension + "_id"}
+    if dimension == "client":
+        keys.add("clientid")
+    return keys
+
+
+def _argument_values(value, dimension, *, _depth=0):
+    """Every value naming ``dimension`` anywhere inside ``value``.
+
+    Walks dicts and lists up to :data:`_MAX_ARGUMENT_DEPTH` deep, matching a
+    key equal to ``dimension`` or ``dimension + "_id"`` (``clientid`` too,
+    for ``"client"``), case-insensitively, scalar or list; and a sibling
+    ``{"subject_type": dimension, "subject_id": ...}`` pair, the same shape
+    :class:`~kognita.envelope.Envelope` itself uses for its primary subject.
+    Everything is coerced to a string so a numeric id still matches a
+    delegation's string client.
+
+    Returns ``None`` once the structure goes deeper than the bound: a value
+    that deep is unresolved, not absent, so the caller must fail closed
+    rather than silently treat it as a non-match.
+    """
+    if _depth > _MAX_ARGUMENT_DEPTH:
+        return None
+    values = set()
+    if isinstance(value, dict):
+        lowered = {k.lower(): v for k, v in value.items() if isinstance(k, str)}
+        if str(lowered.get("subject_type", "")).lower() == dimension and "subject_id" in lowered:
+            subject_id = lowered["subject_id"]
+            if subject_id is not None:
+                values.add(str(subject_id))
+        keys = _dimension_keys(dimension)
+        for key, item in value.items():
+            if not isinstance(key, str):
+                continue
+            if key.lower() in keys:
+                # Under a key that names the dimension only scalar ids are
+                # resolvable; an object or nested structure there is
+                # unresolved and fails closed.
+                items = item if isinstance(item, (list, tuple)) else [item]
+                for element in items:
+                    if isinstance(element, (dict, list, tuple)):
+                        return None
+                    if element is not None:
+                        values.add(str(element))
+            elif isinstance(item, (dict, list, tuple)):
+                nested = _argument_values(item, dimension, _depth=_depth + 1)
+                if nested is None:
+                    return None
+                values.update(nested)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            if isinstance(item, (dict, list, tuple)):
+                nested = _argument_values(item, dimension, _depth=_depth + 1)
+                if nested is None:
+                    return None
+                values.update(nested)
+    return values
+
+
 def _checks(envelope, snapshot, at):
     if not envelope.agent_name:
         return []
@@ -189,11 +253,20 @@ def _checks(envelope, snapshot, at):
     permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
     verb = permission.get("verb") if isinstance(permission, dict) else None
     subjects = {k: [v] for k, v in envelope.all_subjects().items()}
+    # A tool argument naming a delegation's own dimension (a client it is
+    # scoped to, or any other `allowed_data` dimension) overrides the
+    # delegation's implied value only in appearance: it must be covered by
+    # `allowed_data`, however deep it is nested, or the call is for someone
+    # else's data and is denied rather than silently rescoped. `client` is
+    # always one such dimension (`delegate` requires it), so this alone
+    # enforces the exact-match the delegation's own client needs.
     valid = (_lineage_valid(selected[0], rows, at) and _live(selected[3], at) and d.agent == envelope.agent_name
         and d.human == envelope.principal and d.purpose == envelope.purpose
         and d.jurisdiction == envelope.actor_location and verb in d.allowed_actions
         and _covers(d.allowed_data, subjects)
-        and subjects.get("client", [d.client]) == [d.client])
+        and subjects.get("client", [d.client]) == [d.client]
+        and all((named := _argument_values(envelope.arguments, dim)) is not None and named <= set(allowed)
+                for dim, allowed in d.allowed_data.items()))
     if '_parent' in selected[3]:
         valid = valid and envelope.tool in selected[3].get('_tools', [])
         valid = valid and permission.get('required_level', 7) <= selected[3].get('_level', -1)
