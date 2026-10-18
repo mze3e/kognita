@@ -503,6 +503,7 @@ class UseCase(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     usecase_id: str = Field(index=True)
+    deployment_mode: str | None = None
     version: int = 1
     record: dict[str, Any] = Field(
         default_factory=dict, sa_column=Column(JSON, nullable=False)
@@ -1175,3 +1176,11 @@ __all__ = [
     "utcnow",
     "as_utc",
 ]
+
+
+class _WorkloadCredential(SQLModel, table=True):
+    """Only a digest is persisted; each row belongs to exactly one agent."""
+    __tablename__ = "_workload_credentials"
+    digest: str = Field(primary_key=True)
+    agent_name: str = Field(index=True)
+    revoked: bool = False

@@ -465,7 +465,7 @@ def test_agent_name_outside_the_client_configuration_is_deny(session, evidence):
     assert any("authenticated client configuration" in citation for citation in denial["citations"])
 
 
-def test_approved_system_trigger_is_a_system_actor(session, evidence):
+def test_approved_system_trigger_cannot_bypass_workload_credentials(session, evidence):
     from test_usecases import NOW, ensure_live_purposes
 
     ensure_live_purposes(session, evidence, ("COLLABORATION",), at=NOW)
@@ -485,19 +485,13 @@ def test_approved_system_trigger_is_a_system_actor(session, evidence):
         session=session,
     )
 
-    assert response.status == 200
-    assert len(upstream.calls) == 1
+    assert response.status == 403
+    assert len(upstream.calls) == 0
     assert response.evaluation is not None
-    assert response.evaluation.outcome is Outcome.ALLOW
+    assert response.evaluation.outcome is Outcome.DENY
     assert response.evaluation.envelope.agent_name is None
-    tool_call = next(
-        event
-        for event in _events(session, response.evaluation.request_id)
-        if event.event_type is EventType.TOOL_CALL
-    )
-    assert tool_call.actor_type is ActorType.SYSTEM
-    assert tool_call.actor_id == "nightly-refresh"
-    assert tool_call.actor_type is not ActorType.HUMAN
+    assert any(check.check == "AGENT_CREDENTIAL" and check.result is CheckResult.FAIL
+               for check in response.evaluation.checks)
 
 
 def test_default_actor_context_supplies_the_agent_name(session, evidence):

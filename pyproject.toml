@@ -157,6 +157,7 @@ source_modules = [
     "kognita.canonical",
     "kognita.classify",
     "kognita.communication",
+    "kognita.credentials",
     "kognita.db",
     "kognita.egress",
     "kognita.embedding",

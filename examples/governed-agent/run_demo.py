@@ -131,6 +131,15 @@ def _denied(session, pack, evidence) -> None:
 
 def _gateway(engine, pack, evidence) -> None:
     """Redact through the AI gateway into a local stand-in. No provider key."""
+    from kognita.credentials import issue, revoke
+    from kognita.registry import get
+
+    # This local demonstration acts as the owner to provision a workload secret.
+    # Production operators deliver it through their agent secret store.
+    with session_scope(engine) as session:
+        owner = get(session, app.AGENT_NAME).owner_exec
+        credential = issue(session, app.AGENT_NAME, evidence=evidence, actor_id=owner)
+
     bodies: list[bytes] = []
 
     class Handler(BaseHTTPRequestHandler):
@@ -183,7 +192,7 @@ def _gateway(engine, pack, evidence) -> None:
         response = gateway.handle(
             "POST",
             "/v1/chat/completions",
-            {"agent_name": app.AGENT_NAME},
+            {"agent_name": app.AGENT_NAME, "agent_credential": credential},
             json.dumps(
                 {
                     "model": app.MODEL,
@@ -197,6 +206,8 @@ def _gateway(engine, pack, evidence) -> None:
     finally:
         server.shutdown()
         server.server_close()
+        with session_scope(engine) as session:
+            revoke(session, app.AGENT_NAME, credential, evidence=evidence, actor_id=owner)
 
     if response.status != 200 or not bodies:
         raise RuntimeError(

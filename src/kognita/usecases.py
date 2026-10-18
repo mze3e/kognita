@@ -351,6 +351,7 @@ class UseCaseSpec:
     residual_materiality: str = "low"
     approval_gate: str = "none"
     review_sampling_rate: float = 0.0
+    deployment_mode: str | None = None
     maximum_autonomy: int = 0
     _autonomy_gates: Mapping[str, Any] = field(default_factory=dict)
     _autonomy_step_down: Mapping[str, Any] = field(default_factory=dict)
@@ -482,6 +483,7 @@ class RegisteredUseCase:
     residual_materiality: str
     approval_gate: str
     review_sampling_rate: float
+    deployment_mode: str | None
     maximum_autonomy: int
     monitoring: bool
     explanation_depth: str
@@ -609,6 +611,10 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
     def add(text: str) -> None:
         found.append(_cite(usecase_id, text))
 
+    if spec.deployment_mode not in (None, "gateway", "library"):
+        add("S2-DEPLOYMENT-MODE: deployment_mode must be gateway or library")
+    if spec.deployment_mode == "library" and derived_tier(spec) >= 2:
+        add("S2-DEPLOYMENT-MODE: tier 2 and above require gateway mode")
     if not spec.usecase_id.strip():
         add("a use case id is required")
     if not spec.purpose.strip():
@@ -969,6 +975,7 @@ def build_record(
         "approval_gate": spec.approval_gate,
         "review_sampling_rate": float(spec.review_sampling_rate),
         "maximum_autonomy": int(spec.maximum_autonomy),
+        "deployment_mode": spec.deployment_mode,
         "_autonomy_gates": dict(spec._autonomy_gates),
         "_autonomy_step_down": dict(spec._autonomy_step_down),
         "monitoring": bool(spec.monitoring),
@@ -1050,6 +1057,7 @@ def from_record(
         residual_materiality=str(record.get("residual_materiality") or ""),
         approval_gate=str(record.get("approval_gate") or ""),
         review_sampling_rate=float(record.get("review_sampling_rate") or 0),
+        deployment_mode=record.get("deployment_mode"),
         maximum_autonomy=int(record.get("maximum_autonomy") or 0),
         monitoring=bool(record.get("monitoring")),
         explanation_depth=str(record.get("explanation_depth") or ""),
@@ -1561,6 +1569,7 @@ def _supersede(
         usecase_id=usecase_id,
         version=version,
         record=record,
+        deployment_mode=record.get("deployment_mode"),
         effective_from=at,
     )
     session.add(row)
@@ -1954,6 +1963,7 @@ def activate(
 
 
 _MATERIAL_FIELDS = (
+    "deployment_mode",
     "autonomy",
     "maximum_autonomy",
     "jurisdiction",

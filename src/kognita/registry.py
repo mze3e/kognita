@@ -37,6 +37,7 @@ def register(
                     materiality_tier=materiality_tier)
     metadata_changed = created or any(getattr(agent, key) != value for key, value in metadata.items())
     if _identity:
+        _identity = _provider_key_finding(session, name, _identity, writer)
         evidence = _identity.pop("evidence", None)
         actor_id = _identity.pop("actor_id", "")
         permitted = {"purpose", "use_cases", "permitted_systems", "tool_allowlist",
@@ -191,6 +192,8 @@ def approve_deployment(
     import json
     from kognita.canonical import canonical_json
 
+    agent.environment = _provider_key_finding(session, name, agent.environment, evidence)
+    deployment = _provider_key_finding(session, name, deployment, evidence)
     _deployment_hash(agent, deployment)
     deployment = json.loads(canonical_json(deployment))
     candidate = Agent.model_validate(agent.model_dump())
@@ -210,3 +213,40 @@ def approve_deployment(
 
 
 __all__.append("approve_deployment")
+
+
+def _provider_key_finding(session, name, value, evidence):
+    """Flag declared provider secrets without copying their values to evidence."""
+    import re
+
+    pattern = re.compile(r"(?:[A-Z0-9_]*(?:OPENAI|ANTHROPIC|AZURE|GEMINI|GOOGLE|COHERE|MISTRAL|GROQ|PROVIDER)[A-Z0-9_]*(?:API_KEY|ACCESS_TOKEN|SECRET|CREDENTIAL)|API_KEY)", re.I)
+    found = set()
+
+    def clean(item):
+        if isinstance(item, dict):
+            result = {}
+            for key, child in item.items():
+                if pattern.fullmatch(str(key)) and child:
+                    found.add(str(key))
+                    result[key] = "[REDACTED]"
+                else:
+                    result[key] = clean(child)
+            return result
+        if isinstance(item, (tuple, list)):
+            return [clean(child) for child in item]
+        if isinstance(item, str):
+            found.update(pattern.findall(item))
+            def redact(match):
+                found.add(match.group(1))
+                return match.group(1) + "=[REDACTED]"
+            return re.sub(r"(" + pattern.pattern + r")\s*[=:]\s*[^\s,;]+", redact, item)
+        return item
+
+    cleaned = clean(value)
+    if found:
+        evidence.emit(session, correlation_id=f"identity:{name}",
+            event_type=EventType.REVIEW, actor_type=ActorType.SYSTEM,
+            actor_id="registry", payload={"action": "REVIEW_FLAG", "agent": name,
+            "finding": "provider-key finding", "fields": sorted(found),
+            "citation": "S2-PROVIDER-KEY", "usecase_id": ""})
+    return cleaned
