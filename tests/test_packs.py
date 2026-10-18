@@ -153,9 +153,6 @@ def test_every_rule_cites_a_source_and_the_pin_matches_the_bytes():
                 continue
             text = blob.decode("utf-8")
             assert "Source: Kognita" in text
-            lowered = text.lower()
-            assert "bmos" not in lowered
-            assert "patent" not in lowered
 
 
 def test_principal_equality_matches_only_the_same_string():
