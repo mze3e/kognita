@@ -92,7 +92,7 @@ def _gov_seed(session):
     gp.seed_policies(session, now=FROZEN_NOW)
     from fixtures.agents import register
 
-    register(session, name="marker-agent", owner_exec="Risk Team")
+    register(session, name="marker-agent", owner_exec="Risk Team", _principal="marker_alice")
 
 
 @pytest.fixture

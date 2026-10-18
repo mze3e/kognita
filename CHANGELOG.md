@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- 0.5 DoD item 1: Deny incomplete existing identity declarations and cover review expiry and changed deployments through both HTTP ingresses.
+- 0.5 DoD item 4: Cover daily action blast-radius denial through gateway HTTP.
+- 0.5 DoD item 20: Cover deploy-manifest environment scanning for provider keys.
+
 - 0.5 DoD item 21: Abort default MCP HTTP connections on kill switches and deadlines, with per-call cancellation and completion evidence.
 - 0.5 DoD item 17: Run nine adversarial scenarios through both HTTP ingresses for every shipped pack, checking attack-specific controls and evidence; cite exhausted gateway budgets even alongside policy denials.
 - Feed retained gateway and governed tool responses into risk review and withhold before-delivery holds (#18).

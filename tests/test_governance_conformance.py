@@ -23,8 +23,8 @@ from kognita.testing.harness import FROZEN_NOW, Harness
 
 def _seed(session):
     bp.seed_policies(session, now=FROZEN_NOW)
-    register(session, name="marker-agent", owner_exec="Risk Team")
-    register(session, name="proposer-agent", owner_exec="Policy Team")
+    register(session, name="marker-agent", owner_exec="Risk Team", _principal="marker_alice")
+    register(session, name="proposer-agent", owner_exec="Policy Team", _principal="marker_alice")
 
 
 @pytest.fixture

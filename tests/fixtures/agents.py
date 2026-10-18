@@ -16,7 +16,9 @@ _DEPLOYMENT = dict(system_prompt="", instructions="", tools=[], permissions=[],
 
 
 def register(session, **kwargs):
+    principal = kwargs.pop("_principal", "alice")
     agent = _register(session, **kwargs)
+    agent.principal = principal
     return configure(agent, session)
 
 
@@ -24,6 +26,8 @@ def configure(agent, session=None):
     agent.field_allowlist = {purpose: ["$", "marked", "content.text", "content.type",
         "tools.name", "tools.description", "tools.inputSchema", "protocolVersion",
         "serverInfo.name", "serverInfo.version", "capabilities.tools"] for purpose in PURPOSES}
+    agent.environment = "test"
+    agent.principal = agent.principal or "alice"
     agent.purpose = "policy regression fixture"
     agent.use_cases = PURPOSES
     agent.permitted_systems = ["fixture"]
