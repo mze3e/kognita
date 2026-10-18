@@ -154,6 +154,44 @@ def _seed(path: Path) -> None:
     engine.dispose()
 
 
+def _live_collaboration(path: Path) -> None:
+    """The closed history adopts the register, so the purpose needs a live entry."""
+    from datetime import datetime, timezone
+
+    from kognita.evidence import EvidenceWriter
+    from kognita.usecases import model_card_id, register_model_card
+    from test_usecases import _live_purpose
+
+    at = datetime.now(timezone.utc)
+    provider = urlparse(UPSTREAM).hostname
+    engine = make_engine(path)
+    evidence = EvidenceWriter(engine)
+    with Session(engine) as session:
+        register_model_card(
+            session,
+            provider=provider,
+            model=MODEL,
+            version=MODEL,
+            intended_use="Gateway overhead fixture",
+            limitations="None recorded",
+            evaluation_results="Not evaluated",
+            approver="Luis Ortega",
+            approved_at=at,
+            evidence=evidence,
+            actor_id="Luis Ortega",
+            at=at,
+        )
+        _live_purpose(
+            session,
+            evidence,
+            "COLLABORATION",
+            at=at,
+            approved_models=(model_card_id(provider, MODEL, MODEL),),
+        )
+        session.commit()
+    engine.dispose()
+
+
 def _listen(server: ThreadingHTTPServer) -> threading.Thread:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -259,11 +297,14 @@ def _fill_store(path: Path) -> None:
             )
         )
         drills.append((purpose, _CLOSED_FROM, _CLOSED_FROM, _CLOSED_TO))
+        # A closed use-case row for COLLABORATION would hold version 1, which
+        # the live entry registered below needs. The history uses other ids.
+        closed_usecase = f"closed-use-case-{index}"
         usecases.append(
             (
-                purpose,
+                closed_usecase,
                 1,
-                json.dumps({"usecase_id": purpose, "status": "retired"}),
+                json.dumps({"usecase_id": closed_usecase, "status": "retired"}),
                 f"{index:064x}",
                 _CLOSED_FROM,
                 _CLOSED_TO,
@@ -367,6 +408,7 @@ def _bench(tmp_path: Path, monkeypatch, *, fill: bool) -> None:
     _seed(db)
     if fill:
         _fill_store(db)
+        _live_collaboration(db)
     held: dict[str, Gateway] = {}
 
     def serve(self, host: str = "127.0.0.1", port: int = 8080) -> None:

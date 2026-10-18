@@ -1486,6 +1486,29 @@ def load_register(
     )
 
 
+def _governing_register(
+    session: Session, *, as_of: datetime | None = None
+) -> UseCaseRegister | None:
+    """The register that governs a decision, or ``None`` when none was adopted.
+
+    Once any use case has been registered, the register governs every
+    execution path, even when nothing is in force at ``as_of``: an empty
+    register then denies every purpose rather than falling back to the
+    deployment's purpose list. A store that never registered a use case keeps
+    the purpose list.
+    """
+    register = load_register(session, as_of=as_of)
+    return _governing(session, register)
+
+
+def _governing(session: Session, register: UseCaseRegister) -> UseCaseRegister | None:
+    """``register`` when it governs; see :func:`_governing_register`."""
+    if register.entries:
+        return register
+    adopted = session.exec(select(UseCase.usecase_id).limit(1)).first()
+    return register if adopted is not None else None
+
+
 def _emit(
     session: Session,
     evidence: EvidenceWriter,

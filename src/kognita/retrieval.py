@@ -23,7 +23,7 @@ from sqlmodel import Session, select
 from kognita.canonical import canonical_hash
 from kognita.embedding import lexical_overlap
 from kognita.evidence import EvidenceWriter
-from kognita.models import KnowledgeItem, as_utc
+from kognita.models import KnowledgeItem, Revocation, as_utc, in_force, utcnow
 from kognita.retention import RetentionStore
 from kognita.protocols import Embedder
 from kognita.vectors import NumpyVectorIndex
@@ -118,6 +118,26 @@ def entitled_items(
     ]
 
 
+def _revoked_sources(session: Session, at: datetime) -> frozenset[str]:
+    """Source values under an open revocation at ``at``."""
+    return frozenset(
+        str(row.value).strip()
+        for row in in_force(session, Revocation, at)
+        if row.dimension == "source" and str(row.value).strip()
+    )
+
+
+def _is_revoked_source(item: KnowledgeItem, revoked: frozenset[str]) -> bool:
+    """An item whose document or source label is revoked is not a candidate."""
+    if not revoked:
+        return False
+    names = {item.document_ref.strip(), item.source_label.strip()}
+    if item.id is not None:
+        names.add(str(item.id))
+    names.discard("")
+    return bool(names & revoked)
+
+
 def passage_snippet(body: str, query: str) -> str:
     """The paragraph the query matched, not a fixed prefix of the body.
 
@@ -161,9 +181,19 @@ def retrieve(
     min_score: float = MIN_SCORE,
     use_case: str = "",
 ) -> list[Retrieved]:
-    """Search the knowledge store within the caller's entitlement."""
+    """Search the knowledge store within the caller's entitlement.
+
+    Items whose ``document_ref``, ``source_label`` or id is under an open
+    ``source`` revocation are never candidates.
+    """
     limit = ceiling if ceiling is not None else ceiling_for(is_admin)
     candidates = entitled_items(session, zone=zone, ceiling=limit)
+    # A revoked source is excluded before scoring, whether or not the request
+    # named it: revocation applies to what retrieval would return.
+    revoked = _revoked_sources(session, utcnow())
+    excluded = [item for item in candidates if _is_revoked_source(item, revoked)]
+    if excluded:
+        candidates = [item for item in candidates if not _is_revoked_source(item, revoked)]
 
     hits: list[Retrieved] = []
     ranked: list[tuple[KnowledgeItem, float]] = []
@@ -248,6 +278,7 @@ def retrieve(
                 "zone": zone,
                 "ceiling": Classification(limit).value,
                 "candidate_count": len(candidates),
+                **({"revoked_excluded": len(excluded)} if excluded else {}),
                 "returned_ids": [h.id for h in hits],
                 "items": items,
                 "top_score": hits[0].score if hits else 0.0,

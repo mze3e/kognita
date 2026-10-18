@@ -52,7 +52,7 @@ from kognita.models import (
 from kognita.registry import set_kill_switch
 from kognita.revocation import OpenRevocation, load_revocations
 from kognita.rules import circuit_breaker
-from kognita.usecases import is_material, load_register, record_incident
+from kognita.usecases import _governing, is_material, load_register, record_incident
 from kognita.vocabulary import (
     ActorType,
     CheckResult,
@@ -944,7 +944,7 @@ def _probe(
     evaluation = decide(
         envelope,
         load_snapshot(session, as_of=at),
-        usecases=register if register.entries else None,
+        usecases=_governing(session, register),
         as_of=at,
     )
     return record(session, evaluation, evidence=evidence, now=at)

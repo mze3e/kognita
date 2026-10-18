@@ -313,6 +313,39 @@ def decide(
     )
 
 
+def _standing_checks(
+    envelope: Envelope,
+    snapshot: PolicySnapshot,
+    *,
+    attributes: dict[str, Any] | None = None,
+    usecases: UseCaseRegister | None = None,
+    at: datetime,
+) -> list[Check]:
+    """The gates that can close after a decision, as they stand at ``at``.
+
+    The agent registry and kill switch, the use-case register when it
+    governs, open revocations, overdue drills and tripped circuit breakers.
+    A held call re-reads these before it is released, because an approval
+    granted later does not outrank a kill switch or a revocation that came
+    first. Only failures and escalations are returned.
+    """
+    attrs = dict(attributes or {})
+    checks: list[Check] = []
+    checks.extend(registry_checks(envelope, snapshot))
+    if usecases is not None:
+        checks.extend(usecase_checks(envelope, usecases, at))
+    checks.extend(
+        revocation_checks(envelope, snapshot.revocations, attributes=attrs, register=usecases)
+    )
+    checks.extend(drill_checks(envelope, snapshot.drill_dues, register=usecases, at=at))
+    checks.extend(circuit_breaker_checks(envelope, snapshot.policies, attrs, at))
+    return [
+        check
+        for check in _pin_policy_hashes(checks, snapshot.policies)
+        if check.result in (CheckResult.FAIL, CheckResult.ESCALATE)
+    ]
+
+
 def _pin_policy_hashes(checks: list[Check], policies: tuple[Policy, ...]) -> list[Check]:
     """Record the hash of each policy row the check evaluated.
 

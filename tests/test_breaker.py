@@ -1505,3 +1505,121 @@ def test_prompt_revocation_is_not_a_dimension_and_prompt_breaker_matches(session
             citation="Prompt is not a revocation dimension",
             now=NOW,
         )
+
+
+def test_gateway_withholds_a_revoked_model_version_the_provider_served(session, evidence):
+    """The caller sends no model_version header; the response names a revoked one."""
+    register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    revoke(
+        session,
+        "model",
+        "api.openai.com/summary@1",
+        evidence=evidence,
+        actor_id="Head of Research Ops",
+        citation="Stop summary version 1",
+        owner="Head of Research Ops",
+        now=NOW,
+    )
+    session.commit()
+    upstream_calls: list[bytes] = []
+
+    def transport(method, url, headers, body):
+        upstream_calls.append(body)
+        return (
+            200,
+            {"content-type": "application/json"},
+            b'{"model":"summary","model_version":"1","choices":[{"message":{"content":"v1 body"}}]}',
+        )
+
+    gateway = Gateway(
+        engine=session.get_bind(),
+        evidence=evidence,
+        upstream="https://api.openai.com",
+        client=ClientConfiguration(
+            principal="alice",
+            purpose="COLLABORATION",
+            agent_names=frozenset({"dossier-agent"}),
+            actor_location="SG",
+        ),
+        purposes=("COLLABORATION",),
+        transport=transport,
+    )
+    response = gateway.handle(
+        "POST",
+        "/v1/chat/completions",
+        {"agent_name": "dossier-agent"},
+        json.dumps(
+            {"model": "summary", "messages": [{"role": "user", "content": "market hours are public"}]}
+        ).encode(),
+        session=session,
+    )
+    session.commit()
+    assert response.status == 403
+    assert b"v1 body" not in response.body
+    withheld = [
+        event
+        for event in session.exec(select(EvidenceEvent)).all()
+        if event.payload.get("withheld") is True
+    ]
+    assert withheld and withheld[-1].payload["checks"][0]["check"] == "REVOCATION"
+
+
+def test_gateway_denies_a_principal_header_that_differs_from_the_bound_client(
+    session, evidence
+):
+    """A caller cannot borrow another principal's name through a header."""
+    register_agent(session, name="dossier-agent", owner_exec="Head of Research Ops")
+    session.commit()
+    upstream_calls: list[bytes] = []
+
+    def transport(method, url, headers, body):
+        upstream_calls.append(body)
+        return 200, {"content-type": "application/json"}, b'{"choices":[{"message":{"content":"ok"}}]}'
+
+    gateway = Gateway(
+        engine=session.get_bind(),
+        evidence=evidence,
+        upstream="https://api.openai.com",
+        client=ClientConfiguration(
+            principal="bob",
+            purpose="COLLABORATION",
+            agent_names=frozenset({"dossier-agent"}),
+            actor_location="SG",
+        ),
+        purposes=("COLLABORATION",),
+        transport=transport,
+    )
+    body = json.dumps(
+        {"model": "summary", "messages": [{"role": "user", "content": "market hours are public"}]}
+    ).encode()
+    borrowed = gateway.handle(
+        "POST",
+        "/v1/chat/completions",
+        {"agent_name": "dossier-agent", "principal": "alice"},
+        body,
+        session=session,
+    )
+    assert borrowed.evaluation is not None
+    assert borrowed.evaluation.outcome is Outcome.DENY
+    assert borrowed.evaluation.envelope.principal == "bob"
+    assert any(
+        check.check == "AGENT_IDENTITY" and "principal header" in check.citation
+        for check in borrowed.evaluation.failures()
+    )
+    other_purpose = gateway.handle(
+        "POST",
+        "/v1/chat/completions",
+        {"agent_name": "dossier-agent", "purpose": "DOSSIER_PREP"},
+        body,
+        session=session,
+    )
+    assert other_purpose.evaluation.outcome is Outcome.DENY
+    same = gateway.handle(
+        "POST",
+        "/v1/chat/completions",
+        {"agent_name": "dossier-agent", "principal": "bob"},
+        body,
+        session=session,
+    )
+    assert same.evaluation.outcome is Outcome.ALLOW
+    assert len(upstream_calls) == 1

@@ -13,6 +13,7 @@ from sqlmodel import select
 
 from fixtures import demo_pack as dp
 
+from kognita.approvals import ApprovalError
 from kognita.broker import ask
 from kognita.canonical import canonical_hash
 from kognita.evidence import verify_chain
@@ -346,6 +347,7 @@ def test_continue_run_executes_only_after_grant(harness):
             session,
             run_id,
             {approval_id: True},
+            approver_name="Jane Approver",
             evidence=harness.evidence,
             registry=registry,
             now=harness.now,
@@ -474,6 +476,7 @@ def test_continue_run_retrieves_only_after_grant(harness):
             session,
             run.id,
             {run.approvals_pending[0]: True},
+            approver_name="Jane Approver",
             evidence=harness.evidence,
             embedder=harness.embedder,
             now=harness.now,
@@ -488,3 +491,227 @@ def test_continue_run_retrieves_only_after_grant(harness):
 
     assert retrievals
     assert isinstance(resumed.results, list)
+
+
+def _held(harness, registry):
+    run = Run()
+    with harness.session() as session:
+        run_governed(
+            session,
+            _hold_envelope(),
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=harness.now,
+            run=run,
+            now=harness.now,
+        )
+        session.commit()
+    return run
+
+
+def test_continue_run_refuses_a_grant_with_no_named_approver(harness):
+    """Holding a run id is not an approval: a grant must name the approver."""
+    registry, executed = _registry()
+    run = _held(harness, registry)
+
+    with harness.session() as session:
+        with pytest.raises(ApprovalError, match="must name the approver"):
+            continue_run(
+                session,
+                run.id,
+                {run.approvals_pending[0]: True},
+                evidence=harness.evidence,
+                registry=registry,
+                now=harness.now,
+            )
+        session.rollback()
+
+    with harness.session() as session:
+        row = session.get(RunRecord, run.id)
+        assert row is not None and row.continuation_hash
+    assert executed == []
+
+
+def test_continue_run_refuses_self_approval_by_the_requester(harness):
+    """The requesting principal cannot sign their own single-signature approval."""
+    registry, executed = _registry()
+    run = _held(harness, registry)
+    requester = _hold_envelope().principal
+
+    with harness.session() as session:
+        with pytest.raises(ApprovalError, match="differ from the requester"):
+            continue_run(
+                session,
+                run.id,
+                {run.approvals_pending[0]: True},
+                evidence=harness.evidence,
+                registry=registry,
+                approver_name=requester,
+                now=harness.now,
+            )
+        session.rollback()
+    assert executed == []
+
+
+def test_resume_withholds_a_call_revoked_while_it_waited(harness):
+    """A revocation recorded after the hold wins over the later grant."""
+    from kognita.models import Agent
+    from kognita.registry import register
+    from kognita.revocation import revoke
+
+    registry, executed = _registry()
+    run = _held(harness, registry)
+
+    with harness.session() as session:
+        if session.exec(select(Agent).where(Agent.name == "dossier-agent")).first() is None:
+            register(session, name="dossier-agent", owner_exec="Head of Research Ops")
+        revoke(
+            session,
+            "tool",
+            "draft_publication",
+            evidence=harness.evidence,
+            actor_id="Head of Research Ops",
+            citation="Tool withdrawn pending review",
+            owner="Head of Research Ops",
+            now=harness.now,
+        )
+        resumed = continue_run(
+            session,
+            run.id,
+            {run.approvals_pending[0]: True},
+            approver_name="Jane Approver",
+            evidence=harness.evidence,
+            registry=registry,
+            now=harness.now,
+        )
+        session.commit()
+
+    assert executed == []
+    assert resumed.data is None
+    assert resumed.evaluation.outcome is Outcome.DENY
+    assert any("Revocation" in check.citation for check in resumed.evaluation.failures())
+
+
+def test_resume_withholds_a_call_after_the_agent_kill_switch(harness):
+    """Engaging the agent's kill switch after the hold stops the release."""
+    from kognita.models import Agent
+    from kognita.registry import register, set_kill_switch
+
+    registry, executed = _registry()
+    run = Run()
+    envelope = dp.envelope(
+        "draft_publication",
+        purpose="DOSSIER_PREP",
+        site="SG",
+        subject="1",
+        agent="dossier-agent",
+    )
+    with harness.session() as session:
+        if session.exec(select(Agent).where(Agent.name == "dossier-agent")).first() is None:
+            register(session, name="dossier-agent", owner_exec="Head of Research Ops")
+        held = run_governed(
+            session,
+            envelope,
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=harness.now,
+            run=run,
+            now=harness.now,
+        )
+        session.commit()
+    assert held.approval_required
+
+    with harness.session() as session:
+        set_kill_switch(
+            session,
+            "dossier-agent",
+            True,
+            evidence=harness.evidence,
+            actor_id="Head of Research Ops",
+            now=harness.now,
+        )
+        resumed = continue_run(
+            session,
+            run.id,
+            {run.approvals_pending[0]: True},
+            approver_name="Jane Approver",
+            evidence=harness.evidence,
+            registry=registry,
+            now=harness.now,
+        )
+        session.commit()
+
+    assert executed == []
+    assert resumed.evaluation.outcome is Outcome.DENY
+
+
+def test_retrieval_excludes_a_revoked_source_the_request_never_named(harness):
+    """Revoking a source removes it from the candidates, not only from named requests."""
+    from kognita.models import Agent
+    from kognita.registry import register
+    from kognita.retrieval import retrieve
+    from kognita.revocation import revoke
+
+    question = "What does the ethics board require before release?"
+    with harness.session() as session:
+        if session.exec(select(Agent).where(Agent.name == "dossier-agent")).first() is None:
+            register(session, name="dossier-agent", owner_exec="Head of Research Ops")
+        index_item(
+            session,
+            title="Ethics board standing order",
+            body="Restricted-region subjects require a person to sign the release.",
+            embedder=harness.embedder,
+            zones=["SG"],
+            source_label="Ethics Board Standing Order 22",
+            document_ref="revoked-doc",
+        )
+        before = retrieve(
+            session, question, zone="SG", embedder=harness.embedder, min_score=0.0
+        )
+        revoke(
+            session,
+            "source",
+            "revoked-doc",
+            evidence=harness.evidence,
+            actor_id="Head of Research Ops",
+            citation="Source withdrawn",
+            owner="Head of Research Ops",
+            now=harness.now,
+        )
+        after = retrieve(
+            session, question, zone="SG", embedder=harness.embedder, min_score=0.0
+        )
+        session.commit()
+
+    assert [hit.document_ref for hit in before] == ["revoked-doc"]
+    assert after == []
+
+
+def test_run_governed_enforces_the_register_once_one_exists(harness):
+    """A purpose on the deployment's list is denied when the register does not name it."""
+    from test_usecases import _live_purpose
+
+    registry, executed = _registry()
+    with harness.session() as session:
+        _live_purpose(session, harness.evidence, "registered-elsewhere", at=harness.now)
+        result = run_governed(
+            session,
+            dp.envelope("draft_publication", purpose="COLLABORATION", site="SG", subject="1"),
+            registry=registry,
+            evidence=harness.evidence,
+            pack=harness.pack,
+            purposes=dp.PURPOSES,
+            as_of=harness.now,
+            now=harness.now,
+        )
+        session.commit()
+
+    assert executed == []
+    assert result.evaluation.outcome is Outcome.DENY
+    assert any(
+        check.check == "USE_CASE_REGISTERED" for check in result.evaluation.failures()
+    )

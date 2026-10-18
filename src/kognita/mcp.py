@@ -49,7 +49,7 @@ from kognita.db import create_all, make_engine, session_scope
 from kognita.envelope import Check, Envelope, Evaluation
 from kognita.evidence import EvidenceWriter
 from kognita.exceptions import ConfigError, KognitaError
-from kognita.gateway import ClientConfiguration, _identity
+from kognita.gateway import ClientConfiguration, _bound_principal, _identity
 from kognita.tools import ToolRegistry, run_governed
 from kognita.vocabulary import CheckResult, Classification, Outcome
 
@@ -563,13 +563,17 @@ class McpProxy:
             envelope_arguments = {}
 
         agent_name, trigger, identity_checks = _identity(self.client, headers)
+        principal, purpose, principal_checks = _bound_principal(
+            self.client, headers, self.purposes or ()
+        )
         context: dict[str, Any] = {}
         admitted = _admitted_trigger(trigger, identity_checks)
+        identity_checks = identity_checks + principal_checks
         if admitted:
             context["system_trigger"] = admitted
         envelope = Envelope(
-            principal=headers.get("principal") or self.client.principal,
-            purpose=headers.get("purpose") or self.client.purpose,
+            principal=principal,
+            purpose=purpose,
             tool=envelope_tool,
             actor_location=self.client.actor_location,
             agent_name=agent_name,
