@@ -11,6 +11,7 @@ implementation. A document outside that subset is an error.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from dataclasses import dataclass, replace
@@ -20,7 +21,7 @@ from typing import Any, Iterable
 
 from sqlmodel import Session, select
 
-from kognita.canonical import canonical_json
+from kognita.canonical import canonical_hash, canonical_json
 from kognita.envelope import Check, Envelope
 from kognita.exceptions import KognitaError
 from kognita.governance import PolicySnapshot, decide
@@ -1246,6 +1247,25 @@ def read_policy_set(path: str | Path) -> PolicySet:
     return PolicySet(rules=tuple(rules), scenarios=tuple(scenarios), source=str(target))
 
 
+def source_hash(path: str | Path) -> str:
+    """SHA-256 of the file a load read, or of a directory's policy files.
+
+    A directory hash is the canonical hash of each policy file's name and
+    SHA-256, sorted by name. Scenario files are not included: they do not
+    change stored rows.
+    """
+    target = Path(path)
+    if target.is_file():
+        return hashlib.sha256(target.read_bytes()).hexdigest()
+    if not target.is_dir():
+        raise PolicyLanguageError([Finding("parse", f"{target} does not exist")])
+    manifest = [
+        {"path": child.name, "sha256": hashlib.sha256(child.read_bytes()).hexdigest()}
+        for child in _policy_paths(target)
+    ]
+    return canonical_hash(manifest)
+
+
 def _strip_fence(body: str) -> str:
     lines = body.splitlines()
     while lines and not lines[0].strip():
@@ -2169,7 +2189,11 @@ def _stored_body(row: Policy) -> tuple[Any, ...]:
 
 
 def compile_rules(
-    session: Session, policies: PolicySet, *, at: datetime | None = None
+    session: Session,
+    policies: PolicySet,
+    *,
+    at: datetime | None = None,
+    close_absent: bool = False,
 ) -> int:
     """Insert the policy set. A changed effective row is closed and replaced.
 
@@ -2177,12 +2201,17 @@ def compile_rules(
     of a different rule body closes that row at ``at`` and inserts the successor
     starting then. The comparison is the rule body, not the window: the file
     keeps the authored ``effective_from``, and the store keeps the history.
+
+    With ``close_absent``, an effective row whose id is not in ``policies`` is
+    closed at ``at``. A directory load and a change load pass that, because the
+    set they compile is the whole policy. A single-file load does not.
     """
     moment = at or utcnow()
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=timezone.utc)
     existing = _rows_by_rule_id(session, moment)
     written = 0
+    incoming = {rule.id for rule in policies.rules}
     for rule in policies.rules:
         payload = _payload(rule)
         row = existing.get(rule.id)
@@ -2244,6 +2273,13 @@ def compile_rules(
             )
         )
         written += 1
+    if close_absent:
+        for rule_id, row in existing.items():
+            if rule_id in incoming or not row.is_effective(moment):
+                continue
+            row.effective_to = moment
+            session.add(row)
+            written += 1
     session.flush()
     return written
 
@@ -2313,6 +2349,7 @@ __all__ = [
     "rule_to_data",
     "run_scenarios",
     "scenario_case",
+    "source_hash",
     "strict_findings",
     "validate",
 ]

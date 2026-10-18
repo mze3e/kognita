@@ -18,11 +18,12 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
+from kognita.canonical import canonical_json
 from kognita.db import create_all, make_engine, session_scope
 from kognita.evidence import ChainBreak, EvidenceWriter, export_chain, verify_chain
 from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration, Gateway
-from kognita.vocabulary import FailureMode
+from kognita.vocabulary import ActorType, EventType, FailureMode
 from kognita.mcp import McpProxy, load_root_config
 from kognita.policy import (
     PolicyLanguageError,
@@ -40,6 +41,7 @@ from kognita.policy import (
     render_change,
     render_explanation,
     run_scenarios,
+    source_hash,
     validate,
 )
 from kognita.reconstruct import reconstruct, render_reconstruction
@@ -368,12 +370,38 @@ def _policy_error(exc: PolicyLanguageError) -> int:
     return 1
 
 
+def _findings_that_block_a_load(findings: list[Any], *, strict: bool) -> list[Any]:
+    """What stops a load.
+
+    A plain load blocks type and referential errors, and an uncited rule.
+    Untested rules, dangling references, and clarification markers block only
+    when ``strict`` is set, which is how a change load runs.
+    """
+    blocked = blocking_findings(findings, strict=strict)
+    if strict:
+        return blocked
+    seen = {(item.code, item.message, item.rule_id) for item in blocked}
+    for item in findings:
+        if item.code != "uncited":
+            continue
+        key = (item.code, item.message, item.rule_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        blocked.append(item)
+    return blocked
+
+
 def cmd_policy_load(args: argparse.Namespace) -> int:
     """Parse a policy set, or merge a change, and compile the rules to rows.
 
     A change file needs ``--policy``, the current policy set. Loading a change
     runs the strict checks and, when they pass, merges the delta into that
     directory, archives the change with the date, and compiles the result.
+
+    A plain load refuses an uncited rule. An untested rule does not stop a
+    plain load. A load that changes stored rows appends one POLICY_CHANGE
+    evidence event in the same transaction.
     """
     path = Path(args.path)
     try:
@@ -387,7 +415,9 @@ def cmd_policy_load(args: argparse.Namespace) -> int:
             policy_path = Path(args.policy)
             current = read_policy_set(policy_path)
             change = read_change(path)
-            findings = blocking_findings(validate(current, change), strict=True)
+            findings = _findings_that_block_a_load(
+                validate(current, change), strict=True
+            )
             if findings:
                 _print_findings(findings)
                 return 1
@@ -395,16 +425,18 @@ def cmd_policy_load(args: argparse.Namespace) -> int:
             merged = apply_change(
                 current, change, directory=directory, when=datetime.now(timezone.utc)
             )
-            written = _compile_policy(args.db, merged)
+            written = _compile_policy(args.db, merged, source=path, close_absent=True)
             print(f"applied {path} into {directory}")
             print(f"compiled {written} rules into {args.db}")
             return 0
         policies = read_policy_set(path)
-        findings = blocking_findings(validate(policies), strict=False)
+        findings = _findings_that_block_a_load(validate(policies), strict=False)
         if findings:
             _print_findings(findings)
             return 1
-        written = _compile_policy(args.db, policies)
+        written = _compile_policy(
+            args.db, policies, source=path, close_absent=path.is_dir()
+        )
         print(f"compiled {written} rules into {args.db}")
         return 0
     except PolicyLanguageError as exc:
@@ -497,11 +529,64 @@ def cmd_policy_test(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
-def _compile_policy(db: str, policies: Any) -> int:
+def _rule_body(rule: Any) -> str:
+    """The rule body a load compares. Effective dates are not part of it."""
+    return canonical_json(
+        {
+            "id": rule.id,
+            "regime": rule.regime,
+            "rule_type": rule.rule_type,
+            "applies_to": rule.applies_to,
+            "citation": rule.citation,
+            "rule": rule.rule,
+        }
+    )
+
+
+def _changed_ids(before: Any, after: Any) -> tuple[list[str], list[str], list[str]]:
+    previous = {rule.id: rule for rule in before.rules}
+    current = {rule.id: rule for rule in after.rules}
+    added = sorted(current.keys() - previous.keys())
+    removed = sorted(previous.keys() - current.keys())
+    modified = sorted(
+        rule_id
+        for rule_id in previous.keys() & current.keys()
+        if _rule_body(previous[rule_id]) != _rule_body(current[rule_id])
+    )
+    return added, modified, removed
+
+
+def _compile_policy(db: str, policies: Any, *, source: Path, close_absent: bool) -> int:
+    """Compile rows and, when any stored row changes, append POLICY_CHANGE.
+
+    The event is written in the same transaction as the rows. A load that
+    writes nothing appends nothing.
+    """
     engine = make_engine(db)
     create_all(engine)
+    moment = datetime.now(timezone.utc)
+    digest = source_hash(source)
     with session_scope(engine) as session:
-        return compile_rules(session, policies)
+        before = policies_from_session(session, at=moment)
+        written = compile_rules(session, policies, at=moment, close_absent=close_absent)
+        after = policies_from_session(session, at=moment)
+        added, modified, removed = _changed_ids(before, after)
+        if added or modified or removed:
+            EvidenceWriter(engine).emit(
+                session,
+                correlation_id="policy-load",
+                event_type=EventType.POLICY_CHANGE,
+                actor_type=ActorType.SYSTEM,
+                actor_id="kognita policy load",
+                payload={
+                    "action": "LOAD",
+                    "added": added,
+                    "modified": modified,
+                    "removed": removed,
+                    "source_hash": digest,
+                },
+            )
+        return written
 
 
 def _policies_in(db: str, as_of: datetime | None) -> Any:
@@ -656,7 +741,12 @@ def build_parser() -> argparse.ArgumentParser:
     policy_sub = policy.add_subparsers(dest="policy_command", required=True)
 
     load = policy_sub.add_parser(
-        "load", help="parse, type-check, and compile rules to rows"
+        "load",
+        help=(
+            "parse, type-check, and compile rules to rows. Refuses an uncited "
+            "rule. A load that changes stored rows appends a POLICY_CHANGE "
+            "evidence event"
+        ),
     )
     load.add_argument("path", help="policy file, policy directory, or change file")
     load.add_argument("--db", default="kognita.db", help="policy store")
