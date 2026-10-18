@@ -74,7 +74,6 @@ from kognita.evidence import (
     EvidenceWriter,
     export_chain,
     hashes_only,
-    tamper_for_test,
     verify_chain,
     verify_export,
 )
@@ -200,7 +199,6 @@ __all__ = [
     "export_chain",
     "verify_export",
     "hashes_only",
-    "tamper_for_test",
     "ChainBreak",
     "RetentionStore",
     # approvals

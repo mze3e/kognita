@@ -47,6 +47,7 @@ from kognita.tools import (
     _bind_interaction,
     _budget_payload,
     _checkpoint,
+    _remember_pack,
     _save_run,
     record_run_decision,
 )
@@ -261,6 +262,7 @@ def ask(
 
     subjects = pack.load_subjects(routed, session)
     attributes = pack.resolve_attributes(routed, subjects)
+    _remember_pack(pack)
     snap = snapshot if snapshot is not None else load_snapshot(session, as_of=as_of)
     # The question is free text. Typed envelope fields stay as the caller set
     # them; classification is filled only when the pack did not supply one.
@@ -323,6 +325,7 @@ def ask(
             kind="retrieval",
             extra={"question": question, "route": route.name, "top_k": top_k},
             interaction_id=interaction_id,
+            pack=pack,
         )
     elif run is not None:
         _save_run(session, run)

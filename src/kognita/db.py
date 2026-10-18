@@ -106,10 +106,15 @@ _EVIDENCE_HEAD: tuple[str, ...] = (
         SELECT 1, NEW.sequence, NEW.event_hash
         WHERE NOT EXISTS (SELECT 1 FROM evidence_head);
     END""",
-    """CREATE TRIGGER IF NOT EXISTS evidence_head_forward_only
+    # The first release allowed an equal sequence, so a store that lost its
+    # last event could append a new one under the same number. The head now
+    # only moves strictly forward; that trigger is replaced on older stores.
+    "DROP TRIGGER IF EXISTS evidence_head_forward_only",
+    """CREATE TRIGGER IF NOT EXISTS evidence_head_strictly_forward
     BEFORE UPDATE ON evidence_head
-    WHEN NEW.sequence < OLD.sequence
-    BEGIN SELECT RAISE(ABORT, 'the evidence head cannot move backwards'); END""",
+    WHEN NEW.sequence <= OLD.sequence
+    BEGIN SELECT RAISE(ABORT, 'the evidence head only moves forward: sequence '
+        || NEW.sequence || ' is not after ' || OLD.sequence); END""",
     """CREATE TRIGGER IF NOT EXISTS evidence_head_no_delete
     BEFORE DELETE ON evidence_head
     BEGIN SELECT RAISE(ABORT, 'the evidence head cannot be deleted'); END""",

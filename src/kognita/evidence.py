@@ -438,34 +438,6 @@ def verify_export(export: dict[str, Any]) -> int:
     return len(rows)
 
 
-def tamper_for_test(session: Session, sequence: int, payload: dict[str, Any]) -> EvidenceEvent:
-    """Rewrite one payload and leave its hashes stale.
-
-    This is a test hook. It is not a correction path and it does not recompute
-    ``payload_hash`` or ``event_hash``. :func:`verify_chain` then reports that
-    the payload does not match its hash.
-    """
-    from kognita.db import EVIDENCE_GUARD_TRIGGERS
-
-    event = session.exec(
-        select(EvidenceEvent).where(EvidenceEvent.sequence == sequence)
-    ).first()
-    if event is None:
-        raise LookupError(f"no evidence event at sequence {sequence}")
-    # The store refuses an UPDATE on evidence. The hook stands for someone
-    # with raw write access, so it lifts that guard for one write and puts it back.
-    connection = session.connection()
-    connection.exec_driver_sql("DROP TRIGGER IF EXISTS evidence_events_no_update")
-    try:
-        event.payload = dict(payload)
-        session.add(event)
-        session.flush()
-    finally:
-        if connection.dialect.name == "sqlite":
-            connection.exec_driver_sql(EVIDENCE_GUARD_TRIGGERS[0])
-    return event
-
-
 def hashes_only(_event_type: EventType, payload: dict[str, Any]) -> dict[str, Any]:
     """A ``redact_payload`` hook that replaces every value with its hash.
 
@@ -487,6 +459,5 @@ __all__ = [
     "verify_export",
     "hashes_only",
     "recompute_event_hash",
-    "tamper_for_test",
     "GENESIS_HASH",
 ]

@@ -355,6 +355,10 @@ def _approval_policy_recheck(
     at: datetime,
     original: Evaluation,
     known_policy_ids: set[int],
+    subjects: dict[str, Any] | None = None,
+    rules: dict[str, Evaluator] | None = None,
+    engages: Callable[[Policy, RuleContext], bool] | None = None,
+    pack_unavailable: str | None = None,
 ) -> list[Check]:
     """Policies that were not in force at the hold and are stricter than this approval.
 
@@ -364,12 +368,46 @@ def _approval_policy_recheck(
     release. Policies already known at the checkpoint are not re-litigated
     here. Standing checks cover the kill switch, the register, revocations,
     drills and breakers.
+
+    The new policies are evaluated with the pack that held the call: its
+    ``rules``, its ``engages`` scope, and its ``subjects``, as the original
+    decision was. When that pack cannot be restored, ``pack_unavailable``
+    says why, and every policy that came into force during the hold
+    escalates with that reason in its citation. It is not evaluated without
+    the pack's scope, and it is not skipped.
     """
+    if pack_unavailable is not None:
+        unseen = [
+            policy
+            for policy in snapshot.effective(at)
+            if policy.id is not None and policy.id not in known_policy_ids
+        ]
+        return _pin_policy_hashes(
+            [
+                Check(
+                    check="PACK_CONTEXT",
+                    regime=policy.regime,
+                    result=CheckResult.ESCALATE,
+                    citation=(
+                        f"Policy {policy.id} ({policy.citation}) came into force while "
+                        f"the call was held, and the pack that held it could not be "
+                        f"restored at resume: {pack_unavailable}. It cannot be "
+                        f"evaluated in that pack's scope, so the release is withheld."
+                    ),
+                    policy_id=policy.id,
+                )
+                for policy in unseen
+            ],
+            snapshot.policies,
+        )
     fresh = decide(
         envelope,
         snapshot,
         attributes=attributes,
+        subjects=subjects,
+        rules=rules,
         usecases=usecases,
+        engages=engages,
         as_of=at,
         request_id=original.request_id,
     )

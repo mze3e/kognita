@@ -440,11 +440,14 @@ def _checkpoint(
     kind: str,
     extra: dict[str, Any] | None = None,
     interaction_id: str | None = None,
+    pack: Any = None,
 ) -> str:
     """Persist a continuation by content hash and point the run at that hash.
 
     Checkpoints happen at the policy boundary, once, when the outcome is
-    ``HUMAN_APPROVAL``. The run row receives the hash only.
+    ``HUMAN_APPROVAL``. The run row receives the hash only. The pack that
+    decided is recorded by identity, so the resume can evaluate policies that
+    came into force during the hold with the same rules, scope and subjects.
     """
     payload = _jsonable(
         {
@@ -460,6 +463,7 @@ def _checkpoint(
             "decision_id": evaluation.decision_id,
             "approval_id": approval_id,
             "policy_ids": _policy_ids_at(session, evaluation.as_of),
+            **({"pack": _remember_pack(pack)} if pack is not None else {}),
             **(extra or {}),
             **({"interaction_id": interaction_id} if interaction_id else {}),
         }
@@ -516,6 +520,79 @@ def _known_policy_ids(
             if isinstance(item, int) and not isinstance(item, bool)
         }
     return set(_policy_ids_at(session, at))
+
+
+# Packs that decided a held call in this process, by identity. A pack is
+# code (rule evaluators, an ``engages`` predicate, a subject loader), so the
+# continuation stores who it was, not what it does. continue_run looks the
+# pack up here; when it is not found the resume fails closed.
+_PACKS: dict[str, Any] = {}
+
+
+def _pack_identity(pack: Any) -> dict[str, Any]:
+    """What a continuation records about the pack that decided it."""
+    kind = type(pack)
+    rules = pack.rules() or {}
+    return {
+        "name": str(getattr(pack, "name", "") or ""),
+        "class": f"{kind.__module__}.{kind.__qualname__}",
+        "version": str(getattr(pack, "version", "") or ""),
+        "rule_types": sorted(str(key) for key in rules),
+    }
+
+
+def _remember_pack(pack: Any) -> dict[str, Any]:
+    identity = _pack_identity(pack)
+    _PACKS[canonical_hash(identity)] = pack
+    return identity
+
+
+@dataclass(frozen=True)
+class _PackContext:
+    """The pack's rules, scope and subjects at resume, or why they are missing."""
+
+    rules: dict[str, Any] | None = None
+    engages: Callable[..., bool] | None = None
+    subjects: dict[str, Any] | None = None
+    unavailable: str | None = None
+
+
+def _restore_pack(
+    session: Session, payload: Mapping[str, Any], envelope: Envelope
+) -> _PackContext:
+    """The held call's pack context, or a reason it cannot be restored.
+
+    The pack must be the one recorded at the checkpoint: same name, class,
+    version and rule types. Its subjects are loaded again for the resume.
+    """
+    identity = payload.get("pack")
+    if not isinstance(identity, Mapping):
+        return _PackContext(
+            unavailable="the continuation does not record the pack that decided it"
+        )
+    label = str(identity.get("name") or identity.get("class") or "unnamed")
+    pack = _PACKS.get(canonical_hash(dict(identity)))
+    if pack is None:
+        return _PackContext(
+            unavailable=f"pack {label!r} has not been loaded in this process"
+        )
+    try:
+        current = _pack_identity(pack)
+        if current != dict(identity):
+            return _PackContext(
+                unavailable=f"pack {label!r} no longer matches the one that held the call"
+            )
+        subjects = dict(pack.load_subjects(envelope, session) or {})
+        rules = pack.rules()
+    except Exception as error:  # noqa: BLE001 - any failure here fails closed
+        return _PackContext(
+            unavailable=f"pack {label!r} raised {type(error).__name__} while restoring"
+        )
+    return _PackContext(
+        rules=rules,
+        engages=getattr(pack, "engages", None),
+        subjects=subjects,
+    )
 
 
 def _envelope_from_continuation(payload: Mapping[str, Any]) -> Envelope:
@@ -705,6 +782,8 @@ def run_governed(
     # data: the decision point needs the attributes before it can decide.
     subjects = pack.load_subjects(envelope, session)
     attributes = pack.resolve_attributes(envelope, subjects)
+    # A call held in an earlier process resumes with this pack once it is seen again.
+    _remember_pack(pack)
     snap = snapshot if snapshot is not None else load_snapshot(session, as_of=as_of)
     argument_text = _argument_text(envelope)
     if argument_text:
@@ -792,6 +871,7 @@ def run_governed(
                 evidence=evidence,
                 kind="tool",
                 interaction_id=interaction_id,
+                pack=pack,
             )
         _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
         return ToolRun(evaluation=evaluation, data=None, approval_required=True)
@@ -945,6 +1025,13 @@ def continue_run(
             at=at,
         )
         seen = {(check.check, check.policy_id, check.result) for check in recheck}
+        known = _known_policy_ids(session, payload, evaluation.as_of)
+        unseen = any(
+            policy.id is not None and policy.id not in known
+            for policy in snapshot.effective(at)
+        )
+        # The pack is needed only when a policy came into force during the hold.
+        context = _restore_pack(session, payload, envelope) if unseen else _PackContext()
         for check in _approval_policy_recheck(
             envelope,
             snapshot,
@@ -952,7 +1039,11 @@ def continue_run(
             usecases=usecases,
             at=at,
             original=evaluation,
-            known_policy_ids=_known_policy_ids(session, payload, evaluation.as_of),
+            known_policy_ids=known,
+            subjects=context.subjects,
+            rules=context.rules,
+            engages=context.engages,
+            pack_unavailable=context.unavailable,
         ):
             key = (check.check, check.policy_id, check.result)
             if key in seen:

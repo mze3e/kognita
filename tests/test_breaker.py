@@ -24,7 +24,8 @@ from kognita.breaker import (
 from kognita.cli import main
 from kognita.db import create_all, make_engine
 from kognita.envelope import Envelope
-from kognita.evidence import ChainBreak, EvidenceWriter, tamper_for_test, verify_chain
+from evidence_guard import tamper_for_test
+from kognita.evidence import ChainBreak, EvidenceWriter, verify_chain
 from kognita.gateway import ClientConfiguration, Gateway
 from kognita.governance import decide, load_snapshot
 from kognita.interaction import open_interaction
@@ -1668,6 +1669,22 @@ def test_gateway_withholds_a_revoked_model_version_the_provider_served(session, 
         if event.payload.get("withheld") is True
     ]
     assert withheld and withheld[-1].payload["checks"][0]["check"] == "REVOCATION"
+    # The client was given the denial, not the output: a withheld response is
+    # not receipt, even though the model call was recorded with its hash.
+    calls = [
+        event
+        for event in session.exec(select(EvidenceEvent)).all()
+        if event.event_type == EventType.MODEL_CALL
+        and event.correlation_id == withheld[-1].correlation_id
+    ]
+    assert calls and calls[-1].payload.get("response_hash")
+    at = calls[-1].recorded_at
+    at = at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+    window = dict(start=at - timedelta(days=1), end=at + timedelta(days=1))
+    affected = affected_clients(session, model="summary", **window)
+    assert affected["clients"] == []
+    assert affected["unlinked"] == []
+    assert affected_clients(session, usecase="COLLABORATION", **window)["unlinked"] == []
 
 
 def test_gateway_denies_a_principal_header_that_differs_from_the_bound_client(

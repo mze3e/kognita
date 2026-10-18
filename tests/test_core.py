@@ -676,6 +676,75 @@ def test_chain_detects_events_removed_from_the_end(harness):
             verify_chain(session)
 
 
+def test_a_sequence_freed_by_a_tail_delete_cannot_be_reused(harness):
+    """After the last event is removed, the next append cannot take its number.
+
+    The head checkpoint only moves strictly forward, so an insert that would
+    reuse the removed sequence is refused, and verification still reports
+    the truncation.
+    """
+    from sqlalchemy.exc import IntegrityError
+
+    envelope = dp.envelope("get_subject_profile", site="SG", subject="2")
+    with harness.session() as session:
+        before = verify_chain(session)
+        for _ in range(3):
+            harness.decide_and_record(envelope, session)
+        session.commit()
+
+        lift_evidence_guard(session)
+        victim = session.exec(
+            select(EvidenceEvent).where(EvidenceEvent.sequence == before + 3)
+        ).one()
+        session.delete(victim)
+        session.commit()
+
+        with pytest.raises(IntegrityError, match="only moves forward"):
+            harness.decide_and_record(envelope, session)
+        session.rollback()
+
+        with pytest.raises(ChainBreak, match="removed from the end"):
+            verify_chain(session)
+
+
+def test_an_older_store_gets_the_strictly_forward_head(tmp_path):
+    """A store created with the earlier, non-strict trigger is upgraded."""
+    from sqlalchemy import text as sql_text
+    from sqlalchemy.exc import IntegrityError
+
+    from kognita.db import create_all, make_engine
+
+    engine = make_engine(tmp_path / "old.db")
+    create_all(engine)
+    with engine.begin() as connection:
+        connection.exec_driver_sql("DROP TRIGGER IF EXISTS evidence_head_strictly_forward")
+        connection.exec_driver_sql(
+            """CREATE TRIGGER evidence_head_forward_only
+            BEFORE UPDATE ON evidence_head
+            WHEN NEW.sequence < OLD.sequence
+            BEGIN SELECT RAISE(ABORT, 'the evidence head cannot move backwards'); END"""
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO evidence_head (id, sequence, event_hash) VALUES (1, 5, 'h')"
+        )
+    create_all(engine)
+    with engine.begin() as connection:
+        names = {
+            row[0]
+            for row in connection.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type = 'trigger'"
+            )
+        }
+        assert "evidence_head_forward_only" not in names
+        assert "evidence_head_strictly_forward" in names
+    with pytest.raises(IntegrityError, match="only moves forward"):
+        with engine.begin() as connection:
+            connection.execute(
+                sql_text("UPDATE evidence_head SET sequence = 5, event_hash = 'other'")
+            )
+    engine.dispose()
+
+
 def test_the_head_checkpoint_cannot_be_moved_back(harness):
     from sqlalchemy.exc import IntegrityError
     from sqlalchemy import text as sql_text
@@ -685,8 +754,15 @@ def test_the_head_checkpoint_cannot_be_moved_back(harness):
         for _ in range(2):
             harness.decide_and_record(envelope, session)
         session.commit()
-        with pytest.raises(IntegrityError, match="backwards"):
+        with pytest.raises(IntegrityError, match="only moves forward"):
             session.execute(sql_text("UPDATE evidence_head SET sequence = 1"))
+        session.rollback()
+        head = session.execute(sql_text("SELECT sequence FROM evidence_head")).one()[0]
+        with pytest.raises(IntegrityError, match="only moves forward"):
+            session.execute(
+                sql_text("UPDATE evidence_head SET sequence = :s, event_hash = 'x'"),
+                {"s": head},
+            )
         session.rollback()
         with pytest.raises(IntegrityError, match="cannot be deleted"):
             session.execute(sql_text("DELETE FROM evidence_head"))

@@ -489,7 +489,7 @@ def affected_clients(
     """Clients who received model or released tool output in ``[start, end)``.
 
     Receipt is a ``MODEL_CALL`` or a released ``TOOL_CALL``. A denial is not
-    receipt. Output linked to an interaction is listed under ``clients``.
+    receipt, and neither is a model response the gateway withheld. Output linked to an interaction is listed under ``clients``.
     Output with no interaction, such as a gateway or MCP call, is not given a
     client id; it is listed under ``unlinked`` as "client unknown" so the
     query does not read as complete when it is not.
@@ -522,6 +522,10 @@ def affected_clients(
             continue
         payload = _payload(event)
         if not _released(event.event_type, payload):
+            continue
+        if event.event_type == EventType.MODEL_CALL and _withheld_later(
+            by_correlation.get(event.correlation_id, [])
+        ):
             continue
         interaction = _interaction_for(event.correlation_id, interactions, links)
         if interaction is None or not interaction.client_id:
@@ -1010,6 +1014,21 @@ def _released(event_type: EventType, payload: dict[str, Any]) -> bool:
     if payload.get("response_hash"):
         return True
     return payload.get("sent") is True
+
+
+def _withheld_later(same_correlation: Sequence[EvidenceEvent]) -> bool:
+    """True when the gateway withheld the model response after recording it.
+
+    A model call is recorded with its response before the served model is
+    checked. When that check withholds the body, a ``POLICY_DECISION`` with
+    ``withheld`` true follows on the same correlation id, and the client was
+    given the denial, not the output.
+    """
+    return any(
+        event.event_type == EventType.POLICY_DECISION
+        and _payload(event).get("withheld") is True
+        for event in same_correlation
+    )
 
 
 def _interaction_for(
