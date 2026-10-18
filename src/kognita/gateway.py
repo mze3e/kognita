@@ -30,10 +30,10 @@ Identity, on this gateway only. Calls that do not come through here keep the
 behaviour they already have.
 
 - A call with no agent name is not a human, and it does not skip the registry.
-  The call must name a registered agent or an approved system trigger. Either
-  of those is admitted; the absence of both is a denial.
-- Until agents carry their own credentials, an agent name is accepted only
-  when the bound client configuration lists it.
+  Calls require a registered agent with a workload credential. An approved
+  system trigger alone cannot substitute for workload authentication.
+- Agent names require a matching workload secret in ``agent_credential`` and
+  admission by the bound client configuration.
 
 The failure mode is set per use case. A use case is the purpose string on the
 envelope; the retention store already records that string as ``use_case``.
@@ -404,6 +404,18 @@ def _with_checks(evaluation: Evaluation, extra: Sequence[Check]) -> Evaluation:
         as_of=evaluation.as_of,
         envelope_hash=envelope_hash(evaluation.envelope, evaluation.attributes, checks),
     )
+
+
+def _credential_checks(session: Session, name: str | None, headers: Mapping[str, str]) -> list[Check]:
+    from kognita.credentials import verify
+
+    try:
+        valid = bool(name) and verify(session, name, headers.get("agent_credential"))
+    except Exception:
+        valid = False
+    return [Check(check="AGENT_CREDENTIAL", regime="INTERNAL",
+                  result=CheckResult.PASS if valid else CheckResult.FAIL,
+                  citation="S2-CREDENTIAL: valid workload credential bound to agent required")]
 
 
 def _identity(
@@ -883,7 +895,7 @@ class Gateway:
         principal, purpose, principal_checks = _bound_principal(
             self.client, headers, self.purposes
         )
-        identity_checks = identity_checks + principal_checks
+        identity_checks = identity_checks + principal_checks + _credential_checks(session, agent_name, headers)
         arguments: dict[str, Any] = {}
         template_version = _template_version(headers)
         if headers.get("model_version"):

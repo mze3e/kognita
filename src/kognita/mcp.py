@@ -17,8 +17,8 @@ One call, in order:
    wins. The classifier does not decide.
 3. Resolve identity with the same rules as the AI gateway. A call with no
    agent name is a denial. An agent name is admitted only when the bound
-   client configuration lists it. An approved system trigger is a system
-   actor.
+   client configuration lists it and its workload credential verifies. A
+   system trigger alone cannot bypass workload authentication.
 4. :func:`kognita.tools.run_governed` authorises and records the call. The
    backend is contacted only when that call is released: an allow, or a
    human approval that already has a live grant. A denial, an escalation,
@@ -49,7 +49,7 @@ from kognita.db import create_all, make_engine, session_scope
 from kognita.envelope import Check, Envelope, Evaluation
 from kognita.evidence import EvidenceWriter
 from kognita.exceptions import ConfigError, KognitaError
-from kognita.gateway import ClientConfiguration, _bound_principal, _identity
+from kognita.gateway import ClientConfiguration, _bound_principal, _identity, _credential_checks
 from kognita.tools import ToolRegistry, run_governed
 from kognita.vocabulary import CheckResult, Classification, Outcome
 
@@ -569,7 +569,7 @@ class McpProxy:
         )
         context: dict[str, Any] = {}
         admitted = _admitted_trigger(trigger, identity_checks)
-        identity_checks = identity_checks + principal_checks
+        identity_checks = identity_checks + principal_checks + _credential_checks(session, agent_name, headers)
         if admitted:
             context["system_trigger"] = admitted
         envelope = Envelope(
@@ -749,8 +749,6 @@ class McpProxy:
             {"jsonrpc": "2.0", "id": rpc_id, "method": method, "params": dict(params)}
         ).encode("utf-8")
         forward = {"content-type": "application/json", "accept": "application/json"}
-        if headers.get("authorization"):
-            forward["authorization"] = headers["authorization"]
         state["proxied"] = True
         try:
             _status, _response_headers, raw = self.transport("POST", server.url, forward, body)

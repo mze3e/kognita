@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add per-agent hashed workload credentials with evidenced issue and revocation, gateway and MCP authentication, deployment mode validation, and provider-key review findings.
+
+
 ### Fixed
 
 - Provision the governed-agent scaffold with an approved behavior manifest and explicit read-only model-call permissions matching its gateway request.

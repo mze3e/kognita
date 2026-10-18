@@ -51,3 +51,30 @@ def seeded(session):
     register(session, name="dossier-agent", owner_exec="Head of Research Ops")
     session.commit()
     return session
+
+
+@pytest.fixture(autouse=True)
+def _legacy_workload_credentials(request, monkeypatch):
+    """Older policy tests use real issued credentials for their fixture agents.
+
+    S2 tests supply headers themselves so missing-secret cases stay explicit.
+    """
+    if request.module.__name__ == "test_credentials":
+        return
+    from kognita.gateway import Gateway
+    from kognita.mcp import McpProxy
+
+    def wrap(original):
+        def authenticated(self, method, path, headers, body, **kwargs):
+            headers = dict(headers)
+            name = headers.get("agent_name") or self.client.agent_name
+            from fixtures.agents import _credentials
+            key = str(self.engine.url) if self.engine.url.database else self.engine
+            secrets = _credentials.get(key, {})
+            if name in secrets and not any(k.lower() == "agent_credential" for k in headers):
+                headers["agent_credential"] = secrets[name]
+            return original(self, method, path, headers, body, **kwargs)
+        return authenticated
+
+    monkeypatch.setattr(Gateway, "handle", wrap(Gateway.handle))
+    monkeypatch.setattr(McpProxy, "handle", wrap(McpProxy.handle))

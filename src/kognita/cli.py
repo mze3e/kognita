@@ -1680,6 +1680,8 @@ def _agent_deploy(args):
                          version=manifest.get("version", "0.1.0"),
                          risk_class=manifest.get("risk_class", "MEDIUM"),
                          materiality_tier=manifest.get("materiality_tier", "T2"))
+        from kognita.registry import _provider_key_finding
+        manifest = _provider_key_finding(session, agent.name, manifest, EvidenceWriter(engine))
         for key in ("purpose", "use_cases", "permitted_systems", "tool_allowlist",
                     "review_date", "environment", "principal"):
             value = manifest.get(key)

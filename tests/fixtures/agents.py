@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from kognita.evidence import EvidenceWriter
 from kognita.registry import register as _register, approve_deployment
 
+_credentials = {}
+
 _DEPLOYMENT = dict(system_prompt="", instructions="", tools=[], permissions=[],
                    data_sources=[], orchestration="", memory_behaviour="")
 
@@ -31,6 +33,13 @@ def configure(agent, session=None):
         return agent
     approve_deployment(session, agent.name, deployment=_DEPLOYMENT,
         evidence=EvidenceWriter(session.get_bind()), actor_id=agent.owner_exec)
+    from kognita.credentials import issue
+    engine = session.get_bind()
+    if not hasattr(engine, "_test_workload_credentials"):
+        engine._test_workload_credentials = {}
+    engine._test_workload_credentials[agent.name] = issue(session, agent.name,
+        evidence=EvidenceWriter(engine), actor_id=agent.owner_exec)
+    _credentials[str(engine.url) if engine.url.database else engine] = engine._test_workload_credentials
     return agent
 
 TOOLS = ['crm/read_note',

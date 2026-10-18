@@ -411,8 +411,8 @@ def test_agent_name_must_match_the_client_configuration(session, evidence):
     )
 
 
-def test_registered_agent_and_approved_system_trigger_are_not_denials(session, evidence):
-    """A matching agent is admitted. An approved system trigger is admitted as SYSTEM."""
+def test_registered_agent_authenticates_and_trigger_cannot_bypass_credentials(session, evidence):
+    """A configured trigger cannot bypass workload authentication."""
     _register(session)
     _live(session)
     session.flush()
@@ -451,23 +451,17 @@ def test_registered_agent_and_approved_system_trigger_are_not_denials(session, e
         _body("hello"),
         session=session,
     )
-    assert trigger_response.status == 200
-    assert len(upstream.calls) == 2
+    assert trigger_response.status == 403
+    assert len(upstream.calls) == 1
     assert trigger_response.evaluation is not None
-    assert trigger_response.evaluation.outcome is Outcome.ALLOW
+    assert trigger_response.evaluation.outcome is Outcome.DENY
     assert trigger_response.evaluation.envelope.agent_name is None
     assert any(
         check.check == "SYSTEM_TRIGGER" and check.result is CheckResult.PASS
         for check in trigger_response.evaluation.checks
     )
-    trigger_call = next(
-        event
-        for event in _events(session, trigger_response.evaluation.request_id)
-        if event.event_type is EventType.MODEL_CALL
-    )
-    assert trigger_call.actor_type is ActorType.SYSTEM
-    assert trigger_call.actor_id == "nightly-refresh"
-    assert trigger_call.actor_type is not ActorType.HUMAN
+    assert any(check.check == "AGENT_CREDENTIAL" and check.result is CheckResult.FAIL
+               for check in trigger_response.evaluation.checks)
 
     bound = _gateway(
         session.get_bind(),
@@ -564,7 +558,7 @@ def test_evidence_store_unavailable_refuses_the_call(session, engine):
     assert response.status == 503
     assert upstream.calls == []
     assert json.loads(response.body)["error"] == "evidence store unavailable"
-    assert all(event.payload.get("action") in ("AGENT_REGISTERED", "DEPLOYMENT_APPROVED")
+    assert all(event.payload.get("action") in ("AGENT_REGISTERED", "DEPLOYMENT_APPROVED", "CREDENTIAL_ISSUED")
                for event in session.exec(select(EvidenceEvent)).all())
     assert session.exec(select(GovernanceDecision)).all() == []
 
