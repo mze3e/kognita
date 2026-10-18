@@ -1046,10 +1046,9 @@ class Gateway:
             ))
             if held:
                 evaluation = _with_checks(evaluation, held)
-            if evaluation.outcome is Outcome.ALLOW:
-                blocked = _budget_block(bound_run, classification=classification, now=now)
-                if blocked:
-                    evaluation = _deny_for_budgets(evaluation, blocked)
+            blocked = _budget_block(bound_run, classification=classification, now=now)
+            if blocked:
+                evaluation = _deny_for_budgets(evaluation, blocked)
 
         local = _is_local(self.upstream)
         egress_decision = (

@@ -48,6 +48,7 @@ def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(),
         return 'timeout', None
     done, stop = Event(), Event()
     result = []
+    finished = []
     key = (agent, run, frozenset([delegation, *_authority]), object())
     def work():
         try:
@@ -55,6 +56,7 @@ def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(),
         except BaseException as exc:
             result.append((False, exc))
         finally:
+            finished.append(monotonic())
             done.set()
     with _lock:
         _active[key] = stop
@@ -85,10 +87,14 @@ def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(),
                     cancellation_done.wait(min(0.01, max(0, deadline - monotonic())))
                     confirmed = bool(confirmation and confirmation[0])
                 if done.is_set():
+                    if timeout:
+                        return 'timeout', None
                     if confirmed and result and not result[0][0]:
                         return ('timeout' if timeout else 'cancelled'), None
                     break
                 return ('timeout' if timeout else 'cancelled' if confirmed else 'cancellation_requested'), None
+        if finished[0] > deadline:
+            return 'timeout', None
         ok, value = result[0]
         if not ok:
             return 'failed', value
