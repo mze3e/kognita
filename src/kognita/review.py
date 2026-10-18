@@ -576,9 +576,9 @@ def _packet_gaps(packet: Mapping[str, Any]) -> list[str]:
             if not value.strip():
                 gaps.append(field)
         elif isinstance(value, list):
-            if not value:
+            if not value or any(not isinstance(item, str) or not item.strip() for item in value):
                 gaps.append(field)
-        elif value is None:
+        else:
             gaps.append(field)
     return gaps
 

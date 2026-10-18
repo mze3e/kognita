@@ -337,6 +337,13 @@ def decide(
     from kognita._sandbox import _constraints
     constraints, sandbox_checks = _constraints(envelope, agent)
     checks.extend(sandbox_checks)
+    # Missing evidence can never authorize an action or weaken a denial.
+    checks = [
+        replace(c, citation="CITATION-REQUIRED",
+                result=CheckResult.FAIL if c.result is CheckResult.FAIL else CheckResult.ESCALATE)
+        if not c.citation.strip() else c
+        for c in checks
+    ]
     frozen = tuple(_pin_policy_hashes(checks, snapshot.policies))
     attrs.pop('_sandbox_constraints', None)
     if constraints is not None and resolve_outcome(frozen) is Outcome.ALLOW:
