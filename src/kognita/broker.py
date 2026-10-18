@@ -214,8 +214,8 @@ def _retrieve_for(
     evidence: EvidenceWriter,
     top_k: int,
     run: Run | None = None,
-) -> list[Retrieved]:
-    return retrieve(
+) -> tuple[list[Retrieved], Evaluation]:
+    hits = retrieve(
         session,
         question,
         zone=envelope.actor_location,
@@ -229,6 +229,9 @@ def _retrieve_for(
         use_case=envelope.purpose,
         run=run,
     )
+
+    from kognita.anomaly import _retrieved
+    return _retrieved(session, evaluation, evidence, hits)
 
 
 def ask(
@@ -373,7 +376,7 @@ def ask(
             evaluation=evaluation,
         )
 
-    results = _retrieve_for(
+    results, evaluation = _retrieve_for(
         session,
         question,
         routed,
@@ -408,7 +411,7 @@ def _resume_retrieval(
     """Fetch entitled sources for a continuation that was held before retrieval."""
     if embedder is None:
         raise ApprovalError("continuing a retrieval requires an embedder")
-    results = _retrieve_for(
+    results, evaluation = _retrieve_for(
         session,
         str(payload["question"]),
         envelope,

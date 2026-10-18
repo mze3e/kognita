@@ -61,3 +61,40 @@ A tool's declared provenance and permissions must describe its real behavior.
 The library cannot inspect a tool body to prove that it obeys those declarations.
 This slice does not provide sandbox execution, credential isolation within a
 shared process, automatic fleet containment or cancellation of in-flight calls.
+
+## Behavioral containment
+
+The S6a monitor keeps an indexed daily summary per agent and reads at most eight
+rows: today and seven previous active days. It tracks distinct client references,
+documents released by the governed broker, attempted actions, denied actions,
+tools, tool transitions and observed data classifications. Cold-start ceilings
+are 100 distinct clients, 1,000 actions and 1,000 documents per UTC day. After
+three historical days, volume is capped at three times the largest historical
+day, with a floor of ten and the cold-start ceiling still applying. The current
+day cannot raise its own baseline. Three requests for undeclared tools or ten
+denials trigger containment. Once warm, unseen tools, transitions and data
+classes also trigger containment. These conservative defaults require reviewed
+redeployment and operational calibration before production use.
+
+| Threat | Automatic response | Rule |
+| --- | --- | --- |
+| Client enumeration, action loops or bulk document extraction | Deny the crossing request and quarantine | `S6-VOLUME` |
+| Tool privilege probing or repeated denied requests | Quarantine before further tool admission | `S6-PRIVILEGE-PROBING` |
+| A changed tool workflow or data classification | Deny and quarantine | `S6-TOOL-SEQUENCE`, `S6-DATA-CLASS` |
+| Reuse of a stale decision after quarantine | Fresh kill-switch lookup at recording denies release | `S6-QUARANTINE` |
+
+Containment sets the kill switch, calls credential revocation for all the agent's
+credentials, stops new tool admissions, records an incident and then appends an
+alert addressed to the accountable owner. The triggering denial counts toward
+the circuit breaker; repeated quarantine denials do not multiply that flag.
+All updates and evidence share the caller's transaction. Hosts must commit a
+denied request's transaction to retain containment. Alert delivery uses the
+host's evidence consumer. Only the accountable human owner may release an anomaly
+quarantine; old credentials remain revoked after release.
+
+This monitor cannot observe direct network requests, direct provider calls or
+unregistered document ingestion. It does not cancel synchronous transports that
+were released before containment. In-flight cancellation and sandbox network
+constraints require their respective enforcement adapters. Gateway isolation
+and the existing authority controls remain necessary against an attacker who
+stays below behavioral thresholds or compromises the host itself.

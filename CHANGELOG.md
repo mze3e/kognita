@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add bounded per-agent behavioral baselines, automatic anomaly quarantine, credential revocation, tool admission stops, incident evidence, and owner alerts.
+
 - Isolate external and client data across runs and approval continuations, reject conflicting agent duties, evidence injection alerts, and require transaction-bound step-up evidence for high-risk tool calls.
 
 - Enforce per-agent blast-radius and rolling rate limits independently of run budgets, with bounded indexed usage reads and checks at approval release.

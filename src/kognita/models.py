@@ -1229,3 +1229,12 @@ class _BlastUsage(SQLModel, table=True):
     at: datetime = Field(sa_column=_utc_column())
     clients: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
     value: float = 0
+
+
+class _AnomalyDay(SQLModel, table=True):
+    __tablename__ = "_anomaly_days"
+    __table_args__ = (Index("ix_anomaly_agent_day", "agent_name", "day", unique=True),)
+    id: int | None = Field(default=None, primary_key=True)
+    agent_name: str
+    day: str
+    body: dict = Field(default_factory=dict, sa_column=Column(JSON))

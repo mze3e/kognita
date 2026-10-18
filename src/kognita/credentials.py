@@ -44,11 +44,23 @@ def verify(session: _Session, agent_name: str, credential: str | None) -> bool:
                 _hmac.compare_digest(row.digest, digest))
 
 
-def revoke(session: _Session, agent_name: str, credential: str, *,
-           evidence: _EvidenceWriter, actor_id: str) -> None:
+def revoke(session: _Session, agent_name: str, credential: str | None, *,
+           evidence: _EvidenceWriter, actor_id: str, _automatic: bool = False) -> None:
     """Revoke one secret with append-only evidence."""
     agent = _get(session, agent_name)
-    row = session.get(_WorkloadCredential, _digest(credential), populate_existing=True)
+    if _automatic and credential is None:
+        from sqlalchemy import update
+        result = session.execute(update(_WorkloadCredential).where(
+            _WorkloadCredential.agent_name == agent_name,
+            _WorkloadCredential.revoked == False).values(revoked=True))
+        evidence.emit(session, correlation_id=f"credentials:{agent_name}",
+            event_type=_EventType.POLICY_CHANGE, actor_type=_ActorType.SYSTEM,
+            actor_id=actor_id, payload={"action": "CREDENTIAL_REVOKED",
+            "agent": agent_name, "scope": "all", "count": result.rowcount,
+            "citation": "S6-ANOMALY"})
+        session.flush()
+        return
+    row = session.get(_WorkloadCredential, _digest(credential or ""), populate_existing=True)
     if agent is None or actor_id != agent.owner_exec or not actor_id.strip():
         raise ValueError("S2-CREDENTIAL: accountable owner required")
     if row is None or row.agent_name != agent_name:
