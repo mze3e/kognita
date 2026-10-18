@@ -99,6 +99,9 @@ def load_snapshot(session: Session, *, as_of: datetime | None = None,
     for agent in agents.values():
         if _evidence is not None and agent.autonomy_level:
             _step_down(session, agent.name, evidence=_evidence, now=at)
+    from kognita.approvals import _expire_holds
+    for name in agents:
+        _expire_holds(session, name, _evidence, at)
     from kognita.authority import _load
     from kognita._limits import _load_usage
     return PolicySnapshot(
@@ -734,6 +737,19 @@ def record(
             confirmation_required=confirmation_required,
             now=at,
         )
+
+    if evaluation.outcome == Outcome.HUMAN_APPROVAL and create_approval:
+        from kognita.approvals import _ApprovalContinuation
+        continuation = session.get(_ApprovalContinuation, evaluation.envelope_hash)
+        if continuation is not None:
+            from kognita.approvals import _release_hold
+            previous = session.get(Approval, continuation.approval_id)
+            _release_hold(session, previous, evidence, at)
+        session.merge(_ApprovalContinuation(envelope_hash=evaluation.envelope_hash,
+                                           approval_id=approval.id,
+                                           agent_name=envelope.agent_name,
+                                           expires_at=approval.expires_at))
+        session.flush()
 
     return Evaluation(
         request_id=evaluation.request_id,

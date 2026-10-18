@@ -1220,6 +1220,17 @@ class _Authority(SQLModel, table=True):
     ended: bool = Field(default=False, index=True)
 
 
+class _ApprovalContinuation(SQLModel, table=True):
+    """Exact-request approval holds with a transactional one-use claim."""
+    __tablename__ = "_approval_continuations"
+    __table_args__ = (Index("ix_approval_hold_expiry", "agent_name", "consumed", "expires_at"),)
+    envelope_hash: str = Field(primary_key=True)
+    approval_id: int
+    consumed: bool = False
+    agent_name: str | None = None
+    expires_at: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+
+
 class _BlastUsage(SQLModel, table=True):
     """Admission reservations; release moves the reservation to execution time."""
     __tablename__ = "_blast_usage"

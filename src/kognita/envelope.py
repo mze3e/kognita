@@ -185,12 +185,13 @@ def envelope_hash(
     """Bind an envelope, its resolved attributes and its checks into one hash.
 
     Approvals are issued against this value, so changing any of the three
-    invalidates an approval rather than silently widening it.
+    invalidates an approval rather than silently widening it. Volatile quota
+    usage stays in evidence but cannot change the approval binding.
     """
     return canonical_hash(
         {
             "envelope": envelope.to_dict(),
-            "attributes": attributes,
+            "attributes": {k: v for k, v in attributes.items() if k != "_s4_usage"},
             "checks": [c.to_dict() for c in checks],
         }
     )

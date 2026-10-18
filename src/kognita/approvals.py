@@ -15,7 +15,7 @@ from typing import Sequence
 from sqlmodel import Session, select
 
 from kognita.evidence import EvidenceWriter
-from kognita.models import Approval, as_utc, utcnow
+from kognita.models import Approval, _ApprovalContinuation, as_utc, utcnow
 from kognita.vocabulary import ActorType, ApprovalStatus, Classification, EventType
 
 
@@ -27,6 +27,72 @@ _UNASSIGNED_APPROVER = "Unassigned (duty desk)"
 
 class ApprovalError(Exception):
     """An approval could not be transitioned as requested."""
+
+
+def _release_hold(session, approval, evidence, at):
+    from kognita.models import GovernanceDecision, _BlastUsage
+    decision = session.get(GovernanceDecision, approval.decision_id)
+    row = session.get(_BlastUsage, decision.request_id) if decision else None
+    if row is not None:
+        evidence = evidence or EvidenceWriter(session.get_bind(), clock=lambda: at)
+        evidence.emit(session, correlation_id=row.request_id,
+            event_type=EventType.APPROVAL, actor_id="governance-pdp",
+            payload={"action": "BLAST_RADIUS_HOLD_RELEASED", "citation": "S4-USAGE",
+                     "approval_id": approval.id, "request_id": row.request_id})
+        session.delete(row)
+        session.flush()
+
+
+def _expire_holds(session, agent_name, evidence, at):
+    rows = session.exec(select(_ApprovalContinuation).where(
+        _ApprovalContinuation.agent_name == agent_name,
+        _ApprovalContinuation.expires_at <= at,
+        _ApprovalContinuation.consumed == False).limit(10001)).all()
+    for row in rows:
+        approval = session.get(Approval, row.approval_id)
+        if approval.status in (ApprovalStatus.PENDING, ApprovalStatus.MARKED):
+            approval.status = ApprovalStatus.EXPIRED
+            approval.decided_at = at
+            session.add(approval)
+        _release_hold(session, approval, evidence, at)
+        row.consumed = True
+        session.add(row)
+    session.flush()
+
+
+def _resume(session, evaluation, evidence, at):
+    """Atomically spend an exact, live approval; all other checks still apply."""
+    from dataclasses import replace
+    from sqlalchemy import update
+    from kognita.vocabulary import Outcome, CheckResult
+    from kognita.envelope import Check
+    if evaluation.outcome != Outcome.HUMAN_APPROVAL:
+        return evaluation
+    row = session.get(_ApprovalContinuation, evaluation.envelope_hash)
+    if row is None:
+        return evaluation
+    approval = session.get(Approval, row.approval_id)
+    expiry = as_utc(approval.expires_at)
+    live = approval.status == ApprovalStatus.APPROVED and (expiry is None or expiry > at)
+    if approval.status in (ApprovalStatus.PENDING, ApprovalStatus.MARKED) and (expiry is None or expiry > at):
+        return evaluation
+    if not live:
+        _release_hold(session, approval, evidence, at)
+    spent = session.execute(update(_ApprovalContinuation).where(
+        _ApprovalContinuation.envelope_hash == row.envelope_hash,
+        _ApprovalContinuation.consumed == False).values(consumed=True)
+        .execution_options(synchronize_session=False)) if live else None
+    allowed = live and spent.rowcount == 1
+    check = Check(check="APPROVAL-CONTINUATION", regime="INTERNAL",
+                  citation="APPROVAL-CONTINUATION",
+                  result=CheckResult.PASS if allowed else CheckResult.FAIL)
+    evidence.emit(session, correlation_id=evaluation.request_id,
+        event_type=EventType.APPROVAL, actor_id="governance-pdp",
+        payload={"action": "CONTINUED" if allowed else "WITHHELD",
+                 "approval_id": approval.id, "envelope_hash": evaluation.envelope_hash,
+                 "citation": check.citation})
+    return replace(evaluation, outcome=Outcome.ALLOW if allowed else Outcome.DENY,
+                   checks=evaluation.checks + (check,))
 
 
 def open_approval(
@@ -128,6 +194,7 @@ def _transition(
         approval.decided_at = at
         session.add(approval)
         session.flush()
+        _release_hold(session, approval, evidence, at)
         raise ApprovalError(f"approval {approval.id} expired at {expiry.isoformat()}")
 
     approval.status = status
@@ -155,6 +222,7 @@ def _transition(
             "reason": reason,
         },
     )
+    _release_hold(session, approval, evidence, at)
     return approval
 
 
@@ -190,6 +258,7 @@ def mark(
         approval.decided_at = at
         session.add(approval)
         session.flush()
+        _release_hold(session, approval, evidence, at)
         raise ApprovalError(f"approval {approval.id} expired at {expiry.isoformat()}")
 
     approver_id = _identity(approver_id)
@@ -259,6 +328,7 @@ def confirm(
         approval.decided_at = at
         session.add(approval)
         session.flush()
+        _release_hold(session, approval, evidence, at)
         raise ApprovalError(f"approval {approval.id} expired at {expiry.isoformat()}")
 
     approval.status = ApprovalStatus.APPROVED
@@ -281,6 +351,7 @@ def confirm(
             "reason": reason,
         },
     )
+    _release_hold(session, approval, evidence, at)
     return approval
 
 
@@ -379,7 +450,7 @@ def expire_stale(
     stale = [
         a
         for a in session.exec(
-            select(Approval).where(Approval.status == ApprovalStatus.PENDING)
+            select(Approval).where(Approval.status.in_([ApprovalStatus.PENDING, ApprovalStatus.MARKED]))
         ).all()
         if (expiry := as_utc(a.expires_at)) is not None and expiry <= at
     ]
@@ -387,6 +458,7 @@ def expire_stale(
         approval.status = ApprovalStatus.EXPIRED
         approval.decided_at = at
         session.add(approval)
+        _release_hold(session, approval, evidence, at)
         if evidence:
             evidence.emit(
                 session,
