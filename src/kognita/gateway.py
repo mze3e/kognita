@@ -52,6 +52,7 @@ from __future__ import annotations
 import json
 import sys
 import threading
+import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping, Sequence
@@ -741,17 +742,49 @@ class Gateway:
     ) -> GatewayResponse:
         """Govern one request. A supplied ``session`` is left for the caller to commit."""
         self._flush_deferred()
+        failures = len(self.evidence.telemetry_failures)
+        started = time.perf_counter() if self.evidence.telemetry is not None else None
         if session is None:
             try:
                 with session_scope(self.engine) as owned:
-                    return self._handle(owned, method, path, headers, body, run=run)
+                    response = self._handle(owned, method, path, headers, body, run=run)
             except _EvidenceStoreUnavailable:
-                return _json_response(503, {"error": "evidence store unavailable"})
-        try:
-            return self._handle(session, method, path, headers, body, run=run)
-        except _EvidenceStoreUnavailable:
-            session.rollback()
-            return _json_response(503, {"error": "evidence store unavailable"})
+                response = _json_response(503, {"error": "evidence store unavailable"})
+        else:
+            try:
+                response = self._handle(session, method, path, headers, body, run=run)
+            except _EvidenceStoreUnavailable:
+                session.rollback()
+                response = _json_response(503, {"error": "evidence store unavailable"})
+        return self._note_telemetry(response, started, failures)
+
+    def _note_telemetry(
+        self,
+        response: GatewayResponse,
+        started: float | None,
+        failures: int,
+    ) -> GatewayResponse:
+        """Export latency beside the decision, then surface an export failure.
+
+        The status, the body, and the evaluation are the decision that was
+        already recorded. The header is only set when an export failed.
+        """
+        if started is not None:
+            correlation = ""
+            if response.evaluation is not None:
+                correlation = response.evaluation.request_id
+            self.evidence.observe(
+                {
+                    "kind": "latency",
+                    "seconds": time.perf_counter() - started,
+                    "correlation_id": correlation,
+                }
+            )
+        if len(self.evidence.telemetry_failures) == failures:
+            return response
+        headers = dict(response.headers)
+        headers["x-kognita-telemetry-export"] = "failed"
+        return replace(response, headers=headers)
 
     def _store(self, fn: Callable[[], Any]) -> Any:
         try:
@@ -1165,6 +1198,7 @@ class Gateway:
             self._store(lambda: _save_run(session, run))
         evaluation = item.evaluation
         classification = item.classification
+        run_id = item.run.id if item.run is not None and item.save_run else None
         recorded = self._store(
             lambda: record(
                 session,
@@ -1173,6 +1207,7 @@ class Gateway:
                 classification=classification,
                 budget=item.decision_budget,
                 now=item.decided_at,
+                run_id=run_id,
             )
         )
         model = item.model
@@ -1374,7 +1409,10 @@ class Gateway:
         run: Run | None,
         now: datetime,
     ) -> Evaluation:
+        if run is not None:
+            self._store(lambda: _save_run(session, run))
         budget = _budget_payload(run) if run is not None else None
+        run_id = None if run is None else run.id
         return self._store(
             lambda: record(
                 session,
@@ -1383,6 +1421,7 @@ class Gateway:
                 classification=classification,
                 budget=budget,
                 now=now,
+                run_id=run_id,
             )
         )
 

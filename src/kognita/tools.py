@@ -678,6 +678,8 @@ def run_governed(
         tokens=tokens,
         now=at,
     )
+    if run is not None:
+        _save_run(session, run)
 
     # Evaluation.allowed includes HUMAN_APPROVAL so the work may be prepared.
     # Release is a separate question: an already-granted approval for this
@@ -695,6 +697,7 @@ def run_governed(
         budget=_budget_payload(run) if run is not None else None,
         create_approval=already_granted is None,
         now=at,
+        run_id=None if run is None else run.id,
     )
 
     if not evaluation.allowed:

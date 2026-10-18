@@ -15,6 +15,8 @@ module takes a caller-supplied hash or sequence number.
 """
 from __future__ import annotations
 
+import json
+import sys
 import threading
 from collections.abc import Callable
 from datetime import datetime
@@ -32,6 +34,10 @@ from kognita.vocabulary import ActorType, Classification, EventType
 #: payload to keep, or a reduced version. The default keeps payloads as given —
 #: callers decide what to put in them.
 PayloadFilter = Callable[[EventType, dict[str, Any]], dict[str, Any]]
+
+#: Called with a copy of an event after that event is in the chain. A failure
+#: here is recorded and does not change the event.
+TelemetryHook = Callable[[dict[str, Any]], None]
 
 #: The prev_hash of the first event in a chain.
 GENESIS_HASH = "0" * 64
@@ -152,10 +158,15 @@ class EvidenceWriter:
         *,
         redact_payload: PayloadFilter | None = None,
         clock: Callable[[], datetime] = utcnow,
+        telemetry: TelemetryHook | None = None,
     ) -> None:
         self.engine = engine
         self.redact_payload = redact_payload
         self.clock = clock
+        self.telemetry = telemetry
+        #: Export failures, in order. The decision that was already appended is
+        #: not in this list and is not rewritten when an export fails.
+        self.telemetry_failures: list[str] = []
         self._lock = _lock_for(engine)
 
     def emit(
@@ -216,7 +227,53 @@ class EvidenceWriter:
             session.add(event)
             session.flush()
             _cite_payload_links(session, event, body)
+        self._export_snapshot(event)
         return event
+
+    def observe(self, snapshot: dict[str, Any]) -> None:
+        """Hand a copy to the telemetry hook.
+
+        The hook is not called when none is set. An exception is appended to
+        :attr:`telemetry_failures` and written to stderr. It is not raised,
+        and this method does not write evidence.
+        """
+        if self.telemetry is None:
+            return
+        try:
+            self.telemetry(dict(snapshot))
+        except Exception as exc:
+            self._note_export_failure(f"{exc}")
+
+    def _export_snapshot(self, event: EvidenceEvent) -> None:
+        """Export a copy of ``event`` after it has been appended.
+
+        The hook receives a plain dict, not the row. A failure leaves the row
+        as it was flushed.
+        """
+        if self.telemetry is None:
+            return
+        try:
+            recorded = as_utc(event.recorded_at)
+            snapshot = {
+                "kind": "evidence",
+                "sequence": event.sequence,
+                "correlation_id": event.correlation_id,
+                "event_type": EventType(event.event_type).value,
+                "actor_type": ActorType(event.actor_type).value,
+                "actor_id": event.actor_id,
+                "classification": Classification(event.classification).value,
+                "payload": json.loads(canonical_json(event.payload)),
+                "event_hash": event.event_hash,
+                "recorded_at": recorded.isoformat() if recorded else None,
+            }
+            self.telemetry(snapshot)
+        except Exception as exc:
+            self._note_export_failure(f"sequence {event.sequence}: {exc}")
+
+    def _note_export_failure(self, message: str) -> None:
+        text = f"OpenTelemetry export failed: {message}"
+        self.telemetry_failures.append(text)
+        sys.stderr.write(text + "\n")
 
 
 def recompute_event_hash(event: EvidenceEvent) -> str:
@@ -369,6 +426,7 @@ def hashes_only(_event_type: EventType, payload: dict[str, Any]) -> dict[str, An
 
 __all__ = [
     "EvidenceWriter",
+    "TelemetryHook",
     "ChainBreak",
     "verify_chain",
     "export_chain",

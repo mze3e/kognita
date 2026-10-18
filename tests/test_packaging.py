@@ -78,8 +78,9 @@ def test_importing_kognita_loads_no_optional_dependency():
         "if m.split('.')[0] in {'graphiti_core', 'kuzu', 'openai', 'anthropic', "
         "'docling', 'docling_core', 'docling_parse', 'docling_ibm_models', "
         "'hermes_cli', 'hermes_bootstrap', 'run_agent', 'agents', 'langgraph', "
-        "'langchain_core', 'pydantic_ai'} "
-        "or m == 'kognita.ingest' or m.startswith('kognita.ingest.')); "
+        "'langchain_core', 'pydantic_ai', 'opentelemetry'} "
+        "or m == 'kognita.ingest' or m.startswith('kognita.ingest.') "
+        "or m == 'kognita.otel' or m.startswith('kognita.otel.')); "
         "print(','.join(leaked))"
     )
     result = subprocess.run(
@@ -268,6 +269,55 @@ def test_removed_graph_names_explain_the_removal(removed):
 def _contracts() -> list[dict]:
     config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
     return config["tool"]["importlinter"]["contracts"]
+
+
+def test_otel_stays_out_of_the_engine_and_out_of_all():
+    """OpenTelemetry is an extra. The flight recorder is engine code."""
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
+    extras = config["project"]["optional-dependencies"]
+    assert extras["otel"] == [
+        "opentelemetry-api>=1.27.0",
+        "opentelemetry-sdk>=1.27.0",
+        "opentelemetry-exporter-otlp-proto-http>=1.27.0",
+    ]
+    assert "otel" not in " ".join(extras["all"])
+    engine = next(
+        c
+        for c in _contracts()
+        if c["name"] == "the decision engine reaches nothing optional"
+    )
+    assert "kognita.recorder" in engine["source_modules"]
+    assert "kognita.otel" not in engine["source_modules"]
+    assert "opentelemetry" in engine["forbidden_modules"]
+    assert "kognita.otel" in engine["forbidden_modules"]
+    contract = next(
+        c
+        for c in _contracts()
+        if c["name"] == "OpenTelemetry is reached only from the otel extra"
+    )
+    assert contract["source_modules"] == ["kognita"]
+    assert set(contract["forbidden_modules"]) == {"opentelemetry", "kognita.otel"}
+    assert contract["ignore_imports"] == [
+        "kognita.cli -> kognita.otel",
+        "kognita.otel -> opentelemetry",
+    ]
+
+
+def test_only_the_otel_package_imports_opentelemetry():
+    """The engine and the CLI do not import OpenTelemetry at module level."""
+    offenders: list[str] = []
+    for path in PACKAGE_ROOT.rglob("*.py"):
+        rel = path.relative_to(PACKAGE_ROOT).as_posix()
+        for offset, module in _imported_modules(path):
+            otel_pkg = module == "kognita.otel" or module.startswith("kognita.otel.")
+            sdk = module == "opentelemetry" or module.startswith("opentelemetry.")
+            if otel_pkg:
+                if rel != "cli.py" or offset == 0:
+                    offenders.append(f"{rel} imports {module} at column {offset}")
+                continue
+            if sdk and (not rel.startswith("otel/") or offset == 0):
+                offenders.append(f"{rel} imports {module} at column {offset}")
+    assert not offenders, offenders
 
 
 def test_the_engine_contract_forbids_docling_and_ingestion():

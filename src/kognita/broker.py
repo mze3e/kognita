@@ -296,6 +296,8 @@ def ask(
         if evaluation.approval_required
         else None
     )
+    if run is not None:
+        _save_run(session, run)
     evaluation = record(
         session,
         evaluation,
@@ -303,6 +305,7 @@ def ask(
         budget=_budget_payload(run) if run is not None else None,
         create_approval=already_granted is None,
         now=at,
+        run_id=None if run is None else run.id,
     )
 
     holding = evaluation.approval_required and already_granted is None
