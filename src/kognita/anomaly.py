@@ -122,15 +122,16 @@ def _contain(session, agent, evaluation, evidence, at, rule):
                 'agent': agent.name, 'usecase_id': evaluation.envelope.purpose, **extra})
     emit('ANOMALY_QUARANTINED')
     revoke(session, agent.name, None, evidence=evidence, actor_id='anomaly', _automatic=True)
-    # The current admission is denied and all subsequent tool admissions encounter
-    # the persisted kill switch. Already released transports cannot be recalled.
-    emit('ANOMALY_TOOLS_STOPPED', scope='new admissions')
+    from kognita._actions import _stop
+    _stop(agent=agent.name)
+    emit('ANOMALY_TOOLS_STOPPED', scope='new admissions and in-flight calls')
     purpose = evaluation.envelope.purpose
     entry = load_register(session, as_of=at).get(purpose)
     emit('INCIDENT', usecase_id=purpose if entry else '', impact=1,
          summary=f'{rule}: {agent.name} automatically quarantined',
          accountable_owner=agent.owner_exec, at=_utc(at).isoformat())
-    emit('ANOMALY_ALERT', accountable_owner=agent.owner_exec)
+    emit('ANOMALY_ALERT', accountable_owner=agent.owner_exec,
+         _recipients=[agent.owner_exec, entry.knowledge_lead if entry else 'Knowledge Lead'])
 
 
 __all__ = []

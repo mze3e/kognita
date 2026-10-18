@@ -226,6 +226,8 @@ def alerts(session: Session, *, as_of: datetime | None = None) -> dict[str, Any]
             _denial_alert(events),
             chain,
             _drift_alert(events),
+            *(_control_alert(_payload(event), sequence=event.sequence)
+              for event in events if _is_control_alert(_payload(event))),
         ],
         "injection_attempts": injections,
         "entitlement_blocks": blocks,
@@ -285,6 +287,18 @@ def effectiveness(
     }
 
 
+def _is_control_alert(payload):
+    return payload.get("action") == "ANOMALY_ALERT" or (
+        payload.get("action") == "ALERT" and payload.get("citation") == "S1-DRIFT")
+
+
+def _control_alert(payload, *, sequence=None):
+    return {"kind": payload["action"], "fired": True, "measured": True,
+            "citation": payload["citation"], "sequence": sequence,
+            "_agent": payload.get("agent", ""),
+            "_recipients": payload.get("_recipients", payload.get("recipients", []))}
+
+
 def telemetry_signals(snapshot: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
     """Signals one snapshot can support.
 
@@ -315,6 +329,12 @@ def telemetry_signals(snapshot: Mapping[str, Any]) -> tuple[dict[str, Any], ...]
         "correlation_id": str(snapshot.get("correlation_id") or ""),
         "sequence": snapshot.get("sequence"),
     }
+    if _is_control_alert(payload):
+        alert = _control_alert(payload)
+        return tuple(_signal("alert", measured=True, value=1,
+            citation=alert["citation"], attributes={**attributes,
+                "_action": alert["kind"], "_agent": alert["_agent"],
+                "_recipient": recipient}) for recipient in alert["_recipients"])
     if event_type == EventType.POLICY_DECISION.value:
         outcome = payload.get("outcome")
         measured = isinstance(outcome, str) and outcome in _OUTCOMES

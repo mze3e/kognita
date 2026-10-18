@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persist served-model card denials as the delivered decision and replay the response restriction (#35).
 - Keep volatile quota usage in evidence without changing approval hashes, and release rejected or expired approval holds (#14).
 - Persist exact-request approval continuations and consume grants once before gateway forwarding or governed execution (#16).
+- 0.5 DoD item 14: deliver containment alerts through recorder alerts and OpenTelemetry to the owner and Knowledge Lead, and signal in-flight MCP cancellation.
+- 0.5 DoD item 19: deliver automatic step-down alerts through recorder alerts and OpenTelemetry; verify the next gateway decision uses the reduced level.
 
 - Deny conflicting primary and additional subjects with S3-SUBJECT-CONFLICT and consistently prefer the primary subject when resolving references.
 - Per-tool subject mapping: Enforce private `_subject_paths` declarations against delegated data scopes; deny missing, malformed, or ambiguous argument paths before execution.
