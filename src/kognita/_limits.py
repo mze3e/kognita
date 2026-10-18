@@ -172,6 +172,10 @@ def _recheck(session, evaluation, at):
     env = evaluation.envelope
     if not env.agent_name or not evaluation.allowed:
         return evaluation
+    # Take a database write lock before reading counters; hold through commit.
+    from sqlalchemy import update as _update
+    session.execute(_update(Agent).where(Agent.name == env.agent_name)
+                    .values(name=Agent.name).execution_options(synchronize_session=False))
     agent = session.exec(select(Agent).where(Agent.name == env.agent_name)
                          .execution_options(populate_existing=True)).first()
     if agent is None or agent.blast_radius is None:

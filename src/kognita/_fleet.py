@@ -43,6 +43,11 @@ def _run_checks(session, run, envelope, evidence):
 def _delegate(session, run, name, scope, evidence, at):
     from kognita.tools import Run, _refresh_run, _save_run
     from kognita.authority import _load, _lineage_valid
+    # Take a database write lock before reading counters; hold through commit.
+    from sqlalchemy import update as _update
+    from kognita.models import RunRecord
+    session.execute(_update(RunRecord).where(RunRecord.id == run.id)
+                    .values(id=RunRecord.id).execution_options(synchronize_session=False))
     _refresh_run(session, run)
     binding = run._authority_scope
     parent = session.get(_Authority, binding.get('delegation_id', ''), populate_existing=True)
