@@ -80,8 +80,11 @@ from kognita.governance import (
     resolve_outcome,
 )
 from kognita.retention import RetentionStore
+from kognita.breaker import circuit_breaker_checks
+from kognita.revocation import revocation_checks
 from kognita.rules import build_registry
 from kognita.usecases import (
+    _governing,
     _served_model_citation,
     endpoint_named,
     load_register,
@@ -144,11 +147,16 @@ class _DeferredModel:
 
 @dataclass
 class _ModelCardDenial:
-    """A served version with no approved card. Written after the stored decision."""
+    """A served version that is withheld. Written after the stored decision.
+
+    ``check`` names the gate: no approved card, or a revocation or circuit
+    breaker that matches the version the provider actually served.
+    """
 
     model: str
     version: str
     citation: str
+    check: str = "USE_CASE_MODEL"
 
 
 @dataclass
@@ -177,9 +185,10 @@ class ClientConfiguration:
     ``agent_names`` is the set of agent names the client may present.
     ``system_triggers`` is the set of approved system triggers. ``agent_name``
     and ``system_trigger`` are the identities the session itself carries when
-    a request header does not. Principal and purpose headers, when the
-    request carries them, are the authenticated values; otherwise these
-    fields are.
+    a request header does not. ``principal`` and ``purpose`` are the
+    authenticated values. A request header may repeat them but cannot change
+    them: a principal or purpose header that differs is denied, the same way
+    an agent name outside ``agent_names`` is.
     """
 
     principal: str
@@ -453,6 +462,50 @@ def _identity(
             ),
         )
     ]
+
+
+def _bound_principal(
+    client: ClientConfiguration,
+    headers: Mapping[str, str],
+    purposes: Sequence[str] = (),
+) -> tuple[str, str, list[Check]]:
+    """Principal and purpose from the authenticated client configuration.
+
+    Request headers are not authenticated. A principal header that repeats
+    the bound principal is accepted; one that names anybody else is denied,
+    so a caller cannot borrow a pilot user's name or another subject's
+    identity. A purpose header may pick a purpose the deployment configured
+    (``purposes``, or the client's own purpose); any other purpose header is
+    denied. The envelope carries the bound principal.
+    """
+    checks: list[Check] = []
+    claimed_principal = headers.get("principal") or None
+    if claimed_principal is not None and claimed_principal != client.principal:
+        checks.append(
+            Check(
+                check="AGENT_IDENTITY",
+                regime="INTERNAL",
+                result=CheckResult.FAIL,
+                citation="principal header does not match the authenticated client configuration",
+            )
+        )
+    purpose = client.purpose
+    claimed_purpose = headers.get("purpose") or None
+    if claimed_purpose is not None and claimed_purpose != client.purpose:
+        if claimed_purpose in set(purposes):
+            purpose = claimed_purpose
+        else:
+            checks.append(
+                Check(
+                    check="AGENT_IDENTITY",
+                    regime="INTERNAL",
+                    result=CheckResult.FAIL,
+                    citation=(
+                        "purpose header is not a purpose configured for this client"
+                    ),
+                )
+            )
+    return client.principal, purpose, checks
 
 
 def _budget_block(
@@ -828,8 +881,10 @@ class Gateway:
                 return _json_response(400, {"error": "classification is not a known value"})
 
         agent_name, trigger, identity_checks = _identity(self.client, headers)
-        principal = headers.get("principal") or self.client.principal
-        purpose = headers.get("purpose") or self.client.purpose
+        principal, purpose, principal_checks = _bound_principal(
+            self.client, headers, self.purposes
+        )
+        identity_checks = identity_checks + principal_checks
         arguments: dict[str, Any] = {}
         template_version = _template_version(headers)
         if headers.get("model_version"):
@@ -877,7 +932,7 @@ class Gateway:
         # One register for this request. The model-card link and the endpoint
         # flag read it again; loading it a second time would scan the same rows.
         session.info["_kognita_register"] = register
-        usecases = register if register.entries else None
+        usecases = _governing(session, register)
         flagged = not endpoint_named(register, self.upstream)
 
         def finish(response: GatewayResponse) -> GatewayResponse:
@@ -1130,6 +1185,37 @@ class Gateway:
         served_name, served_version = _reported_model(
             payload["model"], restored_payload
         )
+        stopped = self._served_model_stopped(
+            evaluation,
+            snapshot=snapshot,
+            register=usecases,
+            provider=provider_name,
+            model=served_name or "",
+            version=served_version or "",
+            at=self.evidence.clock(),
+        )
+        if stopped is not None:
+            self._record_model_card_denial(
+                session,
+                evaluation,
+                classification=classification,
+                deferred=deferred,
+                model=served_name or "",
+                version=served_version or "",
+                citation=stopped.citation,
+                check=stopped.check,
+            )
+            return finish(
+                _json_response(
+                    403,
+                    {
+                        "outcome": Outcome.DENY.value,
+                        "error": "the served model is revoked or stopped",
+                        "request_id": evaluation.request_id,
+                    },
+                    evaluation=evaluation,
+                )
+            )
         card = resolve_model_card(
             register,
             provider=self.provider or (urlparse(self.upstream).hostname or self.upstream),
@@ -1242,8 +1328,45 @@ class Gateway:
                     model=denial.model,
                     version=denial.version,
                     citation=denial.citation,
+                    check=denial.check,
                 )
             )
+
+    def _served_model_stopped(
+        self,
+        evaluation: Evaluation,
+        *,
+        snapshot: Any,
+        register: Any,
+        provider: str,
+        model: str,
+        version: str,
+        at: datetime,
+    ) -> Check | None:
+        """A revocation or breaker on the model the provider actually served.
+
+        The decision matched the model the caller asked for. The response
+        names the model that answered; a revoked or stopped version there is
+        withheld, whatever the request said.
+        """
+        arguments = dict(evaluation.envelope.arguments or {})
+        attributes = dict(evaluation.attributes)
+        if provider:
+            attributes["provider"] = provider
+        if model:
+            attributes["model"] = model
+        if version:
+            arguments["model_version"] = version
+            attributes["model_version"] = version
+        served = replace(evaluation.envelope, arguments=arguments)
+        revocations = snapshot.revocations
+        checks = revocation_checks(
+            served, revocations, attributes=attributes, register=register
+        ) + circuit_breaker_checks(served, snapshot.policies, attributes, at)
+        for check in checks:
+            if check.result in (CheckResult.FAIL, CheckResult.ESCALATE):
+                return check
+        return None
 
     def _record_model_card_denial(
         self,
@@ -1255,11 +1378,12 @@ class Gateway:
         model: str,
         version: str,
         citation: str,
+        check: str = "USE_CASE_MODEL",
     ) -> None:
         """Append the withhold. A deferred call writes it once the decision has an id."""
         if deferred is not None:
             deferred.model_card_denial = _ModelCardDenial(
-                model=model, version=version, citation=citation
+                model=model, version=version, citation=citation, check=check
             )
             return
         self._store(
@@ -1270,6 +1394,7 @@ class Gateway:
                 model=model,
                 version=version,
                 citation=citation,
+                check=check,
             )
         )
 
@@ -1282,6 +1407,7 @@ class Gateway:
         model: str,
         version: str,
         citation: str,
+        check: str = "USE_CASE_MODEL",
     ) -> None:
         """One DENY outcome, linked to the decision already stored. Nothing is updated."""
         if evaluation.decision_id is None:
@@ -1301,7 +1427,7 @@ class Gateway:
                 "envelope_hash": evaluation.envelope_hash,
                 "checks": [
                     Check(
-                        check="USE_CASE_MODEL",
+                        check=check,
                         regime="INTERNAL",
                         result=CheckResult.FAIL,
                         citation=citation,

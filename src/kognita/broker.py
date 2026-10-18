@@ -35,6 +35,7 @@ from kognita.governance import (
     load_snapshot,
     record,
 )
+from kognita.usecases import _governing_register
 from kognita.models import utcnow
 from kognita.protocols import Embedder
 from kognita.retrieval import Retrieved, ceiling_for, retrieve
@@ -277,6 +278,7 @@ def ask(
         subjects=subjects,
         rules=pack.rules(),
         purposes=purposes,
+        usecases=_governing_register(session, as_of=as_of or at),
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )

@@ -215,6 +215,28 @@ def _activate(session, evidence, spec: UseCaseSpec, **kwargs) -> None:
     )
 
 
+def _live_purpose(
+    session, evidence, usecase_id: str, at=NOW, approved_models=()
+) -> None:
+    """A live, tier 1 use case for an existing purpose, registered at ``at``.
+
+    Once a store has registered any use case the register governs every path,
+    so tests that call through a purpose that predates the register give that
+    purpose a live entry.
+    """
+    set_appetite(
+        session, _appetite(), evidence=evidence, actor_id="CRO",
+        senior_management=True, at=at,
+    )
+    spec = _spec(usecase_id=usecase_id, approved_models=tuple(approved_models))
+    register(session, spec, evidence=evidence, actor_id="Jane Smith", at=at)
+    approve_rating(session, usecase_id, spec.control_function, evidence=evidence, at=at)
+    activate(
+        session, usecase_id, evidence=evidence, actor_id=spec.control_function,
+        at=at, status="live",
+    )
+
+
 def _envelope(purpose: str, principal: str = "alice") -> Envelope:
     return Envelope(principal=principal, purpose=purpose, tool="get_subject_profile")
 

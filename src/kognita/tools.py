@@ -57,12 +57,14 @@ from kognita.envelope import Check, Envelope, Evaluation, envelope_hash
 from kognita.evidence import EvidenceWriter
 from kognita.governance import (
     PolicySnapshot,
+    _standing_checks,
     classifier_derived_envelope,
     decide,
     load_snapshot,
     record,
     resolve_outcome,
 )
+from kognita.usecases import _governing_register
 from kognita.models import Approval, Continuation, RunRecord, as_utc, utcnow
 from kognita.retention import RetentionStore
 from kognita.vocabulary import (
@@ -691,6 +693,7 @@ def run_governed(
         subjects=subjects,
         rules=pack.rules(),
         purposes=purposes,
+        usecases=_governing_register(session, as_of=as_of or at),
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
@@ -784,14 +787,16 @@ def continue_run(
     registry: ToolRegistry | None = None,
     embedder: Any = None,
     subgraph: Callable[..., Any] | None = None,
-    approver_name: str = "Unassigned (duty desk)",
+    approver_name: str = "",
     confirmer: str | None = None,
     now: datetime | None = None,
 ) -> ToolRun | Any:
     """Resume a run suspended on ``HUMAN_APPROVAL``.
 
     ``approvals_resolved`` maps an approval id to whether the person granted
-    it. The held call executes only when that approval is actually granted
+    it. ``approver_name`` is the person resolving it. A single-signature grant
+    without one, or by the requester, raises
+    :class:`~kognita.approvals.ApprovalError` and does not execute. The held call executes only when that approval is actually granted
     and :func:`kognita.approvals.find_granted` still finds it live. A denial
     resumes the record and does not execute.
 
@@ -892,6 +897,20 @@ def continue_run(
         and gating.status == ApprovalStatus.APPROVED
         and not clock_hit
     )
+    # The approval answers the hold, not what changed while it waited. A kill
+    # switch, revocation, breaker or register change since the decision still
+    # withholds the call. The stored decision is kept; the recheck is appended.
+    recheck: list[Check] = []
+    if execute:
+        recheck = _standing_checks(
+            envelope,
+            load_snapshot(session, as_of=at),
+            attributes=dict(evaluation.attributes),
+            usecases=_governing_register(session, as_of=at),
+            at=at,
+        )
+        if recheck:
+            execute = False
 
     evidence.emit(
         session,
@@ -908,6 +927,7 @@ def continue_run(
             "decision": "approved" if granted_flag else "denied",
             "executed": execute,
             **({"budget": "wall_clock_seconds"} if clock_hit else {}),
+            **({"rechecked": [check.check for check in recheck]} if recheck else {}),
         },
     )
     run.continuation_hash = None
@@ -918,6 +938,8 @@ def continue_run(
         # A denied approval stays a denial and does not execute.
         if clock_hit and granted_flag:
             evaluation = _deny_for_budgets(evaluation, ["wall_clock_seconds"])
+        if recheck:
+            evaluation = _with_checks(evaluation, recheck)
         _record_resume_decision(
             session,
             payload,

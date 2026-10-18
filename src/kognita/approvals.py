@@ -19,6 +19,12 @@ from kognita.models import Approval, as_utc, utcnow
 from kognita.vocabulary import ActorType, ApprovalStatus, Classification, EventType
 
 
+
+# The queue placeholder for an approval nobody has picked up. It is not a
+# signature: a grant that names it is refused.
+
+_UNASSIGNED_APPROVER = "Unassigned (duty desk)"
+
 class ApprovalError(Exception):
     """An approval could not be transitioned as requested."""
 
@@ -32,7 +38,7 @@ def open_approval(
     evidence: EvidenceWriter,
     correlation_id: str,
     ttl: timedelta = timedelta(hours=48),
-    approver_name: str = "Unassigned (duty desk)",
+    approver_name: str = _UNASSIGNED_APPROVER,
     requester_id: str = "",
     approver_id: str | None = None,
     proposal_id: int | None = None,
@@ -304,7 +310,17 @@ def grant(
             now=now,
         )
 
-    # Single-signature flow
+    # Single-signature flow. The grant names a real person who is not the
+    # requester; the queue placeholder is not a signature.
+    name = (approver_name or "").strip()
+    if not name or name == _UNASSIGNED_APPROVER:
+        raise ApprovalError(
+            f"approval {approval.id}: a grant must name the approver"
+        )
+    if name == (approval.requester_id or "").strip():
+        raise ApprovalError(
+            f"approval {approval.id}: the approver must differ from the requester"
+        )
     return _transition(
         session,
         approval,
