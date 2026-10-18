@@ -519,11 +519,11 @@ Do not wait for client harm.
 - [ ] Risk-based review queue with coverage reporting per use case and risk tier
 - [ ] Circuit breaker trips automatically in a test scenario, and the affected-client query lists exactly the clients who received output in the window
 - [ ] Revocation by each dimension takes effect on the next decision without affecting other use cases
-- [ ] Risk tiers enforce minimum controls; a tier 3 use case cannot be activated by its own builder
+- [x] Risk tiers enforce minimum controls; a tier 3 use case cannot be activated by its own builder
 - [ ] An incomplete approval packet cannot be approved; rubber-stamp approvals are flagged
 - [ ] Private-banking starter pack with scenarios, including cross-border and booking-centre denials
 - [ ] OpenTelemetry export
-- [ ] A use case outside the risk appetite cannot be registered; a use case past its review date is denied
+- [x] A use case outside the risk appetite cannot be registered; a use case past its review date is denied
 - [ ] "Do not contact" outcomes recorded with reasons; a bare score is rejected as rationale
 - [ ] Every communication carries a communication level and content provenance label; unregistered channels are denied
 - [ ] Pause, override, restrict and recover work on a live run and are evidenced
@@ -535,11 +535,11 @@ Do not wait for client harm.
 - [ ] hermes-agent adapter plus at least three others
 - [ ] Flight recorder with export
 - [ ] Cycle time, decision quality and reliability reported per use case from evidence, against a registered baseline and target
-- [ ] A tier 2 use case with no named Knowledge Lead is denied
-- [ ] A materiality rating not approved by the control function cannot be activated; the control function cannot approve a use case it owns
-- [ ] A use case whose residual materiality is outside the risk appetite cannot be activated
+- [x] A tier 2 use case with no named Knowledge Lead is denied
+- [x] A materiality rating not approved by the control function cannot be activated; the control function cannot approve a use case it owns
+- [x] A use case whose residual materiality is outside the risk appetite cannot be activated
 - [ ] Quantitative appetite measures (AI incidents, single-provider dependencies, performance breaches) reported against their thresholds from evidence
-- [ ] A pilot denies calls from users outside its list and after its end date
+- [x] A pilot denies calls from users outside its list and after its end date
 - [ ] An unmediated AI entry records its assurance gap and compensating control; a gateway call to an unregistered AI endpoint is flagged
 - [ ] Revoking a provider stops it on the next decision for every use case; a kill-switch drill is evidenced and an overdue drill is flagged
 - [ ] Retiring a use case stops its agents and applies its retention period

@@ -126,6 +126,7 @@ source_modules = [
     "kognita.retrieval",
     "kognita.rules",
     "kognita.tools",
+    "kognita.usecases",
     "kognita.vectors",
     "kognita.vocabulary",
 ]

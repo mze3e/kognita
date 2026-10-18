@@ -28,7 +28,7 @@ from sqlalchemy.types import JSON, DateTime
 from sqlmodel import Field, SQLModel
 
 from kognita.canonical import canonical_hash
-from kognita.exceptions import PolicyEditError
+from kognita.exceptions import KognitaError, PolicyEditError
 
 from kognita.vocabulary import (
     ActorType,
@@ -401,12 +401,69 @@ class Continuation(SQLModel, table=True):
     payload: dict[str, Any] = Field(sa_column=Column(JSON, nullable=False))
 
 
+class UseCase(SQLModel, table=True):
+    """One version of a registered AI use case.
+
+    Versions are effective-dated. A registry change closes the current row and
+    inserts the next version; the closed row is not rewritten. ``record`` is the
+    entry. ``effective_to`` is not part of the hash, so closing the window does
+    not change what a decision pinned.
+    """
+
+    __tablename__ = "use_cases"
+    __table_args__ = (
+        UniqueConstraint("usecase_id", "version", name="uq_usecase_version"),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    usecase_id: str = Field(index=True)
+    version: int = 1
+    record: dict[str, Any] = Field(
+        default_factory=dict, sa_column=Column(JSON, nullable=False)
+    )
+    content_hash: str = Field(default="")
+    effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+    effective_to: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+
+    def is_effective(self, at: datetime) -> bool:
+        """Whether this version is in force at ``at`` (half-open interval)."""
+        start = as_utc(self.effective_from)
+        end = as_utc(self.effective_to)
+        assert start is not None
+        return start <= at and (end is None or end > at)
+
+
+class RiskAppetite(SQLModel, table=True):
+    """The AI risk appetite in force, as one versioned policy.
+
+    A use case outside the appetite cannot be registered. Changing the appetite
+    is a governed change; the closed row is not rewritten.
+    """
+
+    __tablename__ = "risk_appetites"
+
+    id: int | None = Field(default=None, primary_key=True)
+    version: int = 1
+    record: dict[str, Any] = Field(
+        default_factory=dict, sa_column=Column(JSON, nullable=False)
+    )
+    content_hash: str = Field(default="")
+    effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+    effective_to: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+
+    def is_effective(self, at: datetime) -> bool:
+        start = as_utc(self.effective_from)
+        end = as_utc(self.effective_to)
+        assert start is not None
+        return start <= at and (end is None or end > at)
+
+
 class RetentionPolicy(SQLModel, table=True):
     """How long one use case keeps content in the retention store.
 
-    The use-case register is a later release. This row is only the retention
-    period for a use case the caller names. ``retain_days`` of None keeps the
-    content until an explicit erasure.
+    The period is keyed by the use case id the register names. ``retain_days``
+    of None keeps the content until an explicit erasure. Applying the period
+    when a use case is retired is a later slice.
     """
 
     __tablename__ = "retention_policies"
@@ -484,12 +541,43 @@ class EntityEdge(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
 
 
-def _committed(policy: Policy, name: str) -> Any:
+def usecase_content(row: UseCase) -> dict[str, Any]:
+    """The use-case version as evaluated, without the window's closing instant."""
+    start = as_utc(row.effective_from)
+    return {
+        "usecase_id": row.usecase_id,
+        "version": row.version,
+        "record": row.record,
+        "effective_from": start.isoformat() if start else None,
+    }
+
+
+def usecase_content_hash(row: UseCase) -> str:
+    """Hash of :func:`usecase_content`."""
+    return canonical_hash(usecase_content(row))
+
+
+def appetite_content(row: RiskAppetite) -> dict[str, Any]:
+    """The appetite version as evaluated, without the window's closing instant."""
+    start = as_utc(row.effective_from)
+    return {
+        "version": row.version,
+        "record": row.record,
+        "effective_from": start.isoformat() if start else None,
+    }
+
+
+def appetite_content_hash(row: RiskAppetite) -> str:
+    """Hash of :func:`appetite_content`."""
+    return canonical_hash(appetite_content(row))
+
+
+def _committed(row: Any, name: str) -> Any:
     """The last flushed value of ``name`` when this update changes it."""
-    state = sa_inspect(policy)
+    state = sa_inspect(row)
     if name in state.committed_state:
         return state.committed_state[name]
-    return getattr(policy, name)
+    return getattr(row, name)
 
 
 @event.listens_for(Policy, "before_insert")
@@ -525,6 +613,63 @@ def _reject_in_place_policy_edit(_mapper: Any, _connection: Any, target: Policy)
     target.content_hash = fresh
 
 
+def _refuse_closed_window(row: Any) -> None:
+    """A window that is already closed is not moved."""
+    state = sa_inspect(row)
+    if "effective_to" in state.committed_state:
+        previous_end = state.committed_state["effective_to"]
+        if previous_end is not None:
+            raise KognitaError(
+                "effective_to is already set; registry changes are new versions"
+            )
+
+
+@event.listens_for(UseCase, "before_insert")
+def _stamp_usecase_content_hash(_mapper: Any, _connection: Any, target: UseCase) -> None:
+    """The stamp is the row's content. A caller-supplied hash is not kept."""
+    target.content_hash = usecase_content_hash(target)
+
+
+@event.listens_for(UseCase, "before_update")
+def _reject_in_place_usecase_edit(_mapper: Any, _connection: Any, target: UseCase) -> None:
+    """Closing the window is the only rewrite an effective use case accepts."""
+    _refuse_closed_window(target)
+    fresh = usecase_content_hash(target)
+    stored = _committed(target, "content_hash") or ""
+    if fresh == stored:
+        return
+    start = as_utc(_committed(target, "effective_from"))
+    if start is not None and start <= utcnow():
+        raise KognitaError(
+            "in-place edit of an effective use case; registry changes are new versions"
+        )
+    target.content_hash = fresh
+
+
+@event.listens_for(RiskAppetite, "before_insert")
+def _stamp_appetite_content_hash(
+    _mapper: Any, _connection: Any, target: RiskAppetite
+) -> None:
+    target.content_hash = appetite_content_hash(target)
+
+
+@event.listens_for(RiskAppetite, "before_update")
+def _reject_in_place_appetite_edit(
+    _mapper: Any, _connection: Any, target: RiskAppetite
+) -> None:
+    _refuse_closed_window(target)
+    fresh = appetite_content_hash(target)
+    stored = _committed(target, "content_hash") or ""
+    if fresh == stored:
+        return
+    start = as_utc(_committed(target, "effective_from"))
+    if start is not None and start <= utcnow():
+        raise KognitaError(
+            "in-place edit of an effective risk appetite; changes are new versions"
+        )
+    target.content_hash = fresh
+
+
 __all__ = [
     "Agent",
     "Policy",
@@ -536,10 +681,16 @@ __all__ = [
     "KnowledgeItem",
     "Entity",
     "EntityEdge",
+    "UseCase",
+    "RiskAppetite",
     "RetentionPolicy",
     "RetainedContent",
     "policy_content",
     "policy_content_hash",
+    "usecase_content",
+    "usecase_content_hash",
+    "appetite_content",
+    "appetite_content_hash",
     "utcnow",
     "as_utc",
 ]

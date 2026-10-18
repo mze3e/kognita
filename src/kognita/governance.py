@@ -42,6 +42,7 @@ from kognita.models import (
     utcnow,
 )
 from kognita.rules import Evaluator, build_registry
+from kognita.usecases import UseCaseRegister, usecase_checks
 from kognita.vocabulary import (
     ActorType,
     Classification,
@@ -85,7 +86,8 @@ def resolve_outcome(checks: Sequence[Check]) -> Outcome:
     Precedence is DENY > ESCALATE > HUMAN_APPROVAL > ALLOW, so a single failure
     among any number of passes still denies. An empty check list allows — a
     request nothing objects to is permitted, which is why the registry checks
-    below always contribute at least a purpose check.
+    below always contribute at least a purpose check, or a use-case check when
+    the caller supplies a register.
     """
     results = {c.result for c in checks}
     if CheckResult.FAIL in results:
@@ -144,6 +146,10 @@ def purpose_check(envelope: Envelope, purposes: Sequence[str]) -> Check:
 
     A missing or empty list declares nothing. The check fails closed, the same
     way a purpose outside a declared list fails. It does not pass every purpose.
+
+    When :func:`decide` is given a use-case register, this check is not run.
+    The register check replaces it: the purpose must be a registered use case,
+    and the citation names that use case's accountable owner.
     """
     ok = bool(purposes) and envelope.purpose in set(purposes)
     return Check(
@@ -162,6 +168,7 @@ def decide(
     subjects: dict[str, Any] | None = None,
     rules: dict[str, Evaluator] | None = None,
     purposes: Sequence[str] = (),
+    usecases: UseCaseRegister | None = None,
     engages: Callable[[Policy, RuleContext], bool] | None = None,
     as_of: datetime | None = None,
     request_id: str | None = None,
@@ -170,6 +177,10 @@ def decide(
 
     ``purposes`` is the list the deployment declared. Missing or empty fails
     closed. A purpose on that list passes this check; any other purpose fails it.
+
+    ``usecases`` is a :class:`~kognita.usecases.UseCaseRegister`. When it is
+    given, it replaces the purpose list: the envelope's purpose must be a
+    registered use case, and a passing check cites the accountable owner.
 
     ``engages`` lets a pack say whether a policy is in scope for this request at
     all. Evaluating a rule from a regime the request never touches produces
@@ -183,7 +194,10 @@ def decide(
 
     checks: list[Check] = []
     checks.extend(registry_checks(envelope, snapshot))
-    checks.append(purpose_check(envelope, purposes))
+    if usecases is not None:
+        checks.extend(usecase_checks(envelope, usecases, at))
+    else:
+        checks.append(purpose_check(envelope, purposes))
 
     context = RuleContext(
         envelope=envelope, attributes=attrs, subjects=subject_rows, as_of=at
