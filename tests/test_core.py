@@ -707,6 +707,25 @@ def test_a_sequence_freed_by_a_tail_delete_cannot_be_reused(harness):
             verify_chain(session)
 
 
+def test_strictly_forward_trigger_is_a_literal_raise():
+    """RAISE must take a string literal; || breaks create_all on older SQLite."""
+    import sqlite3
+
+    from kognita.db import _EVIDENCE_HEAD
+
+    sql = next(s for s in _EVIDENCE_HEAD if "evidence_head_strictly_forward" in s)
+    assert "||" not in sql
+    connection = sqlite3.connect(":memory:")
+    connection.execute(
+        "CREATE TABLE evidence_head (id INTEGER, sequence INTEGER, event_hash TEXT)"
+    )
+    connection.executescript(sql)
+    connection.execute("INSERT INTO evidence_head VALUES (1, 2, 'h')")
+    with pytest.raises(sqlite3.IntegrityError, match="only moves forward"):
+        connection.execute("UPDATE evidence_head SET sequence = 2, event_hash = 'x'")
+    connection.close()
+
+
 def test_an_older_store_gets_the_strictly_forward_head(tmp_path):
     """A store created with the earlier, non-strict trigger is upgraded."""
     from sqlalchemy import text as sql_text

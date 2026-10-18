@@ -126,7 +126,7 @@ from kognita.vocabulary import (
     Outcome,
 )
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 #: Names from the Graphiti + Kuzu graph engine, which 0.1.x exported here and
 #: which left the package entirely after 0.3 (ADR 0008).
