@@ -431,6 +431,7 @@ def test_control_function_cannot_approve_a_use_case_it_owns(session, evidence):
     assert shown is not None
     assert shown.rating_approved is True
     assert shown.rating_approved_by == "Alex Chen"
+    assert shown.rating_approved_at == NOW
 
 
 def test_tier_3_cannot_be_signed_off_by_its_builder(session, evidence):
@@ -548,6 +549,63 @@ def test_a_use_case_past_its_review_date_is_denied(session, evidence):
     assert allowed.outcome is Outcome.ALLOW
 
 
+def test_a_missed_review_needs_the_control_function_to_approve_again(session, evidence):
+    _open(session, evidence)
+    _activate(session, evidence, _spec())
+    entry = load_register(session, as_of=NOW).get("research-summary")
+    assert entry is not None
+    assert entry.review_date is not None
+    assert entry.rating_approved_at == NOW
+    deadline = entry.review_date
+    with pytest.raises(
+        KognitaError, match="approve the materiality rating again"
+    ) as denied:
+        activate(
+            session,
+            "research-summary",
+            status="live",
+            evidence=evidence,
+            actor_id="Alex Chen",
+            at=deadline,
+        )
+    assert "accountable owner: Jane Smith" in str(denied.value)
+    stale = deadline - timedelta(microseconds=1)
+    approve_rating(
+        session, "research-summary", "Alex Chen", evidence=evidence, at=stale
+    )
+    with pytest.raises(KognitaError, match="approve the materiality rating again"):
+        activate(
+            session,
+            "research-summary",
+            status="live",
+            evidence=evidence,
+            actor_id="Alex Chen",
+            at=deadline,
+        )
+    approve_rating(
+        session, "research-summary", "Alex Chen", evidence=evidence, at=deadline
+    )
+    activate(
+        session,
+        "research-summary",
+        status="live",
+        evidence=evidence,
+        actor_id="Alex Chen",
+        at=deadline,
+    )
+    renewed = load_register(session, as_of=deadline).get("research-summary")
+    assert renewed is not None
+    assert renewed.rating_approved_at == deadline
+    assert renewed.review_date == deadline + timedelta(days=365)
+    allowed = decide(
+        _envelope("research-summary"),
+        PolicySnapshot(),
+        usecases=load_register(session, as_of=deadline),
+        as_of=deadline,
+    )
+    assert allowed.outcome is Outcome.ALLOW
+
+
 def test_a_pilot_denies_users_outside_its_list_and_calls_after_its_end(
     session, evidence
 ):
@@ -634,13 +692,23 @@ def test_registry_changes_are_policy_change_events(session, evidence):
     assert "retired" in _named(denied, "USE_CASE_STATUS")[0].citation
 
 
-def test_a_material_change_clears_activation_until_reapproved(session, evidence):
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("jurisdiction", "HK"),
+        ("purpose", "Summarise research for a different desk"),
+        ("category", "meeting preparation"),
+    ],
+)
+def test_a_material_change_clears_activation_until_reapproved(
+    session, evidence, field, value
+):
     _open(session, evidence)
     spec = _spec(jurisdiction="SG")
     _activate(session, evidence, spec)
     revise(
         session,
-        replace(spec, jurisdiction="HK"),
+        replace(spec, **{field: value}),
         evidence=evidence,
         actor_id="Jane Smith",
         at=NOW,
@@ -649,6 +717,7 @@ def test_a_material_change_clears_activation_until_reapproved(session, evidence)
     assert entry is not None
     assert entry.status == ""
     assert entry.rating_approved is False
+    assert entry.rating_approved_at is None
     evaluation = decide(
         _envelope(spec.usecase_id),
         PolicySnapshot(),

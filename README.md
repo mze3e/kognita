@@ -76,6 +76,17 @@ Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vect
 
 **Fail closed.** Outcomes resolve as `DENY > ESCALATE > HUMAN_APPROVAL > ALLOW`. One failing check among a hundred passes still denies, so a policy set cannot be widened by adding permissive rules. A policy whose rule type has no evaluator escalates rather than being skipped. A missing or empty purpose list fails the purpose check.
 
+**Use-case register.** When a decision is given a register, the envelope's purpose is a registered use case id, and a passing check cites that use case's accountable owner. The free-text purpose list remains for a decision with no register. Tier floors and review periods are constants in `kognita.usecases`:
+
+| Tier | Approval gate | Sampling | Autonomy ceiling | Explanation | Review |
+| --- | --- | --- | --- | --- | --- |
+| 1 | none | 5% | L2 | citation | 365 days |
+| 2 | human review | 10% | L3 | sources | 180 days |
+| 3 | human approval | 50% | L4 | suitability | 90 days |
+| 4 | two signatures | 100% | L4 | full | 90 days |
+
+Monitoring is required at every tier. On the review date the use case is denied. Activating it again waits until the designated control function approves the materiality rating at or after that date. A change of purpose or category clears activation, as does a change of autonomy, jurisdiction, client population, or intended use.
+
 **Every decision cites its rule.** Each check carries the regime and citation it came from. A check without a citation is an assertion, not a decision, and the conformance kit enforces it.
 
 **Agents are registered, and can be stopped.** An agent that is not in the registry is denied. Each registered agent carries a version, an accountable owner and a materiality tier, and has a kill switch that denies its next request:

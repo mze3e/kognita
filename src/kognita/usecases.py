@@ -17,6 +17,26 @@ notify anyone.
 Autonomy levels appear here only as the ceiling a tier's minimum controls
 allow (L0 retrieve through L6 broad autonomy). Enforcing a level on a call is
 not this register.
+
+Tier floors and review periods are constants in this module. A tier may not
+run with a weaker approval gate, a lower sampling rate, a higher autonomy
+ceiling, or a shallower explanation than its floor, and it may not run past
+its review period.
+
+- Tier 1: approval gate ``none``, sampling 5%, autonomy ceiling L2,
+  explanation ``citation``, review every 365 days.
+- Tier 2: approval gate ``human_review``, sampling 10%, autonomy ceiling L3,
+  explanation ``sources``, review every 180 days.
+- Tier 3: approval gate ``human_approval``, sampling 50%, autonomy ceiling L4,
+  explanation ``suitability``, review every 90 days.
+- Tier 4: approval gate ``two_signature``, sampling 100%, autonomy ceiling L4,
+  explanation ``full``, review every 90 days.
+
+Monitoring is required at every tier. On the review date the use case is
+denied. Activation after that date waits until the designated control
+function approves the materiality rating again, at or after the review date.
+A change of purpose or category clears activation, as does a change of
+autonomy, jurisdiction, client population, or intended use.
 """
 
 from __future__ import annotations
@@ -146,14 +166,21 @@ _MATERIALITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 _APPROVAL_RANK = {"none": 0, "human_review": 1, "human_approval": 2, "two_signature": 3}
 _EXPLANATION_RANK = {"citation": 1, "sources": 2, "suitability": 3, "full": 4}
 
-#: How long a tier may run before its review date. The date is the deadline:
-#: on that date the use case is denied until it is activated again.
+#: How long a tier may run before its review date. These periods are constants:
+#: tier 1 is 365 days, tier 2 is 180, and tiers 3 and 4 are 90. The date is the
+#: deadline. On that date the use case is denied. ``activate`` does not clear
+#: that denial by itself. The designated control function approves the rating
+#: again at or after the deadline, and that later approval is what activation
+#: requires.
 REVIEW_DAYS = {1: 365, 2: 180, 3: 90, 4: 90}
 
-#: Minimum controls a tier requires. A weaker gate, a lower sampling rate, a
-#: higher autonomy ceiling, missing monitoring, a shallower explanation, or a
-#: missing validator fails validation. The autonomy integers are the ceiling
-#: only: L0 is 0 and L6 is 6.
+#: Minimum controls a tier requires. These floors are constants. A weaker gate,
+#: a lower sampling rate, a higher autonomy ceiling, missing monitoring, a
+#: shallower explanation, or a missing validator fails validation. The autonomy
+#: integers are the ceiling only: L0 is 0 and L6 is 6. The table is tier 1
+#: none / 0.05 / L2 / citation, tier 2 human_review / 0.10 / L3 / sources,
+#: tier 3 human_approval / 0.50 / L4 / suitability, tier 4 two_signature / 1.0
+#: / L4 / full. Monitoring is required at every tier.
 _TIER_MINIMUMS: dict[int, dict[str, Any]] = {
     1: {
         "approval": "none",
@@ -344,6 +371,7 @@ class RegisteredUseCase:
     proposed_tier: int
     rating_approved: bool
     rating_approved_by: str
+    rating_approved_at: datetime | None
     validation_signoff_by: str
     inherent_materiality: str
     credited_controls: tuple[str, ...]
@@ -722,6 +750,7 @@ def build_record(
     status: str = "",
     rating_approved: bool = False,
     rating_approved_by: str = "",
+    rating_approved_at: datetime | None = None,
     validation_signoff_by: str = "",
     criteria_met: bool = False,
     review_date: datetime | None = None,
@@ -759,6 +788,7 @@ def build_record(
         "proposed_tier": tier,
         "rating_approved": rating_approved,
         "rating_approved_by": rating_approved_by,
+        "rating_approved_at": _iso(rating_approved_at),
         "validation_signoff_by": validation_signoff_by,
         "inherent_materiality": spec.inherent_materiality,
         "credited_controls": _sorted_texts(spec.credited_controls),
@@ -828,6 +858,7 @@ def from_record(
         proposed_tier=int(record.get("proposed_tier") or 0),
         rating_approved=bool(record.get("rating_approved")),
         rating_approved_by=str(record.get("rating_approved_by") or ""),
+        rating_approved_at=_parse_time(record.get("rating_approved_at")),
         validation_signoff_by=str(record.get("validation_signoff_by") or ""),
         inherent_materiality=str(record.get("inherent_materiality") or ""),
         credited_controls=tuple(record.get("credited_controls") or ()),
@@ -972,6 +1003,39 @@ def _review_citation(entry: RegisteredUseCase, at: datetime) -> str | None:
             entry.owner,
         )
     return None
+
+
+def _rating_activation_citation(entry: RegisteredUseCase, at: datetime) -> str | None:
+    """The rating rule ``activate`` enforces.
+
+    Before the review date, an approval by the control function is enough.
+    Once that date has been reached, an earlier approval is stale. Activation
+    waits until the control function approves the rating again at or after
+    the review date. A missing timestamp on a closed window fails closed.
+    """
+    review_date = entry.review_date
+    missed = review_date is not None and _aware(at) >= review_date
+    if missed:
+        approved_at = entry.rating_approved_at
+        if (
+            entry.rating_approved
+            and approved_at is not None
+            and approved_at >= review_date
+        ):
+            return None
+        return _cite(
+            entry.usecase_id,
+            "a missed review date needs the control function to approve "
+            "the materiality rating again",
+            entry.owner,
+        )
+    if entry.rating_approved:
+        return None
+    return _cite(
+        entry.usecase_id,
+        "a materiality rating the control function has not approved cannot be activated",
+        entry.owner,
+    )
 
 
 def _check(name: str, citation: str, *, passed: bool = False) -> Check:
@@ -1410,6 +1474,7 @@ def approve_rating(
     record["version"] = current.version + 1
     record["rating_approved"] = True
     record["rating_approved_by"] = approver
+    record["rating_approved_at"] = _iso(when)
     row = _supersede(
         session,
         current,
@@ -1447,8 +1512,10 @@ def _activation_citations(
     at: datetime,
 ) -> tuple[str, ...]:
     found = list(configuration_citations(entry, appetite, agents, at=at))
-    # configuration_citations treats a not-yet-activated row as allowed to lack
-    # a review date and an approved rating. Activation is stricter.
+    # A closed review window is reported on a row that is already pilot or
+    # live. Activation is what opens the next window, so that finding is not
+    # itself a refusal. The rating check below is the refusal: once the
+    # review date has been reached, the control function must approve again.
     found = [
         item
         for item in found
@@ -1467,14 +1534,9 @@ def _activation_citations(
                 entry.owner,
             )
         )
-    if not entry.rating_approved:
-        found.append(
-            _cite(
-                entry.usecase_id,
-                "a materiality rating the control function has not approved cannot be activated",
-                entry.owner,
-            )
-        )
+    rating = _rating_activation_citation(entry, at)
+    if rating is not None:
+        found.append(rating)
     if status == "pilot":
         if not entry.pilot_users:
             found.append(
@@ -1559,9 +1621,12 @@ def activate(
 ) -> UseCase:
     """Activate a use case as ``pilot`` or ``live``.
 
-    The rating must already be approved. Residual materiality and the rest of
-    the appetite are checked again. A tier 3 or 4 use case needs sign-off from
-    someone who is not a builder.
+    The rating must already be approved. Once the review date has been
+    reached, that approval is stale: the designated control function has to
+    approve the rating again at or after the review date before activation
+    can proceed. Residual materiality and the rest of the appetite are
+    checked again. A tier 3 or 4 use case needs sign-off from someone who is
+    not a builder.
     """
     when = _aware(at or utcnow())
     current = _require(session, usecase_id, when)
@@ -1640,11 +1705,13 @@ def revise(
     actor_id: str,
     at: datetime | None = None,
 ) -> UseCase:
-    """Write a new version. A change of autonomy, jurisdiction, client population,
-    or intended use clears activation until the use case is approved again.
+    """Write a new version.
 
-    Purpose and category are the same kind of change: they are what the use case
-    is for. A live use case cannot be revised below its tier's minimum controls.
+    A change of autonomy, maximum autonomy, jurisdiction, client population,
+    intended use, purpose, or category clears activation. The rating approval
+    goes with it, including the time it was given, until the control function
+    approves again. A live use case cannot be revised below its tier's minimum
+    controls.
     """
     when = _aware(at or utcnow())
     current = _require(session, spec.usecase_id, when)
@@ -1662,6 +1729,7 @@ def revise(
         status = ""
         rating_approved = False
         rating_approved_by = ""
+        rating_approved_at = None
         signoff = ""
         criteria_met = False
         review_date = when
@@ -1669,6 +1737,7 @@ def revise(
         status = entry.status
         rating_approved = entry.rating_approved
         rating_approved_by = entry.rating_approved_by
+        rating_approved_at = entry.rating_approved_at
         signoff = entry.validation_signoff_by
         criteria_met = entry.criteria_met
         review_date = entry.review_date
@@ -1680,6 +1749,7 @@ def revise(
                     status=status,
                     rating_approved=rating_approved,
                     rating_approved_by=rating_approved_by,
+                    rating_approved_at=rating_approved_at,
                     validation_signoff_by=signoff,
                     criteria_met=criteria_met,
                     review_date=review_date,
@@ -1694,6 +1764,7 @@ def revise(
         status=status,
         rating_approved=rating_approved,
         rating_approved_by=rating_approved_by,
+        rating_approved_at=rating_approved_at,
         validation_signoff_by=signoff,
         criteria_met=criteria_met,
         review_date=review_date,
