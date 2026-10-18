@@ -1,8 +1,9 @@
 """Policy files, change deltas, and colocated scenarios.
 
-The scenario text below is the shape in the 0.4 roadmap. The rule that makes
-those two cases pass is an ATTRIBUTE_DENYLIST of the other client's id: the
-current rule types have no "subject is the principal" condition.
+The scenario text below is the shape in the 0.4 roadmap. The principal there
+(``alice@corp``) is not the subject id (``alice``), so PRINCIPAL_EQUALITY does
+not decide this case. The rule that makes the two cases pass remains an
+ATTRIBUTE_DENYLIST of the other client's id.
 """
 
 from __future__ import annotations

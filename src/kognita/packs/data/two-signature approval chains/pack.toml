@@ -1,0 +1,9 @@
+name = "two-signature approval chains"
+version = "1.0.0"
+purposes = ["PAYMENT", "INSTRUCTION"]
+files = [
+  "policy/release-payment.yaml",
+  "policy/release-payment.scenarios.yaml",
+  "policy/release-instruction.yaml",
+  "policy/release-instruction.scenarios.yaml",
+]

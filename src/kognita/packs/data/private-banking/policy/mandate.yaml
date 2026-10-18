@@ -1,0 +1,10 @@
+id: mandate
+regime: PRIVATE_BANKING
+rule_type: REQUIRES_FLAG
+citation: "The discussion must sit inside the recorded mandate. Source: Kognita private-banking pack, mandate limit."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  flags:
+    - within_mandate
+  on_violation: fail
+  description: "Mandate limit."

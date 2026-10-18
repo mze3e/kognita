@@ -1,0 +1,14 @@
+id: permitted-locations
+regime: LOCATION
+rule_type: ATTRIBUTE_ALLOWLIST
+citation: "An actor may act only from SG, HK, AE, or CH. Source: Kognita starter pack geo-fencing, permitted locations."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  allow:
+    actor_location:
+      - SG
+      - HK
+      - AE
+      - CH
+  on_violation: fail
+  description: "Permitted actor locations."

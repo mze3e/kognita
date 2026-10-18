@@ -521,7 +521,7 @@ Do not wait for client harm.
 - [x] Revocation by each dimension takes effect on the next decision without affecting other use cases
 - [x] Risk tiers enforce minimum controls; a tier 3 use case cannot be activated by its own builder
 - [x] An incomplete approval packet cannot be approved; rubber-stamp approvals are flagged
-- [ ] Private-banking starter pack with scenarios, including cross-border and booking-centre denials
+- [x] Private-banking starter pack with scenarios, including cross-border and booking-centre denials
 - [x] OpenTelemetry export
 - [x] A use case outside the risk appetite cannot be registered; a use case past its review date is denied
 - [x] "Do not contact" outcomes recorded with reasons; a bare score is rejected as rationale
@@ -531,7 +531,7 @@ Do not wait for client harm.
 - [x] One interaction reconstructs end to end: all ten examinability questions answered from evidence, with no "not recorded" rows
 - [x] Graph extra removed from the package (ADR 0008)
 - [x] Policy language: load, diff, validate, explain, test
-- [ ] Five starter packs with scenarios
+- [x] Five starter packs with scenarios
 - [x] hermes-agent adapter plus at least three others
 - [x] Flight recorder with export
 - [x] Cycle time, decision quality and reliability reported per use case from evidence, against a registered baseline and target

@@ -1,0 +1,24 @@
+rule: permitted-locations
+scenarios:
+  - name: "an actor in Singapore is permitted"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      actor_location: SG
+    when:
+      tool: read_record
+    then:
+      decision: ALLOW
+      cites: permitted-locations
+  - name: "an actor outside the permitted list is refused"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      actor_location: US
+    when:
+      tool: read_record
+    then:
+      decision: DENY
+      cites: permitted-locations

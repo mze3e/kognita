@@ -1,0 +1,9 @@
+name = "geo-fencing"
+version = "1.0.0"
+purposes = ["ACCESS"]
+files = [
+  "policy/permitted-locations.yaml",
+  "policy/permitted-locations.scenarios.yaml",
+  "policy/blocked-locations.yaml",
+  "policy/blocked-locations.scenarios.yaml",
+]

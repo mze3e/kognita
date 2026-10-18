@@ -1,0 +1,13 @@
+id: blocked-locations
+regime: LOCATION
+rule_type: ATTRIBUTE_DENYLIST
+citation: "An actor in KP, IR, or SY is refused. Source: Kognita starter pack geo-fencing, blocked locations."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  deny:
+    actor_location:
+      - KP
+      - IR
+      - SY
+  on_violation: fail
+  description: "Blocked actor locations."

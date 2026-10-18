@@ -1,0 +1,14 @@
+id: booking-centre
+regime: PRIVATE_BANKING
+rule_type: ATTRIBUTE_ALLOWLIST
+citation: "A client discussion may name only a booking centre in SG, HK, CH, or AE. Source: Kognita private-banking pack, booking-centre list."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  allow:
+    booking_centre:
+      - SG
+      - HK
+      - CH
+      - AE
+  on_violation: fail
+  description: "Recognised booking centres."

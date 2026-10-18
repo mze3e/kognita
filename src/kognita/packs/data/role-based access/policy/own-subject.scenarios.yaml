@@ -1,0 +1,28 @@
+rule: own-subject
+scenarios:
+  - name: "the principal may read a subject they own"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        role: reader
+        subject_owner: alice
+    when:
+      tool: read_record
+    then:
+      decision: ALLOW
+      cites: own-subject
+  - name: "the principal may not read someone else's subject"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        role: reader
+        subject_owner: bob
+    when:
+      tool: read_record
+    then:
+      decision: DENY
+      cites: own-subject

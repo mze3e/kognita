@@ -1,0 +1,26 @@
+id: client-communication-content
+regime: PRIVATE_BANKING
+rule_type: CONTENT_POLICY
+citation: "A product recommendation needs the pack's disclosures, an approved tone, a registered channel, investment-risk language, and a research attribution. Source: Kognita private-banking pack, client communication content."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  levels:
+    - "product recommendation"
+  lanes:
+    - client
+  required_disclosures:
+    - "Past performance is not a guide to future performance."
+  prohibited_claims:
+    - guaranteed
+  approved_tones:
+    - neutral
+  permitted_jurisdictions:
+    - SG
+    - HK
+    - CH
+    - AE
+  permitted_channels:
+    - "secure message"
+  require_risk_language: true
+  require_research_attribution: true
+  description: "Product-recommendation content."

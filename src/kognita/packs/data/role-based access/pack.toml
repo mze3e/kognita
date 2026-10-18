@@ -1,0 +1,9 @@
+name = "role-based access"
+version = "1.0.0"
+purposes = ["ACCESS"]
+files = [
+  "policy/named-role.yaml",
+  "policy/named-role.scenarios.yaml",
+  "policy/own-subject.yaml",
+  "policy/own-subject.scenarios.yaml",
+]

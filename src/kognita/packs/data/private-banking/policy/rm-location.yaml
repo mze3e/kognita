@@ -1,0 +1,15 @@
+id: rm-location
+regime: PRIVATE_BANKING
+rule_type: ATTRIBUTE_ALLOWLIST
+citation: "The relationship manager must be in SG, HK, CH, AE, or GB. Source: Kognita private-banking pack, RM location list."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  allow:
+    rm_location:
+      - SG
+      - HK
+      - CH
+      - AE
+      - GB
+  on_violation: fail
+  description: "Recognised RM locations."

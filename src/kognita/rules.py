@@ -308,6 +308,53 @@ def contact_frequency(policy: Any, context: RuleContext) -> list[Check]:
     ]
 
 
+@rule("PRINCIPAL_EQUALITY")
+def principal_equality(policy: Any, context: RuleContext) -> list[Check]:
+    """The principal must equal one named attribute.
+
+    Rule payload::
+
+        {"equals": "subject_owner", "on_violation": "fail"}
+
+    ``equals`` is an attribute, or an envelope field when the attribute is
+    absent. The comparison is string equality. A missing name, a missing
+    value, a value that is not a string, or an empty principal fails closed.
+    ``tools`` and ``purposes`` narrow the rule; empty or absent means any.
+    """
+    tools = _as_set(policy.rule.get("tools"))
+    purposes = _as_set(policy.rule.get("purposes"))
+    if tools and context.envelope.tool not in tools:
+        return []
+    if purposes and context.envelope.purpose not in purposes:
+        return []
+    on_violation = CheckResult(policy.rule.get("on_violation", "fail"))
+    key = policy.rule.get("equals")
+    citation = policy.citation or "Principal equality"
+    principal = context.envelope.principal
+    if not isinstance(key, str) or not key.strip():
+        ok = False
+        detail = "principal equality could not be evaluated"
+    else:
+        actual = _lookup(context, key)
+        ok = isinstance(actual, str) and bool(principal) and actual == principal
+        if ok:
+            detail = f"principal matches {key}"
+        elif not isinstance(actual, str) or actual == "":
+            detail = f"principal equality could not be evaluated for {key}"
+            ok = False
+        else:
+            detail = f"principal does not match {key}"
+    return [
+        Check(
+            check=policy.rule_type,
+            regime=policy.regime,
+            result=CheckResult.PASS if ok else on_violation,
+            citation=f"{citation} — {detail}",
+            policy_id=policy.id,
+        )
+    ]
+
+
 def _texts(value: Any) -> list[str] | None:
     """A list of strings, or None when the value is not one."""
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):

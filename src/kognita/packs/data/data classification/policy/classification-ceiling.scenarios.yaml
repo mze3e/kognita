@@ -1,0 +1,26 @@
+rule: classification-ceiling
+scenarios:
+  - name: "public content passes the ceiling"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        classification: C0
+    when:
+      tool: read_record
+    then:
+      decision: ALLOW
+      cites: classification-ceiling
+  - name: "confidential content escalates"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        classification: C2
+    when:
+      tool: read_record
+    then:
+      decision: ESCALATE
+      cites: classification-ceiling

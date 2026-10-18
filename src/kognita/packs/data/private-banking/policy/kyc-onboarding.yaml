@@ -1,0 +1,9 @@
+id: kyc-onboarding
+regime: PRIVATE_BANKING
+rule_type: REQUIRES_HUMAN_APPROVAL
+citation: "KYC onboarding is prepared by the agent and approved by a person. Source: Kognita private-banking pack, KYC human approval."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  tools:
+    - approve_kyc
+  description: "KYC stays with a person."

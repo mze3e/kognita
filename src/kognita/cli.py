@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -36,6 +37,20 @@ from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration, Gateway
 from kognita.vocabulary import ActorType, EventType, FailureMode
 from kognita.mcp import McpProxy, load_root_config
+from kognita.packs import (
+    PackError,
+    list_packs,
+    load_source_hash,
+    resolve_pack,
+    update_pack,
+)
+from kognita.packs.catalog import (
+    DEFAULT_PACK_SOURCE,
+    builtin_data,
+    default_managed_root,
+    default_user_root,
+)
+from kognita.packs.update import pinned_names
 from kognita.policy import (
     PolicyLanguageError,
     apply_change,
@@ -302,18 +317,176 @@ def _attach_otel(evidence: EvidenceWriter) -> int | None:
     return None
 
 
+def _pack_roots(args: argparse.Namespace) -> tuple[Path, Path]:
+    user = Path(args.user_root) if getattr(args, "user_root", None) else default_user_root()
+    managed = (
+        Path(args.managed_root) if getattr(args, "managed_root", None) else default_managed_root()
+    )
+    return user, managed
+
+
+def _load_named_pack(args: argparse.Namespace) -> Any:
+    """Resolve a pack, compile it, and return the pack or an exit code.
+
+    Compilation appends ``POLICY_CHANGE`` with ``source_hash`` when stored
+    rows change. The user overlay is read and not written.
+    """
+    if getattr(args, "overlay", None) and not getattr(args, "pack", None):
+        print("an overlay needs a pack", file=sys.stderr)
+        return 2
+    user, managed = _pack_roots(args)
+    try:
+        pack = resolve_pack(
+            args.pack,
+            overlay=args.overlay,
+            user_root=user,
+            managed_root=managed,
+        )
+    except PackError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    findings = _findings_that_block_a_load(validate(pack.policies), strict=False)
+    if findings:
+        _print_findings(findings)
+        return 1
+    _compile_policy(
+        args.db,
+        pack.policies,
+        source=pack.policy_dir,
+        close_absent=False,
+        pack=pack.name,
+        source_hash_value=load_source_hash(pack, args.overlay),
+    )
+    return pack
+
+
+def _hmac_key(path: str | None) -> bytes | None:
+    if not path:
+        env = os.environ.get("KOGNITA_PACKS_HMAC_KEY")
+        if not env:
+            return None
+        return env.encode("utf-8")
+    data = Path(path).read_bytes()
+    if data.endswith(b"\n"):
+        data = data[:-1]
+    if not data:
+        raise PackError("hmac key is empty")
+    return data
+
+
+def cmd_packs_list(args: argparse.Namespace) -> int:
+    """Print pack names found on disk."""
+    user, managed = _pack_roots(args)
+    for name in list_packs(user_root=user, managed_root=managed):
+        print(name)
+    return 0
+
+
+def cmd_packs_show(args: argparse.Namespace) -> int:
+    """Print one pack's version, origin, and rule ids."""
+    user, managed = _pack_roots(args)
+    try:
+        pack = resolve_pack(
+            args.name,
+            overlay=getattr(args, "overlay", None),
+            user_root=user,
+            managed_root=managed,
+        )
+    except PackError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    print(f"{pack.name}  {pack.version}  {pack.origin}")
+    for rule in pack.policies.rules:
+        print(f"{rule.id}  {rule.rule_type}")
+    return 0
+
+
+def cmd_packs_load(args: argparse.Namespace) -> int:
+    """Compile a pack into the policy store."""
+    args.pack = args.name
+    loaded = _load_named_pack(args)
+    if isinstance(loaded, int):
+        return loaded
+    print(f"loaded {loaded.name} {loaded.version}")
+    return 0
+
+
+def cmd_packs_update(args: argparse.Namespace) -> int:
+    """Fetch pinned packs and install them only when integrity checks pass."""
+    user, managed = _pack_roots(args)
+    pins = Path(args.pins) if args.pins else builtin_data() / "pins.toml"
+    try:
+        key = _hmac_key(args.hmac_key)
+        names = [args.name] if args.name else pinned_names(pins)
+    except PackError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    if not names:
+        print("no pinned packs to update", file=sys.stderr)
+        return 1
+    failed = 0
+    for name in names:
+        result = update_pack(
+            name,
+            db=args.db,
+            source=args.source,
+            ref=args.ref,
+            root=args.root,
+            expect=args.expect,
+            signature=args.signature,
+            hmac_key=key,
+            pins=pins,
+            managed_root=managed,
+            user_root=user,
+        )
+        if result.refused:
+            failed += 1
+            print(f"refused {name}: {result.reason}", file=sys.stderr)
+            continue
+        print(f"updated {name} {result.version} {result.source_hash}")
+    return 1 if failed else 0
+
+
+def cmd_packs_diff(args: argparse.Namespace) -> int:
+    """Diff a resolved pack against another policy directory."""
+    user, managed = _pack_roots(args)
+    try:
+        pack = resolve_pack(
+            args.name,
+            overlay=getattr(args, "overlay", None),
+            user_root=user,
+            managed_root=managed,
+        )
+        other = read_policy_set(args.other)
+    except (PackError, PolicyLanguageError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    print(f"{pack.name} {pack.version}")
+    print(render_change(diff_sets(pack.policies, other)), end="")
+    return 0
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
     """Run the OpenAI-compatible AI gateway, or the MCP proxy.
 
     The AI gateway binds one client configuration. Agent names outside that
     configuration are denied. ``--purposes`` is the purpose allowlist.
     ``--purpose`` is the purpose claimed when a request has none. With no
-    ``--purposes``, every call is denied. ``--provider`` accepts
-    ``openai-compatible`` only. ``--mcp --root-config`` fronts MCP servers
-    instead, and does not start the model gateway. The proxy's allowlist is
-    the ``purposes`` list in that file, not ``--purpose`` and not ``--purposes``.
+    ``--purposes`` and no ``--pack``, every call is denied. ``--pack`` loads
+    that pack first and, when ``--purposes`` is omitted, uses the pack's
+    purposes.
+    ``--provider`` accepts ``openai-compatible`` only. ``--mcp --root-config``
+    fronts MCP servers instead, and does not start the model gateway. The
+    proxy's allowlist is the ``purposes`` list in that file, not ``--purpose``
+    and not ``--purposes``.
     """
     if args.mcp:
+        if args.pack or args.overlay:
+            print(
+                "serve --pack is the AI gateway; the MCP proxy reads its pack from --root-config",
+                file=sys.stderr,
+            )
+            return 2
         return _cmd_serve_mcp(args)
     if not args.upstream:
         print("serve --provider openai-compatible requires --upstream", file=sys.stderr)
@@ -325,6 +498,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
         failed = _attach_otel(evidence)
         if failed:
             return failed
+    pack = None
+    if args.pack:
+        loaded = _load_named_pack(args)
+        if isinstance(loaded, int):
+            return loaded
+        pack = loaded
+        if not args.purposes:
+            args.purposes = list(loaded.purposes)
     gateway = Gateway(
         engine=engine,
         evidence=evidence,
@@ -338,6 +519,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         ),
         purposes=tuple(args.purposes or ()),
         failure_mode={args.purpose: args.failure_mode},
+        pack=pack,
     )
     gateway.serve(args.host, args.port)
     return 0
@@ -715,35 +897,47 @@ def _changed_ids(before: Any, after: Any) -> tuple[list[str], list[str], list[st
     return added, modified, removed
 
 
-def _compile_policy(db: str, policies: Any, *, source: Path, close_absent: bool) -> int:
+def _compile_policy(
+    db: str,
+    policies: Any,
+    *,
+    source: Path,
+    close_absent: bool,
+    pack: str | None = None,
+    source_hash_value: str | None = None,
+) -> int:
     """Compile rows and, when any stored row changes, append POLICY_CHANGE.
 
     The event is written in the same transaction as the rows. A load that
-    writes nothing appends nothing.
+    writes nothing appends nothing. A pack load names the pack and uses the
+    hash of the files that were compiled.
     """
     engine = make_engine(db)
     create_all(engine)
     moment = datetime.now(timezone.utc)
-    digest = source_hash(source)
+    digest = source_hash(source) if source_hash_value is None else source_hash_value
     with session_scope(engine) as session:
         before = policies_from_session(session, at=moment)
         written = compile_rules(session, policies, at=moment, close_absent=close_absent)
         after = policies_from_session(session, at=moment)
         added, modified, removed = _changed_ids(before, after)
         if added or modified or removed:
+            payload: dict[str, Any] = {
+                "action": "LOAD",
+                "added": added,
+                "modified": modified,
+                "removed": removed,
+                "source_hash": digest,
+            }
+            if pack:
+                payload["pack"] = pack
             EvidenceWriter(engine).emit(
                 session,
-                correlation_id="policy-load",
+                correlation_id="policy-load" if not pack else f"pack-load:{pack}",
                 event_type=EventType.POLICY_CHANGE,
                 actor_type=ActorType.SYSTEM,
-                actor_id="kognita policy load",
-                payload={
-                    "action": "LOAD",
-                    "added": added,
-                    "modified": modified,
-                    "removed": removed,
-                    "source_hash": digest,
-                },
+                actor_id="kognita policy load" if not pack else "kognita packs load",
+                payload=payload,
             )
         return written
 
@@ -1085,8 +1279,22 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "purpose the AI gateway may allow; repeatable. Distinct from "
             "--purpose, which is only the purpose claimed when a request has "
-            "none. With no --purposes, the gateway denies every call"
+            "none. With no --purposes, the gateway uses the loaded pack's "
+            "purposes, and denies every call when neither is set"
         ),
+    )
+    serve.add_argument("--pack", help="starter or installed pack to load before serving")
+    serve.add_argument(
+        "--overlay",
+        help="policy directory merged on top of --pack; same rule id, user wins",
+    )
+    serve.add_argument(
+        "--user-root",
+        help="directory of user packs that shadow installed packs by name",
+    )
+    serve.add_argument(
+        "--managed-root",
+        help="directory written by kognita packs update",
     )
     serve.add_argument(
         "--failure-mode",
@@ -1373,6 +1581,66 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--citation", required=True)
     run.add_argument("--fallback", required=True, help="how the fallback was reached")
     run.set_defaults(func=cmd_drill_run)
+
+    packs = sub.add_parser("packs", help="list, load, update, and diff packs")
+    packs_sub = packs.add_subparsers(dest="packs_command", required=True)
+    packs_list = packs_sub.add_parser("list", help="list packs found on disk")
+    packs_list.add_argument("--user-root")
+    packs_list.add_argument("--managed-root")
+    packs_list.set_defaults(func=cmd_packs_list)
+    packs_show = packs_sub.add_parser("show", help="print one pack and its rules")
+    packs_show.add_argument("name")
+    packs_show.add_argument("--overlay")
+    packs_show.add_argument("--user-root")
+    packs_show.add_argument("--managed-root")
+    packs_show.set_defaults(func=cmd_packs_show)
+    packs_load = packs_sub.add_parser(
+        "load", help="compile a pack into the policy store"
+    )
+    packs_load.add_argument("name")
+    packs_load.add_argument("--overlay")
+    packs_load.add_argument("--user-root")
+    packs_load.add_argument("--managed-root")
+    packs_load.add_argument("--db", default="kognita.db")
+    packs_load.set_defaults(func=cmd_packs_load)
+    packs_update = packs_sub.add_parser(
+        "update",
+        help="fetch a pinned pack from the Kognita repository and verify it",
+    )
+    packs_update.add_argument(
+        "name",
+        nargs="?",
+        help="pack to update; omit to update every locally pinned pack",
+    )
+    packs_update.add_argument("--source", default=DEFAULT_PACK_SOURCE)
+    packs_update.add_argument("--ref", default="main")
+    packs_update.add_argument("--root", default="src/kognita/packs/data")
+    packs_update.add_argument(
+        "--expect",
+        help="sha256:<hex> pin for this update; replaces the pin file for this call",
+    )
+    packs_update.add_argument(
+        "--signature",
+        help="hmac:<hex> over the canonical file manifest",
+    )
+    packs_update.add_argument(
+        "--hmac-key",
+        help="HMAC key file, or set KOGNITA_PACKS_HMAC_KEY",
+    )
+    packs_update.add_argument("--pins")
+    packs_update.add_argument("--user-root")
+    packs_update.add_argument("--managed-root")
+    packs_update.add_argument("--db", default="kognita.db")
+    packs_update.set_defaults(func=cmd_packs_update)
+    packs_diff = packs_sub.add_parser(
+        "diff", help="diff one pack's policy against another directory"
+    )
+    packs_diff.add_argument("name")
+    packs_diff.add_argument("other", help="directory of the other policy version")
+    packs_diff.add_argument("--overlay")
+    packs_diff.add_argument("--user-root")
+    packs_diff.add_argument("--managed-root")
+    packs_diff.set_defaults(func=cmd_packs_diff)
 
     return parser
 

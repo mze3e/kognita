@@ -1,0 +1,10 @@
+id: concentration
+regime: PRIVATE_BANKING
+rule_type: REQUIRES_FLAG
+citation: "The discussion must sit inside the recorded concentration limit. Source: Kognita private-banking pack, concentration limit."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  flags:
+    - within_concentration
+  on_violation: fail
+  description: "Concentration limit."

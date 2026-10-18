@@ -1,0 +1,11 @@
+id: research-distribution
+regime: PRIVATE_BANKING
+rule_type: ATTRIBUTE_DENYLIST
+citation: "Research distribution marked prohibited is refused. Source: Kognita private-banking pack, research-distribution restrictions."
+effective_from: "2020-01-01T00:00:00+00:00"
+rule:
+  deny:
+    research_distribution:
+      - prohibited
+  on_violation: fail
+  description: "Research-distribution bar."

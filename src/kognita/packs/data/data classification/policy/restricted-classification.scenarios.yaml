@@ -1,0 +1,14 @@
+rule: restricted-classification
+scenarios:
+  - name: "restricted content is refused"
+    given:
+      principal: alice
+      purpose: ACCESS
+      tool: read_record
+      attributes:
+        classification: C3
+    when:
+      tool: read_record
+    then:
+      decision: DENY
+      cites: restricted-classification

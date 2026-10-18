@@ -114,6 +114,11 @@ _SCHEMAS: dict[str, dict[str, Any]] = {
         "optional_lists": ("tools",),
         "optional": ("max_contacts", "window_days", "description"),
     },
+    "PRINCIPAL_EQUALITY": {
+        "required_maps": (),
+        "optional_lists": ("tools", "purposes"),
+        "optional": ("equals", "on_violation", "description"),
+    },
     "PROHIBITED": {
         "required_maps": (),
         "optional_lists": (),
@@ -876,6 +881,8 @@ def _payload_messages(rule_type: str, rule: Any) -> list[str]:
         messages.append("min_confidence must be a number")
     if rule_type == "CONTACT_FREQUENCY":
         messages.extend(_frequency_messages(rule))
+    if rule_type == "PRINCIPAL_EQUALITY":
+        messages.extend(_principal_messages(rule))
     if rule_type == "CONTENT_POLICY":
         messages.extend(_content_policy_messages(rule))
     if rule_type == "AI_DISCLOSURE":
@@ -897,6 +904,16 @@ def _breaker_messages(rule: dict[str, Any]) -> list[str]:
     if owner is not None and (not isinstance(owner, str) or not owner.strip()):
         messages.append("accountable_owner must be a non-empty string")
     return messages
+
+
+def _principal_messages(rule: dict[str, Any]) -> list[str]:
+    """Principal equality names the one attribute the principal must match."""
+    equals = rule.get("equals")
+    if "equals" not in rule:
+        return ["equals is required"]
+    if not isinstance(equals, str) or not equals.strip():
+        return ["equals must be a non-empty string"]
+    return []
 
 
 def _frequency_messages(rule: dict[str, Any]) -> list[str]:

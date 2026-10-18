@@ -1,0 +1,12 @@
+rule: release-instruction
+scenarios:
+  - name: "releasing an instruction needs two signatures"
+    given:
+      principal: alice
+      purpose: INSTRUCTION
+      tool: release_instruction
+    when:
+      tool: release_instruction
+    then:
+      decision: HUMAN_APPROVAL
+      cites: release-instruction
