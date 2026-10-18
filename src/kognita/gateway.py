@@ -51,6 +51,7 @@ every mode refuses.
 from __future__ import annotations
 
 import json
+import re
 import sys
 import threading
 import time
@@ -274,6 +275,33 @@ def _content_text(content: Any) -> str:
     return ""
 
 
+def _request_content_text(content: Any) -> tuple[str, bool]:
+    """Extract supported content; unknown shapes must fail admission."""
+    if content is None:
+        return "", True
+    if isinstance(content, str):
+        return content, True
+    if isinstance(content, list):
+        parts: list[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif (
+                isinstance(item, dict)
+                and item.get("type") in (None, "text", "input_text", "output_text")
+                and isinstance(item.get("text"), str)
+            ):
+                parts.append(_forwarded_text(item))
+            elif isinstance(item, dict) and item.get("type") in (
+                "image_url", "input_image", "image", "audio", "input_audio", "file", "input_file",
+            ):
+                parts.append(_forwarded_text(item))
+            else:
+                return "", False
+        return "\n".join(part for part in parts if part), True
+    return "", False
+
+
 def _forwarded_text(payload: Any) -> str:
     """Strings the provider reads after parsing the JSON body.
 
@@ -299,21 +327,97 @@ def _forwarded_text(payload: Any) -> str:
     return "\n".join(parts)
 
 
-def _prompt_text(payload: Mapping[str, Any]) -> str:
-    """The prose the provider will see. Typed fields other than text are left out."""
+def _redact_payload(payload: Any, redactor: Any) -> tuple[Any, dict[str, str]]:
+    """Redact decoded values with one token namespace across the request."""
+    token_map: dict[str, str] = {}
+    tokens: dict[str, str] = {}
+    counters: dict[str, int] = {}
+
+    def walk(value: Any) -> Any:
+        if isinstance(value, str):
+            text, local = redactor.redact(value)
+            replacements: dict[str, str] = {}
+            for token, original in local.items():
+                if original not in tokens:
+                    label = token.rsplit("_", 1)[0]
+                    counters[label] = counters.get(label, 0) + 1
+                    shared = f"{label}_{counters[label]}]"
+                    tokens[original] = shared
+                    token_map[shared] = original
+                replacements[token] = tokens[original]
+            # Substitute once so renumbered tokens cannot collide with local ones.
+            if replacements:
+                text = re.sub(
+                    "|".join(re.escape(token) for token in replacements),
+                    lambda match: replacements[match.group(0)], text,
+                )
+            return text
+        if isinstance(value, dict):
+            return {key: walk(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [walk(item) for item in value]
+        return value
+
+    return walk(payload), token_map
+
+
+def _message_text(message: Mapping[str, Any]) -> tuple[str, bool]:
+    """Validate message content and screen all remaining provider-visible fields."""
+    text, supported = _request_content_text(message.get("content"))
+    calls = message.get("tool_calls", [])
+    if not isinstance(calls, list):
+        supported = False
+        calls = []
+    for call in calls:
+        function = call.get("function") if isinstance(call, dict) else None
+        if not isinstance(function, dict) or not isinstance(function.get("arguments"), str):
+            supported = False
+    if "function_call" in message:
+        function = message["function_call"]
+        if not isinstance(function, dict) or not isinstance(function.get("arguments"), str):
+            supported = False
+    extra = _forwarded_text({
+        key: value for key, value in message.items()
+        if key not in {"content", "role", "tool_call_id"}
+    })
+    return "\n".join(part for part in (text, extra) if part), supported
+
+
+def _prompt_text_and_support(payload: Mapping[str, Any]) -> tuple[str, bool]:
+    """Collect provider-visible text and validate request content shapes."""
     parts: list[str] = []
+    supported = True
     messages = payload.get("messages")
     if isinstance(messages, list):
         for message in messages:
-            if isinstance(message, dict):
-                text = _content_text(message.get("content"))
-                if text:
-                    parts.append(text)
-    for key in ("prompt", "input"):
-        text = _content_text(payload.get(key))
-        if text:
-            parts.append(text)
-    return "\n".join(parts)
+            if not isinstance(message, dict):
+                supported = False
+                continue
+            text, ok = _message_text(message)
+            supported = supported and ok
+            if text:
+                parts.append(text)
+    elif messages is not None:
+        supported = False
+    for key in ("prompt", "input", "instructions"):
+        if key in payload:
+            text, ok = _request_content_text(payload.get(key))
+            supported = supported and ok
+            if text:
+                parts.append(text)
+    extra = _forwarded_text({
+        key: value for key, value in payload.items()
+        if key not in {"messages", "prompt", "input", "instructions", "model"}
+    })
+    if extra:
+        parts.append(extra)
+    return "\n".join(parts), supported
+
+
+def _prompt_text(payload: Mapping[str, Any]) -> str:
+    """The prose the provider will see. Typed fields other than text are left out."""
+    text, _ = _prompt_text_and_support(payload)
+    return text
 
 
 def _response_text(payload: Mapping[str, Any]) -> str:
@@ -950,7 +1054,7 @@ class Gateway:
             arguments=arguments,
         )
         now = self.evidence.clock()
-        prompt = _prompt_text(payload)
+        prompt, content_supported = _prompt_text_and_support(payload)
         try:
             bound_run = self._bind_run(session, headers, run)
         except _RunNotFound as exc:
@@ -1000,8 +1104,10 @@ class Gateway:
             if isinstance(declared, dict):
                 current = dict(declared)
                 messages = payload.get("messages", [])
+                if not isinstance(messages, list):
+                    messages = []
                 systems = [message.get("content", "") for message in messages
-                           if message.get("role") in ("system", "developer")]
+                           if isinstance(message, dict) and message.get("role") in ("system", "developer")]
                 current["system_prompt"] = "\n".join(str(value) for value in systems)
                 current["tools"] = payload.get("tools", [])
                 current["instructions"] = payload.get("instructions", "")
@@ -1047,6 +1153,18 @@ class Gateway:
                     regime="INTERNAL",
                     result=CheckResult.FAIL,
                     citation="S5-INJECTION",
+                )
+            )
+        if not content_supported:
+            # A content shape this gateway cannot read into text (so cannot
+            # classify or screen for injection) is refused rather than
+            # silently forwarded as if it carried nothing.
+            identity_checks.append(
+                Check(
+                    check="S5-UNSUPPORTED-CONTENT",
+                    regime="INTERNAL",
+                    result=CheckResult.FAIL,
+                    citation="S5-UNSUPPORTED-CONTENT",
                 )
             )
         attributes = {**evaluation.attributes, "_admission_checks": [c.to_dict() for c in identity_checks]}
@@ -1183,11 +1301,11 @@ class Gateway:
                 )
             )
 
-        raw = body.decode("utf-8")
         if egress_decision is EgressDecision.REDACT:
-            sent_text, token_map = self.egress.redactor.redact(raw)
+            sanitized, token_map = _redact_payload(payload, self.egress.redactor)
+            sent_text = json.dumps(sanitized, ensure_ascii=False)
         else:
-            sent_text, token_map = raw, {}
+            sent_text, token_map = body.decode("utf-8"), {}
         sent_body = sent_text.encode("utf-8")
         forward = {
             key: value for key, value in headers.items() if key in _FORWARDED_HEADERS
