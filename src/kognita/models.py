@@ -604,6 +604,23 @@ class RetainedContent(SQLModel, table=True):
     retained_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
 
 
+class RetainedReference(SQLModel, table=True):
+    """One use case's hold on a retained body.
+
+    The body is stored once per hash. Each use case that stores the same bytes
+    adds its own reference, and a later store by that use case moves its
+    ``retained_at`` forward. The body is erased by retention only when every
+    reference has passed its use case's period.
+    """
+
+    __tablename__ = "retained_references"
+
+    content_hash: str = Field(primary_key=True)
+    use_case: str = Field(default="", primary_key=True)
+    correlation_id: str = Field(default="", index=True)
+    retained_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+
+
 class EvidenceCheck(SQLModel, table=True):
     """One ``policy_id`` from an evidence payload's ``checks``.
 

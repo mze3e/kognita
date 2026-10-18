@@ -74,19 +74,64 @@ _WINDOW_INDEXES: tuple[str, ...] = (
 )
 
 
+# Evidence is append-only in the store, not only by convention. An UPDATE or
+# DELETE on an evidence row is refused by SQLite. A one-row head checkpoint
+# records the last sequence and its hash on every insert; it can only move
+# forward and cannot be deleted. verify_chain compares the chain's tail with it,
+# so events removed from the end are reported, not silently accepted.
+EVIDENCE_GUARD_TRIGGERS: tuple[str, ...] = (
+    """CREATE TRIGGER IF NOT EXISTS evidence_events_no_update
+    BEFORE UPDATE ON evidence_events
+    BEGIN SELECT RAISE(ABORT, 'evidence is append-only: an evidence row cannot be updated'); END""",
+    """CREATE TRIGGER IF NOT EXISTS evidence_events_no_delete
+    BEFORE DELETE ON evidence_events
+    BEGIN SELECT RAISE(ABORT, 'evidence is append-only: an evidence row cannot be deleted'); END""",
+)
+_EVIDENCE_HEAD: tuple[str, ...] = (
+    """CREATE TABLE IF NOT EXISTS evidence_head (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        sequence INTEGER NOT NULL,
+        event_hash TEXT NOT NULL
+    )""",
+    """INSERT INTO evidence_head (id, sequence, event_hash)
+    SELECT 1, sequence, event_hash FROM evidence_events
+    WHERE NOT EXISTS (SELECT 1 FROM evidence_head)
+    ORDER BY sequence DESC LIMIT 1""",
+    """CREATE TRIGGER IF NOT EXISTS evidence_head_advance
+    AFTER INSERT ON evidence_events
+    BEGIN
+        UPDATE evidence_head SET sequence = NEW.sequence, event_hash = NEW.event_hash
+        WHERE id = 1;
+        INSERT INTO evidence_head (id, sequence, event_hash)
+        SELECT 1, NEW.sequence, NEW.event_hash
+        WHERE NOT EXISTS (SELECT 1 FROM evidence_head);
+    END""",
+    """CREATE TRIGGER IF NOT EXISTS evidence_head_forward_only
+    BEFORE UPDATE ON evidence_head
+    WHEN NEW.sequence < OLD.sequence
+    BEGIN SELECT RAISE(ABORT, 'the evidence head cannot move backwards'); END""",
+    """CREATE TRIGGER IF NOT EXISTS evidence_head_no_delete
+    BEFORE DELETE ON evidence_head
+    BEGIN SELECT RAISE(ABORT, 'the evidence head cannot be deleted'); END""",
+)
+
+
 def create_all(engine: Engine) -> None:
     """Create every registered table that does not yet exist.
 
     A domain pack's models must be imported before this runs, or its tables are
     simply absent from the metadata and silently skipped. On SQLite, indexes
     that a later release added are created on a store that already has the
-    tables.
+    tables. Evidence rows are protected from UPDATE and DELETE, and the head
+    checkpoint is created and backfilled from the last event.
     """
     SQLModel.metadata.create_all(engine)
     if engine.dialect.name != "sqlite":
         return
     with engine.begin() as connection:
         for statement in _WINDOW_INDEXES:
+            connection.exec_driver_sql(statement)
+        for statement in (*_EVIDENCE_HEAD, *EVIDENCE_GUARD_TRIGGERS):
             connection.exec_driver_sql(statement)
 
 

@@ -15,6 +15,7 @@ from sqlmodel import Session, select
 
 from fixtures import demo_pack as dp
 
+from evidence_guard import lift_evidence_guard
 from kognita.evidence import EvidenceWriter, hashes_only, verify_chain
 from kognita.models import (
     Approval,
@@ -241,6 +242,7 @@ def test_deleting_an_event_removes_its_citations(engine):
             payload={"checks": [{"policy_id": policy.id}]},
         )
         session.commit()
+        lift_evidence_guard(session)
         session.delete(event)
         session.commit()
         assert session.exec(select(EvidenceCheck)).all() == []

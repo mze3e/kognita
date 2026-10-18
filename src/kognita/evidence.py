@@ -326,7 +326,33 @@ def verify_chain(session: Session) -> int:
         if recompute_event_hash(event) != event.event_hash:
             raise ChainBreak(event.sequence, "event hash does not match its contents")
         expected_prev = event.event_hash
+    head = evidence_head(session)
+    if head is not None:
+        sequence, head_hash = head
+        if sequence != len(events) or head_hash != expected_prev:
+            raise ChainBreak(
+                sequence,
+                f"the chain ends at sequence {len(events)}, but the head checkpoint "
+                f"records sequence {sequence}: events were removed from the end",
+            )
     return len(events)
+
+
+def evidence_head(session: Session) -> tuple[int, str] | None:
+    """The head checkpoint ``(sequence, event_hash)``, or ``None`` if the store has none.
+
+    ``create_all`` keeps it on SQLite. A store without the table has no
+    checkpoint to compare against.
+    """
+    try:
+        row = session.connection().exec_driver_sql(
+            "SELECT sequence, event_hash FROM evidence_head WHERE id = 1"
+        ).first()
+    except Exception:
+        return None
+    if row is None:
+        return None
+    return int(row[0]), str(row[1])
 
 
 def export_chain(
@@ -419,14 +445,24 @@ def tamper_for_test(session: Session, sequence: int, payload: dict[str, Any]) ->
     ``payload_hash`` or ``event_hash``. :func:`verify_chain` then reports that
     the payload does not match its hash.
     """
+    from kognita.db import EVIDENCE_GUARD_TRIGGERS
+
     event = session.exec(
         select(EvidenceEvent).where(EvidenceEvent.sequence == sequence)
     ).first()
     if event is None:
         raise LookupError(f"no evidence event at sequence {sequence}")
-    event.payload = dict(payload)
-    session.add(event)
-    session.flush()
+    # The store refuses an UPDATE on evidence. The hook stands for someone
+    # with raw write access, so it lifts that guard for one write and puts it back.
+    connection = session.connection()
+    connection.exec_driver_sql("DROP TRIGGER IF EXISTS evidence_events_no_update")
+    try:
+        event.payload = dict(payload)
+        session.add(event)
+        session.flush()
+    finally:
+        if connection.dialect.name == "sqlite":
+            connection.exec_driver_sql(EVIDENCE_GUARD_TRIGGERS[0])
     return event
 
 

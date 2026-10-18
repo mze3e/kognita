@@ -20,6 +20,7 @@ from sqlmodel import Session, select
 
 from fixtures import demo_pack as dp
 
+from evidence_guard import lift_evidence_guard
 from kognita.canonical import hash_text
 from kognita.cli import main
 from kognita.db import create_all, make_engine
@@ -370,6 +371,7 @@ def test_chain_break_is_a_finding_and_the_report_continues(harness):
     with harness.session() as session:
         evaluation, _item = _record_interaction(harness, session)
         session.commit()
+        lift_evidence_guard(session)
         session.execute(
             text(
                 "UPDATE evidence_events SET payload = :payload WHERE sequence = :sequence"

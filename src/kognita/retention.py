@@ -15,7 +15,13 @@ from sqlmodel import Session, select
 from kognita.canonical import canonical_json, hash_text
 from kognita.evidence import EvidenceWriter
 from kognita.exceptions import RetentionError
-from kognita.models import RetainedContent, RetentionPolicy, as_utc, utcnow
+from kognita.models import (
+    RetainedContent,
+    RetainedReference,
+    RetentionPolicy,
+    as_utc,
+    utcnow,
+)
 from kognita.vocabulary import ActorType, Classification, EventType
 
 
@@ -117,6 +123,10 @@ class RetentionStore:
         kind = row.kind
         use_case = row.use_case
         linked = correlation_id or row.correlation_id or f"erasure:{content_hash[:12]}"
+        for reference in session.exec(
+            select(RetainedReference).where(RetainedReference.content_hash == content_hash)
+        ).all():
+            session.delete(reference)
         session.delete(row)
         session.flush()
         evidence.emit(
@@ -147,15 +157,21 @@ class RetentionStore:
         policies = {
             row.use_case: row for row in session.exec(select(RetentionPolicy)).all()
         }
+        holds: dict[str, list[tuple[str, datetime | None]]] = {}
+        for reference in session.exec(select(RetainedReference)).all():
+            holds.setdefault(reference.content_hash, []).append(
+                (reference.use_case, as_utc(reference.retained_at))
+            )
         expired: list[str] = []
         for row in session.exec(select(RetainedContent)).all():
-            policy = policies.get(row.use_case)
-            if policy is None or policy.retain_days is None:
-                continue
-            retained_at = as_utc(row.retained_at)
-            if retained_at is None:
-                continue
-            if retained_at + timedelta(days=policy.retain_days) <= at:
+            # The first store is a hold too, so content kept before references
+            # existed is still governed by its own use case.
+            references = [(row.use_case, as_utc(row.retained_at))]
+            references.extend(holds.get(row.content_hash, []))
+            if all(
+                _elapsed(policies.get(use_case), retained_at, at)
+                for use_case, retained_at in references
+            ):
                 expired.append(row.content_hash)
         for content_hash in expired:
             self.erase(
@@ -180,7 +196,10 @@ class RetentionStore:
         correlation_id: str,
         now: datetime | None,
     ) -> None:
+        at = now or utcnow()
+        self._hold(session, digest, use_case, correlation_id, at)
         if session.get(RetainedContent, digest) is not None:
+            session.flush()
             return
         session.add(
             RetainedContent(
@@ -189,10 +208,42 @@ class RetentionStore:
                 use_case=use_case,
                 correlation_id=correlation_id,
                 body=body,
-                retained_at=now or utcnow(),
+                retained_at=at,
             )
         )
         session.flush()
+
+    def _hold(
+        self,
+        session: Session,
+        digest: str,
+        use_case: str,
+        correlation_id: str,
+        at: datetime,
+    ) -> None:
+        """Record or extend this use case's hold on ``digest``."""
+        reference = session.get(RetainedReference, (digest, use_case))
+        if reference is None:
+            session.add(
+                RetainedReference(
+                    content_hash=digest,
+                    use_case=use_case,
+                    correlation_id=correlation_id,
+                    retained_at=at,
+                )
+            )
+            return
+        previous = as_utc(reference.retained_at)
+        if previous is None or previous < as_utc(at):
+            reference.retained_at = at
+            session.add(reference)
+
+
+def _elapsed(policy: RetentionPolicy | None, retained_at: datetime | None, at: datetime) -> bool:
+    """Whether one hold has passed its use case's period. No period keeps it."""
+    if policy is None or policy.retain_days is None or retained_at is None:
+        return False
+    return retained_at + timedelta(days=policy.retain_days) <= at
 
 
 __all__ = ["RetentionStore"]
