@@ -245,6 +245,10 @@ class _GatewayPack:
 
 Transport = Callable[[str, str, Mapping[str, str], bytes], tuple[int, Mapping[str, str], bytes]]
 
+_MODEL_PATHS = frozenset({
+    "/v1/chat/completions", "/v1/completions", "/v1/responses", "/v1/embeddings",
+})
+
 
 def _headers(headers: Mapping[str, str]) -> dict[str, str]:
     return {str(key).lower(): "" if value is None else str(value) for key, value in headers.items()}
@@ -1021,6 +1025,16 @@ class Gateway:
         )
         identity_checks = identity_checks + principal_checks + _credential_checks(session, agent_name, headers)
         arguments: dict[str, Any] = {}
+        # Use the same path for authorization and transport. Only the missing
+        # leading slash accepted by _upstream_url is normalized; ambiguous URL
+        # syntax (queries, escapes, traversal, duplicate slashes) fails closed.
+        path = path if path.startswith("/") else f"/{path}"
+        arguments["_model_path"] = path
+        if path not in _MODEL_PATHS:
+            identity_checks.append(Check(
+                check="S5-MODEL-ENDPOINT", citation="S5-MODEL-ENDPOINT",
+                regime="INTERNAL", result=CheckResult.FAIL,
+            ))
         # Binds an approval continuation to this exact request body.
         arguments["_request_sha256"] = canonical_hash(payload)
         template_version = _template_version(headers)
