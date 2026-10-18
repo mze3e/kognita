@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Gateway egress redaction now operates on decoded JSON string values and re-serializes the sanitized payload, so a JSON escape (e.g. `alice\u0040example.com`) can no longer reach the provider unredacted.
 - Gateway classification and injection checks now cover `tool_calls[].function.arguments` and every message role (including tool-role content), and deny requests whose content has a shape the gateway cannot read into text instead of silently skipping it.
+- R1 #4: Reconstruct, validate and evidence sandbox constraints before approved tool execution, including continuations.
+- R1 #5: Bind continuations to a credential digest and deny release after revocation without retaining the secret.
+- R1 #8: Screen resumed tool responses and hold delivery when an explicit human review gate lacks risk criteria.
+- R1 #10: Atomically consume the exact one-use approval before broker retrieval on either release path.
+
 - 0.5 DoD item 1: Deny incomplete existing identity declarations and cover review expiry and changed deployments through both HTTP ingresses.
 - 0.5 DoD item 4: Cover daily action blast-radius denial through gateway HTTP.
 - 0.5 DoD item 20: Cover deploy-manifest environment scanning for provider keys.

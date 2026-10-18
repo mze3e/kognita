@@ -218,7 +218,11 @@ def test_gateway_l4_model_call_continues_after_approval(session, evidence, engin
     assert held.evaluation.outcome is Outcome.HUMAN_APPROVAL, held.evaluation.failures()
     assert any(c.check == "S1-L4-APPROVAL" for c in held.evaluation.checks)
     _resolve(session, evidence)
-    assert invoke().status == 200
+    # Approval does not waive the tier-3 review obligation: missing criteria
+    # now hold the returned model response before delivery.
+    released = invoke()
+    assert released.status == 403
+    assert any(c.check == "REVIEW" for c in released.evaluation.failures())
     assert invoke().status == 403
     assert len(backend.calls) == 1
 

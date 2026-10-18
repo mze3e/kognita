@@ -951,9 +951,10 @@ def _screen_retained_response(session, evaluation, *, evidence, response_text, o
     at = now or evidence.clock()
     register = _register or load_register(session, as_of=at)
     entry = register.get(evaluation.envelope.purpose)
-    # Only use cases with defined risk criteria are screened inline. Without
-    # criteria the response is counted as unscreened in the coverage report.
-    if _criteria_at(session, evaluation.envelope.purpose, at) is None:
+    # An explicit human review/approval gate requires risk screening even if
+    # its criteria are missing. Missing criteria enter the before-delivery queue.
+    if (_criteria_at(session, evaluation.envelope.purpose, at) is None
+            and (entry is None or entry.approval_gate == "none")):
         return None
     from kognita.interaction import open_interaction, attach
     ident = interaction_id or evaluation.request_id

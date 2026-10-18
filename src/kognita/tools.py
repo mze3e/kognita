@@ -537,6 +537,7 @@ def _checkpoint(
             "kind": kind,
             "envelope": envelope.to_dict(),
             "context": {k: v for k, v in envelope.context.items() if k != "_agent_credential"},
+            "_credential_digest": _continuation_credential(envelope),
             "request_id": evaluation.request_id,
             "outcome": evaluation.outcome.value,
             "checks": [c.to_dict() for c in evaluation.checks],
@@ -574,6 +575,31 @@ def _checkpoint(
         },
     )
     return digest
+
+
+def _continuation_credential(envelope):
+    from kognita.credentials import _digest
+    secret = envelope.context.get("_agent_credential")
+    return _digest(secret) if isinstance(secret, str) and secret else None
+
+
+def _restore_sandbox(session, evaluation, evidence, at):
+    """Validate approved execution constraints again before releasing the body."""
+    from dataclasses import replace
+    from kognita._sandbox import _constraints
+    snapshot = load_snapshot(session, as_of=at, _agent_name=evaluation.envelope.agent_name or "")
+    constraints, checks = _constraints(evaluation.envelope, snapshot.agents.get(evaluation.envelope.agent_name))
+    if any(c.result == CheckResult.FAIL for c in checks):
+        return _with_checks(evaluation, checks)
+    if constraints is None:
+        return evaluation
+    attrs = {**evaluation.attributes, "_sandbox_constraints": constraints}
+    evaluation = replace(evaluation, attributes=attrs,
+        envelope_hash=envelope_hash(evaluation.envelope, attrs, evaluation.checks))
+    evidence.emit(session, correlation_id=evaluation.request_id, event_type=EventType.APPROVAL,
+        actor_id="governance-pdp", payload={"action": "SANDBOX_RESTORED",
+        "citation": "S6B-SANDBOX", "attributes": attrs})
+    return evaluation
 
 
 def _policy_ids_at(session: Session, at: datetime) -> list[int]:
@@ -863,6 +889,18 @@ def _response_outcome(session, evaluation, checks, evidence):
     return final
 
 
+def _screen_tool_response(session, evaluation, data, evidence, *, interaction_id):
+    from kognita.review import _screen_retained_response
+    text = canonical_json(data)
+    held = _screen_retained_response(session, evaluation, evidence=evidence,
+        response_text=text, output_hash=hash_text(text), interaction_id=interaction_id, now=evidence.clock())
+    if held:
+        evaluation = _response_outcome(session, evaluation, [Check(check="REVIEW", regime="INTERNAL",
+            result=CheckResult.FAIL, citation=held)], evidence)
+        data = None
+    return evaluation, data
+
+
 def _argument_text(envelope: Envelope) -> str:
     """String arguments, in insertion order. Non-strings are not prose to classify."""
     parts: list[str] = []
@@ -1013,6 +1051,9 @@ def run_governed(
         run_id=None if run is None else run.id,
     )
 
+    if evaluation.approval_required and already_granted is not None:
+        evaluation = _restore_sandbox(session, evaluation, evidence, at)
+
     if not evaluation.allowed:
         if run is not None:
             _save_run(session, run)
@@ -1051,14 +1092,7 @@ def run_governed(
     _bind_interaction(session, interaction_id, evaluation, run, evidence, at)
 
     data = _release_tool(session, envelope, evaluation, spec, evidence, run, _at=at)
-    from kognita.review import _screen_retained_response
-    held = _screen_retained_response(session, evaluation, evidence=evidence,
-        response_text=canonical_json(data), output_hash=hash_text(canonical_json(data)),
-        interaction_id=interaction_id, now=evidence.clock())
-    if held:
-        evaluation = _response_outcome(session, evaluation, [Check(check="REVIEW", regime="INTERNAL",
-            result=CheckResult.FAIL, citation=held)], evidence)
-        data = None
+    evaluation, data = _screen_tool_response(session, evaluation, data, evidence, interaction_id=interaction_id)
     record_run_decision(session, interaction_id, evaluation, evidence, now=at)
     return ToolRun(
         evaluation=evaluation,
@@ -1192,6 +1226,14 @@ def continue_run(
     # is kept; the recheck is appended.
     recheck: list[Check] = []
     if execute:
+        from kognita.models import _WorkloadCredential
+        digest = payload.get("_credential_digest")
+        credential = session.get(_WorkloadCredential, digest, populate_existing=True) if isinstance(digest, str) else None
+        issued = session.exec(select(_WorkloadCredential.digest).where(
+            _WorkloadCredential.agent_name == envelope.agent_name).limit(1)).first() if envelope.agent_name else None
+        if (digest is not None or issued is not None) and (credential is None or credential.revoked or credential.agent_name != envelope.agent_name):
+            recheck.append(Check(check="S2-CREDENTIAL", citation="S2-CREDENTIAL",
+                                 regime="INTERNAL", result=CheckResult.FAIL))
         snapshot = load_snapshot(session, as_of=at, _evidence=evidence, _agent_name=envelope.agent_name or "")
         attributes = dict(evaluation.attributes)
         usecases = _governing_register(session, as_of=at)
@@ -1255,7 +1297,15 @@ def continue_run(
         if recheck:
             execute = False
 
-    if execute and payload.get("kind") == "tool":
+    if execute:
+        from kognita.models import _ApprovalContinuation
+        binding = session.get(_ApprovalContinuation, evaluation.envelope_hash, populate_existing=True)
+        if binding is None or binding.approval_id != approval_id:
+            recheck.append(Check(check="APPROVAL-CONTINUATION", citation="APPROVAL-CONTINUATION",
+                                 regime="INTERNAL", result=CheckResult.FAIL))
+            execute = False
+
+    if execute:
         from kognita.approvals import _resume
         from kognita._limits import _recheck, _reserve
         checked = _recheck(session, evaluation, at)
@@ -1263,6 +1313,9 @@ def continue_run(
         execute = resumed.outcome == Outcome.ALLOW
         if execute:
             _reserve(session, resumed, at)
+            if payload.get("kind") == "tool":
+                evaluation = _restore_sandbox(session, evaluation, evidence, at)
+                execute = evaluation.allowed
         else:
             evaluation = resumed
 
@@ -1324,19 +1377,20 @@ def continue_run(
             )
         return ToolRun(evaluation=evaluation, data=None, approval_required=False)
 
-    _record_resume_decision(
-        session,
-        payload,
-        evaluation,
-        evidence,
-        approver_name=approver_name,
-        approval_id=approval_id,
-        execute=True,
-        granted_flag=granted_flag,
-        clock_hit=clock_hit,
-        now=at,
-    )
     if payload.get("kind") == "retrieval":
+        _record_resume_decision(
+            session,
+            payload,
+            evaluation,
+            evidence,
+            approver_name=approver_name,
+            approval_id=approval_id,
+            execute=True,
+            granted_flag=granted_flag,
+            clock_hit=clock_hit,
+            now=at,
+        )
+
         from kognita.broker import _resume_retrieval
 
         return _resume_retrieval(
@@ -1354,6 +1408,20 @@ def continue_run(
         raise ToolNotRegistered("continuing a tool call requires a registry")
     spec = registry.get(envelope.tool)
     data = _release_tool(session, envelope, evaluation, spec, evidence, run, _at=at)
+    evaluation, data = _screen_tool_response(session, evaluation, data, evidence,
+        interaction_id=payload.get("interaction_id"))
+    _record_resume_decision(
+        session,
+        payload,
+        evaluation,
+        evidence,
+        approver_name=approver_name,
+        approval_id=approval_id,
+        execute=evaluation.allowed,
+        granted_flag=granted_flag,
+        clock_hit=clock_hit,
+        now=at,
+    )
     return ToolRun(
         evaluation=evaluation,
         data=data,
