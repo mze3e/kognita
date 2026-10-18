@@ -1071,6 +1071,11 @@ class Gateway:
         consumed = False
         try:
             evaluation = self._record(session, evaluation, classification, bound_run, now)
+            if evaluation.outcome is not Outcome.ALLOW:
+                # record() can still flip ALLOW to a denial (quota recheck,
+                # S6-VOLUME anomaly quarantine). The denial is already
+                # evidenced; forwarding to upstream now would contradict it.
+                return finish(_denied(evaluation))
             if bound_run is not None:
                 _consume(bound_run, cost_usd=None, tokens=None, now=now)
                 consumed = True

@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Provision the governed-agent scaffold with an approved behavior manifest and explicit read-only model-call permissions matching its gateway request.
+- Stop the gateway from consuming run budget and forwarding to the upstream once `record()` flips an allowed decision to DENY (quota recheck, S6-VOLUME anomaly quarantine); the denial is now returned immediately instead of a 200 response.
 
 ### Added
 
