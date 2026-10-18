@@ -699,14 +699,14 @@ The kill switch and revocation take effect on the next decision. A tool call alr
 - [x] Recommend and execute are separate permissions; an agent with only recommend cannot act
 - [x] A burst above the per-minute rate limit is denied
 - [x] A run that has touched client data cannot reach a public-content tool
-- [ ] Containment quarantines, revokes and stops an agent without a human in the loop, then alerts
+- [x] Containment quarantines, revokes and stops an agent without a human in the loop, then alerts
 - [x] Authority lineage reconstructs the full chain for a delegated action
 - [x] Recover runs compensating actions in reverse order
-- [ ] Adversarial suite passes; threat model published
+- [x] Adversarial suite passes; threat model published
 - [x] A promotion request below its evidence thresholds cannot be approved
-- [ ] A sustained metric decline steps the agent down one level automatically, evidenced and alerted
+- [x] A sustained metric decline steps the agent down one level automatically, evidenced and alerted
 - [ ] A tier 2 use case registered in library mode fails validation; an agent holding a provider credential directly is flagged
-- [ ] Engaging the kill switch cancels an in-flight tool call at the proxy and records which calls were cancelled; a tool call past its maximum duration times out with evidence
+- [x] Engaging the kill switch cancels an in-flight tool call at the proxy and records which calls were cancelled; a tool call past its maximum duration times out with evidence
 
 ---
 
