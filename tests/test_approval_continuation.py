@@ -89,7 +89,7 @@ def test_changed_tool_request_does_not_match(session, evidence, pack):
     assert calls == []
 
 
-def _gateway_call(session, evidence, engine):
+def _gateway_call(session, evidence, engine, level="0"):
     _live(session)
     _register(session)
     scope = {"client": ["123"], "model": [MODEL]}
@@ -102,10 +102,11 @@ def _gateway_call(session, evidence, engine):
     credential = issue(session, "dossier-agent", evidence=evidence, actor_id="Head of Research Ops")
     _hold(session, "model_call")
     backend = _Upstream(b'{"model":"gateway-model","choices":[]}')
-    gateway = _gateway(engine, evidence, backend)
+    # A raised assurance claim needs a bound run that carries the relay floor.
+    gateway = _gateway(engine, evidence, backend, **({} if level == "0" else {"run": Run(max_calls=10)}))
     def invoke(text="hello"):
         return gateway.handle("POST", PATH, {"agent_name": "dossier-agent",
-            "agent_credential": credential, "delegation_id": did, "assurance_level": "2"}, _body(text), session=session)
+            "agent_credential": credential, "delegation_id": did, "assurance_level": level}, _body(text), session=session)
     return backend, invoke
 
 
@@ -190,7 +191,7 @@ def test_gateway_l4_model_call_continues_after_approval(session, evidence, engin
     from kognita.usecases import load_register, revise, approve_rating, activate
     from test_usecases import _tier3
 
-    backend, invoke = _gateway_call(session, evidence, engine)
+    backend, invoke = _gateway_call(session, evidence, engine, level="2")
     entry = load_register(session, as_of=NOW).get("COLLABORATION")
     spec = _tier3(usecase_id="COLLABORATION", purpose="COLLABORATION",
         approved_models=tuple(entry.record["approved_models"]))
