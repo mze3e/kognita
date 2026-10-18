@@ -18,9 +18,20 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
+from kognita.breaker import (
+    BREAKER_DIMENSIONS,
+    BreakerError,
+    affected_clients,
+    evaluate_breakers,
+    reset_breaker,
+    run_kill_switch_drill,
+    schedule_kill_switch_drill,
+    set_breaker_threshold,
+)
 from kognita.canonical import canonical_json
 from kognita.db import create_all, make_engine, session_scope
 from kognita.evidence import ChainBreak, EvidenceWriter, export_chain, verify_chain
+from kognita.revocation import DIMENSIONS, RevocationError, reinstate, revoke
 from kognita.exceptions import ConfigError
 from kognita.gateway import ClientConfiguration, Gateway
 from kognita.vocabulary import ActorType, EventType, FailureMode
@@ -744,6 +755,249 @@ def _policies_in(db: str, as_of: datetime | None) -> Any:
         return policies_from_session(session, at=as_of)
 
 
+def _parse_when(value: str) -> datetime:
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError(f"{value!r} is not an ISO timestamp") from exc
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _print_json(payload: Any) -> None:
+    print(json.dumps(payload, indent=2, sort_keys=True))
+
+
+def _revocation_target(args: argparse.Namespace) -> tuple[str, str]:
+    for name in DIMENSIONS:
+        value = getattr(args, name)
+        if value:
+            return name, value
+    raise RevocationError("Revocation: name one dimension")
+
+
+def cmd_evidence_affected(args: argparse.Namespace) -> int:
+    """List clients who received model output or released tool output in a window."""
+    try:
+        start = _parse_when(args.start)
+        end = _parse_when(args.end)
+    except ValueError as exc:
+        print(f"Affected clients: {exc}", file=sys.stderr)
+        return 2
+    engine = make_engine(args.db)
+    create_all(engine)
+    try:
+        with session_scope(engine) as session:
+            report = affected_clients(
+                session,
+                model=args.model or "",
+                policy_id=args.policy or "",
+                usecase=args.usecase or "",
+                start=start,
+                end=end,
+            )
+    except BreakerError as exc:
+        print(str(exc), file=sys.stderr)
+        code = 2 if "name one of" in str(exc) else 1
+        return code
+    _print_json(report)
+    return 0
+
+
+def cmd_revoke(args: argparse.Namespace) -> int:
+    """Revoke one dimension. The next matching decision is a denial."""
+    engine = make_engine(args.db)
+    create_all(engine)
+    evidence = EvidenceWriter(engine)
+    try:
+        dimension, value = _revocation_target(args)
+        with session_scope(engine) as session:
+            row = revoke(
+                session,
+                dimension,
+                value,
+                evidence=evidence,
+                actor_id=args.actor,
+                citation=args.citation,
+                owner=args.owner or "",
+                limit_usecases=tuple(args.limit_usecase or ()),
+                below_classification=args.below or "",
+            )
+            payload = {
+                "revocation_id": row.id,
+                "dimension": row.dimension,
+                "value": row.value,
+                "citation": row.citation,
+                "accountable_owners": list(row.accountable_owners),
+                "limit_usecases": list(row.limit_usecases),
+                "below_classification": row.below_classification,
+            }
+    except (RevocationError, BreakerError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    _print_json(payload)
+    return 0
+
+
+def cmd_reinstate(args: argparse.Namespace) -> int:
+    """Record one owner's cited reinstatement.
+
+    A provider stays open until every accountable owner of every use case
+    that lists it has reinstated it. ``effective_to`` is null until then.
+    """
+    engine = make_engine(args.db)
+    create_all(engine)
+    evidence = EvidenceWriter(engine)
+    try:
+        with session_scope(engine) as session:
+            row = reinstate(
+                session,
+                args.revocation_id,
+                evidence=evidence,
+                actor_id=args.actor,
+                citation=args.citation,
+            )
+            payload = {
+                "revocation_id": row.id,
+                "dimension": row.dimension,
+                "value": row.value,
+                "effective_to": row.effective_to.isoformat() if row.effective_to else None,
+                "closed": row.effective_to is not None,
+            }
+    except RevocationError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    _print_json(payload)
+    return 0
+
+
+def cmd_breaker_threshold(args: argparse.Namespace) -> int:
+    engine = make_engine(args.db)
+    create_all(engine)
+    evidence = EvidenceWriter(engine)
+    try:
+        with session_scope(engine) as session:
+            row = set_breaker_threshold(
+                session,
+                args.dimension,
+                args.value,
+                threshold=args.threshold,
+                window_seconds=args.window_seconds,
+                evidence=evidence,
+                actor_id=args.actor,
+                citation=args.citation,
+                owner=args.owner or "",
+            )
+            payload = {
+                "id": row.id,
+                "dimension": row.dimension,
+                "value": row.value,
+                "threshold": row.threshold,
+                "window_seconds": row.window_seconds,
+                "accountable_owner": row.accountable_owner,
+                "citation": row.citation,
+            }
+    except BreakerError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    _print_json(payload)
+    return 0
+
+
+def cmd_breaker_evaluate(args: argparse.Namespace) -> int:
+    engine = make_engine(args.db)
+    create_all(engine)
+    evidence = EvidenceWriter(engine)
+    try:
+        with session_scope(engine) as session:
+            tripped = evaluate_breakers(session, evidence=evidence)
+    except BreakerError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    _print_json(list(tripped))
+    return 0
+
+
+def cmd_breaker_reset(args: argparse.Namespace) -> int:
+    engine = make_engine(args.db)
+    create_all(engine)
+    evidence = EvidenceWriter(engine)
+    try:
+        with session_scope(engine) as session:
+            policy = reset_breaker(
+                session,
+                args.dimension,
+                args.value,
+                evidence=evidence,
+                actor_id=args.actor,
+                citation=args.citation,
+            )
+            payload = {
+                "policy_id": policy.id,
+                "dimension": args.dimension,
+                "value": args.value,
+                "effective_to": policy.effective_to.isoformat() if policy.effective_to else None,
+            }
+    except BreakerError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    _print_json(payload)
+    return 0
+
+
+def cmd_drill_due(args: argparse.Namespace) -> int:
+    engine = make_engine(args.db)
+    create_all(engine)
+    evidence = EvidenceWriter(engine)
+    try:
+        due = _parse_when(args.at)
+    except ValueError as exc:
+        print(f"Kill-switch drill: {exc}", file=sys.stderr)
+        return 2
+    try:
+        with session_scope(engine) as session:
+            row = schedule_kill_switch_drill(
+                session,
+                args.usecase,
+                due_at=due,
+                evidence=evidence,
+                actor_id=args.actor,
+                citation=args.citation,
+            )
+            payload = {
+                "usecase_id": row.usecase_id,
+                "next_due": row.next_due.isoformat(),
+            }
+    except BreakerError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    _print_json(payload)
+    return 0
+
+
+def cmd_drill_run(args: argparse.Namespace) -> int:
+    engine = make_engine(args.db)
+    create_all(engine)
+    evidence = EvidenceWriter(engine)
+    try:
+        with session_scope(engine) as session:
+            payload = run_kill_switch_drill(
+                session,
+                args.usecase,
+                args.agent,
+                evidence=evidence,
+                actor_id=args.actor,
+                citation=args.citation,
+                fallback=args.fallback,
+            )
+    except BreakerError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    _print_json(payload)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
@@ -785,6 +1039,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="path prefix; writes <prefix>.json and <prefix>.txt",
     )
     reconstruct_cmd.set_defaults(func=cmd_evidence_reconstruct)
+
+    affected = evidence_sub.add_parser(
+        "affected",
+        help="list clients who received model or released tool output in a window",
+    )
+    affected.add_argument("--db", default="kognita.db", help="store path or URL")
+    affected.add_argument("--model", default="", help="model version, name, or card")
+    affected.add_argument("--policy", default="", help="policy id")
+    affected.add_argument("--usecase", default="", help="use case id")
+    affected.add_argument("--from", dest="start", required=True, help="window start, inclusive")
+    affected.add_argument("--to", dest="end", required=True, help="window end, exclusive")
+    affected.set_defaults(func=cmd_evidence_affected)
 
     serve = sub.add_parser("serve", help="run the AI gateway or the MCP proxy")
     mode = serve.add_mutually_exclusive_group(required=True)
@@ -1017,6 +1283,96 @@ def build_parser() -> argparse.ArgumentParser:
     test_cmd = policy_sub.add_parser("test", help="run colocated policy scenarios")
     test_cmd.add_argument("path", help="policy file, scenario file, or directory")
     test_cmd.set_defaults(func=cmd_policy_test)
+
+    revoke_cmd = sub.add_parser(
+        "revoke",
+        help="revoke one dimension; the next matching decision is a denial",
+    )
+    target = revoke_cmd.add_mutually_exclusive_group(required=True)
+    for name in DIMENSIONS:
+        target.add_argument(f"--{name}", help=f"{name} to revoke")
+    revoke_cmd.add_argument("--db", default="kognita.db", help="store path or URL")
+    revoke_cmd.add_argument("--actor", required=True, help="person recording the revocation")
+    revoke_cmd.add_argument("--citation", required=True, help="rule the revocation cites")
+    revoke_cmd.add_argument(
+        "--owner",
+        default="",
+        help="accountable owner, when the dimension does not name one",
+    )
+    revoke_cmd.add_argument(
+        "--limit-usecase",
+        action="append",
+        default=None,
+        help="provider only: use case that may still call it; repeatable",
+    )
+    revoke_cmd.add_argument(
+        "--below",
+        default="",
+        help="provider only: exclusive classification ceiling, for example C2",
+    )
+    revoke_cmd.set_defaults(func=cmd_revoke)
+
+    reinstate_cmd = sub.add_parser(
+        "reinstate",
+        help="close a revocation; the actor must be an accountable owner it names",
+    )
+    reinstate_cmd.add_argument("--db", default="kognita.db", help="store path or URL")
+    reinstate_cmd.add_argument("--id", dest="revocation_id", type=int, required=True)
+    reinstate_cmd.add_argument("--actor", required=True)
+    reinstate_cmd.add_argument("--citation", required=True)
+    reinstate_cmd.set_defaults(func=cmd_reinstate)
+
+    breaker = sub.add_parser("breaker", help="circuit-breaker thresholds")
+    breaker_sub = breaker.add_subparsers(dest="breaker_command", required=True)
+
+    threshold = breaker_sub.add_parser("threshold", help="record how many flags trip a breaker")
+    threshold.add_argument("--db", default="kognita.db", help="store path or URL")
+    threshold.add_argument("--dimension", required=True, choices=BREAKER_DIMENSIONS)
+    threshold.add_argument("--value", required=True)
+    threshold.add_argument("--threshold", type=int, required=True)
+    threshold.add_argument("--window-seconds", type=int, required=True)
+    threshold.add_argument("--actor", required=True)
+    threshold.add_argument("--citation", required=True)
+    threshold.add_argument("--owner", default="")
+    threshold.set_defaults(func=cmd_breaker_threshold)
+
+    evaluate_cmd = breaker_sub.add_parser(
+        "evaluate",
+        help="trip each threshold whose flags in the window have reached it",
+    )
+    evaluate_cmd.add_argument("--db", default="kognita.db", help="store path or URL")
+    evaluate_cmd.set_defaults(func=cmd_breaker_evaluate)
+
+    reset_cmd = breaker_sub.add_parser(
+        "reset",
+        help="close a tripped breaker; the actor must be its accountable owner",
+    )
+    reset_cmd.add_argument("--db", default="kognita.db", help="store path or URL")
+    reset_cmd.add_argument("--dimension", required=True, choices=BREAKER_DIMENSIONS)
+    reset_cmd.add_argument("--value", required=True)
+    reset_cmd.add_argument("--actor", required=True)
+    reset_cmd.add_argument("--citation", required=True)
+    reset_cmd.set_defaults(func=cmd_breaker_reset)
+
+    drill = sub.add_parser("drill", help="kill-switch drills for a high-materiality use case")
+    drill_sub = drill.add_subparsers(dest="drill_command", required=True)
+
+    due = drill_sub.add_parser("due", help="set the next drill date")
+    due.add_argument("--db", default="kognita.db", help="store path or URL")
+    due.add_argument("--usecase", required=True)
+    due.add_argument("--at", required=True, help="ISO timestamp the drill is due")
+    due.add_argument("--actor", required=True)
+    due.add_argument("--citation", required=True)
+    due.set_defaults(func=cmd_drill_due)
+
+    run = drill_sub.add_parser("run", help="engage the kill switch and record the denial")
+    run.add_argument("--db", default="kognita.db", help="store path or URL")
+    run.add_argument("--usecase", required=True)
+    run.add_argument("--agent", required=True)
+    run.add_argument("--actor", required=True)
+    run.add_argument("--citation", required=True)
+    run.add_argument("--fallback", required=True, help="how the fallback was reached")
+    run.set_defaults(func=cmd_drill_run)
 
     return parser
 

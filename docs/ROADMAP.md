@@ -517,8 +517,8 @@ Do not wait for client harm.
 - [x] Use-case register enforced: unregistered use cases are denied, and every decision cites an accountable owner
 - [x] Every approved model has a model card linked from each call that used it
 - [x] Risk-based review queue with coverage reporting per use case and risk tier
-- [ ] Circuit breaker trips automatically in a test scenario, and the affected-client query lists exactly the clients who received output in the window
-- [ ] Revocation by each dimension takes effect on the next decision without affecting other use cases
+- [x] Circuit breaker trips automatically in a test scenario, and the affected-client query lists exactly the clients who received output in the window
+- [x] Revocation by each dimension takes effect on the next decision without affecting other use cases
 - [x] Risk tiers enforce minimum controls; a tier 3 use case cannot be activated by its own builder
 - [x] An incomplete approval packet cannot be approved; rubber-stamp approvals are flagged
 - [ ] Private-banking starter pack with scenarios, including cross-border and booking-centre denials
@@ -541,7 +541,7 @@ Do not wait for client harm.
 - [x] Quantitative appetite measures (AI incidents, single-provider dependencies, performance breaches) reported against their thresholds from evidence
 - [x] A pilot denies calls from users outside its list and after its end date
 - [x] An unmediated AI entry records its assurance gap and compensating control; a gateway call to an unregistered AI endpoint is flagged
-- [ ] Revoking a provider stops it on the next decision for every use case; a kill-switch drill is evidenced and an overdue drill is flagged
+- [x] Revoking a provider stops it on the next decision for every use case; a kill-switch drill is evidenced and an overdue drill is flagged
 - [x] Retiring a use case stops its agents and applies its retention period
 
 ---

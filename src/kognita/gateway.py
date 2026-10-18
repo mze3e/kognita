@@ -830,8 +830,11 @@ class Gateway:
         principal = headers.get("principal") or self.client.principal
         purpose = headers.get("purpose") or self.client.purpose
         arguments: dict[str, Any] = {}
+        template_version = _template_version(headers)
         if headers.get("model_version"):
             arguments["model_version"] = headers["model_version"]
+        if template_version:
+            arguments["prompt_template_version"] = template_version
         envelope = Envelope(
             principal=principal,
             purpose=purpose,
@@ -864,6 +867,9 @@ class Gateway:
                 classifier=self.classifier,
             )
         classification = Classification(attributes.get("classification") or Classification.C1)
+        provider_name = self.provider or (urlparse(self.upstream).hostname or self.upstream)
+        if provider_name and not attributes.get("provider"):
+            attributes["provider"] = provider_name
 
         snapshot = self._store(lambda: load_snapshot(session, as_of=now))
         register = self._store(lambda: load_register(session, as_of=now))
@@ -915,7 +921,6 @@ class Gateway:
 
         actor_type = _actor_type(agent_name, trigger)
         actor_id = _actor_id(agent_name, trigger)
-        template_version = _template_version(headers)
         decision_budget = _budget_payload(bound_run) if bound_run is not None else None
         deferred: _DeferredEvidence | None = None
 

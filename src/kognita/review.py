@@ -28,7 +28,8 @@ packet still has a decision.
 Risk-based review scores each model response on an interaction against the use
 case's risk criteria. A high-risk response, and a sampled low-risk response,
 go on the review queue. Coverage is the share screened, queued and reviewed.
-A confirmed problem records a flag. It does not insert a prohibiting policy.
+A confirmed problem records a flag. A registered circuit-breaker threshold
+counts that flag and, when the count is reached, inserts the prohibiting policy.
 """
 
 from __future__ import annotations
@@ -1153,8 +1154,8 @@ def record_review_finding(
 ) -> dict[str, Any]:
     """Record the review outcome and, for a confirmed problem, a flag.
 
-    The flag is evidence a later circuit breaker can count. This does not
-    insert a prohibiting policy. The screening event is not rewritten.
+    The flag counts toward a registered circuit-breaker threshold. Crossing
+    it inserts the prohibiting policy. The screening event is not rewritten.
     """
     at = now or utcnow()
     interaction = require_interaction(session, interaction_id)
@@ -1222,6 +1223,9 @@ def record_review_finding(
                 "citation": CITE_FLAG,
             },
         )
+    from kognita.breaker import evaluate_breakers
+
+    evaluate_breakers(session, evidence=evidence, now=at)
     return payload
 
 

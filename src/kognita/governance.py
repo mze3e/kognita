@@ -32,6 +32,12 @@ from kognita.envelope import Check, Envelope, Evaluation, RuleContext, envelope_
 from kognita.evidence import EvidenceWriter
 from kognita.exceptions import PolicyEditError
 from kognita.approvals import open_approval
+from kognita.breaker import (
+    OpenDrill,
+    circuit_breaker_checks,
+    drill_checks,
+    load_drill_dues,
+)
 from kognita.models import (
     Agent,
     Approval,
@@ -41,6 +47,7 @@ from kognita.models import (
     policy_content_hash,
     utcnow,
 )
+from kognita.revocation import OpenRevocation, load_revocations, revocation_checks
 from kognita.rules import Evaluator, build_registry
 from kognita.usecases import UseCaseRegister, usecase_checks
 from kognita.vocabulary import (
@@ -65,6 +72,8 @@ class PolicySnapshot:
 
     policies: tuple[Policy, ...] = ()
     agents: dict[str, Agent] = field(default_factory=dict)
+    revocations: tuple[OpenRevocation, ...] = ()
+    drill_dues: tuple[OpenDrill, ...] = ()
 
     def effective(self, at: datetime) -> tuple[Policy, ...]:
         return tuple(p for p in self.policies if p.is_effective(at))
@@ -77,7 +86,12 @@ def load_snapshot(session: Session, *, as_of: datetime | None = None) -> PolicyS
         p for p in session.exec(select(Policy)).all() if p.is_effective(at)
     )
     agents = {a.name: a for a in session.exec(select(Agent)).all()}
-    return PolicySnapshot(policies=policies, agents=agents)
+    return PolicySnapshot(
+        policies=policies,
+        agents=agents,
+        revocations=load_revocations(session, at),
+        drill_dues=load_drill_dues(session, at),
+    )
 
 
 def resolve_outcome(checks: Sequence[Check]) -> Outcome:
@@ -226,7 +240,9 @@ def decide(
     ``engages`` lets a pack say whether a policy is in scope for this request at
     all. Evaluating a rule from a regime the request never touches produces
     noise at best and a wrong denial at worst, so an un-engaged policy is skipped
-    rather than passed.
+    rather than passed. A revocation, a kill-switch drill that is overdue or
+    missing on a high-materiality pilot or live use case, and a tripped
+    circuit breaker are applied even when ``engages`` would skip them.
     """
     at = as_of or utcnow()
     attrs = dict(attributes or {})
@@ -243,12 +259,26 @@ def decide(
                 envelope, purposes, owner=_accountable_owner(envelope, snapshot)
             )
         )
+    checks.extend(
+        revocation_checks(
+            envelope,
+            snapshot.revocations,
+            attributes=attrs,
+            register=usecases,
+        )
+    )
+    checks.extend(
+        drill_checks(envelope, snapshot.drill_dues, register=usecases, at=at)
+    )
+    checks.extend(circuit_breaker_checks(envelope, snapshot.policies, attrs, at))
 
     context = RuleContext(
         envelope=envelope, attributes=attrs, subjects=subject_rows, as_of=at
     )
 
     for policy in snapshot.effective(at):
+        if policy.rule_type == "CIRCUIT_BREAKER":
+            continue
         if engages is not None and not engages(policy, context):
             continue
         evaluator = registry.get(policy.rule_type)

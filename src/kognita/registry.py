@@ -62,11 +62,16 @@ def set_kill_switch(
 
     Engaging the switch takes effect on the next decision — there is no in-flight
     cancellation. It is a gate on new actions, not a way to recall one already
-    taken.
+    taken. Releasing it is refused while an agent revocation is open: that
+    release is :func:`kognita.revocation.reinstate`, and the error cites the
+    revocation.
     """
     agent = get(session, name)
     if agent is None:
         raise LookupError(f"agent '{name}' is not registered")
+    when = now or utcnow()
+    if not engaged:
+        _refuse_release_while_revoked(session, name, when)
     agent.kill_switch = engaged
     session.add(agent)
     session.flush()
@@ -81,10 +86,30 @@ def set_kill_switch(
             "agent": name,
             "owner_exec": agent.owner_exec,
             "reason": reason,
-            "at": (now or utcnow()).isoformat(),
+            "at": when.isoformat(),
         },
     )
     return agent
+
+
+def _refuse_release_while_revoked(session: Session, name: str, at: datetime) -> None:
+    """An open agent revocation holds the switch until reinstatement."""
+    from kognita.revocation import RevocationError, load_revocations
+
+    holding = [
+        row
+        for row in load_revocations(session, at)
+        if row.dimension == "agent" and row.value == name
+    ]
+    if not holding:
+        return
+    item = holding[0]
+    owners = ", ".join(item.accountable_owners) or "none"
+    raise RevocationError(
+        f"Revocation: releasing the kill switch of {name} is refused "
+        f"while the agent is revoked · {item.citation} · "
+        f"accountable owner: {owners}"
+    )
 
 
 __all__ = ["register", "get", "all_agents", "set_kill_switch"]
