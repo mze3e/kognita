@@ -21,9 +21,12 @@ names; the flag does not decide the call.
 Quantitative appetite thresholds cover AI incidents (count and impact), how
 many material use cases depend on one model provider, and how many material
 use cases breach their primary-metric target. Material means residual
-materiality high or critical. A breach is reported on the senior-management
-report and, when that report is written with an evidence writer, escalated
-to the accountable owner.
+materiality high or critical, or tier 3 or 4. A live use case with a primary
+metric and no measurement counts as a performance breach and is reported as
+unmeasured; a pilot does not. An incident with no use case counts in every
+jurisdiction filter. A breach is reported on the senior-management report
+and, when that report is written with an evidence writer, escalated to the
+accountable owner.
 
 Retiring a use case engages the kill switch of every agent registered only to
 it, writes its retention period and erases content already past that period,
@@ -151,10 +154,11 @@ PRIMARY_METRICS: tuple[str, ...] = (
     "reliability",
 )
 
-#: Residual materiality at or above this rank is a material use case for the
-#: single-provider count, the performance-breach count, and the
-#: senior-management report.
+#: Residual materiality at or above this rank is material, as is tier 3 or 4.
+#: Material use cases feed the single-provider count, the performance-breach
+#: count, and the senior-management report.
 MATERIAL_RESIDUAL: frozenset[str] = frozenset({"high", "critical"})
+MATERIAL_TIER: int = 3
 
 #: Complexity is recorded as the four factors the classification names.
 COMPLEXITY_FACTORS: dict[str, tuple[str, ...]] = {
@@ -2112,8 +2116,11 @@ def retire(
 
 
 def is_material(entry: RegisteredUseCase) -> bool:
-    """Residual materiality high or critical."""
-    return entry.residual_materiality in MATERIAL_RESIDUAL
+    """Residual materiality high or critical, or tier 3 or 4."""
+    return (
+        entry.residual_materiality in MATERIAL_RESIDUAL
+        or entry.proposed_tier >= MATERIAL_TIER
+    )
 
 
 def _card_index(register: UseCaseRegister) -> dict[str, RegisteredModelCard]:
@@ -2247,6 +2254,18 @@ def _model_call_citation(
     return _cite(
         entry.usecase_id,
         f"model '{requested}' is not pinned to one model card",
+        entry.owner,
+    )
+
+
+def _served_model_citation(
+    entry: RegisteredUseCase, *, model: str, version: str
+) -> str:
+    """Why a served version was withheld. The stored decision is not rewritten."""
+    shown = f"{model}@{version}" if model and version else (model or version or "unknown")
+    return _cite(
+        entry.usecase_id,
+        f"served model '{shown}' has no model card approved for '{entry.usecase_id}'",
         entry.owner,
     )
 
@@ -2632,7 +2651,7 @@ def _events_until(session: Session, at: datetime) -> list[EvidenceEvent]:
 
 def record_incident(
     session: Session,
-    usecase_id: str,
+    usecase_id: str = "",
     *,
     impact: float,
     summary: str,
@@ -2640,28 +2659,36 @@ def record_incident(
     actor_id: str,
     at: datetime | None = None,
 ) -> None:
-    """Record one AI incident against a registered use case."""
+    """Record one AI incident.
+
+    A named use case must be registered. An empty use case is an incident that
+    is not yet assigned; it still counts in every jurisdiction filter.
+    """
     when = _aware(at or utcnow())
     number = _optional_number(impact)
     if number is None or number < 0:
         raise KognitaError("AI incident — impact must be a non-negative number")
     if not summary.strip():
         raise KognitaError("AI incident — a summary is required")
-    entry = load_register(session, as_of=when).get(usecase_id)
-    if entry is None:
-        raise KognitaError(_cite(usecase_id, f"'{usecase_id}' is not registered"))
+    named = usecase_id.strip()
+    owner = ""
+    if named:
+        entry = load_register(session, as_of=when).get(named)
+        if entry is None:
+            raise KognitaError(_cite(named, f"'{named}' is not registered"))
+        owner = entry.owner
     _emit(
         session,
         evidence,
-        correlation_id=f"usecase:{usecase_id}",
+        correlation_id=f"usecase:{named}" if named else "incident",
         actor_id=actor_id,
         action="INCIDENT",
         at=when,
         body={
-            "usecase_id": usecase_id,
+            "usecase_id": named,
             "impact": number,
             "summary": summary.strip(),
-            "accountable_owner": entry.owner,
+            "accountable_owner": owner,
         },
     )
 
@@ -2760,12 +2787,16 @@ def quantitative_measures(
         entry = register.get(usecase_id)
         return entry is not None and entry.jurisdiction == jurisdiction
 
-    incidents = [
-        event
-        for event in events
-        if str((event.payload or {}).get("action") or "") == "INCIDENT"
-        and in_scope(str((event.payload or {}).get("usecase_id") or ""))
-    ]
+    def incident_in_report(event: EvidenceEvent) -> bool:
+        if str((event.payload or {}).get("action") or "") != "INCIDENT":
+            return False
+        usecase_id = str((event.payload or {}).get("usecase_id") or "").strip()
+        # An incident that names no use case counts in every filtered report.
+        if not usecase_id:
+            return True
+        return in_scope(usecase_id)
+
+    incidents = [event for event in events if incident_in_report(event)]
     impact = 0.0
     owners: list[str] = []
     identifiers: list[str] = []
@@ -2826,9 +2857,15 @@ def quantitative_measures(
         if in_scope(usecase_id):
             latest[usecase_id] = event
     breaching: list[RegisteredUseCase] = []
+    saw_unmeasured = False
     for entry in material:
         event = latest.get(entry.usecase_id)
         if event is None:
+            # A live use case with a primary metric and no measurement is a
+            # breach. A pilot is exempt until it is live.
+            if entry.status == "live" and _has_primary_metric(entry):
+                breaching.append(entry)
+                saw_unmeasured = True
             continue
         payload = event.payload or {}
         metric = str(payload.get("primary_metric") or "")
@@ -2839,6 +2876,7 @@ def quantitative_measures(
         if _metric_breaches(metric, value, target):
             breaching.append(entry)
     performance_threshold = appetite.performance_breach_threshold if appetite else None
+    performance_detail = "unmeasured" if saw_unmeasured else ""
 
     return (
         AppetiteMeasure(
@@ -2879,7 +2917,16 @@ def quantitative_measures(
             ),
             tuple(sorted({entry.owner for entry in breaching})),
             tuple(entry.usecase_id for entry in breaching),
+            performance_detail,
         ),
+    )
+
+
+def _has_primary_metric(entry: RegisteredUseCase) -> bool:
+    return (
+        entry.primary_metric in PRIMARY_METRICS
+        and entry.baseline is not None
+        and entry.target is not None
     )
 
 

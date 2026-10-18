@@ -18,7 +18,10 @@ One request, in order:
 5. Restore redacted spans in the response.
 6. Classify the response before it is returned.
 7. Record ``MODEL_CALL`` and ``EGRESS`` by hash and reference. The prompt and
-   the response are not copied into the evidence.
+   the response are not copied into the evidence. A served version with no
+   approved card is not returned. The stored decision stays as recorded, and
+   a later ``DENY`` outcome event, linked to that decision and citing the
+   model-card rule, records that the body was withheld.
 
 Token totals and cost, when the provider response reports them, are added to
 the :class:`~kognita.tools.Run` budget.
@@ -77,7 +80,12 @@ from kognita.governance import (
 )
 from kognita.retention import RetentionStore
 from kognita.rules import build_registry
-from kognita.usecases import endpoint_named, load_register, model_card_link
+from kognita.usecases import (
+    _served_model_citation,
+    endpoint_named,
+    load_register,
+    model_card_link,
+)
 from kognita.tools import (
     Run,
     _budget_breaches,
@@ -133,6 +141,15 @@ class _DeferredModel:
 
 
 @dataclass
+class _ModelCardDenial:
+    """A served version with no approved card. Written after the stored decision."""
+
+    model: str
+    version: str
+    citation: str
+
+
+@dataclass
 class _DeferredEvidence:
     """A decision, and the model evidence of a call that already proceeded.
 
@@ -148,6 +165,7 @@ class _DeferredEvidence:
     run: Run | None = None
     save_run: bool = False
     model: _DeferredModel | None = None
+    model_card_denial: _ModelCardDenial | None = None
 
 
 @dataclass(frozen=True)
@@ -1080,6 +1098,19 @@ class Gateway:
         )
         entry = register.get(purpose) if usecases is not None else None
         if entry is not None and entry.approved_models and not card_id:
+            self._record_model_card_denial(
+                session,
+                evaluation,
+                classification=classification,
+                deferred=deferred,
+                model=served_name or "",
+                version=served_version or "",
+                citation=_served_model_citation(
+                    entry,
+                    model=served_name or "",
+                    version=served_version or "",
+                ),
+            )
             return finish(
                 _json_response(
                     403,
@@ -1134,7 +1165,7 @@ class Gateway:
             self._store(lambda: _save_run(session, run))
         evaluation = item.evaluation
         classification = item.classification
-        self._store(
+        recorded = self._store(
             lambda: record(
                 session,
                 evaluation,
@@ -1150,13 +1181,93 @@ class Gateway:
             self._store(
                 lambda: self._emit_model(
                     session,
-                    evaluation,
+                    recorded,
                     classification,
                     model,
                     item.run,
                     at=decided_at,
                 )
             )
+        denial = item.model_card_denial
+        if denial is not None:
+            self._store(
+                lambda: self._emit_model_card_denial(
+                    session,
+                    recorded,
+                    classification=classification,
+                    model=denial.model,
+                    version=denial.version,
+                    citation=denial.citation,
+                )
+            )
+
+    def _record_model_card_denial(
+        self,
+        session: Session,
+        evaluation: Evaluation,
+        *,
+        classification: Classification,
+        deferred: _DeferredEvidence | None,
+        model: str,
+        version: str,
+        citation: str,
+    ) -> None:
+        """Append the withhold. A deferred call writes it once the decision has an id."""
+        if deferred is not None:
+            deferred.model_card_denial = _ModelCardDenial(
+                model=model, version=version, citation=citation
+            )
+            return
+        self._store(
+            lambda: self._emit_model_card_denial(
+                session,
+                evaluation,
+                classification=classification,
+                model=model,
+                version=version,
+                citation=citation,
+            )
+        )
+
+    def _emit_model_card_denial(
+        self,
+        session: Session,
+        evaluation: Evaluation,
+        *,
+        classification: Classification,
+        model: str,
+        version: str,
+        citation: str,
+    ) -> None:
+        """One DENY outcome, linked to the decision already stored. Nothing is updated."""
+        if evaluation.decision_id is None:
+            raise _EvidenceStoreUnavailable(
+                "a withheld model card cannot be linked to a stored decision"
+            )
+        self.evidence.emit(
+            session,
+            correlation_id=evaluation.request_id,
+            event_type=EventType.POLICY_DECISION,
+            actor_type=ActorType.SYSTEM,
+            actor_id="governance-pdp",
+            classification=classification,
+            payload={
+                "outcome": Outcome.DENY.value,
+                "decision_id": evaluation.decision_id,
+                "envelope_hash": evaluation.envelope_hash,
+                "checks": [
+                    Check(
+                        check="USE_CASE_MODEL",
+                        regime="INTERNAL",
+                        result=CheckResult.FAIL,
+                        citation=citation,
+                    ).to_dict()
+                ],
+                "model": model,
+                "model_version": version,
+                "withheld": True,
+            },
+        )
 
     def _emit_model(
         self,

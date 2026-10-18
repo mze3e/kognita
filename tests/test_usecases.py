@@ -164,6 +164,7 @@ def _tier3(**overrides) -> UseCaseSpec:
         explanation_depth="suitability",
         validators=("Jane Smith", "Noel Independent"),
         human_decision_points=("RM approves the recommendation",),
+        model_providers=("house",),
     )
     values.update(overrides)
     return _spec(**values)
@@ -1179,8 +1180,12 @@ def test_quantitative_measures_escalate_breaches_to_the_owner(session, evidence)
     assert measures["single-provider dependencies"].value == 2
     assert measures["single-provider dependencies"].detail == "house"
     assert measures["single-provider dependencies"].breached is True
-    assert measures["performance breaches"].value == 1
-    assert measures["performance breaches"].usecase_ids == ("research-summary",)
+    assert measures["performance breaches"].value == 2
+    assert measures["performance breaches"].usecase_ids == (
+        "notes-draft",
+        "research-summary",
+    )
+    assert measures["performance breaches"].detail == "unmeasured"
     assert measures["performance breaches"].breached is True
     assert measures["performance breaches"].accountable_owners == ("Jane Smith",)
 
@@ -1191,7 +1196,8 @@ def test_quantitative_measures_escalate_breaches_to_the_owner(session, evidence)
     assert hong_kong["AI incidents"].value == 1
     assert hong_kong["single-provider dependencies"].value == 1
     assert hong_kong["single-provider dependencies"].breached is False
-    assert hong_kong["performance breaches"].value == 1
+    assert hong_kong["performance breaches"].value == 2
+    assert hong_kong["performance breaches"].detail == "unmeasured"
     singapore = quantitative_measures(session, as_of=NOW, jurisdiction="SG")
     assert {item.measure: item.value for item in singapore}["AI incidents"] == 0
 
@@ -1220,6 +1226,144 @@ def test_quantitative_measures_escalate_breaches_to_the_owner(session, evidence)
         (event.payload or {}).get("action") == "SENIOR_MANAGEMENT_REPORT"
         for event in session.exec(select(EvidenceEvent)).all()
     )
+
+
+def test_tier_3_or_4_is_material_when_residual_materiality_is_low(session, evidence):
+    """Material is residual high or critical, or tier 3 or 4."""
+    _open(session, evidence, _appetite(single_provider_threshold=0))
+    with pytest.raises(KognitaError, match="no model provider"):
+        register(
+            session,
+            _tier3(model_providers=()),
+            evidence=evidence,
+            actor_id="Jane Smith",
+            at=NOW,
+        )
+    register(
+        session,
+        _tier2(),
+        evidence=evidence,
+        actor_id="Jane Smith",
+        at=NOW,
+    )
+    _activate(
+        session,
+        evidence,
+        _tier3(),
+        signoff_by="Noel Independent",
+    )
+    measures = {
+        item.measure: item for item in quantitative_measures(session, as_of=NOW)
+    }
+    providers = measures["single-provider dependencies"]
+    assert providers.value == 1
+    assert providers.usecase_ids == ("suitability-check",)
+    assert providers.breached is True
+    report = senior_management_report(session, as_of=NOW)
+    assert {row["usecase_id"] for row in report["material_use_cases"]} == {
+        "suitability-check"
+    }
+    assert report["material_use_cases"][0]["residual_materiality"] == "low"
+    assert report["material_use_cases"][0]["tier"] == 3
+
+
+def test_an_unmeasured_live_primary_metric_is_a_performance_breach(session, evidence):
+    """A live metric with no measurement is a breach. A pilot is exempt."""
+    _open(session, evidence, _appetite(performance_breach_threshold=0))
+    live = _spec(
+        residual_materiality="high",
+        model_providers=("house",),
+        primary_metric="reliability",
+        baseline=0.9,
+        target=0.95,
+    )
+    pilot = _spec(
+        usecase_id="pilot-summary",
+        purpose="Pilot the summary with a named user list",
+        residual_materiality="high",
+        model_providers=("house",),
+        primary_metric="reliability",
+        baseline=0.9,
+        target=0.95,
+        pilot_users=("alice",),
+        pilot_end=NOW + timedelta(days=10),
+        success_criteria="RM acceptance above the baseline",
+    )
+    bare = _spec(
+        usecase_id="no-metric",
+        purpose="A live use case with no primary metric",
+        residual_materiality="high",
+        model_providers=("house",),
+    )
+    _activate(session, evidence, live)
+    _activate(session, evidence, pilot, status="pilot")
+    _activate(session, evidence, bare)
+    performance = {
+        item.measure: item for item in quantitative_measures(session, as_of=NOW)
+    }["performance breaches"]
+    assert performance.value == 1
+    assert performance.usecase_ids == ("research-summary",)
+    assert performance.detail == "unmeasured"
+    assert performance.breached is True
+    assert performance.accountable_owners == ("Jane Smith",)
+
+
+def test_an_incident_with_no_use_case_counts_in_every_filtered_report(
+    session, evidence
+):
+    """An unassigned incident is in the unfiltered report and in every jurisdiction."""
+    _open(session, evidence)
+    _activate(session, evidence, _spec(jurisdiction="HK"))
+    _activate(
+        session,
+        evidence,
+        _spec(
+            usecase_id="sg-brief",
+            purpose="A Singapore briefing",
+            jurisdiction="SG",
+        ),
+    )
+    record_incident(
+        session,
+        "",
+        impact=1,
+        summary="The incident is not yet assigned to a use case",
+        evidence=evidence,
+        actor_id="Priya Shah",
+        at=NOW,
+    )
+    record_incident(
+        session,
+        "research-summary",
+        impact=2,
+        summary="The summary cited a superseded note",
+        evidence=evidence,
+        actor_id="Priya Shah",
+        at=NOW,
+    )
+    assert _incident_count(session) == 2
+    assert _incident_count(session, jurisdiction="HK") == 2
+    assert _incident_count(session, jurisdiction="SG") == 1
+    hong_kong = {
+        item.measure: item
+        for item in quantitative_measures(session, as_of=NOW, jurisdiction="HK")
+    }["AI incidents"]
+    assert hong_kong.usecase_ids == ("research-summary",)
+    with pytest.raises(KognitaError, match="not registered"):
+        record_incident(
+            session,
+            "missing",
+            impact=1,
+            summary="A name that is not a use case",
+            evidence=evidence,
+            actor_id="Priya Shah",
+            at=NOW,
+        )
+
+
+def _incident_count(session, jurisdiction: str | None = None) -> float:
+    measures = quantitative_measures(session, as_of=NOW, jurisdiction=jurisdiction)
+    return next(item.value for item in measures if item.measure == "AI incidents")
 
 
 def test_an_unset_threshold_and_an_equal_value_are_inside_appetite(session, evidence):
