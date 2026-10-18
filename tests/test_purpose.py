@@ -48,16 +48,17 @@ def test_empty_purpose_list_does_not_pass():
 
 
 def test_configured_list_allows_a_listed_purpose():
-    """A purpose the deployment listed is still allowed."""
+    """A purpose the deployment listed is still allowed, and cites the principal."""
     listed = dp.PURPOSES[0]
     evaluation = decide(_envelope(listed), PolicySnapshot(), purposes=(listed,))
     check = _purpose(evaluation)
     assert check.result is CheckResult.PASS
     assert evaluation.outcome is Outcome.ALLOW
+    assert "accountable owner: alice" in check.citation
 
 
 def test_configured_list_denies_an_unlisted_purpose():
-    """A purpose outside the declared list is still denied."""
+    """A purpose outside the declared list is still denied, and still cites the owner."""
     listed = dp.PURPOSES[0]
     unlisted = next(purpose for purpose in dp.PURPOSES if purpose != listed)
     evaluation = decide(_envelope(unlisted), PolicySnapshot(), purposes=(listed,))
@@ -65,3 +66,36 @@ def test_configured_list_denies_an_unlisted_purpose():
     assert check.result is not CheckResult.PASS
     assert check.result is CheckResult.FAIL
     assert evaluation.outcome is Outcome.DENY
+    assert "accountable owner: alice" in check.citation
+
+
+def test_a_listed_purpose_with_no_owner_fails_closed():
+    """No agent owner and no principal is not a decision that names nobody."""
+    listed = dp.PURPOSES[0]
+    envelope = Envelope(principal="", purpose=listed, tool="get_subject_profile")
+    evaluation = decide(envelope, PolicySnapshot(), purposes=(listed,))
+    check = _purpose(evaluation)
+    assert check.result is CheckResult.FAIL
+    assert evaluation.outcome is Outcome.DENY
+    assert "no accountable owner can be cited" in check.citation
+
+
+def test_an_agent_decision_cites_the_agent_owner():
+    """The purpose list stays; the owner is the agent's, not the principal's."""
+    from kognita.models import Agent
+
+    listed = dp.PURPOSES[0]
+    snapshot = PolicySnapshot(
+        agents={"dossier-agent": Agent(name="dossier-agent", owner_exec="Jane Smith")}
+    )
+    envelope = Envelope(
+        principal="alice",
+        purpose=listed,
+        tool="get_subject_profile",
+        agent_name="dossier-agent",
+    )
+    evaluation = decide(envelope, snapshot, purposes=(listed,))
+    check = _purpose(evaluation)
+    assert check.result is CheckResult.PASS
+    assert "accountable owner: Jane Smith" in check.citation
+    assert "alice" not in check.citation

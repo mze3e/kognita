@@ -14,12 +14,15 @@ from sqlmodel import select
 
 from kognita.cli import main
 from kognita.db import create_all, make_engine
+from kognita.egress import EgressDenied, EgressGuard
 from kognita.envelope import Envelope
 from kognita.evidence import verify_chain
 from kognita.exceptions import KognitaError
-from kognita.governance import PolicySnapshot, decide
-from kognita.models import EvidenceEvent, UseCase
+from kognita.governance import PolicySnapshot, decide, load_snapshot
+from kognita.models import EvidenceEvent, ModelCard, RetentionPolicy, UseCase
+from kognita.registry import get as get_agent
 from kognita.registry import register as register_agent
+from kognita.retention import RetentionStore
 from kognita.usecases import (
     ACCOUNTABILITY,
     Appetite,
@@ -30,15 +33,24 @@ from kognita.usecases import (
     derived_tier,
     list_usecases,
     load_register,
+    model_card_id,
+    quantitative_measures,
+    record_incident,
+    record_primary_metric,
     register,
+    register_model_card,
     retire,
     revise,
+    senior_management_report,
     set_appetite,
     suspend,
+    validate_usecase,
 )
+from kognita.vocabulary import Classification
 from kognita.vocabulary import CheckResult, EventType, Outcome
 
 NOW = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+CARD_ID = model_card_id("house", "summary", "1")
 
 LOW_COMPLEXITY = {
     "technology": "established",
@@ -108,7 +120,7 @@ def _spec(**overrides) -> UseCaseSpec:
         client_segments=("private banking",),
         investor_impact="none; internal research only",
         permitted_data_classes=("internal",),
-        approved_models=("house-summary@1",),
+        approved_models=(CARD_ID,),
         agent_authority="retrieve",
         retention_days=365,
         business_process="RM research",
@@ -152,12 +164,27 @@ def _tier3(**overrides) -> UseCaseSpec:
         explanation_depth="suitability",
         validators=("Jane Smith", "Noel Independent"),
         human_decision_points=("RM approves the recommendation",),
+        model_providers=("house",),
     )
     values.update(overrides)
     return _spec(**values)
 
 
 def _open(session, evidence, appetite: Appetite | None = None) -> None:
+    register_model_card(
+        session,
+        provider="house",
+        model="summary",
+        version="1",
+        intended_use="Summarise approved research for an RM",
+        limitations="Does not read tables in exhibits",
+        evaluation_results="Reviewed against the research fixture, May 2026",
+        approver="Luis Ortega",
+        approved_at=NOW,
+        evidence=evidence,
+        actor_id="Luis Ortega",
+        at=NOW,
+    )
     set_appetite(
         session,
         appetite or _appetite(),
@@ -675,12 +702,14 @@ def test_registry_changes_are_policy_change_events(session, evidence):
     assert all(event.event_type == EventType.POLICY_CHANGE for event in events)
     actions = [event.payload["action"] for event in events]
     assert actions == [
+        "MODEL_CARD",
         "SET_APPETITE",
         "REGISTER",
         "APPROVE_RATING",
         "ACTIVATE",
         "SUSPEND",
         "RETIRE",
+        "RETENTION_APPLIED",
     ]
     denied = decide(
         _envelope("research-summary"),
@@ -822,3 +851,652 @@ def test_moving_a_pilot_to_live_needs_the_control_function(session, evidence):
         at=later,
     )
     assert load_register(session, as_of=later).get(spec.usecase_id).status == "live"
+
+
+def _actions(session) -> list[str]:
+    events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
+    return [str((event.payload or {}).get("action") or event.event_type.value) for event in events]
+
+
+def _model_envelope(purpose: str, model: str, version: str = "") -> Envelope:
+    arguments = {"model_version": version} if version else {}
+    return Envelope(
+        principal="alice",
+        purpose=purpose,
+        tool="model_call",
+        subject_type="model",
+        subject_id=model,
+        arguments=arguments,
+    )
+
+
+def test_an_approved_model_without_a_card_cannot_be_registered(session, evidence):
+    _open(session, evidence)
+    with pytest.raises(KognitaError, match="has no model card"):
+        register(
+            session,
+            _spec(approved_models=("house/other@1",)),
+            evidence=evidence,
+            actor_id="Jane Smith",
+            at=NOW,
+        )
+    assert session.exec(select(UseCase)).all() == []
+
+
+def test_a_model_call_cites_the_one_approved_card(session, evidence):
+    _open(session, evidence)
+    _activate(session, evidence, _spec())
+    register = load_register(session, as_of=NOW)
+    pinned = decide(
+        _model_envelope("research-summary", "summary", "1"),
+        PolicySnapshot(),
+        usecases=register,
+        as_of=NOW,
+    )
+    assert pinned.outcome is Outcome.ALLOW
+    assert f"model card: {CARD_ID}" in _named(pinned, "USE_CASE")[0].citation
+    missing = decide(
+        _model_envelope("research-summary", "other", "1"),
+        PolicySnapshot(),
+        usecases=register,
+        as_of=NOW,
+    )
+    assert missing.outcome is Outcome.DENY
+    assert "no model card" in _named(missing, "USE_CASE_MODEL")[0].citation
+
+
+def test_two_cards_for_one_model_name_must_be_pinned(session, evidence):
+    _open(session, evidence)
+    second = model_card_id("house", "summary", "2")
+    register_model_card(
+        session,
+        provider="house",
+        model="summary",
+        version="2",
+        intended_use="Summarise approved research for an RM",
+        limitations="Does not read tables in exhibits",
+        evaluation_results="Reviewed against the research fixture, May 2026",
+        approver="Luis Ortega",
+        approved_at=NOW,
+        evidence=evidence,
+        actor_id="Luis Ortega",
+        at=NOW,
+    )
+    _activate(session, evidence, _spec(approved_models=(CARD_ID, second)))
+    register = load_register(session, as_of=NOW)
+    loose = decide(
+        _model_envelope("research-summary", "summary"),
+        PolicySnapshot(),
+        usecases=register,
+        as_of=NOW,
+    )
+    assert loose.outcome is Outcome.DENY
+    assert "not pinned" in _named(loose, "USE_CASE_MODEL")[0].citation
+    pinned = decide(
+        _model_envelope("research-summary", "summary", "2"),
+        PolicySnapshot(),
+        usecases=register,
+        as_of=NOW,
+    )
+    assert pinned.outcome is Outcome.ALLOW
+    assert f"model card: {second}" in _named(pinned, "USE_CASE")[0].citation
+
+
+def test_in_place_edit_of_an_effective_model_card_is_refused(session, evidence):
+    _open(session, evidence)
+    row = session.exec(select(ModelCard)).one()
+    row.record = {**row.record, "limitations": "rewritten after the fact"}
+    with pytest.raises(KognitaError, match="in-place edit"):
+        session.flush()
+
+
+def test_a_new_model_card_approval_is_a_new_version(session, evidence):
+    _open(session, evidence)
+    later = NOW + timedelta(days=1)
+    register_model_card(
+        session,
+        provider="house",
+        model="summary",
+        version="1",
+        intended_use="Summarise approved research for an RM",
+        limitations="Also misses footnotes",
+        evaluation_results="Reviewed against the research fixture, May 2026",
+        approver="Luis Ortega",
+        approved_at=later,
+        evidence=evidence,
+        actor_id="Luis Ortega",
+        at=later,
+    )
+    current = load_register(session, as_of=later).model_cards
+    assert len(current) == 1
+    assert current[0].card_id == CARD_ID
+    assert current[0].registry_version == 2
+    assert current[0].limitations == "Also misses footnotes"
+    previous = load_register(session, as_of=NOW).model_cards
+    assert previous[0].registry_version == 1
+    assert "footnotes" not in previous[0].limitations
+
+
+def test_egress_links_the_approved_card_and_refuses_a_mismatch(session, evidence):
+    _open(session, evidence)
+    _activate(session, evidence, _spec())
+    guard = EgressGuard(evidence=evidence)
+    result = guard.send(
+        "hello",
+        lambda text: text,
+        classification=Classification.C1,
+        destination="https://api.openai.com",
+        destination_is_local=False,
+        session=session,
+        correlation_id="card-link",
+        provider="house",
+        model="summary",
+        model_version="1",
+        use_case="research-summary",
+    )
+    assert result.decision.value == "ALLOW"
+    event = next(
+        item
+        for item in session.exec(
+            select(EvidenceEvent).where(EvidenceEvent.correlation_id == "card-link")
+        ).all()
+        if item.event_type is EventType.MODEL_CALL
+    )
+    assert event.payload["model_card"] == CARD_ID
+    assert event.payload["model_card_hash"]
+    called = {"sent": False}
+
+    def _call(_text: str) -> str:
+        called["sent"] = True
+        return "no"
+
+    with pytest.raises(EgressDenied, match="no model card"):
+        guard.send(
+            "hello",
+            _call,
+            classification=Classification.C1,
+            destination="https://api.openai.com",
+            destination_is_local=False,
+            session=session,
+            correlation_id="card-block",
+            provider="house",
+            model="summary",
+            model_version="9",
+            use_case="research-summary",
+        )
+    assert called["sent"] is False
+
+
+def test_unmediated_entries_record_the_gap_and_do_not_authorise_a_call(
+    session, evidence
+):
+    _open(session, evidence)
+    with pytest.raises(KognitaError, match="assurance gap"):
+        register(
+            session,
+            _spec(
+                usecase_id="vendor-copilot",
+                unmediated=True,
+                compensating_control="Quarterly sample by the control function",
+            ),
+            evidence=evidence,
+            actor_id="Jane Smith",
+            at=NOW,
+        )
+    with pytest.raises(KognitaError, match="compensating control"):
+        register(
+            session,
+            _spec(
+                usecase_id="vendor-copilot",
+                unmediated=True,
+                assurance_gap="The vendor keeps the prompt log",
+            ),
+            evidence=evidence,
+            actor_id="Jane Smith",
+            at=NOW,
+        )
+    spec = _spec(
+        usecase_id="vendor-copilot",
+        unmediated=True,
+        assurance_gap="The vendor keeps the prompt log",
+        compensating_control="Quarterly sample by the control function",
+        ai_endpoints=("https://copilot.example",),
+    )
+    _activate(session, evidence, spec)
+    assert validate_usecase(session, spec.usecase_id, as_of=NOW) == ()
+    denied = decide(
+        _envelope(spec.usecase_id),
+        PolicySnapshot(),
+        usecases=load_register(session, as_of=NOW),
+        as_of=NOW,
+    )
+    assert denied.outcome is Outcome.DENY
+    citation = _named(denied, "USE_CASE_UNMEDIATED")[0].citation
+    assert "does not authorise a call" in citation
+    assert "accountable owner: Jane Smith" in citation
+
+
+def test_a_material_use_case_records_its_model_providers(session, evidence):
+    _open(session, evidence)
+    with pytest.raises(KognitaError, match="no model provider"):
+        register(
+            session,
+            _spec(residual_materiality="high"),
+            evidence=evidence,
+            actor_id="Jane Smith",
+            at=NOW,
+        )
+    assert session.exec(select(UseCase)).all() == []
+
+
+def test_a_negative_appetite_threshold_is_refused(session, evidence):
+    _open(session, evidence)
+    with pytest.raises(KognitaError, match="non-negative"):
+        set_appetite(
+            session,
+            _appetite(incident_count_threshold=-1),
+            evidence=evidence,
+            actor_id="CRO",
+            senior_management=True,
+            at=NOW,
+        )
+
+
+def test_quantitative_measures_escalate_breaches_to_the_owner(session, evidence):
+    _open(
+        session,
+        evidence,
+        _appetite(
+            incident_count_threshold=0,
+            incident_impact_threshold=1.0,
+            single_provider_threshold=1,
+            performance_breach_threshold=0,
+        ),
+    )
+    summary = _spec(
+        residual_materiality="high",
+        model_providers=("house",),
+        jurisdiction="HK",
+        primary_metric="reliability",
+        baseline=0.9,
+        target=0.95,
+    )
+    briefing = _spec(
+        usecase_id="client-brief",
+        purpose="Prepare a short internal briefing",
+        residual_materiality="high",
+        model_providers=("house",),
+        jurisdiction="SG",
+        primary_metric="cycle time",
+        baseline=12.0,
+        target=8.0,
+    )
+    notes = _spec(
+        usecase_id="notes-draft",
+        purpose="Draft internal meeting notes",
+        residual_materiality="high",
+        model_providers=("other",),
+        jurisdiction="HK",
+        primary_metric="decision quality",
+        baseline=0.8,
+        target=0.9,
+    )
+    _activate(session, evidence, summary)
+    _activate(session, evidence, briefing)
+    _activate(session, evidence, notes)
+    record_incident(
+        session,
+        "research-summary",
+        impact=2.0,
+        summary="The summary cited a superseded note",
+        evidence=evidence,
+        actor_id="Priya Shah",
+        at=NOW,
+    )
+    record_primary_metric(
+        session,
+        "research-summary",
+        0.5,
+        evidence=evidence,
+        actor_id="Jane Smith",
+        at=NOW,
+    )
+    record_primary_metric(
+        session,
+        "client-brief",
+        8.0,
+        evidence=evidence,
+        actor_id="Jane Smith",
+        at=NOW,
+    )
+    measures = {
+        item.measure: item
+        for item in quantitative_measures(session, as_of=NOW)
+    }
+    assert measures["AI incidents"].value == 1
+    assert measures["AI incidents"].breached is True
+    assert measures["AI incident impact"].value == 2.0
+    assert measures["AI incident impact"].breached is True
+    assert measures["single-provider dependencies"].value == 2
+    assert measures["single-provider dependencies"].detail == "house"
+    assert measures["single-provider dependencies"].breached is True
+    assert measures["performance breaches"].value == 2
+    assert measures["performance breaches"].usecase_ids == (
+        "notes-draft",
+        "research-summary",
+    )
+    assert measures["performance breaches"].detail == "unmeasured"
+    assert measures["performance breaches"].breached is True
+    assert measures["performance breaches"].accountable_owners == ("Jane Smith",)
+
+    hong_kong = {
+        item.measure: item
+        for item in quantitative_measures(session, as_of=NOW, jurisdiction="HK")
+    }
+    assert hong_kong["AI incidents"].value == 1
+    assert hong_kong["single-provider dependencies"].value == 1
+    assert hong_kong["single-provider dependencies"].breached is False
+    assert hong_kong["performance breaches"].value == 2
+    assert hong_kong["performance breaches"].detail == "unmeasured"
+    singapore = quantitative_measures(session, as_of=NOW, jurisdiction="SG")
+    assert {item.measure: item.value for item in singapore}["AI incidents"] == 0
+
+    preview = senior_management_report(session, as_of=NOW, jurisdiction="HK")
+    assert {row["usecase_id"] for row in preview["material_use_cases"]} == {
+        "research-summary",
+        "notes-draft",
+    }
+    assert preview["material_use_cases"][0]["open_findings"] == []
+    with pytest.raises(KognitaError, match="who published it"):
+        senior_management_report(session, as_of=NOW, evidence=evidence)
+    senior_management_report(
+        session,
+        as_of=NOW,
+        evidence=evidence,
+        actor_id="CRO",
+    )
+    breaches = [
+        event
+        for event in session.exec(select(EvidenceEvent)).all()
+        if (event.payload or {}).get("action") == "APPETITE_BREACH"
+    ]
+    assert len(breaches) == 4
+    assert {event.payload["accountable_owner"] for event in breaches} == {"Jane Smith"}
+    assert any(
+        (event.payload or {}).get("action") == "SENIOR_MANAGEMENT_REPORT"
+        for event in session.exec(select(EvidenceEvent)).all()
+    )
+
+
+def test_tier_3_or_4_is_material_when_residual_materiality_is_low(session, evidence):
+    """Material is residual high or critical, or tier 3 or 4."""
+    _open(session, evidence, _appetite(single_provider_threshold=0))
+    with pytest.raises(KognitaError, match="no model provider"):
+        register(
+            session,
+            _tier3(model_providers=()),
+            evidence=evidence,
+            actor_id="Jane Smith",
+            at=NOW,
+        )
+    register(
+        session,
+        _tier2(),
+        evidence=evidence,
+        actor_id="Jane Smith",
+        at=NOW,
+    )
+    _activate(
+        session,
+        evidence,
+        _tier3(),
+        signoff_by="Noel Independent",
+    )
+    measures = {
+        item.measure: item for item in quantitative_measures(session, as_of=NOW)
+    }
+    providers = measures["single-provider dependencies"]
+    assert providers.value == 1
+    assert providers.usecase_ids == ("suitability-check",)
+    assert providers.breached is True
+    report = senior_management_report(session, as_of=NOW)
+    assert {row["usecase_id"] for row in report["material_use_cases"]} == {
+        "suitability-check"
+    }
+    assert report["material_use_cases"][0]["residual_materiality"] == "low"
+    assert report["material_use_cases"][0]["tier"] == 3
+
+
+def test_an_unmeasured_live_primary_metric_is_a_performance_breach(session, evidence):
+    """A live metric with no measurement is a breach. A pilot is exempt."""
+    _open(session, evidence, _appetite(performance_breach_threshold=0))
+    live = _spec(
+        residual_materiality="high",
+        model_providers=("house",),
+        primary_metric="reliability",
+        baseline=0.9,
+        target=0.95,
+    )
+    pilot = _spec(
+        usecase_id="pilot-summary",
+        purpose="Pilot the summary with a named user list",
+        residual_materiality="high",
+        model_providers=("house",),
+        primary_metric="reliability",
+        baseline=0.9,
+        target=0.95,
+        pilot_users=("alice",),
+        pilot_end=NOW + timedelta(days=10),
+        success_criteria="RM acceptance above the baseline",
+    )
+    bare = _spec(
+        usecase_id="no-metric",
+        purpose="A live use case with no primary metric",
+        residual_materiality="high",
+        model_providers=("house",),
+    )
+    _activate(session, evidence, live)
+    _activate(session, evidence, pilot, status="pilot")
+    _activate(session, evidence, bare)
+    performance = {
+        item.measure: item for item in quantitative_measures(session, as_of=NOW)
+    }["performance breaches"]
+    assert performance.value == 1
+    assert performance.usecase_ids == ("research-summary",)
+    assert performance.detail == "unmeasured"
+    assert performance.breached is True
+    assert performance.accountable_owners == ("Jane Smith",)
+
+
+def test_an_incident_with_no_use_case_counts_in_every_filtered_report(
+    session, evidence
+):
+    """An unassigned incident is in the unfiltered report and in every jurisdiction."""
+    _open(session, evidence)
+    _activate(session, evidence, _spec(jurisdiction="HK"))
+    _activate(
+        session,
+        evidence,
+        _spec(
+            usecase_id="sg-brief",
+            purpose="A Singapore briefing",
+            jurisdiction="SG",
+        ),
+    )
+    record_incident(
+        session,
+        "",
+        impact=1,
+        summary="The incident is not yet assigned to a use case",
+        evidence=evidence,
+        actor_id="Priya Shah",
+        at=NOW,
+    )
+    record_incident(
+        session,
+        "research-summary",
+        impact=2,
+        summary="The summary cited a superseded note",
+        evidence=evidence,
+        actor_id="Priya Shah",
+        at=NOW,
+    )
+    assert _incident_count(session) == 2
+    assert _incident_count(session, jurisdiction="HK") == 2
+    assert _incident_count(session, jurisdiction="SG") == 1
+    hong_kong = {
+        item.measure: item
+        for item in quantitative_measures(session, as_of=NOW, jurisdiction="HK")
+    }["AI incidents"]
+    assert hong_kong.usecase_ids == ("research-summary",)
+    with pytest.raises(KognitaError, match="not registered"):
+        record_incident(
+            session,
+            "missing",
+            impact=1,
+            summary="A name that is not a use case",
+            evidence=evidence,
+            actor_id="Priya Shah",
+            at=NOW,
+        )
+
+
+def _incident_count(session, jurisdiction: str | None = None) -> float:
+    measures = quantitative_measures(session, as_of=NOW, jurisdiction=jurisdiction)
+    return next(item.value for item in measures if item.measure == "AI incidents")
+
+
+def test_an_unset_threshold_and_an_equal_value_are_inside_appetite(session, evidence):
+    _open(session, evidence, _appetite(incident_count_threshold=1))
+    _activate(session, evidence, _spec())
+    record_incident(
+        session,
+        "research-summary",
+        impact=1,
+        summary="A draft was withdrawn before it was sent",
+        evidence=evidence,
+        actor_id="Priya Shah",
+        at=NOW,
+    )
+    measures = {
+        item.measure: item for item in quantitative_measures(session, as_of=NOW)
+    }
+    assert measures["AI incidents"].value == 1
+    assert measures["AI incidents"].breached is False
+    assert measures["AI incident impact"].threshold is None
+    assert measures["AI incident impact"].breached is False
+    assert measures["single-provider dependencies"].breached is False
+
+
+def test_retirement_stops_exclusive_agents_applies_retention_and_notifies(
+    session, evidence
+):
+    register_agent(session, name="only-agent", owner_exec="Jane Smith")
+    register_agent(session, name="shared-agent", owner_exec="Omar Aziz")
+    _open(session, evidence)
+    _activate(
+        session,
+        evidence,
+        _spec(agents=("only-agent", "shared-agent"), retention_days=365),
+    )
+    _activate(
+        session,
+        evidence,
+        _spec(
+            usecase_id="briefing",
+            purpose="Prepare a briefing from the summary",
+            agents=("shared-agent",),
+            depends_on=("research-summary",),
+            retention_days=None,
+        ),
+    )
+    store = RetentionStore()
+    aged = store.retain_text(
+        session,
+        "aged prompt",
+        kind="prompt",
+        use_case="research-summary",
+        now=NOW - timedelta(days=400),
+    )
+    kept = store.retain_text(
+        session,
+        "recent prompt",
+        kind="prompt",
+        use_case="research-summary",
+        now=NOW - timedelta(days=1),
+    )
+    other = store.retain_text(
+        session,
+        "other prompt",
+        kind="prompt",
+        use_case="briefing",
+        now=NOW - timedelta(days=400),
+    )
+    retire(
+        session, "research-summary", evidence=evidence, actor_id="Alex Chen", at=NOW
+    )
+    assert get_agent(session, "only-agent").kill_switch is True
+    assert get_agent(session, "shared-agent").kill_switch is False
+    assert store.read(session, aged) is None
+    assert store.read(session, kept) == "recent prompt"
+    assert store.read(session, other) == "other prompt"
+    policy = session.get(RetentionPolicy, "research-summary")
+    assert policy is not None
+    assert policy.retain_days == 365
+    actions = _actions(session)
+    assert "KILL_SWITCH_ENGAGED" in actions
+    assert "AGENT_KEPT" in actions
+    assert "RETENTION_APPLIED" in actions
+    assert "DEPENDENT_NOTIFIED" in actions
+    assert "ERASURE" in actions
+    register = load_register(session, as_of=NOW)
+    snapshot = load_snapshot(session, as_of=NOW)
+    stopped = decide(
+        Envelope(
+            principal="alice",
+            purpose="research-summary",
+            tool="get_subject_profile",
+            agent_name="only-agent",
+        ),
+        snapshot,
+        usecases=register,
+        as_of=NOW,
+    )
+    assert stopped.outcome is Outcome.DENY
+    assert "Kill switch engaged" in _named(stopped, "KILL_SWITCH")[0].citation
+    dependent = decide(
+        Envelope(
+            principal="alice",
+            purpose="briefing",
+            tool="get_subject_profile",
+            agent_name="shared-agent",
+        ),
+        snapshot,
+        usecases=register,
+        as_of=NOW,
+    )
+    assert dependent.outcome is Outcome.DENY
+    assert not any(check.check == "KILL_SWITCH" for check in dependent.checks)
+    dependency = _named(dependent, "USE_CASE_DEPENDENCY")[0].citation
+    assert "depends on 'research-summary', which is retired" in dependency
+    assert "accountable owner: Jane Smith" in dependency
+
+
+def test_a_use_case_cannot_depend_on_itself_or_a_missing_agent(session, evidence):
+    _open(session, evidence)
+    with pytest.raises(KognitaError, match="depends on itself"):
+        register(
+            session,
+            _spec(depends_on=("research-summary",)),
+            evidence=evidence,
+            actor_id="Jane Smith",
+            at=NOW,
+        )
+    with pytest.raises(KognitaError, match="is not registered"):
+        register(
+            session,
+            _spec(agents=("ghost-agent",)),
+            evidence=evidence,
+            actor_id="Jane Smith",
+            at=NOW,
+        )

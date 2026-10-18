@@ -28,13 +28,16 @@ from kognita.classify import (
     PATTERN_VERSION,
     PatternClassifier,
 )
-from kognita.cli import build_parser, cmd_serve
+from kognita.cli import build_parser, cmd_serve, main
 from kognita.db import create_all, make_engine
-from kognita.evidence import EvidenceWriter, verify_chain
+from kognita.evidence import EvidenceWriter, export_chain, verify_chain
 from kognita.gateway import ClientConfiguration, Gateway, _prompt_text
 from kognita.models import EvidenceEvent, GovernanceDecision, Policy, RunRecord
+from kognita.replay import replay_decision
 from kognita.registry import register, set_kill_switch
 from kognita.tools import Run
+from kognita.usecases import retire
+from test_usecases import CARD_ID, NOW, _activate, _open, _spec
 from kognita.vocabulary import ActorType, CheckResult, EventType, FailureMode, Outcome
 
 SECRET = "ana@example.org"
@@ -1147,3 +1150,235 @@ def test_gateway_serve_denies_when_no_purpose_list_is_configured(tmp_path, monke
     assert response.evaluation.outcome is Outcome.DENY
     assert _purpose(response.evaluation).result is not CheckResult.PASS
     assert _purpose(response.evaluation).result is CheckResult.FAIL
+
+
+def _summary_request() -> bytes:
+    return json.dumps(
+        {"model": "summary", "messages": [{"role": "user", "content": BENIGN}]}
+    ).encode()
+
+
+def _served(version: str, content: str = "ok") -> bytes:
+    return json.dumps(
+        {
+            "model": "summary",
+            "model_version": version,
+            "choices": [{"message": {"role": "assistant", "content": content}}],
+        }
+    ).encode()
+
+
+def _model_call(session, request_id: str) -> EvidenceEvent:
+    return next(
+        event
+        for event in _events(session, request_id)
+        if event.event_type is EventType.MODEL_CALL
+    )
+
+
+def test_a_gateway_call_links_its_card_and_flags_an_unnamed_endpoint(session, evidence):
+    """An approved model is linked. An endpoint no live use case names is flagged."""
+    _register(session)
+    _open(session, evidence)
+    _activate(session, evidence, _spec())
+    upstream = _Upstream(_served("1"))
+    gateway = _gateway(
+        session.get_bind(),
+        evidence,
+        upstream,
+        client=_client(purpose="research-summary"),
+        provider="house",
+    )
+    unnamed = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _summary_request(),
+        session=session,
+    )
+    assert unnamed.status == 200
+    assert unnamed.evaluation is not None
+    assert unnamed.evaluation.outcome is Outcome.ALLOW
+    assert unnamed.headers["x-kognita-unregistered-ai-endpoint"] == "true"
+    assert b"ok" in unnamed.body
+    linked = _model_call(session, unnamed.evaluation.request_id)
+    assert linked.payload["model_card"] == CARD_ID
+    assert linked.payload["model_card_hash"]
+    assert linked.payload["unregistered_ai_endpoint"] is True
+
+    _activate(
+        session,
+        evidence,
+        _spec(
+            usecase_id="vendor-copilot",
+            unmediated=True,
+            assurance_gap="The vendor keeps the prompt log",
+            compensating_control="Quarterly sample by the control function",
+            ai_endpoints=(UPSTREAM,),
+        ),
+    )
+    named = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _summary_request(),
+        session=session,
+    )
+    assert named.status == 200
+    assert named.evaluation is not None
+    assert named.evaluation.outcome is Outcome.ALLOW
+    assert named.headers["x-kognita-unregistered-ai-endpoint"] == "false"
+    named_call = _model_call(session, named.evaluation.request_id)
+    assert named_call.payload["unregistered_ai_endpoint"] is False
+    assert named_call.payload["model_card"] == CARD_ID
+
+    retire(session, "vendor-copilot", evidence=evidence, actor_id="Alex Chen", at=NOW)
+    retired_endpoint = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _summary_request(),
+        session=session,
+    )
+    assert retired_endpoint.evaluation is not None
+    assert retired_endpoint.evaluation.outcome is Outcome.ALLOW
+    assert retired_endpoint.headers["x-kognita-unregistered-ai-endpoint"] == "true"
+
+
+def test_a_served_model_without_an_approved_card_is_not_returned(
+    session, evidence, tmp_path
+):
+    """The provider body stays withheld when the served version has no card."""
+    _register(session)
+    _open(session, evidence)
+    _activate(session, evidence, _spec(ai_endpoints=(UPSTREAM,)))
+    secret = "provider-body-must-not-leave"
+    upstream = _Upstream(_served("9", secret))
+    gateway = _gateway(
+        session.get_bind(),
+        evidence,
+        upstream,
+        client=_client(purpose="research-summary"),
+        provider="house",
+    )
+    response = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _summary_request(),
+        session=session,
+    )
+    assert upstream.calls
+    assert response.status == 403
+    assert secret.encode() not in response.body
+    assert b"no model card" in response.body
+    assert response.evaluation is not None
+    assert response.evaluation.outcome is Outcome.ALLOW
+    assert response.headers["x-kognita-unregistered-ai-endpoint"] == "false"
+    recorded = _model_call(session, response.evaluation.request_id)
+    assert recorded.payload["model_card"] == ""
+    assert recorded.payload["model_card_hash"] == ""
+    decisions = session.exec(select(GovernanceDecision)).all()
+    assert len(decisions) == 1
+    assert decisions[0].outcome is Outcome.ALLOW
+    assert decisions[0].id == response.evaluation.decision_id
+    assert all(check["check"] != "USE_CASE_MODEL" for check in decisions[0].checks)
+    outcomes = [
+        event
+        for event in session.exec(
+            select(EvidenceEvent).order_by(EvidenceEvent.sequence)
+        ).all()
+        if event.correlation_id == response.evaluation.request_id
+        and event.event_type is EventType.POLICY_DECISION
+    ]
+    assert [event.payload["outcome"] for event in outcomes] == ["ALLOW", "DENY"]
+    denied = outcomes[1]
+    assert denied.payload["decision_id"] == decisions[0].id
+    assert denied.payload["withheld"] is True
+    assert denied.payload["model"] == "summary"
+    assert denied.payload["model_version"] == "9"
+    check = denied.payload["checks"][0]
+    assert check["check"] == "USE_CASE_MODEL"
+    assert check["result"] == CheckResult.FAIL.value
+    assert "summary@9" in check["citation"]
+    assert "no model card" in check["citation"]
+    assert "accountable owner: Jane Smith" in check["citation"]
+    assert secret not in json.dumps(denied.payload)
+    assert verify_chain(session) >= 2
+    replayed = replay_decision(session, response.evaluation.request_id)
+    assert replayed.outcome is Outcome.ALLOW
+    exported = export_chain(session)
+    path = tmp_path / "chain.json"
+    path.write_text(json.dumps(exported))
+    assert main(["evidence", "verify", "--file", str(path)]) == 0
+
+
+def test_a_deferred_withhold_is_appended_when_the_store_recovers(
+    session, engine, evidence
+):
+    """Degraded mode still appends the denial once the queued decision has an id."""
+    _register(session)
+    _open(session, evidence)
+    _activate(
+        session,
+        evidence,
+        _spec(ai_endpoints=(LOCAL_UPSTREAM,)),
+    )
+    session.commit()
+    secret = "deferred-body-must-not-leave"
+    upstream = _Upstream(_served("9", secret))
+    writer = _Toggle(engine)
+    gateway = _gateway(
+        engine,
+        writer,
+        upstream,
+        client=_client(purpose="research-summary"),
+        provider="house",
+        upstream_url=LOCAL_UPSTREAM,
+        failure_mode={"research-summary": FailureMode.DEGRADED},
+    )
+    response = gateway.handle(
+        "POST",
+        PATH,
+        {"agent_name": "dossier-agent"},
+        _summary_request(),
+        session=session,
+    )
+    assert response.status == 403
+    assert secret.encode() not in response.body
+    assert response.evaluation is not None
+    assert response.evaluation.outcome is Outcome.ALLOW
+    assert response.evaluation.decision_id is None
+    pending_decisions, pending_events = _stored(engine)
+    assert pending_decisions == []
+    assert all(
+        event.correlation_id != response.evaluation.request_id
+        for event in pending_events
+    )
+
+    writer.down = False
+    recovered = gateway.handle("GET", PATH, {}, b"")
+    assert recovered.status == 405
+    decisions, events = _stored(engine)
+    assert len(decisions) == 1
+    assert decisions[0].outcome is Outcome.ALLOW
+    request_id = response.evaluation.request_id
+    outcomes = [
+        event.payload["outcome"]
+        for event in events
+        if event.correlation_id == request_id
+        and event.event_type is EventType.POLICY_DECISION
+    ]
+    assert outcomes == ["ALLOW", "DENY"]
+    denied = next(
+        event
+        for event in events
+        if event.correlation_id == request_id
+        and event.event_type is EventType.POLICY_DECISION
+        and event.payload["outcome"] == "DENY"
+    )
+    assert denied.payload["decision_id"] == decisions[0].id
+    assert denied.payload["checks"][0]["check"] == "USE_CASE_MODEL"
+    assert secret not in json.dumps([event.payload for event in events])
+    with Session(engine) as fresh:
+        assert verify_chain(fresh) == len(events)

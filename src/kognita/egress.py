@@ -141,8 +141,9 @@ class EgressPolicy:
     allow_plain_up_to: Classification = Classification.C1
     #: Highest classification that may leave after redaction.
     allow_redacted_up_to: Classification = Classification.C2
-    #: Local destinations skip redaction — nothing crosses a boundary.
-    trust_local: bool = True
+    #: Local destinations skip redaction only when a deployment opts in.
+    #: Localhost is not trusted by default.
+    trust_local: bool = False
 
     def evaluate(
         self, classification: Classification, *, destination_is_local: bool
@@ -224,6 +225,43 @@ class EgressGuard:
         use_case: str = "",
     ) -> EgressResult:
         """Send ``text`` to ``call``, redacting or refusing as policy requires."""
+        if session is not None and use_case:
+            from kognita.usecases import model_call_block
+
+            blocked = model_call_block(
+                session,
+                use_case=use_case,
+                provider=provider,
+                model=model,
+                version=model_version,
+            )
+            if blocked:
+                result = EgressResult(
+                    decision=EgressDecision.DENY,
+                    classification=classification,
+                    destination=destination,
+                    destination_is_local=destination_is_local,
+                )
+                self._evidence(
+                    session,
+                    result,
+                    correlation_id,
+                    actor_id,
+                    actor_type,
+                    sent=False,
+                    provider=provider,
+                    model=model,
+                    model_version=model_version,
+                    prompt_template_version=prompt_template_version,
+                    use_case=use_case,
+                    citation=blocked,
+                )
+                raise EgressDenied(
+                    blocked,
+                    classification=classification,
+                    destination=destination,
+                )
+
         decision = self.evaluate(
             classification, destination_is_local=destination_is_local
         )
@@ -309,6 +347,7 @@ class EgressGuard:
         model_version: str | None = None,
         prompt_template_version: str | None = None,
         use_case: str = "",
+        citation: str = "",
     ) -> None:
         if self.evidence is None or session is None:
             return
@@ -329,6 +368,17 @@ class EgressGuard:
                 use_case=use_case,
                 correlation_id=correlation_id,
             )
+        from kognita.usecases import endpoint_named, load_register, model_card_link
+
+        register = load_register(session)
+        flagged = not endpoint_named(register, result.destination)
+        card_id, card_hash = model_card_link(
+            session,
+            provider=provider,
+            model=model,
+            version=model_version,
+            use_case=use_case,
+        )
         common = {
             "destination": result.destination,
             "destination_is_local": result.destination_is_local,
@@ -337,6 +387,7 @@ class EgressGuard:
             "redacted_spans": result.redacted_span_count,
             "manifest_hash": result.manifest_hash,
             "response_hash": response_hash,
+            "unregistered_ai_endpoint": flagged,
         }
         self.evidence.emit(
             session,
@@ -354,6 +405,9 @@ class EgressGuard:
                 "model_version": model_version,
                 "prompt_template_version": prompt_template_version,
                 "prompt_hash": prompt_hash,
+                "model_card": card_id,
+                "model_card_hash": card_hash,
+                **({"citation": citation} if citation else {}),
             },
         )
         self.evidence.emit(

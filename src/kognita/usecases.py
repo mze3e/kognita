@@ -9,10 +9,29 @@ The envelope's ``purpose`` is the use case id. That is already how a use case
 is named on a decision; the register's own purpose field is the statement of
 what the use case is for.
 
-Out of this slice: model cards, unmediated entries, provider-dependency counts,
-and retirement beyond the status flag. Setting a use case to retired denies
-later decisions and is evidenced. It does not stop agents, apply retention, or
-notify anyone.
+An approved model is a model card (provider, name, version, intended use,
+known limitations, the evaluation the firm relied on, approval date and
+approver). A call that uses one links that card from its model evidence.
+
+An unmediated entry is AI that never passes through Kognita. It records the
+assurance gap and the compensating control. A decision that cites it is a
+denial. The gateways flag a call whose AI endpoint no registered use case
+names; the flag does not decide the call.
+
+Quantitative appetite thresholds cover AI incidents (count and impact), how
+many material use cases depend on one model provider, and how many material
+use cases breach their primary-metric target. Material means residual
+materiality high or critical, or tier 3 or 4. A live use case with a primary
+metric and no measurement counts as a performance breach and is reported as
+unmeasured; a pilot does not. An incident with no use case counts in every
+jurisdiction filter. A breach is reported on the senior-management report
+and, when that report is written with an evidence writer, escalated to the
+accountable owner.
+
+Retiring a use case engages the kill switch of every agent registered only to
+it, writes its retention period and erases content already past that period,
+and notifies the owners of use cases that depend on it. A later decision on
+a dependent use case is a denial while the dependency stays retired.
 
 Autonomy levels appear here only as the ceiling a tier's minimum controls
 allow (L0 retrieve through L6 broad autonomy). Enforcing a level on a call is
@@ -41,9 +60,11 @@ autonomy, jurisdiction, client population, or intended use.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Mapping, Sequence
+from urllib.parse import urlparse
 
 from sqlmodel import Session, select
 
@@ -52,11 +73,18 @@ from kognita.evidence import EvidenceWriter
 from kognita.exceptions import KognitaError
 from kognita.models import (
     Agent,
+    EvidenceEvent,
+    ModelCard,
     RiskAppetite,
     UseCase,
+    as_utc,
+    model_card_content_hash,
     usecase_content_hash,
     utcnow,
 )
+from kognita.registry import get as get_agent
+from kognita.registry import set_kill_switch
+from kognita.retention import RetentionStore
 from kognita.vocabulary import ActorType, CheckResult, EventType
 
 #: Who is accountable, beyond the five owner roles. A seat names a person.
@@ -114,6 +142,23 @@ APPROVAL_GATES: tuple[str, ...] = (
 )
 EXPLANATION_DEPTHS: tuple[str, ...] = ("citation", "sources", "suitability", "full")
 STATUSES: tuple[str, ...] = ("pilot", "live", "suspended", "retired")
+
+#: The one primary metric a use case may name. Direction is fixed by the name:
+#: cycle time breaches above its target; decision quality and reliability
+#: breach below theirs. Item 7 computes these from the interaction record.
+#: Until that record exists, a measurement is an evidenced value compared with
+#: the target stored on that evidence.
+PRIMARY_METRICS: tuple[str, ...] = (
+    "cycle time",
+    "decision quality",
+    "reliability",
+)
+
+#: Residual materiality at or above this rank is material, as is tier 3 or 4.
+#: Material use cases feed the single-provider count, the performance-breach
+#: count, and the senior-management report.
+MATERIAL_RESIDUAL: frozenset[str] = frozenset({"high", "critical"})
+MATERIAL_TIER: int = 3
 
 #: Complexity is recorded as the four factors the classification names.
 COMPLEXITY_FACTORS: dict[str, tuple[str, ...]] = {
@@ -242,6 +287,28 @@ def _iso(value: datetime | None) -> str | None:
     return _aware(value).isoformat()
 
 
+def _optional_int(value: Any) -> int | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value
+
+
+def _optional_number(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if not math.isfinite(float(value)):
+        return None
+    return float(value)
+
+
+def _names(values: Sequence[str]) -> list[str]:
+    return sorted({str(item).strip() for item in values if str(item).strip()})
+
+
 def _sorted_texts(values: Sequence[str]) -> list[str]:
     return sorted(str(item) for item in values)
 
@@ -301,6 +368,16 @@ class UseCaseSpec:
     pilot_end: datetime | None = None
     success_criteria: str = ""
     review_date: datetime | None = None
+    model_providers: tuple[str, ...] = ()
+    ai_endpoints: tuple[str, ...] = ()
+    unmediated: bool = False
+    assurance_gap: str = ""
+    compensating_control: str = ""
+    agents: tuple[str, ...] = ()
+    depends_on: tuple[str, ...] = ()
+    primary_metric: str = ""
+    baseline: float | None = None
+    target: float | None = None
 
 
 @dataclass(frozen=True)
@@ -315,6 +392,10 @@ class Appetite:
     transaction_authority: bool
     maximum_residual_materiality: str
     version: int = 1
+    incident_count_threshold: int | None = None
+    incident_impact_threshold: float | None = None
+    single_provider_threshold: int | None = None
+    performance_breach_threshold: int | None = None
 
     def to_record(self) -> dict[str, Any]:
         return {
@@ -326,6 +407,10 @@ class Appetite:
             "external_communication": self.external_communication,
             "transaction_authority": self.transaction_authority,
             "maximum_residual_materiality": self.maximum_residual_materiality,
+            "incident_count_threshold": self.incident_count_threshold,
+            "incident_impact_threshold": self.incident_impact_threshold,
+            "single_provider_threshold": self.single_provider_threshold,
+            "performance_breach_threshold": self.performance_breach_threshold,
         }
 
     @classmethod
@@ -341,6 +426,18 @@ class Appetite:
                 record.get("maximum_residual_materiality") or ""
             ),
             version=int(record.get("version") or 1),
+            incident_count_threshold=_optional_int(
+                record.get("incident_count_threshold")
+            ),
+            incident_impact_threshold=_optional_number(
+                record.get("incident_impact_threshold")
+            ),
+            single_provider_threshold=_optional_int(
+                record.get("single_provider_threshold")
+            ),
+            performance_breach_threshold=_optional_int(
+                record.get("performance_breach_threshold")
+            ),
         )
 
 
@@ -393,10 +490,40 @@ class RegisteredUseCase:
     intended_use: str
     record: dict[str, Any]
     content_hash: str = ""
+    approved_models: tuple[str, ...] = ()
+    model_providers: tuple[str, ...] = ()
+    ai_endpoints: tuple[str, ...] = ()
+    unmediated: bool = False
+    assurance_gap: str = ""
+    compensating_control: str = ""
+    agents: tuple[str, ...] = ()
+    depends_on: tuple[str, ...] = ()
+    retention_days: int | None = None
+    primary_metric: str = ""
+    baseline: float | None = None
+    target: float | None = None
 
     @property
     def owner(self) -> str:
         return self.business_owner
+
+
+@dataclass(frozen=True)
+class RegisteredModelCard:
+    """The model card a call links, and the register lists."""
+
+    card_id: str
+    provider: str
+    model: str
+    version: str
+    intended_use: str
+    limitations: str
+    evaluation_results: str
+    approver: str
+    approved_at: datetime | None
+    registry_version: int
+    record: dict[str, Any]
+    content_hash: str = ""
 
 
 @dataclass(frozen=True)
@@ -406,6 +533,7 @@ class UseCaseRegister:
     entries: tuple[RegisteredUseCase, ...] = ()
     appetite: Appetite | None = None
     agents: frozenset[str] = frozenset()
+    model_cards: tuple[RegisteredModelCard, ...] = ()
 
     def get(self, usecase_id: str) -> RegisteredUseCase | None:
         matches = [entry for entry in self.entries if entry.usecase_id == usecase_id]
@@ -516,6 +644,23 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
     for seat in ACCOUNTABILITY:
         if not str(spec.accountability.get(seat) or "").strip():
             add(f"accountability for {seat} is not named")
+    metric = spec.primary_metric.strip()
+    if metric or spec.baseline is not None or spec.target is not None:
+        if metric not in PRIMARY_METRICS:
+            add(
+                f"primary metric '{metric or 'missing'}' is not cycle time, "
+                "decision quality, or reliability"
+            )
+        if spec.baseline is None or spec.target is None:
+            add(f"'{usecase_id}' primary metric needs a baseline and a target")
+        elif _optional_number(spec.baseline) is None or _optional_number(spec.target) is None:
+            add(f"'{usecase_id}' primary metric baseline and target must be numbers")
+    if spec.retention_days is not None and (
+        isinstance(spec.retention_days, bool)
+        or not isinstance(spec.retention_days, int)
+        or spec.retention_days < 0
+    ):
+        add(f"'{usecase_id}' retention period must be a non-negative number of days")
     return tuple(found)
 
 
@@ -803,7 +948,7 @@ def build_record(
         "client_segments": _sorted_texts(spec.client_segments),
         "investor_impact": spec.investor_impact,
         "permitted_data_classes": _sorted_texts(spec.permitted_data_classes),
-        "approved_models": _sorted_texts(spec.approved_models),
+        "approved_models": _names(spec.approved_models),
         "agent_authority": spec.agent_authority,
         "retention_days": spec.retention_days,
         "business_process": spec.business_process,
@@ -820,6 +965,16 @@ def build_record(
         "review_date": _iso(
             review_date if review_date is not None else spec.review_date
         ),
+        "model_providers": _names(spec.model_providers),
+        "ai_endpoints": _names(spec.ai_endpoints),
+        "unmediated": bool(spec.unmediated),
+        "assurance_gap": spec.assurance_gap.strip(),
+        "compensating_control": spec.compensating_control.strip(),
+        "agents": _names(spec.agents),
+        "depends_on": _names(spec.depends_on),
+        "primary_metric": spec.primary_metric.strip(),
+        "baseline": spec.baseline,
+        "target": spec.target,
     }
 
 
@@ -880,19 +1035,32 @@ def from_record(
         intended_use=str(record.get("intended_use") or ""),
         record=dict(record),
         content_hash=content_hash,
+        approved_models=tuple(record.get("approved_models") or ()),
+        model_providers=tuple(record.get("model_providers") or ()),
+        ai_endpoints=tuple(record.get("ai_endpoints") or ()),
+        unmediated=bool(record.get("unmediated")),
+        assurance_gap=str(record.get("assurance_gap") or ""),
+        compensating_control=str(record.get("compensating_control") or ""),
+        agents=tuple(record.get("agents") or ()),
+        depends_on=tuple(record.get("depends_on") or ()),
+        retention_days=_optional_int(record.get("retention_days")),
+        primary_metric=str(record.get("primary_metric") or ""),
+        baseline=_optional_number(record.get("baseline")),
+        target=_optional_number(record.get("target")),
     )
 
 
 def registration_citations(
     spec: UseCaseSpec,
-    appetite: Appetite | None,
-    agents: frozenset[str],
+    register: UseCaseRegister,
 ) -> tuple[str, ...]:
     """Refusals that stop a use case being registered at all."""
     found = list(vocabulary_citations(spec))
     if found:
         return tuple(found)
     entry = from_record(build_record(spec, version=1))
+    appetite = register.appetite
+    agents = register.agents
     if not entry.business_owner:
         found.append(
             _cite(
@@ -913,17 +1081,19 @@ def registration_citations(
     residual = residual_citation(entry, appetite)
     if residual is not None:
         found.append(residual)
+    found.extend(_completion_citations(entry, register))
     return tuple(found)
 
 
 def configuration_citations(
     entry: RegisteredUseCase,
-    appetite: Appetite | None,
-    agents: frozenset[str],
+    register: UseCaseRegister,
     *,
     at: datetime,
 ) -> tuple[str, ...]:
     """What ``usecase validate`` reports. Lifecycle status is not itself a failure."""
+    appetite = register.appetite
+    agents = register.agents
     found: list[str] = []
     if not entry.business_owner:
         found.append(
@@ -963,6 +1133,7 @@ def configuration_citations(
                     entry.owner,
                 )
             )
+    found.extend(_completion_citations(entry, register))
     return tuple(found)
 
 
@@ -1064,7 +1235,8 @@ def usecase_checks(
                 "USE_CASE_REGISTERED",
                 _cite(
                     usecase_id or "(none)",
-                    f"'{usecase_id or '(none)'}' is not registered",
+                    f"'{usecase_id or '(none)'}' is not registered · "
+                    "no accountable owner can be cited",
                 ),
             )
         ]
@@ -1193,8 +1365,44 @@ def usecase_checks(
                 )
             )
 
+    for citation in _completion_citations(entry, register):
+        failures.append(_check("USE_CASE_REGISTER", citation))
+    if entry.unmediated:
+        failures.append(
+            _check(
+                "USE_CASE_UNMEDIATED",
+                _cite(
+                    entry.usecase_id,
+                    f"'{entry.usecase_id}' is unmediated and does not authorise a call",
+                    entry.owner,
+                ),
+            )
+        )
+    for dependency in entry.depends_on:
+        other = register.get(dependency)
+        if other is None or other.status == "retired":
+            state = "retired" if other is not None else "not registered"
+            failures.append(
+                _check(
+                    "USE_CASE_DEPENDENCY",
+                    _cite(
+                        entry.usecase_id,
+                        f"'{entry.usecase_id}' depends on '{dependency}', which is {state}",
+                        entry.owner,
+                    ),
+                )
+            )
+    model_failure = _model_call_citation(entry, envelope, register)
+    if model_failure is not None:
+        failures.append(_check("USE_CASE_MODEL", model_failure))
+
     if failures:
         return failures
+    card_note = ""
+    if envelope.subject_type == "model":
+        matched = _matching_cards(entry, envelope, register)
+        if len(matched) == 1:
+            card_note = f" · model card: {matched[0].card_id}"
     return [
         _check(
             "USE_CASE",
@@ -1202,7 +1410,8 @@ def usecase_checks(
                 entry.usecase_id,
                 f"'{entry.usecase_id}' v{entry.version} · tier {entry.proposed_tier} · "
                 f"accountable owner: {entry.business_owner}",
-            ),
+            )
+            + card_note,
             passed=True,
         )
     ]
@@ -1270,7 +1479,12 @@ def load_register(
     entries = tuple(
         _view(row) for row in sorted(by_id.values(), key=lambda item: item.usecase_id)
     )
-    return UseCaseRegister(entries=entries, appetite=appetite, agents=_agents(session))
+    return UseCaseRegister(
+        entries=entries,
+        appetite=appetite,
+        agents=_agents(session),
+        model_cards=_model_cards(session, at),
+    )
 
 
 def _emit(
@@ -1343,6 +1557,25 @@ def appetite_vocabulary(appetite: Appetite) -> tuple[str, ...]:
         found.append(
             f"Risk appetite — maximum autonomy L{appetite.maximum_autonomy} is outside L0 to L6"
         )
+    counts = (
+        ("incident count", appetite.incident_count_threshold),
+        ("single-provider dependencies", appetite.single_provider_threshold),
+        ("performance breaches", appetite.performance_breach_threshold),
+    )
+    for label, value in counts:
+        if value is None:
+            continue
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            found.append(
+                f"Risk appetite — {label} threshold must be a non-negative integer"
+            )
+    impact = appetite.incident_impact_threshold
+    if impact is not None and (
+        isinstance(impact, bool) or not isinstance(impact, (int, float)) or impact < 0
+    ):
+        found.append(
+            "Risk appetite — AI incident impact threshold must be a non-negative number"
+        )
     return tuple(found)
 
 
@@ -1373,6 +1606,10 @@ def set_appetite(
         transaction_authority=appetite.transaction_authority,
         maximum_residual_materiality=appetite.maximum_residual_materiality,
         version=version,
+        incident_count_threshold=appetite.incident_count_threshold,
+        incident_impact_threshold=appetite.incident_impact_threshold,
+        single_provider_threshold=appetite.single_provider_threshold,
+        performance_breach_threshold=appetite.performance_breach_threshold,
     ).to_record()
     if current is not None:
         current.effective_to = when
@@ -1406,11 +1643,8 @@ def register(
         raise KognitaError(
             _cite(spec.usecase_id, f"'{spec.usecase_id}' is already registered")
         )
-    appetite_row = _current_appetite(session, when)
-    appetite = (
-        Appetite.from_record(appetite_row.record) if appetite_row is not None else None
-    )
-    _raise(registration_citations(spec, appetite, _agents(session)))
+    register = load_register(session, as_of=when)
+    _raise(registration_citations(spec, register))
     record = build_record(spec, version=1)
     row = _supersede(
         session, None, usecase_id=spec.usecase_id, version=1, record=record, at=when
@@ -1502,16 +1736,15 @@ def approve_rating(
 
 def _activation_citations(
     entry: RegisteredUseCase,
+    register: UseCaseRegister,
     *,
     status: str,
     actor_id: str,
     signoff_by: str,
     criteria_met: bool,
-    appetite: Appetite | None,
-    agents: frozenset[str],
     at: datetime,
 ) -> tuple[str, ...]:
-    found = list(configuration_citations(entry, appetite, agents, at=at))
+    found = list(configuration_citations(entry, register, at=at))
     # A closed review window is reported on a row that is already pilot or
     # live. Activation is what opens the next window, so that finding is not
     # itself a refusal. The rating check below is the refusal: once the
@@ -1631,19 +1864,15 @@ def activate(
     when = _aware(at or utcnow())
     current = _require(session, usecase_id, when)
     entry = _view(current)
-    appetite_row = _current_appetite(session, when)
-    appetite = (
-        Appetite.from_record(appetite_row.record) if appetite_row is not None else None
-    )
+    register = load_register(session, as_of=when)
     _raise(
         _activation_citations(
             entry,
+            register,
             status=status,
             actor_id=actor_id,
             signoff_by=signoff_by,
             criteria_met=criteria_met,
-            appetite=appetite,
-            agents=_agents(session),
             at=when,
         )
     )
@@ -1716,11 +1945,8 @@ def revise(
     when = _aware(at or utcnow())
     current = _require(session, spec.usecase_id, when)
     entry = _view(current)
-    appetite_row = _current_appetite(session, when)
-    appetite = (
-        Appetite.from_record(appetite_row.record) if appetite_row is not None else None
-    )
-    _raise(registration_citations(spec, appetite, _agents(session)))
+    register = load_register(session, as_of=when)
+    _raise(registration_citations(spec, register))
     proposed = from_record(build_record(spec, version=current.version + 1))
     material = any(
         getattr(proposed, name) != getattr(entry, name) for name in _MATERIAL_FIELDS
@@ -1755,9 +1981,7 @@ def revise(
                     review_date=review_date,
                 )
             )
-            _raise(
-                configuration_citations(candidate, appetite, _agents(session), at=when)
-            )
+            _raise(configuration_citations(candidate, register, at=when))
     record = build_record(
         spec,
         version=current.version + 1,
@@ -1863,12 +2087,15 @@ def retire(
     actor_id: str,
     at: datetime | None = None,
 ) -> UseCase:
-    """Mark a use case retired. The next decision is a denial.
+    """Retire a use case completely.
 
-    This is the status only. It does not engage an agent's kill switch, apply
-    the retention period, or notify owners of dependent use cases.
+    The next decision is a denial. Every agent registered only to this use
+    case has its kill switch engaged. The use case's retention period is
+    written and content already past that period is erased. Owners of use
+    cases that depend on it are notified; their next decision is a denial
+    while this use case stays retired.
     """
-    return _set_status(
+    row = _set_status(
         session,
         usecase_id,
         "retired",
@@ -1877,6 +2104,925 @@ def retire(
         action="RETIRE",
         at=at,
     )
+    when = _aware(at or utcnow())
+    _retire_agents(session, usecase_id, evidence=evidence, actor_id=actor_id, at=when)
+    _apply_retention(
+        session, usecase_id, evidence=evidence, actor_id=actor_id, at=when
+    )
+    _notify_dependents(
+        session, usecase_id, evidence=evidence, actor_id=actor_id, at=when
+    )
+    return row
+
+
+def is_material(entry: RegisteredUseCase) -> bool:
+    """Residual materiality high or critical, or tier 3 or 4."""
+    return (
+        entry.residual_materiality in MATERIAL_RESIDUAL
+        or entry.proposed_tier >= MATERIAL_TIER
+    )
+
+
+def _card_index(register: UseCaseRegister) -> dict[str, RegisteredModelCard]:
+    return {card.card_id: card for card in register.model_cards}
+
+
+def _completion_citations(
+    entry: RegisteredUseCase, register: UseCaseRegister
+) -> tuple[str, ...]:
+    """Cards, providers, agents, dependencies, and the unmediated record."""
+    found: list[str] = []
+    owner = entry.owner
+    usecase_id = entry.usecase_id
+    if entry.unmediated:
+        if not entry.assurance_gap.strip():
+            found.append(
+                _cite(
+                    usecase_id,
+                    f"unmediated '{usecase_id}' records no assurance gap",
+                    owner,
+                )
+            )
+        if not entry.compensating_control.strip():
+            found.append(
+                _cite(
+                    usecase_id,
+                    f"unmediated '{usecase_id}' records no compensating control",
+                    owner,
+                )
+            )
+    cards = _card_index(register)
+    for card_id in entry.approved_models:
+        if card_id not in cards:
+            found.append(
+                _cite(
+                    usecase_id,
+                    f"approved model '{card_id}' has no model card",
+                    owner,
+                )
+            )
+    if is_material(entry) and not entry.model_providers:
+        found.append(
+            _cite(
+                usecase_id,
+                f"material use case '{usecase_id}' records no model provider",
+                owner,
+            )
+        )
+    for name in entry.agents:
+        if name not in register.agents:
+            found.append(
+                _cite(usecase_id, f"agent '{name}' is not registered", owner)
+            )
+    known = {item.usecase_id: item for item in register.entries}
+    for dependency in entry.depends_on:
+        if dependency == usecase_id:
+            found.append(_cite(usecase_id, f"'{usecase_id}' depends on itself", owner))
+            continue
+        other = known.get(dependency)
+        if other is None:
+            found.append(
+                _cite(
+                    usecase_id,
+                    f"'{usecase_id}' depends on '{dependency}', which is not registered",
+                    owner,
+                )
+            )
+        elif other.status == "retired":
+            found.append(
+                _cite(
+                    usecase_id,
+                    f"'{usecase_id}' depends on '{dependency}', which is retired",
+                    owner,
+                )
+            )
+    if entry.primary_metric or entry.baseline is not None or entry.target is not None:
+        if entry.primary_metric not in PRIMARY_METRICS:
+            found.append(
+                _cite(
+                    usecase_id,
+                    f"primary metric '{entry.primary_metric or 'missing'}' is not "
+                    "cycle time, decision quality, or reliability",
+                    owner,
+                )
+            )
+        elif entry.baseline is None or entry.target is None:
+            found.append(
+                _cite(
+                    usecase_id,
+                    f"'{usecase_id}' primary metric needs a baseline and a target",
+                    owner,
+                )
+            )
+    return tuple(found)
+
+
+def _matching_cards(
+    entry: RegisteredUseCase, envelope: Envelope, register: UseCaseRegister
+) -> tuple[RegisteredModelCard, ...]:
+    requested = (envelope.subject_id or "").strip()
+    version = str(envelope.arguments.get("model_version") or "").strip()
+    approved = set(entry.approved_models)
+    found: list[RegisteredModelCard] = []
+    for card in register.model_cards:
+        if card.card_id not in approved:
+            continue
+        pinned = requested in {card.card_id, f"{card.model}@{card.version}"}
+        named = requested == card.model and (not version or version == card.version)
+        if pinned or named:
+            found.append(card)
+    return tuple(found)
+
+
+def _model_call_citation(
+    entry: RegisteredUseCase, envelope: Envelope, register: UseCaseRegister
+) -> str | None:
+    if envelope.subject_type != "model":
+        return None
+    requested = (envelope.subject_id or "").strip()
+    if not requested:
+        return _cite(entry.usecase_id, "a model call names no model", entry.owner)
+    matches = _matching_cards(entry, envelope, register)
+    if len(matches) == 1:
+        return None
+    if not matches:
+        return _cite(
+            entry.usecase_id,
+            f"model '{requested}' has no model card approved for '{entry.usecase_id}'",
+            entry.owner,
+        )
+    return _cite(
+        entry.usecase_id,
+        f"model '{requested}' is not pinned to one model card",
+        entry.owner,
+    )
+
+
+def _served_model_citation(
+    entry: RegisteredUseCase, *, model: str, version: str
+) -> str:
+    """Why a served version was withheld. The stored decision is not rewritten."""
+    shown = f"{model}@{version}" if model and version else (model or version or "unknown")
+    return _cite(
+        entry.usecase_id,
+        f"served model '{shown}' has no model card approved for '{entry.usecase_id}'",
+        entry.owner,
+    )
+
+
+def model_card_id(provider: str, model: str, version: str) -> str:
+    """``provider/model@version``."""
+    return f"{provider}/{model}@{version}"
+
+
+def _component(label: str, value: str) -> str:
+    text = value.strip()
+    if not text or "/" in text or "@" in text:
+        raise KognitaError(
+            f"Model card — {label} must be a single token without '/' or '@'"
+        )
+    return text
+
+
+def _model_cards(session: Session, at: datetime) -> tuple[RegisteredModelCard, ...]:
+    by_id: dict[str, ModelCard] = {}
+    for row in session.exec(select(ModelCard)).all():
+        if not row.is_effective(at):
+            continue
+        current = by_id.get(row.card_id)
+        if current is None or row.version > current.version:
+            by_id[row.card_id] = row
+    return tuple(
+        _view_card(row) for row in sorted(by_id.values(), key=lambda item: item.card_id)
+    )
+
+
+def _view_card(row: ModelCard) -> RegisteredModelCard:
+    record = dict(row.record or {})
+    return RegisteredModelCard(
+        card_id=row.card_id,
+        provider=str(record.get("provider") or ""),
+        model=str(record.get("model") or ""),
+        version=str(record.get("version") or ""),
+        intended_use=str(record.get("intended_use") or ""),
+        limitations=str(record.get("limitations") or ""),
+        evaluation_results=str(record.get("evaluation_results") or ""),
+        approver=str(record.get("approver") or ""),
+        approved_at=_parse_time(record.get("approved_at")),
+        registry_version=row.version,
+        record=record,
+        content_hash=row.content_hash or model_card_content_hash(row),
+    )
+
+
+def register_model_card(
+    session: Session,
+    *,
+    provider: str,
+    model: str,
+    version: str,
+    intended_use: str,
+    limitations: str,
+    evaluation_results: str,
+    approver: str,
+    approved_at: datetime,
+    evidence: EvidenceWriter,
+    actor_id: str = "",
+    at: datetime | None = None,
+) -> ModelCard:
+    """Record a model card. A later approval of the same model version is a new row."""
+    when = _aware(at or utcnow())
+    approved = _aware(approved_at)
+    provider_name = _component("provider", provider)
+    model_name = _component("model", model)
+    model_version = _component("version", version)
+    intended = intended_use.strip()
+    limits = limitations.strip()
+    evaluation = evaluation_results.strip()
+    approver_name = approver.strip()
+    if not intended or not limits or not evaluation or not approver_name:
+        raise KognitaError(
+            "Model card — intended use, known limitations, evaluation results "
+            "and approver are required"
+        )
+    card_id = model_card_id(provider_name, model_name, model_version)
+    current = None
+    for row in session.exec(select(ModelCard).where(ModelCard.card_id == card_id)).all():
+        if not row.is_effective(when):
+            continue
+        if current is None or row.version > current.version:
+            current = row
+    registry_version = 1 if current is None else current.version + 1
+    record = {
+        "card_id": card_id,
+        "provider": provider_name,
+        "model": model_name,
+        "version": model_version,
+        "intended_use": intended,
+        "limitations": limits,
+        "evaluation_results": evaluation,
+        "approver": approver_name,
+        "approved_at": _iso(approved),
+    }
+    if current is not None:
+        current.effective_to = when
+        session.add(current)
+    row = ModelCard(
+        card_id=card_id,
+        version=registry_version,
+        record=record,
+        effective_from=when,
+    )
+    session.add(row)
+    session.flush()
+    _emit(
+        session,
+        evidence,
+        correlation_id=f"model-card:{card_id}",
+        actor_id=actor_id or approver_name,
+        action="MODEL_CARD",
+        at=when,
+        body={
+            "card_id": card_id,
+            "version": registry_version,
+            "content_hash": row.content_hash,
+        },
+    )
+    return row
+
+
+def _endpoint_key(value: str) -> str:
+    raw = value.strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw if "://" in raw else f"//{raw}")
+    host = (parsed.hostname or "").lower().strip("[]")
+    if not host:
+        return raw.lower().rstrip("/")
+    port = f":{parsed.port}" if parsed.port else ""
+    scheme = parsed.scheme.lower()
+    if scheme:
+        return f"{scheme}://{host}{port}"
+    return f"{host}{port}"
+
+
+def endpoint_named(register: UseCaseRegister, destination: str) -> bool:
+    """True when a non-retired use case names this AI endpoint."""
+    dest_key = _endpoint_key(destination)
+    dest_full = destination.strip().rstrip("/").lower()
+    if not dest_key and not dest_full:
+        return False
+    for entry in register.entries:
+        if entry.status == "retired":
+            continue
+        for named in entry.ai_endpoints:
+            key = _endpoint_key(named)
+            full = named.strip().rstrip("/").lower()
+            if dest_key and key and dest_key == key:
+                return True
+            if full and (dest_full == full or dest_full.startswith(full + "/")):
+                return True
+    return False
+
+
+def resolve_model_card(
+    register: UseCaseRegister,
+    *,
+    provider: str,
+    model: str,
+    version: str,
+    use_case: str,
+) -> RegisteredModelCard | None:
+    """The approved card for this provider, model and version, if there is one."""
+    provider_name = provider.strip()
+    model_name = model.strip()
+    model_version = version.strip()
+    if not model_name or not model_version:
+        return None
+    cards = register.model_cards
+    entry = register.get(use_case) if use_case else None
+    if entry is not None:
+        approved = set(entry.approved_models)
+        cards = tuple(card for card in cards if card.card_id in approved)
+    for card in cards:
+        if (
+            card.provider == provider_name
+            and card.model == model_name
+            and card.version == model_version
+        ):
+            return card
+    return None
+
+
+def model_card_link(
+    session: Session,
+    *,
+    provider: str | None,
+    model: str | None,
+    version: str | None,
+    use_case: str,
+    at: datetime | None = None,
+) -> tuple[str, str]:
+    """Card id and content hash for a call, or two empty strings."""
+    register = load_register(session, as_of=at)
+    card = resolve_model_card(
+        register,
+        provider=provider or "",
+        model=model or "",
+        version=version or "",
+        use_case=use_case,
+    )
+    if card is None:
+        return "", ""
+    return card.card_id, card.content_hash
+
+
+def model_call_block(
+    session: Session,
+    *,
+    use_case: str,
+    provider: str | None,
+    model: str | None,
+    version: str | None,
+    at: datetime | None = None,
+) -> str | None:
+    """Why this model call cannot be sent, or None when no register entry applies."""
+    if not use_case:
+        return None
+    register = load_register(session, as_of=at)
+    entry = register.get(use_case)
+    if entry is None:
+        return None
+    if entry.unmediated:
+        return _cite(
+            entry.usecase_id,
+            f"'{entry.usecase_id}' is unmediated and does not authorise a call",
+            entry.owner,
+        )
+    if not entry.approved_models:
+        return _cite(
+            entry.usecase_id,
+            f"'{entry.usecase_id}' has no approved model",
+            entry.owner,
+        )
+    card_id, _hash = model_card_link(
+        session,
+        provider=provider,
+        model=model,
+        version=version,
+        use_case=use_case,
+        at=at,
+    )
+    if not card_id:
+        return _cite(
+            entry.usecase_id,
+            "the model call has no model card approved for "
+            f"'{entry.usecase_id}'",
+            entry.owner,
+        )
+    return None
+
+
+def _retire_agents(
+    session: Session,
+    usecase_id: str,
+    *,
+    evidence: EvidenceWriter,
+    actor_id: str,
+    at: datetime,
+) -> None:
+    register = load_register(session, as_of=at)
+    entry = register.get(usecase_id)
+    if entry is None:
+        return
+    others = [
+        other
+        for other in register.entries
+        if other.usecase_id != usecase_id and other.status != "retired"
+    ]
+    for name in entry.agents:
+        also = [other.usecase_id for other in others if name in other.agents]
+        if also:
+            _emit(
+                session,
+                evidence,
+                correlation_id=f"usecase:{usecase_id}",
+                actor_id=actor_id,
+                action="AGENT_KEPT",
+                at=at,
+                body={"usecase_id": usecase_id, "agent": name, "also_registered_to": also},
+            )
+            continue
+        if get_agent(session, name) is None:
+            _emit(
+                session,
+                evidence,
+                correlation_id=f"usecase:{usecase_id}",
+                actor_id=actor_id,
+                action="AGENT_NOT_REGISTERED",
+                at=at,
+                body={"usecase_id": usecase_id, "agent": name},
+            )
+            continue
+        set_kill_switch(
+            session,
+            name,
+            True,
+            evidence=evidence,
+            actor_id=actor_id,
+            correlation_id=f"usecase:{usecase_id}",
+            reason=f"use case {usecase_id} retired",
+            now=at,
+        )
+
+
+def _apply_retention(
+    session: Session,
+    usecase_id: str,
+    *,
+    evidence: EvidenceWriter,
+    actor_id: str,
+    at: datetime,
+) -> None:
+    register = load_register(session, as_of=at)
+    entry = register.get(usecase_id)
+    retain_days = entry.retention_days if entry is not None else None
+    RetentionStore().set_policy(session, usecase_id, retain_days=retain_days)
+    erased = RetentionStore().enforce(
+        session, evidence=evidence, now=at, actor_id=actor_id
+    )
+    _emit(
+        session,
+        evidence,
+        correlation_id=f"usecase:{usecase_id}",
+        actor_id=actor_id,
+        action="RETENTION_APPLIED",
+        at=at,
+        body={
+            "usecase_id": usecase_id,
+            "retain_days": retain_days,
+            "erased": erased,
+        },
+    )
+
+
+def _notify_dependents(
+    session: Session,
+    usecase_id: str,
+    *,
+    evidence: EvidenceWriter,
+    actor_id: str,
+    at: datetime,
+) -> None:
+    register = load_register(session, as_of=at)
+    for other in register.entries:
+        if other.usecase_id == usecase_id or usecase_id not in other.depends_on:
+            continue
+        _emit(
+            session,
+            evidence,
+            correlation_id=f"usecase:{usecase_id}",
+            actor_id=actor_id,
+            action="DEPENDENT_NOTIFIED",
+            at=at,
+            body={
+                "usecase_id": usecase_id,
+                "dependent": other.usecase_id,
+                "accountable_owner": other.owner,
+            },
+        )
+
+
+def _metric_breaches(metric: str, value: float, target: float) -> bool:
+    if metric == "cycle time":
+        return value > target
+    return value < target
+
+
+def _events_until(session: Session, at: datetime) -> list[EvidenceEvent]:
+    rows = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
+    kept: list[EvidenceEvent] = []
+    for row in rows:
+        recorded = as_utc(row.recorded_at)
+        if recorded is not None and recorded <= at:
+            kept.append(row)
+    return kept
+
+
+def record_incident(
+    session: Session,
+    usecase_id: str = "",
+    *,
+    impact: float,
+    summary: str,
+    evidence: EvidenceWriter,
+    actor_id: str,
+    at: datetime | None = None,
+) -> None:
+    """Record one AI incident.
+
+    A named use case must be registered. An empty use case is an incident that
+    is not yet assigned; it still counts in every jurisdiction filter.
+    """
+    when = _aware(at or utcnow())
+    number = _optional_number(impact)
+    if number is None or number < 0:
+        raise KognitaError("AI incident — impact must be a non-negative number")
+    if not summary.strip():
+        raise KognitaError("AI incident — a summary is required")
+    named = usecase_id.strip()
+    owner = ""
+    if named:
+        entry = load_register(session, as_of=when).get(named)
+        if entry is None:
+            raise KognitaError(_cite(named, f"'{named}' is not registered"))
+        owner = entry.owner
+    _emit(
+        session,
+        evidence,
+        correlation_id=f"usecase:{named}" if named else "incident",
+        actor_id=actor_id,
+        action="INCIDENT",
+        at=when,
+        body={
+            "usecase_id": named,
+            "impact": number,
+            "summary": summary.strip(),
+            "accountable_owner": owner,
+        },
+    )
+
+
+def record_primary_metric(
+    session: Session,
+    usecase_id: str,
+    value: float,
+    *,
+    evidence: EvidenceWriter,
+    actor_id: str,
+    at: datetime | None = None,
+) -> None:
+    """Record the use case's primary metric. The target on the event is the one compared."""
+    when = _aware(at or utcnow())
+    number = _optional_number(value)
+    if number is None:
+        raise KognitaError("Primary metric — the value must be a number")
+    entry = load_register(session, as_of=when).get(usecase_id)
+    if entry is None:
+        raise KognitaError(_cite(usecase_id, f"'{usecase_id}' is not registered"))
+    if (
+        entry.primary_metric not in PRIMARY_METRICS
+        or entry.baseline is None
+        or entry.target is None
+    ):
+        raise KognitaError(
+            _cite(
+                usecase_id,
+                f"'{usecase_id}' has no primary metric with a baseline and a target",
+                entry.owner,
+            )
+        )
+    _emit(
+        session,
+        evidence,
+        correlation_id=f"usecase:{usecase_id}",
+        actor_id=actor_id,
+        action="PRIMARY_METRIC",
+        at=when,
+        body={
+            "usecase_id": usecase_id,
+            "primary_metric": entry.primary_metric,
+            "baseline": entry.baseline,
+            "target": entry.target,
+            "value": number,
+            "version": entry.version,
+            "content_hash": entry.content_hash,
+        },
+    )
+
+
+@dataclass(frozen=True)
+class AppetiteMeasure:
+    """One quantitative appetite measure against its threshold."""
+
+    measure: str
+    value: float
+    threshold: float | None
+    breached: bool
+    accountable_owners: tuple[str, ...]
+    usecase_ids: tuple[str, ...]
+    detail: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "measure": self.measure,
+            "value": self.value,
+            "threshold": self.threshold,
+            "breached": self.breached,
+            "accountable_owners": list(self.accountable_owners),
+            "usecase_ids": list(self.usecase_ids),
+            "detail": self.detail,
+        }
+
+
+def _over(value: float, threshold: float | None) -> bool:
+    return threshold is not None and value > float(threshold)
+
+
+def quantitative_measures(
+    session: Session,
+    *,
+    as_of: datetime | None = None,
+    jurisdiction: str | None = None,
+) -> tuple[AppetiteMeasure, ...]:
+    """Incident, single-provider and performance measures from the register and evidence."""
+    when = _aware(as_of or utcnow())
+    register = load_register(session, as_of=when)
+    appetite = register.appetite
+    events = _events_until(session, when)
+
+    def in_scope(usecase_id: str) -> bool:
+        if not jurisdiction:
+            return True
+        entry = register.get(usecase_id)
+        return entry is not None and entry.jurisdiction == jurisdiction
+
+    def incident_in_report(event: EvidenceEvent) -> bool:
+        if str((event.payload or {}).get("action") or "") != "INCIDENT":
+            return False
+        usecase_id = str((event.payload or {}).get("usecase_id") or "").strip()
+        # An incident that names no use case counts in every filtered report.
+        if not usecase_id:
+            return True
+        return in_scope(usecase_id)
+
+    incidents = [event for event in events if incident_in_report(event)]
+    impact = 0.0
+    owners: list[str] = []
+    identifiers: list[str] = []
+    for event in incidents:
+        payload = event.payload or {}
+        number = _optional_number(payload.get("impact"))
+        if number is not None:
+            impact += number
+        usecase_id = str(payload.get("usecase_id") or "")
+        entry = register.get(usecase_id)
+        owner = entry.owner if entry is not None else str(payload.get("accountable_owner") or "")
+        if usecase_id:
+            identifiers.append(usecase_id)
+        if owner:
+            owners.append(owner)
+    owner_names = tuple(sorted(set(owners)))
+    usecase_ids = tuple(sorted(set(identifiers)))
+    count_threshold = appetite.incident_count_threshold if appetite else None
+    impact_threshold = appetite.incident_impact_threshold if appetite else None
+
+    material = [
+        entry
+        for entry in register.entries
+        if is_material(entry)
+        and entry.status in ("pilot", "live")
+        and (not jurisdiction or entry.jurisdiction == jurisdiction)
+    ]
+    by_provider: dict[str, list[RegisteredUseCase]] = {}
+    for entry in material:
+        for provider in entry.model_providers:
+            by_provider.setdefault(provider, []).append(entry)
+    if by_provider:
+        top = max(by_provider, key=lambda name: (len(by_provider[name]), name))
+        provider_value = float(len(by_provider[top]))
+        provider_detail = top
+    else:
+        top = ""
+        provider_value = 0.0
+        provider_detail = ""
+    provider_threshold = appetite.single_provider_threshold if appetite else None
+    provider_owners: list[str] = []
+    provider_ids: list[str] = []
+    groups = by_provider.items()
+    if provider_threshold is None:
+        groups = ((top, by_provider.get(top, [])),) if top else ()
+    for provider, group in groups:
+        if provider_threshold is not None and len(group) <= provider_threshold:
+            continue
+        for entry in group:
+            provider_owners.append(entry.owner)
+            provider_ids.append(entry.usecase_id)
+
+    latest: dict[str, EvidenceEvent] = {}
+    for event in events:
+        if str((event.payload or {}).get("action") or "") != "PRIMARY_METRIC":
+            continue
+        usecase_id = str((event.payload or {}).get("usecase_id") or "")
+        if in_scope(usecase_id):
+            latest[usecase_id] = event
+    breaching: list[RegisteredUseCase] = []
+    saw_unmeasured = False
+    for entry in material:
+        event = latest.get(entry.usecase_id)
+        if event is None:
+            # A live use case with a primary metric and no measurement is a
+            # breach. A pilot is exempt until it is live.
+            if entry.status == "live" and _has_primary_metric(entry):
+                breaching.append(entry)
+                saw_unmeasured = True
+            continue
+        payload = event.payload or {}
+        metric = str(payload.get("primary_metric") or "")
+        value = _optional_number(payload.get("value"))
+        target = _optional_number(payload.get("target"))
+        if value is None or target is None or metric not in PRIMARY_METRICS:
+            continue
+        if _metric_breaches(metric, value, target):
+            breaching.append(entry)
+    performance_threshold = appetite.performance_breach_threshold if appetite else None
+    performance_detail = "unmeasured" if saw_unmeasured else ""
+
+    return (
+        AppetiteMeasure(
+            "AI incidents",
+            float(len(incidents)),
+            None if count_threshold is None else float(count_threshold),
+            _over(float(len(incidents)), None if count_threshold is None else float(count_threshold)),
+            owner_names,
+            usecase_ids,
+        ),
+        AppetiteMeasure(
+            "AI incident impact",
+            impact,
+            impact_threshold,
+            _over(impact, impact_threshold),
+            owner_names,
+            usecase_ids,
+        ),
+        AppetiteMeasure(
+            "single-provider dependencies",
+            provider_value,
+            None if provider_threshold is None else float(provider_threshold),
+            _over(
+                provider_value,
+                None if provider_threshold is None else float(provider_threshold),
+            ),
+            tuple(sorted(set(provider_owners))),
+            tuple(sorted(set(provider_ids))),
+            provider_detail,
+        ),
+        AppetiteMeasure(
+            "performance breaches",
+            float(len(breaching)),
+            None if performance_threshold is None else float(performance_threshold),
+            _over(
+                float(len(breaching)),
+                None if performance_threshold is None else float(performance_threshold),
+            ),
+            tuple(sorted({entry.owner for entry in breaching})),
+            tuple(entry.usecase_id for entry in breaching),
+            performance_detail,
+        ),
+    )
+
+
+def _has_primary_metric(entry: RegisteredUseCase) -> bool:
+    return (
+        entry.primary_metric in PRIMARY_METRICS
+        and entry.baseline is not None
+        and entry.target is not None
+    )
+
+
+def senior_management_report(
+    session: Session,
+    *,
+    as_of: datetime | None = None,
+    jurisdiction: str | None = None,
+    evidence: EvidenceWriter | None = None,
+    actor_id: str = "",
+) -> dict[str, Any]:
+    """Material use cases and quantitative measures.
+
+    Pass ``evidence`` to record the report and escalate each breach to the
+    accountable owners it names. ``jurisdiction`` limits the report to use
+    cases in that jurisdiction.
+    """
+    when = _aware(as_of or utcnow())
+    if evidence is not None and not actor_id.strip():
+        raise KognitaError(
+            "Senior-management report — publishing it names who published it"
+        )
+    register = load_register(session, as_of=when)
+    measures = quantitative_measures(session, as_of=when, jurisdiction=jurisdiction)
+    systems: list[dict[str, Any]] = []
+    for entry in register.entries:
+        if not is_material(entry):
+            continue
+        if jurisdiction and entry.jurisdiction != jurisdiction:
+            continue
+        systems.append(
+            {
+                "usecase_id": entry.usecase_id,
+                "tier": entry.proposed_tier,
+                "category": entry.category,
+                "residual_materiality": entry.residual_materiality,
+                "inherent_materiality": entry.inherent_materiality,
+                "owner": entry.owner,
+                "status": entry.status or "not activated",
+                "jurisdiction": entry.jurisdiction,
+                "model_providers": list(entry.model_providers),
+                "unmediated": entry.unmediated,
+                "open_findings": list(
+                    configuration_citations(entry, register, at=when)
+                ),
+            }
+        )
+    body: dict[str, Any] = {
+        "at": when.isoformat(),
+        "jurisdiction": jurisdiction or "",
+        "material_use_cases": systems,
+        "measures": [measure.to_dict() for measure in measures],
+    }
+    if evidence is None:
+        return body
+    _emit(
+        session,
+        evidence,
+        correlation_id="senior-management-report",
+        actor_id=actor_id,
+        action="SENIOR_MANAGEMENT_REPORT",
+        at=when,
+        body={
+            "jurisdiction": jurisdiction or "",
+            "measures": [
+                {
+                    "measure": measure.measure,
+                    "value": measure.value,
+                    "threshold": measure.threshold,
+                    "breached": measure.breached,
+                }
+                for measure in measures
+            ],
+        },
+    )
+    for measure in measures:
+        if not measure.breached:
+            continue
+        named = measure.accountable_owners or ("",)
+        for owner in named:
+            _emit(
+                session,
+                evidence,
+                correlation_id="senior-management-report",
+                actor_id=actor_id,
+                action="APPETITE_BREACH",
+                at=when,
+                body={
+                    "measure": measure.measure,
+                    "value": measure.value,
+                    "threshold": measure.threshold,
+                    "accountable_owner": owner,
+                    "usecase_ids": list(measure.usecase_ids),
+                },
+            )
+    return body
 
 
 def list_usecases(
@@ -1910,16 +3056,17 @@ def validate_usecase(
         entries = (entry,)
     found: list[str] = []
     for entry in entries:
-        found.extend(
-            configuration_citations(entry, register.appetite, register.agents, at=when)
-        )
+        found.extend(configuration_citations(entry, register, at=when))
     return tuple(found)
 
 
 __all__ = [
     "ACCOUNTABILITY",
     "CATEGORIES",
+    "PRIMARY_METRICS",
     "Appetite",
+    "AppetiteMeasure",
+    "RegisteredModelCard",
     "RegisteredUseCase",
     "UseCaseRegister",
     "UseCaseSpec",
@@ -1927,12 +3074,22 @@ __all__ = [
     "approve_rating",
     "build_record",
     "derived_tier",
+    "endpoint_named",
     "from_record",
+    "is_material",
     "list_usecases",
     "load_register",
+    "model_call_block",
+    "model_card_id",
+    "model_card_link",
+    "quantitative_measures",
+    "record_incident",
+    "record_primary_metric",
     "register",
+    "register_model_card",
     "retire",
     "revise",
+    "senior_management_report",
     "set_appetite",
     "show_usecase",
     "suspend",

@@ -495,12 +495,43 @@ class RiskAppetite(SQLModel, table=True):
         return start <= at and (end is None or end > at)
 
 
+class ModelCard(SQLModel, table=True):
+    """One version of a model card for an approved model.
+
+    The card id is ``provider/model@version``. A new approval is a new version
+    row; the closed row is not rewritten. ``effective_to`` is not part of the
+    hash.
+    """
+
+    __tablename__ = "model_cards"
+    __table_args__ = (
+        UniqueConstraint("card_id", "version", name="uq_model_card_version"),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    card_id: str = Field(index=True)
+    version: int = 1
+    record: dict[str, Any] = Field(
+        default_factory=dict, sa_column=Column(JSON, nullable=False)
+    )
+    content_hash: str = Field(default="")
+    effective_from: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+    effective_to: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+
+    def is_effective(self, at: datetime) -> bool:
+        """Whether this version is in force at ``at`` (half-open interval)."""
+        start = as_utc(self.effective_from)
+        end = as_utc(self.effective_to)
+        assert start is not None
+        return start <= at and (end is None or end > at)
+
+
 class RetentionPolicy(SQLModel, table=True):
     """How long one use case keeps content in the retention store.
 
     The period is keyed by the use case id the register names. ``retain_days``
-    of None keeps the content until an explicit erasure. Applying the period
-    when a use case is retired is a later slice.
+    of None keeps the content until an explicit erasure. Retiring a use case
+    writes this period and erases content that has already aged past it.
     """
 
     __tablename__ = "retention_policies"
@@ -609,6 +640,22 @@ def appetite_content_hash(row: RiskAppetite) -> str:
     return canonical_hash(appetite_content(row))
 
 
+def model_card_content(row: ModelCard) -> dict[str, Any]:
+    """The model-card version as evaluated, without the window's closing instant."""
+    start = as_utc(row.effective_from)
+    return {
+        "card_id": row.card_id,
+        "version": row.version,
+        "record": row.record,
+        "effective_from": start.isoformat() if start else None,
+    }
+
+
+def model_card_content_hash(row: ModelCard) -> str:
+    """Hash of :func:`model_card_content`."""
+    return canonical_hash(model_card_content(row))
+
+
 def _committed(row: Any, name: str) -> Any:
     """The last flushed value of ``name`` when this update changes it."""
     state = sa_inspect(row)
@@ -709,6 +756,30 @@ def _reject_in_place_appetite_edit(
     target.content_hash = fresh
 
 
+@event.listens_for(ModelCard, "before_insert")
+def _stamp_model_card_content_hash(
+    _mapper: Any, _connection: Any, target: ModelCard
+) -> None:
+    target.content_hash = model_card_content_hash(target)
+
+
+@event.listens_for(ModelCard, "before_update")
+def _reject_in_place_model_card_edit(
+    _mapper: Any, _connection: Any, target: ModelCard
+) -> None:
+    _refuse_closed_window(target)
+    fresh = model_card_content_hash(target)
+    stored = _committed(target, "content_hash") or ""
+    if fresh == stored:
+        return
+    start = as_utc(_committed(target, "effective_from"))
+    if start is not None and start <= utcnow():
+        raise KognitaError(
+            "in-place edit of an effective model card; changes are new versions"
+        )
+    target.content_hash = fresh
+
+
 __all__ = [
     "Agent",
     "Policy",
@@ -722,6 +793,7 @@ __all__ = [
     "EntityEdge",
     "UseCase",
     "RiskAppetite",
+    "ModelCard",
     "RetentionPolicy",
     "RetainedContent",
     "policy_content",
@@ -730,6 +802,8 @@ __all__ = [
     "usecase_content_hash",
     "appetite_content",
     "appetite_content_hash",
+    "model_card_content",
+    "model_card_content_hash",
     "utcnow",
     "as_utc",
 ]
