@@ -25,7 +25,14 @@ from sqlmodel import Session, select
 from kognita.envelope import Check, Envelope
 from kognita.evidence import EvidenceWriter
 from kognita.exceptions import KognitaError
-from kognita.models import Agent, ReinstatementApproval, Revocation, as_utc, utcnow
+from kognita.models import (
+    Agent,
+    ReinstatementApproval,
+    Revocation,
+    as_utc,
+    in_force,
+    utcnow,
+)
 from kognita.registry import set_kill_switch
 from kognita.rules import request_field_keys, request_model_keys
 from kognita.usecases import load_register
@@ -247,10 +254,9 @@ def reinstate(
 
 
 def load_revocations(session: Session, at: datetime) -> tuple[OpenRevocation, ...]:
-    """Revocations in force at ``at``."""
+    """Revocations in force at ``at``. Closed rows are not loaded."""
     when = _aware(at)
-    rows = session.exec(select(Revocation)).all()
-    open_rows = [row for row in rows if row.is_effective(when) and row.id is not None]
+    open_rows = [row for row in in_force(session, Revocation, when) if row.id is not None]
     return tuple(_view(row) for row in open_rows)
 
 

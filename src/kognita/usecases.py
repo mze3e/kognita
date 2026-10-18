@@ -78,6 +78,7 @@ from kognita.models import (
     RiskAppetite,
     UseCase,
     as_utc,
+    in_force,
     model_card_content_hash,
     usecase_content_hash,
     utcnow,
@@ -1448,9 +1449,7 @@ def _current_usecase(session: Session, usecase_id: str, at: datetime) -> UseCase
 
 
 def _current_appetite(session: Session, at: datetime) -> RiskAppetite | None:
-    rows = [
-        row for row in session.exec(select(RiskAppetite)).all() if row.is_effective(at)
-    ]
+    rows = in_force(session, RiskAppetite, at)
     if not rows:
         return None
     return max(rows, key=lambda row: row.version)
@@ -1468,9 +1467,7 @@ def load_register(
     """The use cases and appetite effective at ``as_of``."""
     at = as_of or utcnow()
     by_id: dict[str, UseCase] = {}
-    for row in session.exec(select(UseCase)).all():
-        if not row.is_effective(at):
-            continue
+    for row in in_force(session, UseCase, at):
         current = by_id.get(row.usecase_id)
         if current is None or row.version > current.version:
             by_id[row.usecase_id] = row
@@ -2288,9 +2285,7 @@ def _component(label: str, value: str) -> str:
 
 def _model_cards(session: Session, at: datetime) -> tuple[RegisteredModelCard, ...]:
     by_id: dict[str, ModelCard] = {}
-    for row in session.exec(select(ModelCard)).all():
-        if not row.is_effective(at):
-            continue
+    for row in in_force(session, ModelCard, at):
         current = by_id.get(row.card_id)
         if current is None or row.version > current.version:
             by_id[row.card_id] = row
@@ -2464,9 +2459,15 @@ def model_card_link(
     version: str | None,
     use_case: str,
     at: datetime | None = None,
+    register: UseCaseRegister | None = None,
 ) -> tuple[str, str]:
-    """Card id and content hash for a call, or two empty strings."""
-    register = load_register(session, as_of=at)
+    """Card id and content hash for a call, or two empty strings.
+
+    ``register`` is the register already loaded for this decision. Omitting
+    it reads the register at ``at``.
+    """
+    if register is None:
+        register = load_register(session, as_of=at)
     card = resolve_model_card(
         register,
         provider=provider or "",

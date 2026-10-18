@@ -46,6 +46,7 @@ from kognita.models import (
     InteractionLink,
     Policy,
     as_utc,
+    in_force,
     utcnow,
 )
 from kognita.registry import set_kill_switch
@@ -175,14 +176,13 @@ def evaluate_breakers(
     path. The trip is an incident of impact 1.
     """
     at = _aware(now or utcnow())
-    thresholds = [
-        row
-        for row in session.exec(select(BreakerThreshold)).all()
-        if row.is_effective(at)
-    ]
+    thresholds = in_force(session, BreakerThreshold, at)
     if not thresholds:
         return ()
-    flags = _flags(session, at)
+    # The widest open window. A flag older than every threshold cannot trip
+    # one, so the evidence read stops at that bound instead of the whole chain.
+    window = max(int(row.window_seconds) for row in thresholds)
+    flags = _flags(session, at, window_seconds=window)
     tripped: list[dict[str, Any]] = []
     for row in thresholds:
         if _open_breaker(session, row.dimension, row.value, at) is not None:
@@ -265,11 +265,9 @@ def circuit_breaker_checks(
 
 def load_drill_dues(session: Session, at: datetime) -> tuple[OpenDrill, ...]:
     when = _aware(at)
-    rows = session.exec(select(DrillDue)).all()
     return tuple(
         OpenDrill(usecase_id=row.usecase_id, next_due=_aware(row.next_due))
-        for row in rows
-        if row.is_effective(when)
+        for row in in_force(session, DrillDue, when)
     )
 
 
@@ -641,11 +639,37 @@ def _trip(
     return body
 
 
-def _flags(session: Session, at: datetime) -> list[dict[str, Any]]:
+def _flags(
+    session: Session, at: datetime, *, window_seconds: int
+) -> list[dict[str, Any]]:
+    """Flags at or before ``at`` and inside ``window_seconds`` of it.
+
+    Older evidence is outside every open threshold and is not loaded.
+    """
+    when = _aware(at)
+    start = when - timedelta(seconds=window_seconds)
+    events = session.exec(
+        select(EvidenceEvent)
+        .where(
+            EvidenceEvent.recorded_at >= start,
+            EvidenceEvent.recorded_at <= when,
+            EvidenceEvent.event_type.in_(
+                (
+                    EventType.REVIEW,
+                    EventType.OUTCOME,
+                    EventType.NEAR_MISS,
+                    EventType.POLICY_DECISION,
+                    EventType.EGRESS,
+                )
+            ),
+        )
+        .order_by(EvidenceEvent.sequence)
+    ).all()
     events = [
         event
-        for event in session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
-        if (recorded := as_utc(event.recorded_at)) is not None and recorded <= at
+        for event in events
+        if (recorded := as_utc(event.recorded_at)) is not None
+        and start <= recorded <= when
     ]
     interactions = {
         row.id: row
@@ -934,7 +958,11 @@ def _revocation_holds(session: Session, agent_name: str, at: datetime) -> bool:
 def _open_breaker(
     session: Session, dimension: str, value: str, at: datetime
 ) -> Policy | None:
-    rows = session.exec(select(Policy).where(Policy.rule_type == "CIRCUIT_BREAKER")).all()
+    rows = [
+        policy
+        for policy in in_force(session, Policy, at)
+        if policy.rule_type == "CIRCUIT_BREAKER"
+    ]
     for policy in rows:
         if not policy.is_effective(at) or not isinstance(policy.rule, dict):
             continue

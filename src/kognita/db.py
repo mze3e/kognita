@@ -60,13 +60,34 @@ def make_engine(
     return engine
 
 
+# create_all does not add an index to a table that already exists. These
+# statements cover a store created before the effective-window indexes.
+_WINDOW_INDEXES: tuple[str, ...] = (
+    "CREATE INDEX IF NOT EXISTS ix_policies_effective_window ON policies (effective_from, effective_to)",
+    "CREATE INDEX IF NOT EXISTS ix_use_cases_effective_window ON use_cases (effective_from, effective_to)",
+    "CREATE INDEX IF NOT EXISTS ix_risk_appetites_effective_window ON risk_appetites (effective_from, effective_to)",
+    "CREATE INDEX IF NOT EXISTS ix_model_cards_effective_window ON model_cards (effective_from, effective_to)",
+    "CREATE INDEX IF NOT EXISTS ix_revocations_effective_window ON revocations (effective_from, effective_to)",
+    "CREATE INDEX IF NOT EXISTS ix_breaker_thresholds_effective_window ON breaker_thresholds (effective_from, effective_to)",
+    "CREATE INDEX IF NOT EXISTS ix_drill_dues_effective_window ON drill_dues (effective_from, effective_to)",
+    "CREATE INDEX IF NOT EXISTS ix_evidence_events_recorded_at ON evidence_events (recorded_at)",
+)
+
+
 def create_all(engine: Engine) -> None:
     """Create every registered table that does not yet exist.
 
     A domain pack's models must be imported before this runs, or its tables are
-    simply absent from the metadata and silently skipped.
+    simply absent from the metadata and silently skipped. On SQLite, indexes
+    that a later release added are created on a store that already has the
+    tables.
     """
     SQLModel.metadata.create_all(engine)
+    if engine.dialect.name != "sqlite":
+        return
+    with engine.begin() as connection:
+        for statement in _WINDOW_INDEXES:
+            connection.exec_driver_sql(statement)
 
 
 @contextmanager

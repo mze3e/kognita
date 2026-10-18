@@ -44,6 +44,7 @@ from kognita.models import (
     GovernanceDecision,
     Policy,
     as_utc,
+    in_force,
     policy_content_hash,
     utcnow,
 )
@@ -80,11 +81,13 @@ class PolicySnapshot:
 
 
 def load_snapshot(session: Session, *, as_of: datetime | None = None) -> PolicySnapshot:
-    """Read the policy set and agent registry, filtered to those in force."""
+    """Read the policy set and agent registry in force at ``as_of``.
+
+    Closed policy rows stay in the table and are not loaded. Revocations and
+    drill dues are the same kind of read: the open window, not the history.
+    """
     at = as_of or utcnow()
-    policies = tuple(
-        p for p in session.exec(select(Policy)).all() if p.is_effective(at)
-    )
+    policies = tuple(in_force(session, Policy, at))
     agents = {a.name: a for a in session.exec(select(Agent)).all()}
     return PolicySnapshot(
         policies=policies,
