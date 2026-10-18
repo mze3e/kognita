@@ -991,6 +991,12 @@ def run_governed(
     # Evaluation.allowed includes HUMAN_APPROVAL so the work may be prepared.
     # Release is a separate question: an already-granted approval for this
     # exact envelope is the only thing that lets the body run.
+    from kognita.approvals import _resume
+    from dataclasses import replace
+    resumed = _resume(session, evaluation, evidence, at)
+    evaluation = replace(resumed, outcome=Outcome.HUMAN_APPROVAL) if (
+        evaluation.approval_required and resumed.outcome == Outcome.ALLOW
+    ) else resumed
     already_granted = (
         find_granted(session, evaluation.envelope_hash, now=at)
         if evaluation.approval_required
@@ -1248,6 +1254,17 @@ def continue_run(
             recheck.append(check)
         if recheck:
             execute = False
+
+    if execute and payload.get("kind") == "tool":
+        from kognita.approvals import _resume
+        from kognita._limits import _recheck, _reserve
+        checked = _recheck(session, evaluation, at)
+        resumed = _resume(session, checked, evidence, at)
+        execute = resumed.outcome == Outcome.ALLOW
+        if execute:
+            _reserve(session, resumed, at)
+        else:
+            evaluation = resumed
 
     evidence.emit(
         session,

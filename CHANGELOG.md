@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feed retained gateway and governed tool responses into risk review and withhold before-delivery holds (#18).
 - Withhold model responses that cross token or cost budgets while retaining usage evidence (#30).
 - Persist served-model card denials as the delivered decision and replay the response restriction (#35).
+- Keep volatile quota usage in evidence without changing approval hashes, and release rejected or expired approval holds (#14).
+- Persist exact-request approval continuations and consume grants once before gateway forwarding or governed execution (#16).
 
 - Deny conflicting primary and additional subjects with S3-SUBJECT-CONFLICT and consistently prefer the primary subject when resolving references.
 - Per-tool subject mapping: Enforce private `_subject_paths` declarations against delegated data scopes; deny missing, malformed, or ambiguous argument paths before execution.

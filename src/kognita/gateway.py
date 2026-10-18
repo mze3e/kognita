@@ -927,6 +927,8 @@ class Gateway:
         )
         identity_checks = identity_checks + principal_checks + _credential_checks(session, agent_name, headers)
         arguments: dict[str, Any] = {}
+        # Binds an approval continuation to this exact request body.
+        arguments["_request_sha256"] = canonical_hash(payload)
         template_version = _template_version(headers)
         if headers.get("model_version"):
             arguments["model_version"] = headers["model_version"]
@@ -1057,6 +1059,9 @@ class Gateway:
             blocked = _budget_block(bound_run, classification=classification, now=now)
             if blocked:
                 evaluation = _deny_for_budgets(evaluation, blocked)
+
+        from kognita.approvals import _resume
+        evaluation = self._store(lambda: _resume(session, evaluation, self.evidence, now))
 
         local = _is_local(self.upstream)
         egress_decision = (
