@@ -895,12 +895,16 @@ def run_governed(
     from kognita._isolation import _tool_checks, _ingest
     if run is not None:
         _refresh_run(session, run)
+    from kognita._fleet import _run_checks
+    isolation_checks = _run_checks(session, run, envelope, evidence)
+    evaluation = _with_checks(evaluation, isolation_checks)
+    if any(c.result == CheckResult.FAIL for c in isolation_checks):
+        # A foreign run must not be tainted, spent or checkpointed by this call.
+        run = None
     from kognita._fleet import _external_agent
     _ingest(session, run, evidence, external=_external_agent(session, envelope.agent_name), client_data="client" in envelope.all_subjects() or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
             text=argument_text, correlation_id=evaluation.request_id, _agent_name=envelope.agent_name)
     evaluation = _with_checks(evaluation, _tool_checks(session, envelope, spec, run, evidence, at=at))
-    from kognita._fleet import _run_checks
-    evaluation = _with_checks(evaluation, _run_checks(session, run, envelope, evidence))
     evaluation = _with_checks(evaluation, extra_checks)
     evaluation = _with_checks(
         evaluation,
@@ -1115,6 +1119,9 @@ def continue_run(
             current_spec = registry.get(envelope.tool)
             from kognita._isolation import _tool_checks
             _refresh_run(session, run)
+            from kognita._fleet import _run_checks
+            recheck += [c for c in _run_checks(session, run, envelope, evidence)
+                        if c.result != CheckResult.PASS]
             recheck += _tool_checks(session, envelope, current_spec, run, evidence, at=at)
             current_agent = snapshot.agents.get(envelope.agent_name)
             permission = (current_agent.tool_allowlist or {}).get(envelope.tool, {}) if current_agent else {}

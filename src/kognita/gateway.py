@@ -942,6 +942,11 @@ class Gateway:
                 classifier=self.classifier,
             )
         classification = Classification(attributes.get("classification") or Classification.C1)
+        from kognita._fleet import _run_checks
+        isolation_checks = self._store(lambda: _run_checks(session, bound_run, envelope, self.evidence))
+        identity_checks += isolation_checks
+        if any(c.result == CheckResult.FAIL for c in isolation_checks):
+            bound_run = None
         from kognita._isolation import _ingest
         self._store(lambda: _ingest(session, bound_run, self.evidence,
             external=_external_agent(session, agent_name),
@@ -987,8 +992,6 @@ class Gateway:
             engages=getattr(self.pack, "engages", None),
             as_of=now,
         )
-        from kognita._fleet import _run_checks
-        identity_checks += self._store(lambda: _run_checks(session, bound_run, envelope, self.evidence))
         from kognita._isolation import _assurance_checks
         identity_checks += self._store(lambda: _assurance_checks(session, envelope, bound_run))
         evaluation = _with_checks(evaluation, identity_checks)

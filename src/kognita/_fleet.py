@@ -6,7 +6,7 @@ from uuid import uuid4
 from kognita.models import _RunScope, _Authority, as_utc
 from kognita.envelope import Check
 from kognita.vocabulary import CheckResult
-from kognita.authority import Delegation, _live, _covers, _emit, _VERBS
+from kognita.authority import Delegation, _live, _covers, _emit, _scope_valid
 
 
 def _restore(session, run):
@@ -15,6 +15,12 @@ def _restore(session, run):
 
 
 def _run_checks(session, run, envelope, evidence):
+    authority = session.get(_Authority, envelope.delegation_id, populate_existing=True) if envelope.delegation_id else None
+    required_run = authority.body.get('_run') if authority else None
+    if (required_run and (run is None or run.id != required_run)
+            or run is None and _external_agent(session, envelope.agent_name)):
+        return [Check(check='S6B-RUN-ISOLATION', citation='S6B-RUN-ISOLATION',
+                      regime='INTERNAL', result=CheckResult.FAIL)]
     if run is None:
         return []
     from kognita.tools import _save_run
@@ -49,10 +55,21 @@ def _delegate(session, run, name, scope, evidence, at):
             or parent.grantee != binding.get('agent') or agent is None or owner is None
             or run.control_state != 'live' or not scope.get('why') or not isinstance(scope['why'], str)):
         fail()
+    if set(scope) - {'why', 'allowed_actions', 'allowed_data', 'tools', 'autonomy_level',
+                     'valid_until', 'max_calls', 'max_tokens', 'max_cost_usd', 'wall_clock_seconds'}:
+        fail()
+    if parent.body.get('_run', run.id) != run.id:
+        fail()
     rows = _load(session, parent.grantee, at, evidence)
     if not _lineage_valid(parent.id, rows, at):
         fail()
     d = Delegation.model_validate(parent.body)
+    if not all(any(kind == 'grant' and grantee == d.human
+                   and _live(body, at) and body.get('capability') == action
+                   and _covers(body.get('subject_scope', {}), d.allowed_data)
+                   for _, kind, grantee, body in rows)
+               for action in d.allowed_actions):
+        fail()
     actions = scope.get('allowed_actions', [])
     data = scope.get('allowed_data', {})
     tools = scope.get('tools', [])
@@ -62,18 +79,27 @@ def _delegate(session, run, name, scope, evidence, at):
     except (KeyError, TypeError, ValueError, AttributeError):
         fail()
     parent_tools = parent.body.get('_tools', [k for k in (owner.tool_allowlist or {}) if not k.startswith('_')])
-    if (not isinstance(actions, list) or not actions or not set(actions) <= set(d.allowed_actions)
-            or not isinstance(data, dict) or not data or not _covers(d.allowed_data, data)
+    if (not isinstance(actions, list) or not actions or not all(isinstance(a, str) for a in actions)
+            or not set(actions) <= set(d.allowed_actions)
+            or not isinstance(data, dict) or not data or not _scope_valid(data) or not _covers(d.allowed_data, data)
             or data.get('client') != [d.client]
-            or not isinstance(tools, list) or not tools or not set(tools) <= set(parent_tools)
+            or not isinstance(tools, list) or not tools or not all(isinstance(t, str) for t in tools)
+            or not set(tools) <= set(parent_tools)
             or not set(tools) <= set(agent.tool_allowlist or {})
-            or type(level) is not int or not 0 <= level <= min(owner.autonomy_level or 0, agent.autonomy_level or 0, parent.body.get('_level', 6))
+            or type(level) is not int or not 0 <= level <= min(
+                0 if owner.environment == 'external' else owner.autonomy_level or 0,
+                0 if agent.environment == 'external' else agent.autonomy_level or 0,
+                parent.body.get('_level', 6))
             or not as_utc(at) < until <= as_utc(d.valid_until)):
         fail()
     for tool in tools:
         a = (agent.tool_allowlist or {})[tool]
         p = (owner.tool_allowlist or {}).get(tool, {})
-        if a.get('verb') not in actions or a.get('verb') != p.get('verb') or a.get('required_level', 0) > level:
+        if (not isinstance(a, dict) or not isinstance(p, dict)
+                or a.get('verb') not in actions or a.get('verb') != p.get('verb')
+                or a.get('system') != p.get('system') or a.get('required_level', 0) > level):
+            fail()
+        if tool in run.tool_denylist:
             fail()
     budgets = {}
     for cap, used in [('max_calls', 'calls_used'), ('max_tokens', 'tokens_used'), ('max_cost_usd', 'cost_usd_used')]:
@@ -93,7 +119,8 @@ def _delegate(session, run, name, scope, evidence, at):
     child = Run(**budgets, wall_clock_seconds=seconds, started_at=at,
                 classification_ceiling=run.classification_ceiling,
                 external=run.external or agent.environment == 'external',
-                client_data=run.client_data, assurance_level=run.assurance_level)
+                client_data=run.client_data, assurance_level=run.assurance_level,
+                tool_denylist=list(run.tool_denylist))
     body = d.model_copy(update=dict(agent=name, allowed_actions=actions, allowed_data=data,
         valid_from=at, valid_until=until)).model_dump(mode='json')
     body.update(_parent=parent.id, _tools=tools, _level=level, _why=scope['why'],
@@ -101,7 +128,11 @@ def _delegate(session, run, name, scope, evidence, at):
     row = _Authority(id=str(uuid4()), grantee=name, kind='delegation', body=body)
     _emit(session, evidence, parent.grantee, 'AUTHORITY_TRANSFERRED', row,
           _context={'citation': 'S6B-DELEGATION', 'from_agent': parent.grantee,
-                    'budget': {**budgets, 'wall_clock_seconds': seconds}})
+                    'budget': {**budgets, 'wall_clock_seconds': seconds},
+                    'external': child.external, 'client_data': child.client_data,
+                    'assurance_level': child.assurance_level,
+                    'tool_denylist': child.tool_denylist,
+                    'classification_ceiling': child.classification_ceiling})
     session.add(row)
     # Reserve capacity, rather than giving every sibling the same remaining budget.
     for cap, value in budgets.items():

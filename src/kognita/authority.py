@@ -39,7 +39,8 @@ _VERBS = ("read", "analyse", "recommend", "draft", "queue", "send", "execute")
 def _emit(session, evidence, actor_id, action, row, *, _context=None):
     evidence.emit(session, correlation_id=f"authority:{row.id}",
         event_type=_Event.POLICY_CHANGE,
-        actor_type=_Actor.SYSTEM if action == "AUTHORITY_EXPIRED" else _Actor.HUMAN,
+        actor_type=(_Actor.SYSTEM if action == "AUTHORITY_EXPIRED" else
+                    _Actor.AGENT if action == "AUTHORITY_TRANSFERRED" else _Actor.HUMAN),
         actor_id=actor_id, payload={"action": action, "citation": "S3-AUTHORITY",
                                    "id": row.id, "kind": row.kind, "grantee": row.grantee, "body": row.body, **(_context or {})})
 
@@ -154,6 +155,8 @@ def _load(session, agent_name, at, evidence):
             break
         pending = []
         for identity in sorted(parents):
+            if len(result) + len(pending) >= 1000:
+                return ()
             row = session.get(_Authority, identity, populate_existing=True)
             if row is not None and not row.ended and _live(row.body, at):
                 pending.append((row.id, row.kind, row.grantee, dict(row.body)))

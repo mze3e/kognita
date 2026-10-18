@@ -1195,13 +1195,13 @@ def cmd_drill_run(args: argparse.Namespace) -> int:
 
 def _cmd_evidence_authority(args):
     from kognita.authority import _lineage
-    from kognita.evidence import verify_chain
+    from kognita.evidence import verify_chain, ChainBreak
     engine = make_engine(args.db if "://" in args.db else "sqlite:///" + args.db)
     with session_scope(engine) as session:
         try:
             verify_chain(session)
             _print_json(_lineage(session, args.action_id))
-        except ValueError as exc:
+        except (ValueError, ChainBreak) as exc:
             print(str(exc), file=sys.stderr)
             return 1
     return 0

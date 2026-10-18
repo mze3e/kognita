@@ -639,7 +639,8 @@ def record(
         from dataclasses import replace
         attrs = dict(evaluation.attributes)
         attrs.pop('_sandbox_constraints', None)
-        evaluation = replace(evaluation, attributes=attrs)
+        evaluation = replace(evaluation, attributes=attrs,
+            envelope_hash=envelope_hash(evaluation.envelope, attrs, evaluation.checks))
     envelope = evaluation.envelope
 
     decision = GovernanceDecision(

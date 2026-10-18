@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Complete delegated-run isolation, inherited restrictions, bounded authority reads and historical lineage; verify fleet quotas, authenticated MCP agent messages and restrictive sandbox output with S6b regression tests.
+
 - Add bounded agent delegation, reserved child budgets, live authority lineage checks, run isolation, external-agent taint, authority reconstruction CLI, and evidenced sandbox constraints for execution decisions.
 
 - Add bounded per-agent behavioral baselines, automatic anomaly quarantine, credential revocation, tool admission stops, incident evidence, and owner alerts.
