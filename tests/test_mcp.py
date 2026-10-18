@@ -2,9 +2,9 @@
 
 Covers roadmap 0.3 item 5. An allow is proxied and evidenced. A denial is not
 proxied and returns the outcome and the citations. Free-text arguments are
-classified only when a typed classification is missing. A missing agent name
-is a denial. An evidence-store failure refuses the call and does not reach
-the backend.
+always classified; a typed classification is a floor the classifier can
+raise but not lower. A missing agent name is a denial. An evidence-store
+failure refuses the call and does not reach the backend.
 """
 from __future__ import annotations
 
@@ -350,7 +350,14 @@ def test_tool_arguments_are_absent_from_evidence(session, evidence):
     }
 
 
-def test_free_text_is_classified_only_when_classification_is_missing(session, evidence):
+def test_free_text_is_always_classified_and_typed_values_are_a_floor(session, evidence):
+    """A typed or packed classification is a floor the classifier can raise.
+
+    The text carries an email, which the pattern classifier reads as C2.
+    Neither a caller header nor the pack's own attribute may hold that below
+    C2: the classifier runs every time and the effective label is the more
+    sensitive of what it finds and what was typed.
+    """
     _register(session)
     session.flush()
     text = f"Email {SECRET} about the notes"
@@ -387,9 +394,9 @@ def test_free_text_is_classified_only_when_classification_is_missing(session, ev
     assert typed.status == 200
     assert typed.evaluation is not None
     assert typed.evaluation.outcome is Outcome.ALLOW
-    assert typed.evaluation.attributes["classification"] == "C0"
-    assert "classifier" not in typed.evaluation.attributes
-    assert spy.seen == [text]
+    assert typed.evaluation.attributes["classification"] == "C2"
+    assert typed.evaluation.attributes["classifier"]["label"] == "C2"
+    assert spy.seen == [text, text]
     assert len(upstream.calls) == 2
 
     packed = _proxy(
@@ -407,9 +414,9 @@ def test_free_text_is_classified_only_when_classification_is_missing(session, ev
         session=session,
     )
     assert from_pack.evaluation is not None
-    assert from_pack.evaluation.attributes["classification"] == "C1"
-    assert "classifier" not in from_pack.evaluation.attributes
-    assert spy.seen == [text]
+    assert from_pack.evaluation.attributes["classification"] == "C2"
+    assert from_pack.evaluation.attributes["classifier"]["label"] == "C2"
+    assert spy.seen == [text, text, text]
 
     header_wins = packed.handle(
         "POST",
@@ -419,9 +426,9 @@ def test_free_text_is_classified_only_when_classification_is_missing(session, ev
         session=session,
     )
     assert header_wins.evaluation is not None
-    assert header_wins.evaluation.attributes["classification"] == "C0"
-    assert "classifier" not in header_wins.evaluation.attributes
-    assert spy.seen == [text]
+    assert header_wins.evaluation.attributes["classification"] == "C2"
+    assert header_wins.evaluation.attributes["classifier"]["label"] == "C2"
+    assert spy.seen == [text, text, text, text]
 
 
 def test_missing_agent_name_is_deny(session, evidence):

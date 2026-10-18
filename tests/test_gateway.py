@@ -519,7 +519,14 @@ def test_unregistered_agent_and_kill_switch_still_deny(session, evidence):
     assert any(check.check == "AGENT_REGISTRY" for check in ghost_response.evaluation.checks)
 
 
-def test_typed_classification_wins(session, evidence):
+def test_typed_classification_is_a_floor_not_an_override(session, evidence):
+    """A header cannot keep an email below C2; the classifier still runs.
+
+    ``classification: C0`` on a prompt with an email is a floor, not a
+    ceiling: the classifier raises it to C2, and the egress guard redacts
+    the email before it reaches the upstream, exactly as it would with no
+    header at all.
+    """
     _register(session)
     _live(session)
     session.flush()
@@ -537,9 +544,10 @@ def test_typed_classification_wins(session, evidence):
 
     assert response.status == 200
     assert response.evaluation is not None
-    assert response.evaluation.attributes["classification"] == "C0"
-    assert "classifier" not in response.evaluation.attributes
-    assert SECRET.encode() in upstream.calls[0]["body"]
+    assert response.evaluation.attributes["classification"] == "C2"
+    assert response.evaluation.attributes["classifier"]["label"] == "C2"
+    assert SECRET.encode() not in upstream.calls[0]["body"]
+    assert b"[EMAIL_1]" in upstream.calls[0]["body"]
 
 
 def test_evidence_store_unavailable_refuses_the_call(session, engine):

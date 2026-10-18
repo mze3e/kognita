@@ -11,10 +11,11 @@ One call, in order:
    :class:`~kognita.envelope.Envelope`. Principal and purpose come from
    request headers or the default actor context. For ``tools/call``, ``tool``
    is the tool name and ``arguments`` are the tool arguments.
-2. Fill a missing classification from those arguments through
+2. Classify those arguments through
    :func:`kognita.governance.classifier_derived_envelope`, which
    :func:`kognita.tools.run_governed` already applies. A typed classification
-   wins. The classifier does not decide.
+   is a floor, not an override: the classifier still runs and can only raise
+   it. The classifier does not decide.
 3. Resolve identity with the same rules as the AI gateway. A call with no
    agent name is a denial. An agent name is admitted only when the bound
    client configuration lists it and its workload credential verifies. A
@@ -45,7 +46,7 @@ from typing import Any
 from sqlmodel import Session
 
 from kognita.authority import _argument_values
-from kognita.classify import PatternClassifier
+from kognita.classify import PatternClassifier, most_sensitive
 from kognita.db import create_all, make_engine, session_scope
 from kognita.envelope import Check, Envelope, Evaluation
 from kognita.evidence import EvidenceWriter
@@ -196,8 +197,9 @@ def _admitted_trigger(trigger: str | None, checks: Sequence[Check]) -> str | Non
 class _AttributePack:
     """The caller's pack, with a typed classification written over the gap.
 
-    The typed value wins over the pack and over the classifier. When it is
-    absent, :func:`kognita.tools.run_governed` classifies free-text arguments.
+    The typed value is a floor for both the pack's own attribute and the
+    classifier, never an override: :func:`kognita.tools.run_governed`
+    still classifies free-text arguments and can only raise this value.
     """
 
     def __init__(self, inner: Any, classification: str | None) -> None:
@@ -212,7 +214,12 @@ class _AttributePack:
     def resolve_attributes(self, envelope: Envelope, subjects: dict[str, Any]) -> dict[str, Any]:
         attrs = dict(self._inner.resolve_attributes(envelope, subjects) or {})
         if self._classification:
-            attrs["classification"] = self._classification
+            # The header is a floor: it may raise the pack's label, never lower it.
+            packed = attrs.get("classification")
+            attrs["classification"] = (
+                most_sensitive([packed, self._classification]).value
+                if packed else self._classification
+            )
         return attrs
 
     def rules(self) -> dict[str, Any]:
