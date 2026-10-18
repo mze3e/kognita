@@ -1,1 +1,0 @@
-Finding 17: Public proposal creation and apply entry points (propose_document / apply_proposal_tool in ADR 0007; absent from code) are needed to expose the workflow to host applications. Implemented only as approvals._propose and approvals._apply_proposal under the no-new-public-names constraint. Existing Proposal model is reused without new fields.
