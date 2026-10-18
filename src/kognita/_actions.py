@@ -78,14 +78,16 @@ def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(),
                     confirmation = []
                     def request_cancel():
                         try:
-                            confirmation.append(cancel() is True)
+                            confirmation.append(cancel())
                         except Exception:
                             confirmation.append(False)
                         finally:
                             cancellation_done.set()
                     Thread(target=request_cancel, daemon=True).start()
-                    cancellation_done.wait(min(0.01, max(0, deadline - monotonic())))
-                    confirmed = bool(confirmation and confirmation[0])
+                    cancellation_done.wait(0.01)
+                    confirmed = bool(confirmation and confirmation[0] is True)
+                    if confirmation and confirmation[0] == 'connection_aborted':
+                        return 'connection_aborted', None
                 if done.is_set():
                     if timeout:
                         return 'timeout', None

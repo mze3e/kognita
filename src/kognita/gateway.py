@@ -1049,6 +1049,8 @@ class Gateway:
                     citation="S5-INJECTION",
                 )
             )
+        attributes = {**evaluation.attributes, "_admission_checks": [c.to_dict() for c in identity_checks]}
+        evaluation = replace(evaluation, attributes=attributes)
         evaluation = _with_checks(evaluation, identity_checks)
         if bound_run is not None:
             self._store(lambda: _refresh_run(session, bound_run))

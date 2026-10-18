@@ -77,7 +77,9 @@ def test_default_http_transport_closes_inflight_connection(session, evidence, en
             'agent_name': 'dossier-agent', 'agent_credential': credential,
             'delegation_id': did}, _call(), session=session)
         assert entered.is_set(), response.body
-        expected = {'kill': 'cancelled', 'timeout': 'timeout', 'completed': 'completed'}[control]
+        # Socket EOF confirms local disconnection, not remote action cancellation.
+        expected = {'kill': 'connection_aborted', 'timeout': 'connection_aborted',
+                    'completed': 'completed'}[control]
         if control == 'completed':
             assert json.loads(response.body)['result']['marked'] == 'finished'
         else:
