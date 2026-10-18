@@ -77,6 +77,7 @@ from kognita.governance import (
 )
 from kognita.retention import RetentionStore
 from kognita.rules import build_registry
+from kognita.usecases import endpoint_named, load_register, model_card_link
 from kognita.tools import (
     Run,
     _budget_breaches,
@@ -490,6 +491,16 @@ def _json_response(status: int, payload: Mapping[str, Any], **extra: Any) -> Gat
     )
 
 
+def _annotate_endpoint(response: GatewayResponse, flagged: bool) -> GatewayResponse:
+    """Mark whether the upstream is an AI endpoint no use case names.
+
+    The flag is a discovery signal. It does not change the decision.
+    """
+    headers = dict(response.headers)
+    headers["x-kognita-unregistered-ai-endpoint"] = "true" if flagged else "false"
+    return replace(response, headers=headers)
+
+
 def _denied(evaluation: Evaluation) -> GatewayResponse:
     return _json_response(
         403,
@@ -767,6 +778,9 @@ class Gateway:
         agent_name, trigger, identity_checks = _identity(self.client, headers)
         principal = headers.get("principal") or self.client.principal
         purpose = headers.get("purpose") or self.client.purpose
+        arguments: dict[str, Any] = {}
+        if headers.get("model_version"):
+            arguments["model_version"] = headers["model_version"]
         envelope = Envelope(
             principal=principal,
             purpose=purpose,
@@ -775,6 +789,7 @@ class Gateway:
             agent_name=agent_name,
             subject_type="model",
             subject_id=payload["model"],
+            arguments=arguments,
         )
         now = self.evidence.clock()
         prompt = _prompt_text(payload)
@@ -800,6 +815,13 @@ class Gateway:
         classification = Classification(attributes.get("classification") or Classification.C1)
 
         snapshot = self._store(lambda: load_snapshot(session, as_of=now))
+        register = self._store(lambda: load_register(session, as_of=now))
+        usecases = register if register.entries else None
+        flagged = not endpoint_named(register, self.upstream)
+
+        def finish(response: GatewayResponse) -> GatewayResponse:
+            return _annotate_endpoint(response, flagged)
+
         evaluation = decide(
             envelope,
             snapshot,
@@ -807,6 +829,7 @@ class Gateway:
             subjects=subjects,
             rules=self.pack.rules(),
             purposes=self.purposes,
+            usecases=usecases,
             engages=getattr(self.pack, "engages", None),
             as_of=now,
         )
@@ -883,7 +906,7 @@ class Gateway:
                         model=egress_model,
                     )
                 )
-            return _denied(evaluation)
+            return finish(_denied(evaluation))
 
         consumed = False
         try:
@@ -914,7 +937,7 @@ class Gateway:
                         model=None,
                     )
                 )
-                return _denied(refused)
+                return finish(_denied(refused))
             if bound_run is not None and not consumed:
                 _consume(bound_run, cost_usd=None, tokens=None, now=now)
             deferred = self._enqueue(
@@ -970,7 +993,9 @@ class Gateway:
                 decision_budget=decision_budget,
                 decided_at=now,
             )
-            return _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation)
+            return finish(
+                _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation)
+            )
 
         try:
             upstream_text = upstream_body.decode("utf-8")
@@ -996,10 +1021,12 @@ class Gateway:
                 decision_budget=decision_budget,
                 decided_at=now,
             )
-            return _json_response(
-                502,
-                {"error": "upstream response could not be classified"},
-                evaluation=evaluation,
+            return finish(
+                _json_response(
+                    502,
+                    {"error": "upstream response could not be classified"},
+                    evaluation=evaluation,
+                )
             )
         restored = (
             self.egress.redactor.restore(upstream_text, token_map)
@@ -1040,12 +1067,38 @@ class Gateway:
             if str(key).lower() == "content-type" and value:
                 content_type = str(value)
                 break
-        return GatewayResponse(
-            status=status,
-            body=restored.encode("utf-8"),
-            headers={"content-type": content_type},
-            evaluation=evaluation,
-            response_classifier=response_record,
+        served_name, served_version = _reported_model(
+            payload["model"], restored_payload
+        )
+        card_id, _card_hash = model_card_link(
+            session,
+            provider=self.provider or (urlparse(self.upstream).hostname or self.upstream),
+            model=served_name,
+            version=served_version,
+            use_case=purpose,
+            at=now,
+        )
+        entry = register.get(purpose) if usecases is not None else None
+        if entry is not None and entry.approved_models and not card_id:
+            return finish(
+                _json_response(
+                    403,
+                    {
+                        "outcome": Outcome.DENY.value,
+                        "error": "the served model has no model card",
+                        "request_id": evaluation.request_id,
+                    },
+                    evaluation=evaluation,
+                )
+            )
+        return finish(
+            GatewayResponse(
+                status=status,
+                body=restored.encode("utf-8"),
+                headers={"content-type": content_type},
+                evaluation=evaluation,
+                response_classifier=response_record,
+            )
         )
 
     def _is_degraded(self, use_case: str) -> bool:
@@ -1093,8 +1146,16 @@ class Gateway:
         )
         model = item.model
         if model is not None:
+            decided_at = item.decided_at
             self._store(
-                lambda: self._emit_model(session, evaluation, classification, model, item.run)
+                lambda: self._emit_model(
+                    session,
+                    evaluation,
+                    classification,
+                    model,
+                    item.run,
+                    at=decided_at,
+                )
             )
 
     def _emit_model(
@@ -1104,6 +1165,8 @@ class Gateway:
         classification: Classification,
         model: _DeferredModel,
         run: Run | None,
+        *,
+        at: datetime | None = None,
     ) -> None:
         self._emit(
             session,
@@ -1122,6 +1185,7 @@ class Gateway:
             received_text=model.received_text,
             response_payload=model.response_payload,
             prompt_template_version=model.prompt_template_version,
+            at=at,
         )
 
     def _record_model_evidence(
@@ -1151,7 +1215,14 @@ class Gateway:
             if run is not None and (model.tokens is not None or model.cost_usd is not None):
                 self._store(lambda: _save_run(session, run))
             self._store(
-                lambda: self._emit_model(session, evaluation, classification, model, run)
+                lambda: self._emit_model(
+                    session,
+                    evaluation,
+                    classification,
+                    model,
+                    run,
+                    at=decided_at,
+                )
             )
         except _EvidenceStoreUnavailable:
             if not self._is_degraded(evaluation.envelope.purpose):
@@ -1223,12 +1294,24 @@ class Gateway:
         received_text: str = "",
         response_payload: Mapping[str, Any] | None = None,
         prompt_template_version: str | None = None,
+        at: datetime | None = None,
     ) -> None:
         local = _is_local(self.upstream)
         requested = evaluation.envelope.subject_id or ""
         use_case = evaluation.envelope.purpose
-        model_name, model_version = _reported_model(requested, response_payload if sent else None)
+        model_name, model_version = _reported_model(
+            requested, response_payload if sent else None
+        )
         provider = self.provider or (urlparse(self.upstream).hostname or self.upstream)
+        card_id, card_hash = model_card_link(
+            session,
+            provider=provider,
+            model=model_name,
+            version=model_version,
+            use_case=use_case,
+            at=at,
+        )
+        flagged = not endpoint_named(load_register(session, as_of=at), self.upstream)
         store = RetentionStore()
         prompt_hash = ""
         response_hash = ""
@@ -1257,6 +1340,7 @@ class Gateway:
             "manifest_hash": canonical_hash(sorted(token_map)) if sent else "",
             "sent": sent,
             "response_hash": response_hash,
+            "unregistered_ai_endpoint": flagged,
         }
         if response_record is not None:
             common["response_classifier"] = response_record
@@ -1282,6 +1366,8 @@ class Gateway:
                     "model_version": model_version,
                     "prompt_template_version": prompt_template_version,
                     "prompt_hash": prompt_hash,
+                    "model_card": card_id,
+                    "model_card_hash": card_hash,
                 },
             )
         )

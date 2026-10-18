@@ -141,22 +141,61 @@ def registry_checks(envelope: Envelope, snapshot: PolicySnapshot) -> list[Check]
     ]
 
 
-def purpose_check(envelope: Envelope, purposes: Sequence[str]) -> Check:
+def _accountable_owner(envelope: Envelope, snapshot: PolicySnapshot) -> str:
+    """Who is accountable on the purpose-list path.
+
+    An agent call cites that agent's ``owner_exec``. A call with no agent cites
+    the human principal. An unregistered agent, an agent with no owner, or a
+    call with neither an agent owner nor a principal cites nobody, and the
+    purpose check then fails closed.
+    """
+    if envelope.agent_name:
+        agent = snapshot.agents.get(envelope.agent_name)
+        if agent is None:
+            return ""
+        return agent.owner_exec.strip()
+    return envelope.principal.strip()
+
+
+def purpose_check(
+    envelope: Envelope, purposes: Sequence[str], *, owner: str | None = None
+) -> Check:
     """The purpose must come from the closed vocabulary the deployment declared.
 
     A missing or empty list declares nothing. The check fails closed, the same
     way a purpose outside a declared list fails. It does not pass every purpose.
 
+    Every decision on this path also cites an accountable owner. ``owner`` is
+    the agent's accountable owner when :func:`decide` has one. Omitting it
+    cites the human principal, which is what a direct call did before an owner
+    was a separate argument. An empty owner fails the check even when the
+    purpose is listed.
+
     When :func:`decide` is given a use-case register, this check is not run.
     The register check replaces it: the purpose must be a registered use case,
     and the citation names that use case's accountable owner.
     """
-    ok = bool(purposes) and envelope.purpose in set(purposes)
+    cited = envelope.principal.strip() if owner is None else owner.strip()
+    listed = bool(purposes) and envelope.purpose in set(purposes)
+    if not cited:
+        return Check(
+            check="PURPOSE",
+            regime="INTERNAL",
+            result=CheckResult.FAIL,
+            citation=(
+                "Lawful-basis registry — closed purpose vocabulary · "
+                "no accountable owner can be cited"
+            ),
+        )
+    citation = (
+        "Lawful-basis registry — closed purpose vocabulary · "
+        f"accountable owner: {cited}"
+    )
     return Check(
         check="PURPOSE",
         regime="INTERNAL",
-        result=CheckResult.PASS if ok else CheckResult.FAIL,
-        citation="Lawful-basis registry — closed purpose vocabulary",
+        result=CheckResult.PASS if listed else CheckResult.FAIL,
+        citation=citation,
     )
 
 
@@ -177,6 +216,8 @@ def decide(
 
     ``purposes`` is the list the deployment declared. Missing or empty fails
     closed. A purpose on that list passes this check; any other purpose fails it.
+    The check cites an accountable owner: the agent's owner when the envelope
+    names an agent, otherwise the principal. No owner fails closed.
 
     ``usecases`` is a :class:`~kognita.usecases.UseCaseRegister`. When it is
     given, it replaces the purpose list: the envelope's purpose must be a
@@ -197,7 +238,11 @@ def decide(
     if usecases is not None:
         checks.extend(usecase_checks(envelope, usecases, at))
     else:
-        checks.append(purpose_check(envelope, purposes))
+        checks.append(
+            purpose_check(
+                envelope, purposes, owner=_accountable_owner(envelope, snapshot)
+            )
+        )
 
     context = RuleContext(
         envelope=envelope, attributes=attrs, subjects=subject_rows, as_of=at

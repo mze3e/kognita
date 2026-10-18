@@ -514,8 +514,8 @@ Do not wait for client harm.
 ### Definition of Done
 
 - [x] Docling-backed ingestion with per-section classification and passage-level citations
-- [ ] Use-case register enforced: unregistered use cases are denied, and every decision cites an accountable owner
-- [ ] Every approved model has a model card linked from each call that used it
+- [x] Use-case register enforced: unregistered use cases are denied, and every decision cites an accountable owner
+- [x] Every approved model has a model card linked from each call that used it
 - [ ] Risk-based review queue with coverage reporting per use case and risk tier
 - [ ] Circuit breaker trips automatically in a test scenario, and the affected-client query lists exactly the clients who received output in the window
 - [ ] Revocation by each dimension takes effect on the next decision without affecting other use cases
@@ -538,11 +538,11 @@ Do not wait for client harm.
 - [x] A tier 2 use case with no named Knowledge Lead is denied
 - [x] A materiality rating not approved by the control function cannot be activated; the control function cannot approve a use case it owns
 - [x] A use case whose residual materiality is outside the risk appetite cannot be activated
-- [ ] Quantitative appetite measures (AI incidents, single-provider dependencies, performance breaches) reported against their thresholds from evidence
+- [x] Quantitative appetite measures (AI incidents, single-provider dependencies, performance breaches) reported against their thresholds from evidence
 - [x] A pilot denies calls from users outside its list and after its end date
-- [ ] An unmediated AI entry records its assurance gap and compensating control; a gateway call to an unregistered AI endpoint is flagged
+- [x] An unmediated AI entry records its assurance gap and compensating control; a gateway call to an unregistered AI endpoint is flagged
 - [ ] Revoking a provider stops it on the next decision for every use case; a kill-switch drill is evidenced and an overdue drill is flagged
-- [ ] Retiring a use case stops its agents and applies its retention period
+- [x] Retiring a use case stops its agents and applies its retention period
 
 ---
 

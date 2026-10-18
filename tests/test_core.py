@@ -404,14 +404,35 @@ def test_restricted_content_is_denied_outright(harness):
     assert events and all(e.payload["sent"] is False for e in events)
 
 
-def test_local_destinations_skip_redaction():
+def test_local_destinations_are_not_trusted_by_default():
+    """Localhost skips redaction only when the deployment opts in."""
+    policy = EgressPolicy()
+    assert policy.trust_local is False
+    assert (
+        policy.evaluate(Classification.C3, destination_is_local=True)
+        is EgressDecision.DENY
+    )
     guard = EgressGuard(redactor=PatternRedactor())
+    with pytest.raises(EgressDenied):
+        guard.send(
+            "ana@example.org",
+            lambda text: text,
+            classification=Classification.C3,
+            destination="http://localhost:11434",
+            destination_is_local=True,
+        )
+
+
+def test_local_destinations_skip_redaction_when_trusted():
+    guard = EgressGuard(
+        policy=EgressPolicy(trust_local=True), redactor=PatternRedactor()
+    )
     seen: dict[str, str] = {}
     result = guard.send(
         "ana@example.org",
         lambda t: seen.setdefault("text", t),
         classification=Classification.C3,
-        destination="http://localhost:11434",
+        destination="http://127.0.0.1:11434",
         destination_is_local=True,
     )
     assert result.decision is EgressDecision.ALLOW
