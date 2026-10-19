@@ -268,8 +268,10 @@ def decide(
     agent = snapshot.agents.get(envelope.agent_name)
     if agent is not None:
         attrs["deployment_hash"] = agent.deployment_hash
+        permission = (agent.tool_allowlist or {}).get(envelope.tool)
+        attrs["_s4_transaction"] = isinstance(permission, dict) and permission.get("verb") == "execute"
         if agent.blast_radius is not None:
-            attrs["_s4_usage"] = [[t.isoformat(), cs, v, req] for t, cs, v, req in snapshot._usage.get(agent.name, ())]
+            attrs["_s4_usage"] = [[t.isoformat(), cs, v, req, txn] for t, cs, v, req, txn in snapshot._usage.get(agent.name, ())]
     from kognita.authority import _grant_ids
     if envelope.agent_name:
         attrs["_authority_grants"] = _grant_ids(envelope, snapshot, at)

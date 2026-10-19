@@ -126,10 +126,14 @@ class BlastRadius(_BaseModel):
     max_clients: int | None = _PField(default=None, ge=0)
     max_value: float | None = _PField(default=None, ge=0)
     max_daily_actions: int | None = _PField(default=None, ge=0)
+    #: Daily cap on released calls whose tool permission verb is "execute".
+    max_daily_transactions: int | None = _PField(default=None, ge=0)
     per_minute: int | None = _PField(default=None, ge=0)
     per_hour: int | None = _PField(default=None, ge=0)
     channels: list[str] | None = None
     jurisdictions: list[str] | None = None
+    #: Allow-list of products the agent may touch; ``None`` means unrestricted.
+    products: list[str] | None = None
     execution_authority: _Literal["none", "propose", "execute"] = "none"
     ttl: datetime | None = None
 
@@ -164,6 +168,11 @@ class Agent(SQLModel, table=True):
     deployment_hash: str | None = None
     environment: str | None = None
     principal: str | None = None
+    #: When this agent was deployed; required for a full identity (S1-IDENTITY).
+    deployment_date: datetime | None = Field(default=None, sa_column=_nullable_utc_column())
+    #: The model this agent uses; required for a full identity, and pinned into
+    #: the deployment hash like any other identity field (S1-DEPLOYMENT).
+    model: str | None = None
 
 
 class Policy(SQLModel, table=True):
@@ -1255,6 +1264,9 @@ class _BlastUsage(SQLModel, table=True):
     at: datetime = Field(sa_column=_utc_column())
     clients: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
     value: float = 0
+    #: Whether this reservation's tool permission verb was "execute"; a row
+    #: from before this column existed reads back as None (not a transaction).
+    is_transaction: bool | None = None
 
 
 class _AnomalyDay(SQLModel, table=True):

@@ -86,8 +86,9 @@ def replay_decision(
         from dataclasses import replace as _replace
         from datetime import datetime as _datetime
         snapshot = _replace(snapshot, _usage={envelope.agent_name: tuple(
-            (as_utc(_datetime.fromisoformat(t)), cs, v, req)
-            for t, cs, v, req in recorded_usage)})
+            (as_utc(_datetime.fromisoformat(row[0])), row[1], row[2], row[3],
+             row[4] if len(row) > 4 else False)
+            for row in recorded_usage)})
     evaluation = decide(
         envelope,
         snapshot,

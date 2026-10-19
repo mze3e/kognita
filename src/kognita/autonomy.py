@@ -31,7 +31,9 @@ def _checks(envelope, agent, at, usecases=None):
          and bool(permissions) and type(agent.autonomy_level) is int
          and isinstance(agent.environment, str) and bool(agent.environment.strip())
          and isinstance(agent.principal, str) and bool(agent.principal.strip())
-         and envelope.principal == agent.principal)
+         and envelope.principal == agent.principal
+         and agent.deployment_date is not None
+         and isinstance(agent.model, str) and bool(agent.model.strip()))
     # Context cannot grant permissions. It supplies the behaviour being checked,
     # whose digest must match an owner-approved manifest.
     try:

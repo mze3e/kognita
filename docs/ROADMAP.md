@@ -685,11 +685,25 @@ The kill switch and revocation take effect on the next decision. A tool call alr
 - **Long actions as steps:** a tool whose action cannot be cancelled must be registered as reversible with a compensating action (item 13), or split into steps with a decision between them, so containment always has a point to act
 - Run wall-clock budgets (0.3) remain the outer limit
 
+Identity registration and owner-approved deployment accept `Agent.deployment_date`
+and `Agent.model`. Both are required by `S1-IDENTITY`; a changed model invalidates
+`S1-DEPLOYMENT` until the owner re-approves it. Existing database rows keep null
+values after the additive migration and are denied until completed and approved.
+
+`BlastRadius.max_daily_transactions` limits released calls whose tool permission
+verb is `execute` per UTC calendar day (`S4-DAILY-TRANSACTIONS`). Approval holds
+do not spend transaction quota; approved release uses the existing atomic quota
+admission lock. Read, analyse, recommend, draft, queue and send calls do not
+spend this transaction cap. `BlastRadius.products` is an allow-list over resolved
+`product` subjects, including nested arguments and manifest subject mappings
+(`S4-PRODUCTS`). `None` leaves products unrestricted; an empty list permits no
+named products. Both controls complement the existing per-agent limits.
+
 ### Definition of Done
-- [ ] Every agent has a full identity; agents past review date and changed deployment versions are denied until re-approved
+- [x] Every agent has a full identity; agents past review date and changed deployment versions are denied until re-approved
 - [x] Dual check enforced: a human's entitlement alone never authorizes their agent
 - [x] Autonomy levels enforced; L4 always routes to approval
-- [ ] Blast-radius limits enforced per agent
+- [x] Blast-radius limits enforced per agent
 - [x] Per-agent tool allow-lists and field-level minimization
 - [x] Injection test: a tainted run cannot call a write tool
 - [x] Impersonation test: a high-risk instruction from a channel message without step-up evidence is denied

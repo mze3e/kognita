@@ -32,6 +32,8 @@ L0; increasing an existing agent's autonomy requires `kognita.autonomy.promote()
   },
   "autonomy_level": 0,
   "review_date": "2027-01-01T00:00:00+00:00",
+  "deployment_date": "2026-10-19T00:00:00+00:00",
+  "model": "research-model-v1",
   "environment": "production",
   "principal": "rm@example.org",
   "deployment": {
@@ -57,7 +59,7 @@ use-case maximum and existing tier ceilings also apply (tiers 1/2/3/4:
 L2/L3/L4/L4).
 
 The deployment hash binds all seven behaviour components and the authority
-configuration, including autonomy and review date. `registry.approve_deployment()`
+configuration, including autonomy, review date and `Agent.model`. `registry.approve_deployment()`
 requires the accountable owner and appends approval evidence. Changed behaviour
 or authority and expired reviews deny with `S1-*` rule citations. The approved
 manifest is kept under the private `_deployment` entry in `tool_allowlist`;
@@ -68,6 +70,12 @@ behaviour manifest here when runtime configuration differs from the registry.
 The AI gateway checks system/developer messages (joined with newlines), provider
 tool declarations and supplied instructions against the stored manifest on every
 call. Administrative manifests describe the other runtime components.
+
+`Agent.deployment_date` and `Agent.model` are nullable database columns for
+SQLite 3.31 and Postgres; existing rows stay null. Both must be set at registration
+or deployment approval: either missing (or a blank model) denies with
+`S1-IDENTITY`. Changing the model denies with `S1-DEPLOYMENT` until the owner
+re-approves the deployment.
 
 Identity changes through `registry.register()` accept the identity fields with
 `evidence` and `actor_id`. These changes invalidate approval and cannot raise
@@ -118,6 +126,8 @@ deployment approval. For example:
     "max_clients": 1,
     "max_value": 0,
     "max_daily_actions": 100,
+    "max_daily_transactions": 10,
+    "products": ["approved-research"],
     "per_minute": 5,
     "per_hour": 30,
     "channels": ["crm"],
@@ -130,6 +140,14 @@ deployment approval. For example:
   }
 }
 ```
+
+`BlastRadius.max_daily_transactions` counts released calls whose approved tool
+permission verb is `execute`, using atomic quota admission and the UTC calendar
+day (`S4-DAILY-TRANSACTIONS`). Pending approvals do not spend transaction quota.
+Other verbs do not spend this cap. `BlastRadius.products` checks the resolved
+`product` subject and argument values, including nested values and private
+manifest subject paths (`S4-PRODUCTS`). `None` means unrestricted; `[]` denies
+any named product. These settings require the same owner approval as other limits.
 
 Limits apply across runs. Minute and hour limits use rolling windows; daily
 limits use the UTC calendar day. Client and monetary limits cover the agent's

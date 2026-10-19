@@ -34,6 +34,8 @@ def _setup(session, evidence):
     agent.environment = 'test'
     agent.principal = 'alice'
     agent.review_date = NOW + timedelta(days=90)
+    agent.deployment_date = NOW
+    agent.model = 'fixture-model-v1'
     agent.field_allowlist = {'COLLABORATION': ['content.text', 'content.type']}
     _live(session)
     scope = {'client': ['123'], 'model': [MODEL]}
@@ -80,7 +82,8 @@ def _decision(session):
 @pytest.mark.parametrize('field,value', [('purpose', None), ('purpose', ' '),
     ('use_cases', None), ('permitted_systems', None), ('tool_allowlist', None),
     ('autonomy_level', None), ('review_date', None), ('deployment_hash', None),
-    ('environment', None), ('environment', ' '), ('principal', None), ('principal', ' ')])
+    ('environment', None), ('environment', ' '), ('principal', None), ('principal', ' '),
+    ('model', None), ('model', ' '), ('deployment_date', None)])
 def test_missing_identity_denied_http(session, evidence, engine, field, value):
     agent, headers = _setup(session, evidence)
     setattr(agent, field, value)

@@ -52,7 +52,7 @@ def _load_usage(session, agents, at):
         if b.max_clients is None and b.max_value is None:
             query = query.where(_BlastUsage.at >= start)
         rows = session.exec(query.order_by(_BlastUsage.at.desc()).limit(10001)).all()
-        result[name] = tuple((as_utc(r.at), r.clients, r.value, r.request_id) for r in rows)
+        result[name] = tuple((as_utc(r.at), r.clients, r.value, r.request_id, bool(r.is_transaction)) for r in rows)
     return result
 
 
@@ -66,6 +66,7 @@ def _checks(env, snapshot, at, *, _exclude=None):
                             result=CheckResult.PASS if ok else CheckResult.FAIL))
     permission = (agent.tool_allowlist or {}).get(env.tool)
     gate('S4-TOOL-ALLOWLIST', isinstance(permission, dict) and not env.tool.startswith('_'))
+    verb = permission.get('verb') if isinstance(permission, dict) else None
     if agent.blast_radius is None:
         return checks
     try:
@@ -82,19 +83,24 @@ def _checks(env, snapshot, at, *, _exclude=None):
                                ('S4-PER-HOUR', b.per_hour, at-timedelta(hours=1)),
                                ('S4-DAILY-ACTIONS', b.max_daily_actions, day)]:
         if limit is not None:
-            gate(rule, sum(start < t <= at if start != day else day <= t <= at for t, _, _, _ in rows) < limit)
+            gate(rule, sum(start < t <= at if start != day else day <= t <= at for t, _, _, _, _ in rows) < limit)
+    if b.max_daily_transactions is not None:
+        gate('S4-DAILY-TRANSACTIONS', verb != 'execute' or
+             sum(1 for t, _, _, _, txn in rows if txn and day <= t <= at) < b.max_daily_transactions)
     if b.max_clients is not None:
-        clients = {c for _, cs, _, _ in rows for c in cs}
+        clients = {c for _, cs, _, _, _ in rows for c in cs}
         clients.update(env.context.get('_effective_subjects', {}).get('client', []))
         gate('S4-MAX-CLIENTS', len(clients) <= b.max_clients)
     if b.max_value is not None:
         value = env.arguments.get('value')
-        gate('S4-MAX-VALUE', type(value) in (int, float) and isfinite(value) and 0 <= value and sum(v for _, _, v, _ in rows) + value <= b.max_value)
+        gate('S4-MAX-VALUE', type(value) in (int, float) and isfinite(value) and 0 <= value and sum(v for _, _, v, _, _ in rows) + value <= b.max_value)
     if b.channels is not None:
         gate('S4-CHANNELS', env.arguments.get('channel') in b.channels)
     if b.jurisdictions is not None:
         gate('S4-JURISDICTIONS', env.actor_location in b.jurisdictions)
-    verb = permission.get('verb') if isinstance(permission, dict) else None
+    if b.products is not None:
+        products = set(env.context.get('_effective_subjects', {}).get('product', []))
+        gate('S4-PRODUCTS', products <= set(b.products))
     gate('S4-EXECUTION-AUTHORITY', verb not in ('queue', 'send', 'execute') or b.execution_authority == 'execute')
     if b.ttl is not None:
         gate('S4-TTL', at < as_utc(b.ttl))
@@ -144,7 +150,9 @@ def _reserve(session, evaluation, at):
         session.add(_BlastUsage(request_id=evaluation.request_id,
             agent_name=evaluation.envelope.agent_name, at=at,
             clients=evaluation.attributes.get("_s4_clients", []),
-            value=evaluation.attributes.get("_s4_value", 0)))
+            value=evaluation.attributes.get("_s4_value", 0),
+            is_transaction=(evaluation.outcome != Outcome.HUMAN_APPROVAL and
+                            bool(evaluation.attributes.get("_s4_transaction")))))
         session.flush()
 
 
@@ -152,6 +160,7 @@ def _released(session, evaluation, evidence, at):
     row = session.get(_BlastUsage, evaluation.request_id)
     if row is not None:
         row.at = at
+        row.is_transaction = bool(evaluation.attributes.get("_s4_transaction"))
         evidence.emit(session, correlation_id=evaluation.request_id,
             event_type=EventType.POLICY_CHANGE, actor_type=ActorType.SYSTEM,
             actor_id="governance-pdp", payload={"action": "BLAST_RADIUS_RELEASED",
@@ -185,6 +194,6 @@ def _recheck(session, evaluation, at):
         return evaluation
     checks = tuple(c for c in evaluation.checks if not c.check.startswith('S4-')) + tuple(fresh)
     attrs = dict(evaluation.attributes)
-    attrs["_s4_usage"] = [[t.isoformat(), cs, v, req] for t, cs, v, req in snap._usage[agent.name]]
+    attrs["_s4_usage"] = [[t.isoformat(), cs, v, req, txn] for t, cs, v, req, txn in snap._usage[agent.name]]
     return replace(evaluation, checks=checks, attributes=attrs, outcome=resolve_outcome(checks),
                    envelope_hash=envelope_hash(env, attrs, checks))

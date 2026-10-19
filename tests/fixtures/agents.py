@@ -36,6 +36,9 @@ def configure(agent, session=None):
     agent.tool_allowlist = {name: {"verb": "read", "required_level": 0,
         "permissions": ["read"], "system": "fixture"} for name in TOOLS}
     agent.review_date = datetime(2099, 1, 1, tzinfo=timezone.utc)
+    if "deployment_date" in type(agent).model_fields:
+        agent.deployment_date = agent.deployment_date or datetime(2026, 1, 1, tzinfo=timezone.utc)
+        agent.model = agent.model or "fixture-model-v1"
     if session is None:
         from kognita.registry import _deployment_hash
         agent.tool_allowlist["_deployment"] = _DEPLOYMENT

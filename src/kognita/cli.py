@@ -1720,9 +1720,9 @@ def _agent_deploy(args):
         from kognita.registry import _provider_key_finding
         manifest = _provider_key_finding(session, agent.name, manifest, EvidenceWriter(engine))
         for key in ("purpose", "use_cases", "permitted_systems", "tool_allowlist", "blast_radius", "field_allowlist",
-                    "review_date", "environment", "principal"):
+                    "review_date", "environment", "principal", "deployment_date", "model"):
             value = manifest.get(key)
-            if key == "review_date" and value is not None:
+            if key in ("review_date", "deployment_date") and value is not None:
                 value = datetime.fromisoformat(str(value))
             setattr(agent, key, value)
         type(agent).model_validate(agent.model_dump())
