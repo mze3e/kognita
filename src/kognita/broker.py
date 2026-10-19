@@ -301,6 +301,7 @@ def ask(
         attributes=attributes,
     )
 
+    register = _governing_register(session, as_of=as_of or at)
     evaluation = decide(
         routed,
         snap,
@@ -308,20 +309,19 @@ def ask(
         subjects=subjects,
         rules=pack.rules(),
         purposes=purposes,
-        usecases=_governing_register(session, as_of=as_of or at),
+        usecases=register,
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
+    from kognita.usecases import _library_checks
+    evaluation = _with_checks(evaluation, _library_checks(routed, register))
     # Keep the submitted subjects for step-up/checkpoint identity; consumers use
     # the resolved scope shared by the decision.
     routed = replace(routed, context=evaluation.envelope.context)
     if routed.agent_name:
-        from kognita.models import _WorkloadCredential
         from kognita.credentials import verify
-        issued = session.exec(select(_WorkloadCredential.digest).where(
-            _WorkloadCredential.agent_name == routed.agent_name).limit(1)).first()
-        if issued is not None and not verify(session, routed.agent_name,
-                                             routed.context.get('_agent_credential')):
+        if not verify(session, routed.agent_name,
+                      routed.context.get('_agent_credential')):
             evaluation = _with_checks(evaluation, [Check(check='S2-CREDENTIAL',
                 citation='S2-CREDENTIAL', regime='INTERNAL', result=CheckResult.FAIL)])
     from kognita._fleet import _run_checks

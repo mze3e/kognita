@@ -641,7 +641,7 @@ class McpProxy:
             assurance_level=_assurance(headers),
             subjects=subjects,
             arguments=dict(envelope_arguments),
-            context={**context, "_agent_credential": headers.get("agent_credential"),
+            context={**context, "_governed_ingress": True, "_agent_credential": headers.get("agent_credential"),
                      "_require_client_run": True},
         )
 

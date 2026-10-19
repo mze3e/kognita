@@ -960,7 +960,7 @@ def run_governed(
 ) -> ToolRun:
     """Authorise, then execute. The only supported path to a governed tool.
 
-    Agents with issued workload secrets provide proof in
+    Named agents must provide live workload proof in
     ``envelope.context['_agent_credential']``. It is verified against the live
     store and excluded from persisted checkpoints.
 
@@ -1005,6 +1005,7 @@ def run_governed(
         )
 
     from dataclasses import replace
+    register = _governing_register(session, as_of=as_of or at)
     evaluation = decide(
         envelope,
         snap,
@@ -1012,20 +1013,19 @@ def run_governed(
         subjects=subjects,
         rules=pack.rules(),
         purposes=purposes,
-        usecases=_governing_register(session, as_of=as_of or at),
+        usecases=register,
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
+    from kognita.usecases import _library_checks
+    evaluation = _with_checks(evaluation, _library_checks(envelope, register))
     # Keep the submitted subjects for step-up/checkpoint identity; consumers use
     # the resolved scope shared by the decision.
     envelope = replace(envelope, context=evaluation.envelope.context)
     if envelope.agent_name:
-        from kognita.models import _WorkloadCredential
         from kognita.credentials import verify
-        issued = session.exec(select(_WorkloadCredential.digest).where(
-            _WorkloadCredential.agent_name == envelope.agent_name).limit(1)).first()
-        if issued is not None and not verify(session, envelope.agent_name,
-                                             evaluation.envelope.context.get('_agent_credential')):
+        if not verify(session, envelope.agent_name,
+                      evaluation.envelope.context.get('_agent_credential')):
             extra_checks = tuple(extra_checks) + (Check(check='S2-CREDENTIAL',
                 citation='S2-CREDENTIAL', regime='INTERNAL', result=CheckResult.FAIL),)
     if envelope.agent_name:

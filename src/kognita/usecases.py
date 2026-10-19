@@ -1256,6 +1256,15 @@ def _check(name: str, citation: str, *, passed: bool = False) -> Check:
     )
 
 
+def _library_checks(envelope: Envelope, register: UseCaseRegister) -> list[Check]:
+    """Enforce the tier's ingress requirement at library execution time."""
+    entry = register.get(envelope.purpose)
+    if (entry is not None and entry.proposed_tier >= 2
+            and not envelope.context.get("_governed_ingress")):
+        return [_check("S2-DEPLOYMENT-MODE", "S2-DEPLOYMENT-MODE")]
+    return []
+
+
 def usecase_checks(
     envelope: Envelope,
     register: UseCaseRegister,
