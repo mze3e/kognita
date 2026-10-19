@@ -122,7 +122,7 @@ def test_adapter_preserves_registered_tool_contract(session, evidence, monkeypat
     bound = registry.get('read_note')
     assert {f.name: getattr(bound, f.name) for f in fields(bound) if f.name != 'fn'} == {
         f.name: getattr(declared, f.name) for f in fields(declared) if f.name != 'fn'}
-    assert bound.fn is not original
+    assert bound.fn is original
     if label == 'verb':
         assert outcome is Outcome.DENY
         assert 'S1-LEVEL' in citations

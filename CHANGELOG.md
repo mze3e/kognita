@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- R4 race (PR 96 follow-up): Bind adapter callbacks per call without mutating shared tool registrations, preserving metadata and isolating concurrent invocations.
+
 - R4 #5: Keep failed or unavailable recovery paused and retryable; mark recovered only after all compensations succeed, skipping steps already evidenced as completed.
 - R4 #1: Release governed tools and MCP calls only after consuming their exact current approval; older grants cannot bypass a pending hold or authorize repeated execution.
 - R4 #4: Release approved tool re-invocation results across framework adapters and let the Hermes hook proceed after approval, while withholding pending approvals.
