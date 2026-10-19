@@ -89,11 +89,21 @@ def _delegation(session):
         _Authority.kind == "delegation", _Authority.ended == False)).one().id
 
 
+def _authenticated_envelope(session, subject_id, evidence):
+    from kognita.credentials import issue
+    from kognita.registry import get
+
+    owner = get(session, app.AGENT_NAME).owner_exec
+    credential = issue(session, app.AGENT_NAME, evidence=evidence, actor_id=owner)
+    return replace(app.envelope(subject_id), delegation_id=_delegation(session),
+                   context={"_agent_credential": credential})
+
+
 def _allowed(session, pack, evidence) -> None:
     answer = ask(
         session,
         app.QUESTION,
-        replace(app.envelope(app.ASSIGNED_SUBJECT), delegation_id=_delegation(session)),
+        _authenticated_envelope(session, app.ASSIGNED_SUBJECT, evidence),
         pack=pack,
         embedder=HashingEmbedder(),
         evidence=evidence,
@@ -117,7 +127,7 @@ def _denied(session, pack, evidence) -> None:
     answer = ask(
         session,
         app.QUESTION,
-        replace(app.envelope(app.OTHER_SUBJECT), delegation_id=_delegation(session)),
+        _authenticated_envelope(session, app.OTHER_SUBJECT, evidence),
         pack=pack,
         embedder=HashingEmbedder(),
         evidence=evidence,

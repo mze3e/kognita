@@ -286,7 +286,11 @@ def test_l4_hold_rechecks_current_authority_before_execution(session, evidence, 
     registry.register("read", lambda *_: calls.append(True), verb="queue", required_level=4)
     run = Run()
     from kognita._isolation import _step_up
-    authenticated = replace(_env(), assurance_level=2)
+    # Tier-3 approval rechecks require credentials and trusted ingress admission.
+    from kognita.credentials import issue
+    credential = issue(session, agent.name, evidence=evidence, actor_id="owner")
+    authenticated = replace(_env(), assurance_level=2,
+        context={"_governed_ingress": True, "_agent_credential": credential})
     _step_up(session, authenticated, evidence=evidence, actor_id=authenticated.principal,
         authenticated_workflow=True, transaction_context={"task": "test"},
         independent_authorization="independent", expires_at=NOW + timedelta(hours=1))

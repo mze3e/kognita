@@ -46,7 +46,8 @@ def _tool(session, evidence, *, execute=False, review=False):
     _, _, _, env = _setup(session, evidence, verb='execute' if execute else 'read',
                            threshold='execute' if execute else 'read')
     credential = issue(session, 'worker', evidence=evidence, actor_id='owner')
-    env = replace(env, context={'_agent_credential': credential})
+    # Exercise resumed tier-2+ releases after trusted ingress admission.
+    env = replace(env, context={'_agent_credential': credential, '_governed_ingress': True})
     if execute:
         _review_required(session, evidence, execution=True)
         _criteria(session, evidence, 'after delivery')
