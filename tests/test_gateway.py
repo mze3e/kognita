@@ -411,8 +411,8 @@ def test_agent_name_must_match_the_client_configuration(session, evidence):
     )
 
 
-def test_registered_agent_authenticates_and_trigger_cannot_bypass_credentials(session, evidence):
-    """A configured trigger cannot bypass workload authentication."""
+def test_registered_agent_and_approved_system_trigger_authenticate(session, evidence):
+    """A listed trigger is an authenticated alternative to agent credentials."""
     _register(session)
     _live(session)
     session.flush()
@@ -451,17 +451,17 @@ def test_registered_agent_authenticates_and_trigger_cannot_bypass_credentials(se
         _body("hello"),
         session=session,
     )
-    assert trigger_response.status == 403
-    assert len(upstream.calls) == 1
+    assert trigger_response.status == 200
+    assert len(upstream.calls) == 2
     assert trigger_response.evaluation is not None
-    assert trigger_response.evaluation.outcome is Outcome.DENY
+    assert trigger_response.evaluation.outcome is Outcome.ALLOW
     assert trigger_response.evaluation.envelope.agent_name is None
     assert any(
         check.check == "SYSTEM_TRIGGER" and check.result is CheckResult.PASS
         for check in trigger_response.evaluation.checks
     )
-    assert any(check.check == "AGENT_CREDENTIAL" and check.result is CheckResult.FAIL
-               for check in trigger_response.evaluation.checks)
+    assert not any(check.check == "AGENT_CREDENTIAL" and check.result is CheckResult.FAIL
+                   for check in trigger_response.evaluation.checks)
 
     bound = _gateway(
         session.get_bind(),

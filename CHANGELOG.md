@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 0.5 DoD item 19: deliver automatic step-down alerts through recorder alerts and OpenTelemetry; verify the next gateway decision uses the reduced level.
 - Bind proposals to exact diffs and require a distinct human to apply them atomically with evidence for both steps.
 
+- Admit client-listed system triggers through gateway and MCP credential checks, evidence the trigger, and deny unlisted triggers or uncredentialed agent claims (finding 15).
 - Deny conflicting primary and additional subjects with S3-SUBJECT-CONFLICT and consistently prefer the primary subject when resolving references.
 - Per-tool subject mapping: Enforce private `_subject_paths` declarations against delegated data scopes; deny missing, malformed, or ambiguous argument paths before execution.
 - Reject unknown or foreign MCP runs and preserve workload/delegation taint across omitted or rotated run IDs.

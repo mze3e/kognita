@@ -16,10 +16,11 @@ One call, in order:
    :func:`kognita.tools.run_governed` already applies. A typed classification
    is a floor, not an override: the classifier still runs and can only raise
    it. The classifier does not decide.
-3. Resolve identity with the same rules as the AI gateway. A call with no
-   agent name is a denial. An agent name is admitted only when the bound
-   client configuration lists it and its workload credential verifies. A
-   system trigger alone cannot bypass workload authentication.
+3. Resolve identity with the same rules as the AI gateway. An agent name
+   is admitted only when the bound client configuration lists it and its
+   workload credential verifies. With no agent name, a system trigger listed
+   in that client configuration passes the credential check; all other
+   governance checks still apply. Unlisted triggers are denied.
 4. :func:`kognita.tools.run_governed` authorises and records the call. The
    backend is contacted only when that call is released: an allow, or a
    human approval that already has a live grant. A denial, an escalation,
@@ -619,7 +620,9 @@ class McpProxy:
         )
         context: dict[str, Any] = {}
         admitted = _admitted_trigger(trigger, identity_checks)
-        identity_checks = identity_checks + principal_checks + _credential_checks(session, agent_name, headers)
+        identity_checks = identity_checks + principal_checks + (
+            [] if admitted else _credential_checks(session, agent_name, headers)
+        )
         if admitted:
             context["system_trigger"] = admitted
         from kognita._isolation import _assurance

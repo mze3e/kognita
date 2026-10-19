@@ -3,7 +3,7 @@
 Covers roadmap 0.3 item 5. An allow is proxied and evidenced. A denial is not
 proxied and returns the outcome and the citations. Free-text arguments are
 always classified; a typed classification is a floor the classifier can
-raise but not lower. A missing agent name is a denial. An evidence-store
+raise but not lower. A missing agent name and system trigger is a denial. An evidence-store
 failure refuses the call and does not reach the backend.
 """
 from __future__ import annotations
@@ -472,7 +472,7 @@ def test_agent_name_outside_the_client_configuration_is_deny(session, evidence):
     assert any("authenticated client configuration" in citation for citation in denial["citations"])
 
 
-def test_approved_system_trigger_cannot_bypass_workload_credentials(session, evidence):
+def test_approved_system_trigger_passes_credential_check(session, evidence):
     from test_usecases import NOW, ensure_live_purposes
 
     ensure_live_purposes(session, evidence, ("COLLABORATION",), at=NOW)
@@ -492,12 +492,12 @@ def test_approved_system_trigger_cannot_bypass_workload_credentials(session, evi
         session=session,
     )
 
-    assert response.status == 403
-    assert len(upstream.calls) == 0
+    assert response.status == 200
+    assert len(upstream.calls) == 1
     assert response.evaluation is not None
-    assert response.evaluation.outcome is Outcome.DENY
+    assert response.evaluation.outcome is Outcome.ALLOW
     assert response.evaluation.envelope.agent_name is None
-    assert any(check.check == "AGENT_CREDENTIAL" and check.result is CheckResult.FAIL
+    assert not any(check.check == "AGENT_CREDENTIAL" and check.result is CheckResult.FAIL
                for check in response.evaluation.checks)
 
 
