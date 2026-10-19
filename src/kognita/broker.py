@@ -23,10 +23,10 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any, Callable, Sequence
 
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from kognita.approvals import ApprovalError, find_granted
-from kognita.envelope import Envelope, Evaluation
+from kognita.envelope import Check, Envelope, Evaluation
 from kognita.evidence import EvidenceWriter
 from kognita.governance import (
     PolicySnapshot,
@@ -234,6 +234,27 @@ def _retrieve_for(
     return _retrieved(session, evaluation, evidence, hits)
 
 
+def _retrieval_spec(snap: PolicySnapshot, envelope: Envelope, run: Run | None) -> ToolSpec:
+    """Rebuild the retrieval permission a hold or a resume must check against.
+
+    Reads the agent's *current* manifest, not whatever was true when a
+    question was first asked, so an approval cannot outlive a tightened
+    permission.
+    """
+    agent = snap.agents.get(envelope.agent_name)
+    permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
+    permission = permission if isinstance(permission, dict) else {}
+    level = permission.get('required_level', 0)
+    return ToolSpec(envelope.tool, lambda *_: None,
+        required_level=level if type(level) is int else 0,
+        verb=permission.get('verb', 'read'),
+        # Retrieved sources carry external provenance; delegated retrieval
+        # requires a run before releasing content.
+        external=permission.get('external', False) or bool(envelope.delegation_id and run is None),
+        client_data=permission.get('client_data', False),
+        public_content=permission.get('public_content', False))
+
+
 def ask(
     session: Session,
     question: str,
@@ -291,6 +312,18 @@ def ask(
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
+    # Keep the submitted subjects for step-up/checkpoint identity; consumers use
+    # the resolved scope shared by the decision.
+    routed = replace(routed, context=evaluation.envelope.context)
+    if routed.agent_name:
+        from kognita.models import _WorkloadCredential
+        from kognita.credentials import verify
+        issued = session.exec(select(_WorkloadCredential.digest).where(
+            _WorkloadCredential.agent_name == routed.agent_name).limit(1)).first()
+        if issued is not None and not verify(session, routed.agent_name,
+                                             routed.context.get('_agent_credential')):
+            evaluation = _with_checks(evaluation, [Check(check='S2-CREDENTIAL',
+                citation='S2-CREDENTIAL', regime='INTERNAL', result=CheckResult.FAIL)])
     from kognita._fleet import _run_checks
     from kognita.tools import _refresh_run
     if run is not None:
@@ -301,20 +334,10 @@ def ask(
         run = None
     from kognita._isolation import _ingest, _tool_checks
     _ingest(session, run, evidence, text=question, correlation_id=evaluation.request_id,
-        _agent_name=routed.agent_name, client_data='client' in routed.all_subjects()
+        _agent_name=routed.agent_name, client_data=bool(routed.context.get('_effective_subjects', {}).get('client'))
+        or 'client' in routed.all_subjects()
         or attributes.get('classification') in (Classification.C2, Classification.C3, 'C2', 'C3'))
-    agent = snap.agents.get(routed.agent_name)
-    permission = (agent.tool_allowlist or {}).get(routed.tool, {}) if agent else {}
-    permission = permission if isinstance(permission, dict) else {}
-    level = permission.get('required_level', 0)
-    retrieval_spec = ToolSpec(routed.tool, lambda *_: None,
-        required_level=level if type(level) is int else 0,
-        verb=permission.get('verb', 'read'),
-        # Retrieved sources carry external provenance; delegated retrieval
-        # requires a run before releasing content.
-        external=permission.get('external', False) or bool(routed.delegation_id and run is None),
-        client_data=permission.get('client_data', False),
-        public_content=permission.get('public_content', False))
+    retrieval_spec = _retrieval_spec(snap, routed, run)
     evaluation = _with_checks(evaluation, _tool_checks(session, routed, retrieval_spec, run, evidence, at=at))
     # The ceiling the caller would otherwise search at. A run that sits below
     # it is a budget breach, not a silent narrowing of the result set.
@@ -424,12 +447,23 @@ def _resume_retrieval(
     subgraph: Callable[[Envelope, Session], dict[str, int]] | None,
     run: Run | None = None,
 ) -> BrokerAnswer:
-    """Fetch entitled sources for a continuation that was held before retrieval."""
+    """Fetch entitled sources for a continuation that was held before retrieval.
+
+    A hold can sit for a long time. Taint, assurance, lane and step-up may all
+    have changed since the question was asked, so the current retrieval
+    permission is rebuilt and :func:`kognita._isolation._tool_checks` reruns
+    here, before the approval is used to release anything.
+    """
     if embedder is None:
         raise ApprovalError("continuing a retrieval requires an embedder")
+    at = evidence.clock()
     from kognita._fleet import _run_checks
     isolation = _run_checks(session, run, envelope, evidence)
     evaluation = _with_checks(evaluation, isolation)
+    from kognita._isolation import _tool_checks
+    snap = load_snapshot(session, as_of=at, _evidence=evidence, _agent_name=envelope.agent_name or "")
+    evaluation = _with_checks(evaluation, _tool_checks(
+        session, envelope, _retrieval_spec(snap, envelope, run), run, evidence, at=at))
     if not evaluation.allowed:
         return _refused_answer(evaluation, str(payload.get("route") or KNOWLEDGE))
     results, evaluation = _retrieve_for(
