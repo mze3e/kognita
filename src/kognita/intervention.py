@@ -217,6 +217,8 @@ def recover_run(
         control_state="paused").execution_options(synchronize_session=False))
     run.control_state = "paused"
     session.flush()
+    from kognita._actions import _reconcile_actions
+    _reconcile_actions(session, run.id, evidence)
     pending = session.exec(select(_PendingAction.id).where(
         _PendingAction.run_id == run.id).limit(1)).first()
     if pending is not None:

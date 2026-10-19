@@ -11,6 +11,7 @@ from kognita.vocabulary import ActorType, CheckResult, EventType
 _lock = Lock()
 _active = {}
 _compensations = WeakKeyDictionary()
+_uncertain = WeakKeyDictionary()
 
 
 def _matches(spec, permission):
@@ -42,11 +43,13 @@ def _stop(*, agent=None, run=None, delegation=None):
                 item.set()
 
 
-def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(), _check=None):
+def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(), _check=None, _lifecycle=None):
     """Return an outcome; cancellation is confirmed only by the transport."""
     if seconds <= 0:
         return 'timeout', None
     done, stop = Event(), Event()
+    if _lifecycle is not None:
+        _lifecycle['settled'] = done
     result = []
     finished = []
     key = (agent, run, frozenset([delegation, *_authority]), object())
@@ -79,6 +82,8 @@ def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(),
                     def request_cancel():
                         try:
                             confirmation.append(cancel())
+                            if confirmation[-1] is True and _lifecycle is not None:
+                                _lifecycle['cancelled'] = True
                         except Exception:
                             confirmation.append(False)
                         finally:
@@ -144,17 +149,47 @@ def _begin_action(session, run_id, spec, envelope, evaluation, evidence):
     return row.id
 
 
-def _finish_action(session, action_id, evidence):
+def _finish_action(session, action_id, evidence, *, _lifecycle=None, _commit=True):
     from kognita.models import _PendingAction
     row = session.get(_PendingAction, action_id)
+    if row is not None and _lifecycle and not (
+            _lifecycle['settled'].is_set() or _lifecycle.get('cancelled')):
+        with _lock:
+            _uncertain.setdefault(session.get_bind(), {})[action_id] = _lifecycle
+        evidence.emit(session, correlation_id=action_id, event_type=EventType.INTERVENTION,
+                      actor_type=ActorType.SYSTEM, actor_id='governance-pdp',
+                      payload={'action': '_action_uncertain', 'run_id': row.run_id,
+                               'citation': 'S6C-RECOVER'})
+        session.commit()
+        return
     if row is not None:
         run_id = row.run_id
         session.delete(row)
         evidence.emit(session, correlation_id=action_id, event_type=EventType.INTERVENTION,
                       actor_type=ActorType.SYSTEM, actor_id='governance-pdp',
                       payload={'action': '_action_finished', 'run_id': run_id,
+                               '_settlement': ('cancelled' if _lifecycle and
+                                   _lifecycle.get('cancelled') else 'completed'),
                                'citation': 'S6C-RECOVER'})
-        session.commit()
+        if _commit:
+            session.commit()
+        with _lock:
+            _uncertain.get(session.get_bind(), {}).pop(action_id, None)
+
+
+def _reconcile_actions(session, run_id, evidence):
+    from sqlmodel import select
+    from kognita.models import _PendingAction
+    # Unknown actions (including after restart) remain pending. Only observed
+    # completion or explicit transport confirmation can settle this barrier.
+    rows = session.exec(select(_PendingAction.id).where(
+        _PendingAction.run_id == run_id).limit(100)).all()
+    for action_id in rows:
+        with _lock:
+            lifecycle = _uncertain.get(session.get_bind(), {}).get(action_id)
+        if lifecycle and (lifecycle['settled'].is_set() or lifecycle.get('cancelled')):
+            _finish_action(session, action_id, evidence, _lifecycle=lifecycle, _commit=False)
+    session.flush()
 
 
 def _recover(session, steps, evidence, correlation_id, registry=None):

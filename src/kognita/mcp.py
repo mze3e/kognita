@@ -645,6 +645,7 @@ class McpProxy:
         )
 
         state = {"proxied": False}
+        lifecycle = {}
         registry = ToolRegistry()
 
         def invoke(env: Envelope, evaluation: Evaluation, sess: Session) -> Any:
@@ -694,7 +695,7 @@ class McpProxy:
                 seconds=seconds, agent=agent_name,
                 run=headers.get('run_id'), delegation=envelope.delegation_id,
                 cancel=(lambda: cancel(rpc_id)) if callable(cancel) else None,
-                _authority=authority_ids, _check=live)
+                _authority=authority_ids, _check=live, _lifecycle=lifecycle)
             if bound_run is not None:
                 _refresh_run(sess, bound_run)
             state['_outcome'] = outcome
@@ -750,6 +751,7 @@ class McpProxy:
             identity_checks.append(Check(check='S6C-TOOL-METADATA', regime='INTERNAL',
                 result=CheckResult.FAIL, citation='S6C-TOOL-METADATA'))
             registry.register(envelope.tool, invoke)
+        registry.get(envelope.tool)._backend_lifecycle = lifecycle
         registry.get(envelope.tool)._compensation_name = permission.get('compensation')
         from kognita.tools import Run, _refresh_run
         bound_run = Run(id=headers['run_id']) if headers.get('run_id') else None

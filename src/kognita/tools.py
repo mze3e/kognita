@@ -809,7 +809,8 @@ def _release_tool(
         data = spec.fn(envelope, evaluation, session)
     finally:
         if action_id is not None:
-            _finish_action(session, action_id, evidence)
+            _finish_action(session, action_id, evidence,
+                           _lifecycle=getattr(spec, '_backend_lifecycle', None))
     from kognita._isolation import _ingest
     _ingest(session, run, evidence, external=spec.external,
             client_data=spec.client_data or spec.classification in (Classification.C2, Classification.C3)
