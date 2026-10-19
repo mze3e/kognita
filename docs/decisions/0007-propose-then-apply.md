@@ -212,7 +212,7 @@ A before-snapshot + change allows the human to see exactly what was proposed. A 
 
 Versioning (Tier 2 item 5) tracks the history of a thing *after* it's applied. Proposals track *before* a change is proposed. They're orthogonal: a proposal creates a snapshot, a version is a snapshot post-apply. Both matter, both belong in the schema.
 
-## Public API (0.5.0 follow-up)
+## Public API (0.5.1)
 
 `propose_document` and `apply_proposal_tool` are available from both
 `kognita` and `kognita.approvals`. These trusted host APIs wrap the private

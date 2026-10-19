@@ -215,15 +215,16 @@ The invariants are importable, so external packs run them in their own repositor
 
 ## Known limitations
 
-Kognita is alpha. These are known gaps in v0.5.0. The [changelog](CHANGELOG.md) has the full list.
+Kognita is alpha. These are known limitations in v0.5.1. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
 
-- **Several 0.5 definition-of-done items are partial.** Agent identity does not yet require every field. Blast-radius quota admission is not atomic under concurrency, and there is no daily transaction or allowed-products limit. Containment and step-down alerts are evidence events with no delivery. Provider-credential detection scans declared metadata only. A timed-out or killed MCP call's result is withheld, but the backend call keeps running.
-- **Gateway model calls do not apply every run control.** Live-run interventions (pause, override, restrict, recover), the tool isolation checks and human-approval continuation apply on governed tool calls, not on AI gateway model calls.
-- **The framework adapters cannot pass an agent credential or delegation id yet.** Registered-agent calls through the hermes-agent, openai-agents, langgraph and pydantic-ai adapters are denied (fail closed).
-- **Approved system triggers are denied.** A trigger with no agent credential fails the credential check on the gateway and the MCP proxy.
-- **The gateway does not place a response on the review queue.** Scoring a response against the use case's risk criteria happens when the interaction is screened. A response that was never screened is counted as unscreened in the coverage report.
-- **Degraded-mode evidence is held in the gateway process.** A `DEGRADED` call that proceeds while the evidence store is down keeps the decision and the model evidence in memory until the store accepts writes. Restarting the process before then drops them. `FAIL_CLOSED` is the default, and it refuses the call. The MCP proxy has no degraded mode.
-- **`create_all` does not migrate an existing SQLite file beyond the additive agent columns.** Tables already in the file are otherwise left as they are. A domain pack's models must be imported first, or its tables are skipped.
+- **The gateway refuses attachments.** File, image and audio content parts cannot be inspected locally, so they are refused (S5-UNSUPPORTED-CONTENT).
+- **Degraded-mode evidence is held in the gateway process.** Restarting before the evidence store recovers drops buffered evidence. `FAIL_CLOSED` is the default; MCP has no degraded mode.
+- **Schema migration is limited.** `create_all` applies supported additive columns and SQLite compatibility updates, not arbitrary schema migrations. Import a domain pack's models before creating its tables.
+- **Append-only evidence triggers are SQLite-only.** Other databases do not receive those trigger protections.
+- **Policy citations default to empty at model level.** `decide()` escalates empty citations with CITATION-REQUIRED and preserves denials.
+- **Anomaly buckets use UTC calendar days**, except the rolling 24-hour volume window.
+- **Circuit-breaker window boundaries lack a regression test.**
+- **Run budgets can overshoot by one call.** Post-call usage is accounted for before response release.
 
 ## Where it's heading
 
@@ -237,7 +238,7 @@ The test every release is measured against:
 
 **0.4 "Ingestion, Policy Language and the Client Lifecycle" is shipped** in v0.4.1: structured ingestion with passage-level citations, the policy language, the use-case register, the client interaction record, outcomes and the review queue, communication and intervention controls, the circuit breaker and revocation, starter packs, the flight recorder, and the hermes-agent, openai-agents, langgraph and pydantic-ai adapters.
 
-**0.5 "Agents, Authority and Fleets" is released as an alpha** in v0.5.0: authenticated agent identity and workload credentials, delegated authority with dual checks, autonomy levels with evidence-gated promotion and step-down, blast-radius limits, taint isolation, anomaly containment, agent delegation and fleet controls, reversibility, and a threat model. Some definition-of-done items are still partial; see Known limitations.
+**0.5 "Agents, Authority and Fleets" is released as an alpha** in v0.5.1: authenticated agent identity and workload credentials, delegated authority with dual checks, autonomy levels with evidence-gated promotion and step-down, blast-radius limits, taint isolation, anomaly containment, agent delegation and fleet controls, reversibility, and a threat model. The 0.5 definition-of-done items are complete; v0.5.1 strengthens these controls. See Known limitations for remaining gaps.
 
 Planned, not yet built:
 
@@ -274,6 +275,6 @@ kognita.adapters   provider-backed embedders                 [openai]
 
 ## Status
 
-**Alpha.** v0.5.0 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+**Alpha.** v0.5.1 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 MIT licensed.
