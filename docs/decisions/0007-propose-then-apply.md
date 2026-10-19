@@ -211,3 +211,52 @@ A before-snapshot + change allows the human to see exactly what was proposed. A 
 **Why not versioning?**
 
 Versioning (Tier 2 item 5) tracks the history of a thing *after* it's applied. Proposals track *before* a change is proposed. They're orthogonal: a proposal creates a snapshot, a version is a snapshot post-apply. Both matter, both belong in the schema.
+
+## Public API (0.5.0 follow-up)
+
+`propose_document` and `apply_proposal_tool` are available from both
+`kognita` and `kognita.approvals`. These trusted host APIs wrap the private
+proposal implementation; they do not authenticate an agent or human for the host.
+The host supplies authenticated identities, an existing session and evidence writer,
+and owns the final commit. Neither function creates a new transaction boundary
+for committing the surrounding workflow.
+
+```python
+from kognita import propose_document, apply_proposal_tool, canonical_hash
+from kognita.approvals import open_approval, grant
+from kognita.vocabulary import ActorType
+
+# proposal is a new models.Proposal(kind="document_edit", ...) with the
+# persisted target's table/id, before_snapshot, change and proposer_id.
+propose_document(session, proposal, evidence=evidence, correlation_id=request_id)
+diff_hash = canonical_hash({key: getattr(proposal, key) for key in (
+    "kind", "before_snapshot", "change", "rationale", "subject_type",
+    "subject_id", "proposer_id",
+)})
+approval = open_approval(
+    session, decision_id=decision_id, envelope_hash=diff_hash,
+    proposal_id=proposal.id, requester_id=proposal.proposer_id, scope="LOCAL",
+    evidence=evidence, correlation_id=request_id,
+)
+session.commit()
+# The human reviews the stored proposal before granting it.
+grant(session, approval, approver_name="owner", evidence=evidence,
+      correlation_id=request_id)
+session.commit()
+apply_proposal_tool(
+    session, proposal, target, approval, diff_hash=diff_hash,
+    approver_id="owner", actor_type=ActorType.HUMAN,
+    evidence=evidence, correlation_id=request_id,
+)
+session.commit()
+```
+
+The approval's `envelope_hash` is the canonical proposal hash above, rather than
+the initiating tool envelope hash. `apply_proposal_tool` accepts an optional
+existing `now` argument for deterministic expiry checks. It requires a persisted,
+approved, unexpired approval with matching proposal ID and diff hash; two-signature
+approvals must also be confirmed. Invalid approvals raise `ApprovalError` with
+`PROPOSAL-APPROVAL`. The private helper additionally denies changed diffs,
+changed target state, a nonhuman or the proposer applying the change, and reuse.
+Those errors retain the `PROPOSAL-BINDING`, `PROPOSAL-TARGET` and `PROPOSAL-HUMAN`
+rule IDs. Application, the one-use claim and evidence remain atomic.

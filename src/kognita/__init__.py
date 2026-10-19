@@ -41,6 +41,8 @@ from typing import Any
 
 from kognita.approvals import (
     ApprovalError,
+    propose_document,
+    apply_proposal_tool,
     confirm,
     expire_stale,
     find_granted,
@@ -208,6 +210,8 @@ __all__ = [
     "confirm",
     "expire_stale",
     "find_granted",
+    "propose_document",
+    "apply_proposal_tool",
     "ApprovalError",
     # retrieval
     "retrieve",
