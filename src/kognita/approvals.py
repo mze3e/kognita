@@ -519,6 +519,8 @@ __all__ = [
     "expire_stale",
     "pending",
     "find_granted",
+    "propose_document",
+    "apply_proposal_tool",
 ]
 
 
@@ -599,3 +601,43 @@ def _apply_proposal(session, proposal, target, *, diff_hash, approver_id,
                                '_diff_hash': diff_hash, 'rule_id': 'PROPOSAL-BINDING',
                                'outcome': 'ALLOW'})
     return proposal
+
+
+def propose_document(session, proposal, *, evidence, correlation_id):
+    """Hold a document diff for review without modifying its target (ADR 0007).
+
+    Open an approval with this proposal's id and canonical diff hash as its
+    envelope_hash; apply_proposal_tool requires that exact live grant.
+    The caller owns the transaction and supplies trusted host identities.
+    """
+    if proposal.kind != 'document_edit':
+        raise ApprovalError('PROPOSAL-BINDING: expected a document edit')
+    return _propose(session, proposal, evidence=evidence,
+                    correlation_id=correlation_id)
+
+
+def apply_proposal_tool(session, proposal, target, approval, *, diff_hash,
+                        approver_id, actor_type, evidence, correlation_id, now=None):
+    """Apply an exact document diff once, with a persisted live human approval.
+
+    Approval.envelope_hash must equal diff_hash and approval.proposal_id must
+    name this proposal. The private apply helper checks the stored diff and
+    target before-state and atomically records the change and evidence.
+    The caller owns commit; identities are supplied by the trusted host.
+    """
+    from sqlalchemy import inspect
+    state = inspect(approval)
+    if not state.persistent or state.session is not session:
+        raise ApprovalError('PROPOSAL-APPROVAL: expected a persisted approval')
+    session.refresh(approval)
+    expiry = as_utc(approval.expires_at)
+    if (approval.status != ApprovalStatus.APPROVED
+            or approval.confirmation_status not in (None, ApprovalStatus.APPROVED)
+            or (expiry is not None and expiry <= (now or utcnow()))
+            or approval.proposal_id != proposal.id
+            or approval.envelope_hash != diff_hash
+            or proposal.kind != 'document_edit'):
+        raise ApprovalError('PROPOSAL-APPROVAL: exact live approval required')
+    return _apply_proposal(session, proposal, target, diff_hash=diff_hash,
+                           approver_id=approver_id, actor_type=actor_type,
+                           evidence=evidence, correlation_id=correlation_id)
