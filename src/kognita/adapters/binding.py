@@ -133,7 +133,10 @@ class Binding:
 
         if not _verify(self.session, self.agent_name or "", self.agent_credential):
             return _refused("S2-CREDENTIAL: agent not registered or credential invalid")
-        self.registry.register(name, body)
+        if name in self.registry:
+            self.registry.get(name).fn = body
+        else:
+            self.registry.register(name, body)
         envelope = Envelope(
             principal=self.principal,
             purpose=self.purpose,
