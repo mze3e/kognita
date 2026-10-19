@@ -1047,12 +1047,13 @@ def run_governed(
     from kognita.approvals import _resume
     from dataclasses import replace
     resumed = _resume(session, evaluation, evidence, at)
+    _approval_released = evaluation.approval_required and resumed.outcome == Outcome.ALLOW
     evaluation = replace(resumed, outcome=Outcome.HUMAN_APPROVAL) if (
         evaluation.approval_required and resumed.outcome == Outcome.ALLOW
     ) else resumed
     already_granted = (
         find_granted(session, evaluation.envelope_hash, now=at)
-        if evaluation.approval_required
+        if _approval_released
         else None
     )
     evaluation = record(
