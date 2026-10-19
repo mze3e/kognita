@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Hold the provider credential at the gateway, not the agent: `kognita serve --provider-key` (or `KOGNITA_PROVIDER_KEY`) is forwarded upstream as `Authorization: Bearer`; a caller-presented provider credential (`authorization`, `x-api-key`, `api-key`, `x-goog-api-key`) is denied with `S2-PROVIDER-KEY` and raises a `provider-key finding` review flag, never forwarded, and never written to evidence, a held continuation, or a log line (closes 0.5 item 20).
 - R3 #2: Keep timed-out or unconfirmed MCP actions pending until observed completion or confirmed cancellation; reconcile before recovery and compensate late effects.
+- Preserve registered tool execution metadata when framework adapters bind callbacks (round 3 finding 6).
 
 - Screen and ingest all gateway response fields, including function arguments, before release (r2 #2).
 - Reevaluate response classification and confidence policies before gateway delivery (r2 #3).
