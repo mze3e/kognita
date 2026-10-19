@@ -1427,8 +1427,9 @@ def test_pause_override_restrict_and_recover_are_evidenced(harness):
         "withdraw the draft",
     ]
     assert after.evaluation.outcome is Outcome.DENY
-    assert any("recovered" in check.citation for check in after.evaluation.checks)
-    assert stored.control_state == "recovered"
+    # Named actions without callbacks leave recovery stopped and retryable.
+    assert any("paused" in check.citation for check in after.evaluation.checks)
+    assert stored.control_state == "paused"
     assert executed == ["get_subject_profile"]
 
 
