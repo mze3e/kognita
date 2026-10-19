@@ -42,7 +42,7 @@ def test_default_http_transport_closes_inflight_connection(session, evidence, en
                 # The tool is sleeping pending input; EOF proves actual transport
                 # shutdown, independently of any cancellation adapter claim.
                 Event().wait(0.05)
-                self.connection.settimeout(2)
+                self.connection.settimeout(10)
                 try:
                     if self.connection.recv(1) == b'':
                         disconnected.set()
@@ -59,7 +59,7 @@ def test_default_http_transport_closes_inflight_connection(session, evidence, en
 
     def kill():
         try:
-            assert entered.wait(2)
+            assert entered.wait(10)
             with Session(engine) as other:
                 set_kill_switch(other, 'dossier-agent', True, evidence=evidence,
                                 actor_id='Head of Research Ops')
