@@ -719,7 +719,7 @@ named products. Both controls complement the existing per-agent limits.
 - [x] Adversarial suite passes; threat model published
 - [x] A promotion request below its evidence thresholds cannot be approved
 - [x] A sustained metric decline steps the agent down one level automatically, evidenced and alerted
-- [ ] A tier 2 use case registered in library mode fails validation; an agent holding a provider credential directly is flagged
+- [x] A tier 2 use case registered in library mode fails validation; an agent holding a provider credential directly is flagged
 - [x] Engaging the kill switch cancels an in-flight tool call at the proxy and records which calls were cancelled; a tool call past its maximum duration times out with evidence
 
 ---
