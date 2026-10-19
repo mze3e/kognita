@@ -232,13 +232,18 @@ def recover_run(
         session.commit()
         return payload
     steps = _steps(session, run.id)
-    run.control_state = "recovered"
-    session.add(run)
-    session.flush()
-    payload = _base(run, interaction_id, human, "recover", citation, at)
     from kognita._actions import _stop, _recover
     _stop(run=run_id)
     _recover(session, steps, evidence, interaction_id, _registry)
+    complete = all(step.get("outcome") in {"completed", "already_completed"}
+                   for step in steps)
+    if complete:
+        run.control_state = "recovered"
+    session.add(run)
+    session.flush()
+    payload = _base(run, interaction_id, human, "recover", citation, at)
+    if not complete:
+        payload["checks"][0].update(result=CheckResult.FAIL.value, citation="S6C-RECOVER")
     payload["steps"] = steps
     if not steps:
         payload["note"] = (
