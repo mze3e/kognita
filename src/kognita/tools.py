@@ -908,11 +908,35 @@ def _screen_tool_response(session, evaluation, data, evidence, *, interaction_id
 
 
 def _argument_text(envelope: Envelope) -> str:
-    """String arguments, in insertion order. Non-strings are not prose to classify."""
+    """Collect nested argument strings within bounded classification work.
+
+    Unread content must never be treated as public. The caller denies calls
+    exceeding these limits, including cycles supplied by in-process callers.
+    """
     parts: list[str] = []
-    for value in envelope.arguments.values():
-        if isinstance(value, str) and value.strip():
-            parts.append(value)
+    nodes = 0
+    size = 0
+
+    def _visit(value, depth):
+        nonlocal nodes, size
+        nodes += 1
+        if depth > 32 or nodes > 4096:
+            raise ValueError("S5-TAINT")
+        if isinstance(value, str):
+            size += len(value) + 1
+            if size > 65536:
+                raise ValueError("S5-TAINT")
+            if value.strip():
+                parts.append(value)
+        elif isinstance(value, dict):
+            for key, item in value.items():
+                _visit(key, depth + 1)
+                _visit(item, depth + 1)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                _visit(item, depth + 1)
+
+    _visit(envelope.arguments, 0)
     return "\n".join(parts)
 
 
@@ -962,7 +986,14 @@ def run_governed(
     # A call held in an earlier process resumes with this pack once it is seen again.
     _remember_pack(pack)
     snap = snapshot if snapshot is not None else load_snapshot(session, as_of=as_of or at, _evidence=evidence, _agent_name=envelope.agent_name or "")
-    argument_text = _argument_text(envelope)
+    argument_unread = False
+    try:
+        argument_text = _argument_text(envelope)
+    except ValueError:
+        argument_text = ""
+        argument_unread = True
+        extra_checks = tuple(extra_checks) + (Check(check="S5-TAINT",
+            citation="S5-TAINT", regime="INTERNAL", result=CheckResult.FAIL),)
     if argument_text:
         # Free-text arguments have no typed classification. A caller-supplied
         # classification attribute still wins; identity is not read from the text.
@@ -1014,7 +1045,7 @@ def run_governed(
         # A foreign run must not be tainted, spent or checkpointed by this call.
         run = None
     from kognita._fleet import _external_agent
-    _ingest(session, run, evidence, external=_external_agent(session, envelope.agent_name), client_data=bool(envelope.context.get("_effective_subjects", {}).get("client")) or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
+    _ingest(session, run, evidence, external=_external_agent(session, envelope.agent_name), client_data=argument_unread or bool(envelope.context.get("_effective_subjects", {}).get("client")) or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
             text=argument_text, correlation_id=evaluation.request_id, _agent_name=envelope.agent_name)
     if (envelope.context.get("_require_client_run") and envelope.delegation_id and run is None
             and (envelope.context.get("_effective_subjects", {}).get("client")
