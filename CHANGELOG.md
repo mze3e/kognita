@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - R4 #5: Keep failed or unavailable recovery paused and retryable; mark recovered only after all compensations succeed, skipping steps already evidenced as completed.
 - R4 #1: Release governed tools and MCP calls only after consuming their exact current approval; older grants cannot bypass a pending hold or authorize repeated execution.
 - R4 #4: Release approved tool re-invocation results across framework adapters and let the Hermes hook proceed after approval, while withholding pending approvals.
+- R4 #2: Classify and taint nested MCP argument content; deny content exceeding bounded traversal with `S5-TAINT`.
 
 - R4 #3: Preserve listed system-trigger admission during MCP live polling while cancelling calls when the trigger is removed or the bound run is stopped.
 - Hold the provider credential at the gateway, not the agent: `kognita serve --provider-key` (or `KOGNITA_PROVIDER_KEY`) is forwarded upstream as `Authorization: Bearer`; a caller-presented provider credential (`authorization`, `x-api-key`, `api-key`, `x-goog-api-key`) is denied with `S2-PROVIDER-KEY` and raises a `provider-key finding` review flag, never forwarded, and never written to evidence, a held continuation, or a log line (closes 0.5 item 20).

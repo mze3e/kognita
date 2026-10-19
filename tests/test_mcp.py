@@ -361,6 +361,8 @@ def test_free_text_is_always_classified_and_typed_values_are_a_floor(session, ev
     _register(session)
     session.flush()
     text = f"Email {SECRET} about the notes"
+    # Argument keys are forwarded content too and now join classifier input.
+    classified_text = f"query\n{text}"
     upstream = _Upstream()
     spy = _Spy()
     proxy = _proxy(session.get_bind(), evidence, upstream, classifier=spy)
@@ -380,8 +382,8 @@ def test_free_text_is_always_classified_and_typed_values_are_a_floor(session, ev
     assert recorded["version"] == PATTERN_VERSION
     assert recorded["label"] == "C2"
     assert recorded["confidence"] == INDICATOR_CONFIDENCE
-    assert recorded["input_hash"] == hash_text(text)
-    assert spy.seen == [text]
+    assert recorded["input_hash"] == hash_text(classified_text)
+    assert spy.seen == [classified_text]
     assert len(upstream.calls) == 1
 
     typed = proxy.handle(
@@ -396,7 +398,7 @@ def test_free_text_is_always_classified_and_typed_values_are_a_floor(session, ev
     assert typed.evaluation.outcome is Outcome.ALLOW
     assert typed.evaluation.attributes["classification"] == "C2"
     assert typed.evaluation.attributes["classifier"]["label"] == "C2"
-    assert spy.seen == [text, text]
+    assert spy.seen == [classified_text] * 2
     assert len(upstream.calls) == 2
 
     packed = _proxy(
@@ -416,7 +418,7 @@ def test_free_text_is_always_classified_and_typed_values_are_a_floor(session, ev
     assert from_pack.evaluation is not None
     assert from_pack.evaluation.attributes["classification"] == "C2"
     assert from_pack.evaluation.attributes["classifier"]["label"] == "C2"
-    assert spy.seen == [text, text, text]
+    assert spy.seen == [classified_text] * 3
 
     header_wins = packed.handle(
         "POST",
@@ -428,7 +430,7 @@ def test_free_text_is_always_classified_and_typed_values_are_a_floor(session, ev
     assert header_wins.evaluation is not None
     assert header_wins.evaluation.attributes["classification"] == "C2"
     assert header_wins.evaluation.attributes["classifier"]["label"] == "C2"
-    assert spy.seen == [text, text, text, text]
+    assert spy.seen == [classified_text] * 4
 
 
 def test_missing_agent_name_is_deny(session, evidence):
