@@ -158,6 +158,8 @@ $ kognita serve --provider openai-compatible --upstream https://api.openai.com \
 
 `--provider` accepts `openai-compatible` only, and `--upstream` is the provider origin. `--purposes` is the allowlist; with none, every call is denied. `--purpose` is the purpose claimed when a request has none. The process listens on `127.0.0.1:8080`. Clients set `base_url` to `http://127.0.0.1:8080/v1`.
 
+The gateway holds the provider credential; the agent never does. `--provider-key`, or `KOGNITA_PROVIDER_KEY` when the flag is omitted, is sent upstream as `Authorization: Bearer <key>` on every forwarded call. A caller that presents a provider credential of its own (`authorization`, `x-api-key`, `api-key`, or `x-goog-api-key`) is denied with `S2-PROVIDER-KEY` and raises a `provider-key finding` review flag, with the value never copied into that flag, a decision, a held continuation, or a log line. With no key configured, the gateway forwards no provider credential at all.
+
 **The MCP proxy.** `kognita serve --mcp --root-config config.json` fronts the MCP servers named in that file. The file also names the policy pack, the evidence database, and the default actor context. Every call becomes an envelope and is authorised with `run_governed()`. The backend is contacted only when the call is released: an allow, or a human approval that already has a live grant. A denial, an escalation, and an ungranted human approval return the outcome and the citations. If the evidence store cannot record the call, the proxy refuses it and does not forward. It has no degraded mode.
 
 **Flagship demo.** `kognita scaffold --template governed-agent` creates a small app and a SQLite policy and evidence store.

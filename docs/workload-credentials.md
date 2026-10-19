@@ -35,3 +35,15 @@ Agent manifest and environment declarations containing provider keys create
 redacted before declaration evidence is stored. This checks declared
 configuration; network egress and evidence-store isolation remain deployment
 controls managed outside the agent process.
+
+The AI gateway enforces the same rule at request time. `kognita serve
+--provider openai-compatible` takes `--provider-key`, or `KOGNITA_PROVIDER_KEY`
+when the flag is omitted: the gateway's own upstream credential, sent as
+`Authorization: Bearer <key>` on every forwarded call. A caller that presents
+a provider credential of its own (`authorization`, `x-api-key`, `api-key`, or
+`x-goog-api-key`) is denied with rule `S2-PROVIDER-KEY` and raises a
+`provider-key finding` review flag; the header value is never copied into
+that flag, a decision, a held continuation, or a log line. With no key
+configured, the gateway forwards no provider credential at all. A resumed
+held gateway call (a `model_call` that waited on `HUMAN_APPROVAL`) forwards
+with the same host key — the continuation never carries the caller's headers.

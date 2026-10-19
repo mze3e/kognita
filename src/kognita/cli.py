@@ -480,6 +480,12 @@ def cmd_serve(args: argparse.Namespace) -> int:
     fronts MCP servers instead, and does not start the model gateway. The
     proxy's header list is the ``purposes`` list in that file, not ``--purpose``
     and not ``--purposes``. The register authorizes that call too.
+    ``--provider-key``, or ``KOGNITA_PROVIDER_KEY`` when it is omitted, is the
+    gateway's own upstream credential, sent as ``Authorization: Bearer`` on
+    every forwarded call. A caller that presents a provider credential of its
+    own (``authorization``, ``x-api-key``, ``api-key``, ``x-goog-api-key``) is
+    denied and flagged; the gateway never forwards it. With no key configured,
+    the gateway forwards no provider credential at all.
     """
     if args.mcp:
         if args.pack or args.overlay:
@@ -521,6 +527,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         purposes=tuple(args.purposes or ()),
         failure_mode={args.purpose: args.failure_mode},
         pack=pack,
+        provider_key=args.provider_key or os.environ.get("KOGNITA_PROVIDER_KEY") or None,
     )
     gateway.serve(args.host, args.port)
     return 0
@@ -1286,6 +1293,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="front one or more MCP servers",
     )
     serve.add_argument("--upstream", help="provider origin, not a base path")
+    serve.add_argument(
+        "--provider-key",
+        default=None,
+        help=(
+            "the gateway's own upstream credential, sent as Authorization: "
+            "Bearer on every forwarded call; or set KOGNITA_PROVIDER_KEY. "
+            "A caller-supplied provider credential is denied and flagged, "
+            "never forwarded. With neither set, no provider credential is "
+            "forwarded"
+        ),
+    )
     serve.add_argument(
         "--root-config",
         help="MCP config naming servers, policy pack, evidence database, and actor",

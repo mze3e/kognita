@@ -116,7 +116,11 @@ from kognita.vocabulary import (
     classification_rank,
 )
 
-_FORWARDED_HEADERS = frozenset({"authorization", "content-type", "accept"})
+_FORWARDED_HEADERS = frozenset({"content-type", "accept"})
+# The gateway holds the one key sent upstream; a caller that presents a
+# provider credential of its own is a finding (ROADMAP item 15), never a
+# header the gateway relays on its behalf.
+_CALLER_PROVIDER_KEY_HEADERS = frozenset({"authorization", "x-api-key", "api-key", "x-goog-api-key"})
 
 
 class _EvidenceStoreUnavailable(KognitaError):
@@ -880,12 +884,16 @@ class Gateway:
         transport: Transport | None = None,
         run: Run | None = None,
         provider: str | None = None,
+        provider_key: str | None = None,
         failure_mode: Mapping[str, FailureMode | str] | None = None,
     ) -> None:
         self.engine = engine
         self.evidence = evidence
         self.upstream = upstream
         self.provider = provider
+        # The gateway's own upstream credential. Never read from a request,
+        # never written to evidence, a continuation, or a log line.
+        self.provider_key = provider_key
         self.client = client
         self.pack = pack if pack is not None else _GatewayPack()
         self.purposes = purposes
@@ -1066,6 +1074,28 @@ class Gateway:
                 Check(check="S2-CREDENTIAL", citation="S2-CREDENTIAL",
                       regime="INTERNAL", result=CheckResult.FAIL)]
         identity_checks = identity_checks + principal_checks + credential_checks
+        # An agent holding a provider credential directly is a finding
+        # (ROADMAP item 15): the gateway is the only thing that ever sends one
+        # upstream. A resumed call never reaches here with these headers —
+        # _UNRETAINED_HEADERS already stripped them before the continuation
+        # was written.
+        caller_provider_headers = sorted(
+            key for key in _CALLER_PROVIDER_KEY_HEADERS if headers.get(key)
+        )
+        if caller_provider_headers:
+            identity_checks.append(Check(
+                check="S2-PROVIDER-KEY", citation="S2-PROVIDER-KEY",
+                regime="INTERNAL", result=CheckResult.FAIL,
+            ))
+            self._store(lambda: self.evidence.emit(
+                session, correlation_id=f"provider-key:{agent_name or trigger or 'unknown'}",
+                event_type=EventType.REVIEW, actor_type=ActorType.SYSTEM,
+                actor_id="gateway", payload={
+                    "action": "REVIEW_FLAG", "agent": agent_name or "",
+                    "finding": "provider-key finding", "fields": caller_provider_headers,
+                    "citation": "S2-PROVIDER-KEY", "usecase_id": purpose or "",
+                },
+            ))
         arguments: dict[str, Any] = {}
         # Use the same path for authorization and transport. Only the missing
         # leading slash accepted by _upstream_url is normalized; ambiguous URL
@@ -1396,6 +1426,10 @@ class Gateway:
         }
         if "content-type" not in forward:
             forward["content-type"] = "application/json"
+        # The gateway's own credential, never the caller's. With none
+        # configured, no provider credential is forwarded at all.
+        if self.provider_key:
+            forward["authorization"] = f"Bearer {self.provider_key}"
         forward_decision = egress_decision or EgressDecision.ALLOW
 
         try:
