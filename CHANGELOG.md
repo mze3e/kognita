@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - R3 #2: Keep timed-out or unconfirmed MCP actions pending until observed completion or confirmed cancellation; reconcile before recovery and compensate late effects.
 - Preserve registered tool execution metadata when framework adapters bind callbacks (round 3 finding 6).
 
+- Apply the live workload-credential gate to `broker.ask()` before any retrieval, denying with `S2-CREDENTIAL` on a revoked or missing credential (round 3 finding 3).
+- Use the resolved envelope and effective subjects returned by `decide()` for broker taint, isolation and ingest checks instead of the submitted envelope (round 3 finding 4).
+- Rebuild the current retrieval permission and rerun taint, lane, assurance and step-up checks before a resumed broker retrieval consumes its approval or retrieves (round 3 finding 5).
 - Screen and ingest all gateway response fields, including function arguments, before release (r2 #2).
 - Reevaluate response classification and confidence policies before gateway delivery (r2 #3).
 - Require a bound run before releasing delegated C2+ gateway responses (r2 #4).
