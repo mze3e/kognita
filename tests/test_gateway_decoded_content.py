@@ -196,8 +196,8 @@ def test_unrecognized_content_shape_is_denied_not_skipped(session, evidence):
     assert upstream.calls == []
 
 
-def test_known_multimodal_parts_are_not_denied_as_unsupported(session, evidence):
-    """An image part with no text is skipped, not treated as an unsupported shape."""
+def test_uninspected_multimodal_parts_are_denied_as_unsupported(session, evidence):
+    """An image cannot be screened locally, so it must fail closed."""
     headers = _setup(session, evidence)
     body = json.dumps(
         {
@@ -221,9 +221,10 @@ def test_known_multimodal_parts_are_not_denied_as_unsupported(session, evidence)
     response = gateway.handle("POST", PATH, headers, body, session=session)
 
     assert response.evaluation is not None
-    assert response.evaluation.outcome is Outcome.ALLOW
-    assert response.status == 200
-    assert len(upstream.calls) == 1
+    assert response.evaluation.outcome is Outcome.DENY
+    assert response.status == 403
+    assert any(c.citation == "S5-UNSUPPORTED-CONTENT" for c in response.evaluation.checks)
+    assert upstream.calls == []
 
 
 @pytest.fixture(autouse=True)

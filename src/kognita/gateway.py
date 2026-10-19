@@ -303,10 +303,6 @@ def _request_content_text(content: Any) -> tuple[str, bool]:
                 and isinstance(item.get("text"), str)
             ):
                 parts.append(_forwarded_text(item))
-            elif isinstance(item, dict) and item.get("type") in (
-                "image_url", "input_image", "image", "audio", "input_audio", "file", "input_file",
-            ):
-                parts.append(_forwarded_text(item))
             else:
                 return "", False
         return "\n".join(part for part in parts if part), True
