@@ -641,7 +641,8 @@ class McpProxy:
             assurance_level=_assurance(headers),
             subjects=subjects,
             arguments=dict(envelope_arguments),
-            context={**context, "_agent_credential": headers.get("agent_credential")},
+            context={**context, "_agent_credential": headers.get("agent_credential"),
+                     "_require_client_run": True},
         )
 
         state = {"proxied": False}
@@ -708,6 +709,10 @@ class McpProxy:
                 raise value
             if outcome != 'completed':
                 return _BackendPayload(error={'code': -32002, 'message': outcome})
+            if bound_run is None and env.delegation_id:
+                from kognita.canonical import canonical_json
+                state["_sensitive_response"] = self.classifier.classify(canonical_json(value)) in (
+                    Classification.C2, Classification.C3)
             return value
 
         from kognita.registry import get
@@ -795,6 +800,11 @@ class McpProxy:
             raise _EvidenceStoreUnavailable("evidence store unavailable", rpc_id=rpc_id) from exc
 
         evaluation = result.evaluation
+        if state.get("_sensitive_response"):
+            from kognita.tools import _response_outcome
+            evaluation = _response_outcome(session, evaluation, [Check(
+                check="S5-RUN-REQUIRED", citation="S5-RUN-REQUIRED",
+                regime="INTERNAL", result=CheckResult.FAIL)], self.evidence)
         # Release is run_governed's decision, not "outcome is ALLOW".
         # Evaluation.allowed includes an ungranted HUMAN_APPROVAL, and a live
         # grant leaves the outcome as HUMAN_APPROVAL after the tool has run.

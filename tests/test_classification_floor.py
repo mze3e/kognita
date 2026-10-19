@@ -167,11 +167,13 @@ def test_mcp_header_floor_does_not_suppress_the_classifier(session, evidence):
     )
 
     assert response.evaluation is not None
-    assert response.evaluation.outcome is Outcome.ALLOW
+    # Classified client data requires a run even when the header claims C0.
+    assert response.evaluation.outcome is Outcome.DENY
     assert response.evaluation.attributes["classification"] == "C2"
     assert response.evaluation.attributes["classifier"]["label"] == "C2"
-    assert response.status == 200
-    assert len(upstream.calls) == 1
+    assert "S5-RUN-REQUIRED" in {c.citation for c in response.evaluation.failures()}
+    assert response.status == 403
+    assert not upstream.calls
 
 
 def test_typed_floor_holds_for_a_classifier_that_ignores_hints():
