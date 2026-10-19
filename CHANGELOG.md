@@ -7,101 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-20
+
+### Breaking changes
+
+- Agent identity requires `deployment_date` and `model` for S1-IDENTITY admission.
+- Caller-supplied provider keys are refused; the gateway holds the upstream credential.
+- Agent gateway responses are minimized to purpose-specific field allow-lists, and forwarding is limited to four inference endpoints.
+- MCP HTTP write tools require reversibility with a named compensation tool.
+- File, image and audio attachments are refused when their content cannot be inspected.
+- Tier 2+ use cases cannot execute through the library path.
+- Classifier input hashes include argument keys and nested content.
+
+### Added
+
+- Record deployment date and model with additive nullable identity columns; enforce owner-approved deployments, review expiry and changed-deployment checks through both HTTP ingresses.
+- Add atomic daily transaction limits and resolved product allow-lists to blast-radius controls.
+- Export `propose_document` and `apply_proposal_tool`; bind proposals and distinct-human approval to the exact diff before atomic application.
+- Deliver containment and step-down alerts through recorder alerts and OpenTelemetry to the owner and Knowledge Lead; signal in-flight MCP cancellation.
+- Exercise nine adversarial scenarios through gateway and MCP HTTP for every shipped pack, with attack-specific controls and evidence.
+
 ### Fixed
 
-- R5 codex #2: Deny uninspectable gateway file, image and audio content parts with `S5-UNSUPPORTED-CONTENT` before upstream forwarding.
+- Authenticate library workload credentials before tools or retrieval; revoke authority on run revocation and exclusive use-case retirement, and refresh cached authorization rows across sessions.
+- Require a use-case register, enforce complete agent identity, and scan deployment manifests for provider credentials. Deny and flag caller provider keys without retaining secrets in evidence or continuations.
+- Resolve primary and additional subjects consistently; deny conflicts and enforce tool argument-to-subject mappings against delegated scope.
+- Resolve mapped client scope consistently for authority, client limits, anomaly monitoring, taint and evidence, including broker isolation and ingest checks.
+- Bind MCP calls to valid runs, preserve workload and delegation taint across missing or rotated run IDs, and require bound runs for delegated sensitive inputs, retrieval and responses across ingress paths.
+- Preserve retrieved external taint and enforce run isolation and purpose-specific field minimization on broker summaries, snippets, citations, graph data and resumed retrieval.
+- Admit client-listed system triggers through gateway and MCP credentials and live polling; deny removed triggers, stopped runs, unlisted triggers and uncredentialed agent claims.
+- Carry credentials and delegation IDs through framework adapters; preserve tool execution metadata, isolate concurrent callback bindings, and release approved re-invocation results and Hermes hooks correctly.
+- Apply gateway live-run pause, override, restriction, recovery, tool isolation, external-authority, step-up and injection controls before forwarding; deny omitted approved instructions.
+- Restrict gateway routes and bind the normalized inference path into authorization, approval and evidence.
+- Screen and redact decoded gateway JSON keys and values, every message role and function arguments; refuse unsupported shapes, traversal-limit violations and redaction key collisions. Refuse opaque attachments and support Responses message-shaped input with equivalent controls.
+- Screen every gateway response field, re-evaluate classification and confidence policies, enforce run ceilings, apply field allow-lists, and retain the exact restored and minimized delivery bytes with hashes and delivery status.
+- Feed retained gateway and tool responses into risk review and withhold before-delivery holds; withhold responses crossing token or cost caps while retaining usage evidence. Persist served-model denials as delivered decisions and replay those restrictions.
+- Persist exact-request, single-use approval continuations for gateway, tools and retrieval. Consume the exact current approval before execution; older grants cannot bypass a hold or authorize repeat execution. Release rejected or expired holds without changing approval hashes for volatile quota usage.
+- Bind continuations to credential digests; recheck live credentials, delegation, sandbox constraints, resolved retrieval permissions, taint, lane, assurance and step-up controls on resume. Screen resumed responses and hold delivery when explicit human review lacks risk criteria.
+- Require non-blank approval packet text and distinct named requester, marker and confirmer identities; escalate blank policy citations with CITATION-REQUIRED while preserving denials.
+- Persist pending tool actions and compensations before execution. Keep uncertain or timed-out actions pending until observed completion or confirmed cancellation; reconcile late effects before recovery.
+- Abort default MCP HTTP connections on kill switches and deadlines, distinguish socket abortion from confirmed cancellation, and require compensation for uncancellable mutations.
+- Keep recovery paused and retryable while actions are in flight or compensation fails; mark recovery complete only after every compensation succeeds and skip already completed compensation steps.
+- Detect truncated evidence exports and missing or unreadable head checkpoints. Reconstruct child delegations and assurance in replay, fail closed on missing authority evidence, and preserve successful gateway admission checks in replay.
+- Serialize quota reservation, parent-to-child budget admission and anomaly counter creation/updates across workers, including atomic per-minute and daily limits.
+- Enforce rolling 24-hour anomaly volume ceilings across UTC midnight; bind accepted step-up evidence to host-recorded hashes and deny elevated assurance without a persisted run floor. Cover inclusive/exclusive receipt-window boundaries.
+- Complete the 0.5 definition-of-done checks and clarify the CI core import-leak description; stabilize in-flight HTTP cancellation verification under load.
 
-- R5 codex #3: Accept Responses message inputs and apply chat-equivalent classification, taint, redaction and field controls while refusing unknown input shapes.
-- R5 claude #1: Require live workload credentials on library calls and deny tier-2+ execution outside gateway/MCP ingress.
-- R5 codex #1: Classify and redact gateway JSON object keys alongside values; deny traversal-limit violations and redaction key collisions with `S5-UNSUPPORTED-CONTENT`.
+### Migration from 0.5.0
 
-- R4 race (PR 96 follow-up): Bind adapter callbacks per call without mutating shared tool registrations, preserving metadata and isolating concurrent invocations.
+- **Agent identity:** supply `deployment_date` and `model` at registration/deployment. Existing agent rows need both fields set and owner re-approval of the deployment; incomplete identities fail S1-IDENTITY.
+- **Provider credentials:** remove caller `authorization`, `x-api-key`, `api-key` and `x-goog-api-key` provider headers. Run the gateway with `kognita serve --provider-key` or `KOGNITA_PROVIDER_KEY` instead.
+- **Response fields:** configure purpose-specific field allow-lists and adapt consumers to the minimized gateway response; agent responses return only allow-listed fields. Approved system-trigger calls without an agent bypass agent field minimization.
+- **Inference routes:** use only `/v1/chat/completions`, `/v1/completions`, `/v1/responses` or `/v1/embeddings`. Other routes are refused.
+- **MCP HTTP writes:** tools declared as `draft`, `queue`, `send` or `execute` must declare `reversible: true` and a non-blank `compensation` tool name in the agent tool allow-list. That tool receives the original arguments to undo effects during recovery. Closing an HTTP connection is not confirmed backend cancellation; read tools do not require compensation.
+- **Attachments:** remove file/image/audio content parts and provide supported text inputs; opaque attachments are refused before forwarding.
+- **Execution mode:** route tier 2+ use cases through governed gateway/MCP ingress. Library execution is denied at call time, even if registration previously succeeded.
+- **Library credentials:** named agents calling `broker.ask` or `run_governed` directly must pass a live workload credential in `envelope.context['_agent_credential']`; calls without one fail S2-CREDENTIAL even if no credential was ever issued.
+- **Classifier evidence:** argument keys and nested content are now classified. Old and new evidence input hashes for the same call differ; do not compare them as identical classifier inputs.
 
-- R4 #5: Keep failed or unavailable recovery paused and retryable; mark recovered only after all compensations succeed, skipping steps already evidenced as completed.
-- R4 #1: Release governed tools and MCP calls only after consuming their exact current approval; older grants cannot bypass a pending hold or authorize repeated execution.
-- R4 #4: Release approved tool re-invocation results across framework adapters and let the Hermes hook proceed after approval, while withholding pending approvals.
-- R4 #2: Classify and taint nested MCP argument content; deny content exceeding bounded traversal with `S5-TAINT`.
+### Known issues
 
-- R4 #3: Preserve listed system-trigger admission during MCP live polling while cancelling calls when the trigger is removed or the bound run is stopped.
-- Hold the provider credential at the gateway, not the agent: `kognita serve --provider-key` (or `KOGNITA_PROVIDER_KEY`) is forwarded upstream as `Authorization: Bearer`; a caller-presented provider credential (`authorization`, `x-api-key`, `api-key`, `x-goog-api-key`) is denied with `S2-PROVIDER-KEY` and raises a `provider-key finding` review flag, never forwarded, and never written to evidence, a held continuation, or a log line (closes 0.5 item 20).
-- R3 #2: Keep timed-out or unconfirmed MCP actions pending until observed completion or confirmed cancellation; reconcile before recovery and compensate late effects.
-- Preserve registered tool execution metadata when framework adapters bind callbacks (round 3 finding 6).
-
-- Apply the live workload-credential gate to `broker.ask()` before any retrieval, denying with `S2-CREDENTIAL` on a revoked or missing credential (round 3 finding 3).
-- Use the resolved envelope and effective subjects returned by `decide()` for broker taint, isolation and ingest checks instead of the submitted envelope (round 3 finding 4).
-- Rebuild the current retrieval permission and rerun taint, lane, assurance and step-up checks before a resumed broker retrieval consumes its approval or retrieves (round 3 finding 5).
-- Finding #17: Export `propose_document` and `apply_proposal_tool` from `kognita.approvals` and `kognita`; require an exact live proposal approval before atomic document application (ADR 0007).
-- Require a bound run for delegated MCP client scope or C2+ input and withhold runless C2+ responses (round 3 finding 1).
-- 0.5 DoD 1: Add nullable `Agent.deployment_date` and `Agent.model`, accepted at registration/deployment; require both for S1-IDENTITY and owner re-approval after model changes, with additive SQLite/Postgres migration.
-- 0.5 DoD 4: Add `BlastRadius.max_daily_transactions` for atomic UTC-day execute-call admission (excluding approval holds) and `BlastRadius.products` for resolved product allow-lists, with gateway/MCP and concurrency regressions.
-
-- Screen and ingest all gateway response fields, including function arguments, before release (r2 #2).
-- Reevaluate response classification and confidence policies before gateway delivery (r2 #3).
-- Require a bound run before releasing delegated C2+ gateway responses (r2 #4).
-- Retain exact restored and minimized gateway delivery bytes by hash and evidence delivery status (r2 #7).
-- R2 #6: Persist pending tool actions and declared compensations before execution; keep recovery incomplete while actions are in flight.
-
-- Restrict gateway forwarding to supported model inference paths and bind the normalized path into authorization, approvals and evidence (r2 #1).
-- Resolve mapped client scope consistently for authority, client limits, anomaly monitoring, taint and evidence across MCP, gateway and governed tools (round 2 finding 5).
-- R2 #8: Checkpoint a held gateway `HUMAN_APPROVAL` as a durable Run continuation (pending approval id, exact request) and resume it through `continue_run()` with current credential, delegation and control checks, recording the release as its own decision instead of colliding with the original approval's decision row.
-- Require a bound run before delegated broker retrieval or sensitive model prompts can release content (round 1 finding 3).
-- Pin gateway admission checks for identical replay of successful decisions (r1 #9).
-- Record MCP HTTP socket abortion separately from confirmed cancellation and enforce S6C for uncancellable mutations (r1 #12).
-- Describe the CI core import-leak test accurately in the roadmap.
-- Withhold gateway responses above the run classification ceiling with a cited denial (r1 #6).
-- Apply purpose-specific field allow-lists to gateway responses before delivery (r1 #7).
-- Deny omitted approved gateway instructions before forwarding (r1 #13).
-
-- Gateway egress redaction now operates on decoded JSON string values and re-serializes the sanitized payload, so a JSON escape (e.g. `alice\u0040example.com`) can no longer reach the provider unredacted.
-- Gateway classification and injection checks now cover `tool_calls[].function.arguments` and every message role (including tool-role content), and deny requests whose content has a shape the gateway cannot read into text instead of silently skipping it.
-- R1 #4: Reconstruct, validate and evidence sandbox constraints before approved tool execution, including continuations.
-- R1 #5: Bind continuations to a credential digest and deny release after revocation without retaining the secret.
-- R1 #8: Screen resumed tool responses and hold delivery when an explicit human review gate lacks risk criteria.
-- R1 #10: Atomically consume the exact one-use approval before broker retrieval on either release path.
-
-- 0.5 DoD item 1: Deny incomplete existing identity declarations and cover review expiry and changed deployments through both HTTP ingresses.
-- 0.5 DoD item 4: Cover daily action blast-radius denial through gateway HTTP.
-- 0.5 DoD item 20: Cover deploy-manifest environment scanning for provider keys.
-
-- 0.5 DoD item 21: Abort default MCP HTTP connections on kill switches and deadlines, with per-call cancellation and completion evidence.
-- 0.5 DoD item 17: Run nine adversarial scenarios through both HTTP ingresses for every shipped pack, checking attack-specific controls and evidence; cite exhausted gateway budgets even alongside policy denials.
-- Feed retained gateway and governed tool responses into risk review and withhold before-delivery holds (#18).
-- Withhold model responses that cross token or cost budgets while retaining usage evidence (#30).
-- Persist served-model card denials as the delivered decision and replay the response restriction (#35).
-- Keep volatile quota usage in evidence without changing approval hashes, and release rejected or expired approval holds (#14).
-- Persist exact-request approval continuations and consume grants once before gateway forwarding or governed execution (#16).
-- 0.5 DoD item 14: deliver containment alerts through recorder alerts and OpenTelemetry to the owner and Knowledge Lead, and signal in-flight MCP cancellation.
-- 0.5 DoD item 19: deliver automatic step-down alerts through recorder alerts and OpenTelemetry; verify the next gateway decision uses the reduced level.
-- Bind proposals to exact diffs and require a distinct human to apply them atomically with evidence for both steps.
-
-- Admit client-listed system triggers through gateway and MCP credential checks, evidence the trigger, and deny unlisted triggers or uncredentialed agent claims (finding 15).
-- Deny conflicting primary and additional subjects with S3-SUBJECT-CONFLICT and consistently prefer the primary subject when resolving references.
-- Per-tool subject mapping: Enforce private `_subject_paths` declarations against delegated data scopes; deny missing, malformed, or ambiguous argument paths before execution.
-- Reject unknown or foreign MCP runs and preserve workload/delegation taint across omitted or rotated run IDs.
-- Enforce broker run isolation before admission and resumed retrieval; preserve retrieved content's default external taint across runs.
-- Apply field allow-lists to broker summaries, snippets, citations, graph data, and resumed responses.
-- Require a use-case register for public decisions; purpose lists alone cannot authorize calls.
-- Authenticate issued library workload credentials through private envelope context and snapshot state.
-- Bind accepted step-up evidence to hashes recorded only by the private host workflow.
-- Enforce rolling 24-hour volume ceilings across UTC midnight alongside daily baselines.
-- Deny elevated assurance claims without a persisted run floor.
-- Revoke workload credentials on exclusive use-case retirement and run revocation, ending bound run authority with evidence.
-- Cover the inclusive start and exclusive end of the affected-client receipt window.
-- Refresh cached authorization rows when loading snapshots after changes in another session.
-
-- Evidence truncation is now detected: `verify_export` checks the export's advertised `event_count` and `head_hash` against what it actually verified, and `verify_chain` treats a missing or unreadable head checkpoint as a chain break (not a pass) whenever events exist.
-- Serialize quota recheck and reservation in the decision transaction.
-- Lock parent run capacity before checking and reserving child budgets.
-- Serialize daily anomaly row creation and counter updates across workers.
-- 0.5 DoD item 4 (concurrency): Enforce atomic per-minute and daily quota admission.
-- Require non-blank, stripped approval signers and distinct requester, marker, and confirmer identities.
-- Escalate checks with blank citations using CITATION-REQUIRED, preserving denials.
-- Require approval packet text fields and list members to contain non-blank text.
-- Framework bindings carry workload credentials and delegation IDs through model and tool authorization; missing tool credentials fail closed.
-- Extracted private model transport to keep the shared adapter binding within 200 lines.
-- Gateway model calls enforce live-run pause, override, restriction and recovery controls before forwarding.
-- Gateway model calls enforce approved-tool isolation and deny detected prompt injection before forwarding.
-- Replay reconstructs child delegations (AUTHORITY_TRANSFERRED) and the assurance level, so recorded 0.5 decisions replay to the same outcome; missing authority evidence fails replay closed.
+- Append-only evidence triggers exist only on SQLite; other databases do not receive those trigger protections.
+- `Policy.citation` defaults to an empty string at model level; `decide()` neutralizes empty citations through CITATION-REQUIRED escalation, preserving denials.
+- Anomaly buckets use UTC calendar days, except the rolling 24-hour volume window.
+- There is no circuit-breaker window-boundary regression test.
+- Run budgets can overshoot by one call; usage known only after execution is accounted for before response release.
 
 ## [0.5.0] - 2026-10-19
 
@@ -300,7 +270,9 @@ Known open review findings (fixes are planned for 0.5.1):
 - Multi-provider LLM support (Anthropic, OpenAI, Groq, Gemini, Ollama)
 - Streamlit demo application
 
-[Unreleased]: https://github.com/mze3e/kognita/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/mze3e/kognita/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/mze3e/kognita/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/mze3e/kognita/compare/v0.4.1...v0.5.0
 [0.4.0]: https://github.com/mze3e/kognita/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mze3e/kognita/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mze3e/kognita/compare/v0.1.0...v0.2.0
