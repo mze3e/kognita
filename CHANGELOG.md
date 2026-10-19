@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - R5 codex #2: Deny uninspectable gateway file, image and audio content parts with `S5-UNSUPPORTED-CONTENT` before upstream forwarding.
 
+- R5 codex #3: Accept Responses message inputs and apply chat-equivalent classification, taint, redaction and field controls while refusing unknown input shapes.
 - R4 race (PR 96 follow-up): Bind adapter callbacks per call without mutating shared tool registrations, preserving metadata and isolating concurrent invocations.
 
 - R4 #5: Keep failed or unavailable recovery paused and retryable; mark recovered only after all compensations succeed, skipping steps already evidenced as completed.

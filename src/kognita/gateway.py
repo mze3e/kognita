@@ -408,7 +408,26 @@ def _prompt_text_and_support(payload: Mapping[str, Any]) -> tuple[str, bool]:
         supported = False
     for key in ("prompt", "input", "instructions"):
         if key in payload:
-            text, ok = _request_content_text(payload.get(key))
+            value = payload.get(key)
+            if key == "input" and isinstance(value, list):
+                input_parts: list[str] = []
+                ok = True
+                for item in value:
+                    if (
+                        isinstance(item, dict)
+                        and item.get("type") in (None, "message")
+                        and item.get("role") in ("user", "assistant", "system", "developer")
+                        and "content" in item
+                    ):
+                        item_text, item_ok = _message_text(item)
+                    else:
+                        item_text, item_ok = _request_content_text([item])
+                    ok = ok and item_ok
+                    if item_text:
+                        input_parts.append(item_text)
+                text = "\n".join(input_parts)
+            else:
+                text, ok = _request_content_text(value)
             supported = supported and ok
             if text:
                 parts.append(text)
