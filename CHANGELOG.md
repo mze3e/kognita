@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - R5 codex #3: Accept Responses message inputs and apply chat-equivalent classification, taint, redaction and field controls while refusing unknown input shapes.
 - R5 claude #1: Require live workload credentials on library calls and deny tier-2+ execution outside gateway/MCP ingress.
+- R5 codex #1: Classify and redact gateway JSON object keys alongside values; deny traversal-limit violations and redaction key collisions with `S5-UNSUPPORTED-CONTENT`.
 
 - R4 race (PR 96 follow-up): Bind adapter callbacks per call without mutating shared tool registrations, preserving metadata and isolating concurrent invocations.
 

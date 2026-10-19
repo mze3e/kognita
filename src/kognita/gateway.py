@@ -309,6 +309,12 @@ def _request_content_text(content: Any) -> tuple[str, bool]:
     return "", False
 
 
+# Bounded screening work: a model request may be large, but never unbounded.
+_SCREEN_MAX_DEPTH = 64
+_SCREEN_MAX_NODES = 100_000
+_SCREEN_MAX_CHARS = 4 * 1024 * 1024
+
+
 def _forwarded_text(payload: Any) -> str:
     """Strings the provider reads after parsing the JSON body.
 
@@ -316,26 +322,36 @@ def _forwarded_text(payload: Any) -> str:
     value is used, so the classifier has to see the parsed value.
     """
     parts: list[str] = []
+    nodes = 0
+    size = 0
 
-    def walk(value: Any) -> None:
+    def walk(value: Any, depth: int) -> None:
+        nonlocal nodes, size
+        nodes += 1
+        if depth > _SCREEN_MAX_DEPTH or nodes > _SCREEN_MAX_NODES:
+            raise ValueError("S5-UNSUPPORTED-CONTENT")
         if isinstance(value, str):
+            size += len(value) + 1
+            if size > _SCREEN_MAX_CHARS:
+                raise ValueError("S5-UNSUPPORTED-CONTENT")
             if value:
                 parts.append(value)
             return
         if isinstance(value, Mapping):
-            for item in value.values():
-                walk(item)
+            for key, item in value.items():
+                walk(key, depth + 1)
+                walk(item, depth + 1)
             return
         if isinstance(value, list):
             for item in value:
-                walk(item)
+                walk(item, depth + 1)
 
-    walk(payload)
+    walk(payload, 0)
     return "\n".join(parts)
 
 
 def _redact_payload(payload: Any, redactor: Any) -> tuple[Any, dict[str, str]]:
-    """Redact decoded values with one token namespace across the request."""
+    """Redact decoded keys and values with one token namespace across the request."""
     token_map: dict[str, str] = {}
     tokens: dict[str, str] = {}
     counters: dict[str, int] = {}
@@ -360,7 +376,13 @@ def _redact_payload(payload: Any, redactor: Any) -> tuple[Any, dict[str, str]]:
                 )
             return text
         if isinstance(value, dict):
-            return {key: walk(item) for key, item in value.items()}
+            result = {}
+            for key, item in value.items():
+                redacted_key = walk(key)
+                if redacted_key in result:
+                    raise ValueError("S5-UNSUPPORTED-CONTENT")
+                result[redacted_key] = walk(item)
+            return result
         if isinstance(value, list):
             return [walk(item) for item in value]
         return value
@@ -392,6 +414,11 @@ def _message_text(message: Mapping[str, Any]) -> tuple[str, bool]:
 
 def _prompt_text_and_support(payload: Mapping[str, Any]) -> tuple[str, bool]:
     """Collect provider-visible text and validate request content shapes."""
+    # Screen the whole body once so keys share the values' traversal budget.
+    try:
+        forwarded = _forwarded_text(payload)
+    except ValueError:
+        return "", False
     parts: list[str] = []
     supported = True
     messages = payload.get("messages")
@@ -437,7 +464,7 @@ def _prompt_text_and_support(payload: Mapping[str, Any]) -> tuple[str, bool]:
     })
     if extra:
         parts.append(extra)
-    return "\n".join(parts), supported
+    return forwarded, supported
 
 
 def _prompt_text(payload: Mapping[str, Any]) -> str:
@@ -1310,6 +1337,15 @@ class Gateway:
             if evaluation.outcome is Outcome.ALLOW
             else None
         )
+        sanitized, token_map = None, {}
+        if egress_decision is EgressDecision.REDACT:
+            try:
+                sanitized, token_map = _redact_payload(payload, self.egress.redactor)
+            except ValueError:
+                evaluation = _with_checks(evaluation, [Check(
+                    check="S5-UNSUPPORTED-CONTENT", regime="INTERNAL",
+                    result=CheckResult.FAIL, citation="S5-UNSUPPORTED-CONTENT",
+                )])
         if egress_decision is EgressDecision.DENY:
             evaluation = _with_checks(
                 evaluation,
@@ -1431,7 +1467,6 @@ class Gateway:
             )
 
         if egress_decision is EgressDecision.REDACT:
-            sanitized, token_map = _redact_payload(payload, self.egress.redactor)
             sent_text = json.dumps(sanitized, ensure_ascii=False)
         else:
             sent_text, token_map = body.decode("utf-8"), {}
@@ -1518,7 +1553,15 @@ class Gateway:
             else upstream_text
         )
         restored_payload = _json_object(restored)
-        response_source = _response_text(restored_payload) if restored_payload else restored
+        try:
+            response_source = _response_text(restored_payload) if restored_payload else restored
+        except ValueError:
+            from kognita.tools import _response_outcome
+            checks = [Check(check="S5-UNSUPPORTED-CONTENT", regime="INTERNAL",
+                            result=CheckResult.FAIL, citation="S5-UNSUPPORTED-CONTENT")]
+            evaluation = (self._store(lambda: _response_outcome(session, evaluation, checks, self.evidence))
+                if deferred is None else _deferred_response_outcome(evaluation, checks))
+            return finish(_denied(evaluation))
         response_record = classifier_record(self.classifier, response_source)
         self._store(lambda: _ingest(session, bound_run, self.evidence,
             client_data=_client_data(Classification(response_record['label'])),
