@@ -273,7 +273,7 @@ def _resolve_subjects(envelope, snapshot):
     for key, values in (mapped or {}).items():
         valid = valid and (key not in subjects or subjects[key] == values)
         subjects.setdefault(key, set()).update(values)
-    dimensions = {"client"} | set(subjects)
+    dimensions = {"client", "product"} | set(subjects)
     selected = next((r for r in snapshot._authority if r[0] == envelope.delegation_id and r[1] == "delegation"), None)
     if selected:
         dimensions.update(selected[3].get("allowed_data", {}))

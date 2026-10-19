@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rebuild the current retrieval permission and rerun taint, lane, assurance and step-up checks before a resumed broker retrieval consumes its approval or retrieves (round 3 finding 5).
 - Finding #17: Export `propose_document` and `apply_proposal_tool` from `kognita.approvals` and `kognita`; require an exact live proposal approval before atomic document application (ADR 0007).
 - Require a bound run for delegated MCP client scope or C2+ input and withhold runless C2+ responses (round 3 finding 1).
+- 0.5 DoD 1: Add nullable `Agent.deployment_date` and `Agent.model`, accepted at registration/deployment; require both for S1-IDENTITY and owner re-approval after model changes, with additive SQLite/Postgres migration.
+- 0.5 DoD 4: Add `BlastRadius.max_daily_transactions` for atomic UTC-day execute-call admission (excluding approval holds) and `BlastRadius.products` for resolved product allow-lists, with gateway/MCP and concurrency regressions.
 
 - Screen and ingest all gateway response fields, including function arguments, before release (r2 #2).
 - Reevaluate response classification and confidence policies before gateway delivery (r2 #3).

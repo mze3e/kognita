@@ -384,6 +384,8 @@ def seed_store(db_path: str) -> None:
             "permissions": ["read"], "system": "demo"}
             for name in ("get_subject_profile", "query", "model_call")}
         agent.review_date = utcnow() + timedelta(days=30)
+        agent.deployment_date = utcnow()
+        agent.model = "demo-model-v1"
         approve_deployment(session, agent.name, evidence=EvidenceWriter(engine),
             actor_id=OWNER_EXEC, deployment={
                 "system_prompt": _SYSTEM_PROMPT,

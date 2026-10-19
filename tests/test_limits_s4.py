@@ -163,7 +163,7 @@ def test_agent_cannot_invoke_unlisted_tools(session, evidence, tool):
 def test_usage_cap_fails_closed(session, evidence):
     agent, env = _configure(session, evidence, per_minute=20000)
     snap = load_snapshot(session, as_of=NOW, _agent_name=agent.name)
-    rows = ((NOW, ['123'], 0, 'prior'),) * 10001
+    rows = ((NOW, ['123'], 0, 'prior', False),) * 10001
     result = decide(env, replace(snap, _usage={agent.name: rows}), purposes=['READ'], as_of=NOW, usecases=_usecases(['READ']))
     assert result.outcome == Outcome.DENY
     assert any(c.check == 'S4-USAGE' and c.result.value == 'fail' for c in result.checks)

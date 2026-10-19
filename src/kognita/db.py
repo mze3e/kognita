@@ -137,6 +137,17 @@ def create_all(engine: Engine) -> None:
     from sqlalchemy import inspect
     backfill_taint = not inspect(engine).has_table('_agent_taint')
     SQLModel.metadata.create_all(engine)
+    # Nullable additions preserve existing rows on SQLite 3.31 and Postgres.
+    with engine.begin() as connection:
+        inspector = inspect(connection)
+        for table, additions in {
+            "agents": {"deployment_date": "TIMESTAMP", "model": "TEXT"},
+            "_blast_usage": {"is_transaction": "BOOLEAN"},
+        }.items():
+            columns = {column["name"] for column in inspector.get_columns(table)}
+            for name, kind in additions.items():
+                if name not in columns:
+                    connection.exec_driver_sql(f'ALTER TABLE "{table}" ADD COLUMN "{name}" {kind}')
     if engine.dialect.name != "sqlite":
         return
     with engine.begin() as connection:

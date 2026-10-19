@@ -41,7 +41,7 @@ def register(
         evidence = _identity.pop("evidence", None)
         actor_id = _identity.pop("actor_id", "")
         permitted = {"purpose", "use_cases", "permitted_systems", "tool_allowlist", "blast_radius", "field_allowlist",
-                     "autonomy_level", "review_date", "environment", "principal"}
+                     "autonomy_level", "review_date", "environment", "principal", "deployment_date", "model"}
         if set(_identity) - permitted:
             raise ValueError("S1-IDENTITY: unknown identity fields")
         if evidence is None or actor_id != (agent.owner_exec or owner_exec) or (agent.owner_exec and owner_exec != agent.owner_exec):
@@ -171,7 +171,7 @@ def _deployment_hash(agent: Agent, deployment: dict) -> str:
         "deployment": deployment,
         "identity": {key: getattr(agent, key) for key in (
             "purpose", "use_cases", "permitted_systems", "tool_allowlist", "blast_radius", "field_allowlist",
-            "environment", "principal", "owner_exec", "review_date", "autonomy_level",
+            "environment", "principal", "owner_exec", "review_date", "autonomy_level", "model",
         )},
     })
 

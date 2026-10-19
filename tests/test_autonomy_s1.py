@@ -36,6 +36,8 @@ def _agent(session, evidence, *, level=0, verb="read", required=0):
     agent.review_date = NOW + timedelta(days=90)
     agent.principal = "alice"
     agent.environment = "test"
+    agent.deployment_date = NOW
+    agent.model = "fixture-model-v1"
     approve_deployment(session, agent.name, deployment=dict(_DEPLOYMENT),
                        evidence=evidence, actor_id="owner")
     if level:
@@ -110,7 +112,7 @@ def test_each_behaviour_change_denies_until_owner_reapproves(session, evidence, 
     assert _decide(agent, envelope).outcome is Outcome.ALLOW
 
 
-@pytest.mark.parametrize("change", ["purpose", "use_cases", "permitted_systems", "tool_allowlist", "principal", "environment"])
+@pytest.mark.parametrize("change", ["purpose", "use_cases", "permitted_systems", "tool_allowlist", "principal", "environment", "model"])
 def test_authority_changes_invalidate_hash(session, evidence, change):
     agent = _agent(session, evidence)
     setattr(agent, change, {**agent.tool_allowlist, "extra": {}} if change == "tool_allowlist" else
