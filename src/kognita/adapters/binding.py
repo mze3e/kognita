@@ -1,7 +1,6 @@
 """The decide and gateway path that framework adapters call.
-
-Tool calls go through :func:`kognita.tools.run_governed`: admission or a
-granted approval releases the body. Model calls go through
+Tool calls use :func:`kognita.tools.run_governed` with a per-call callback.
+Admission or granted approval releases the body. Model calls use
 :meth:`kognita.gateway.Gateway.handle`, which decides before forwarding.
 Denials, escalations, pending approvals and missing evaluations withhold
 the result, with citations from the checks that decided it.
@@ -12,7 +11,7 @@ from __future__ import annotations
 import functools
 import inspect
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace as _replace
 from typing import Any
 
 from kognita.adapters._binding import _complete
@@ -133,10 +132,11 @@ class Binding:
 
         if not _verify(self.session, self.agent_name or "", self.agent_credential):
             return _refused("S2-CREDENTIAL: agent not registered or credential invalid")
+        registry = ToolRegistry()
         if name in self.registry:
-            self.registry.get(name).fn = body
+            registry._tools[name] = _replace(self.registry.get(name), fn=body)
         else:
-            self.registry.register(name, body)
+            registry.register(name, body)
         envelope = Envelope(
             principal=self.principal,
             purpose=self.purpose,
@@ -153,7 +153,7 @@ class Binding:
             result = run_governed(
                 self.session,
                 envelope,
-                registry=self.registry,
+                registry=registry,
                 evidence=self.evidence,
                 pack=self.pack,
                 purposes=self.purposes,
