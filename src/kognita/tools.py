@@ -1246,7 +1246,7 @@ def continue_run(
         snapshot = load_snapshot(session, as_of=at, _evidence=evidence, _agent_name=envelope.agent_name or "")
         attributes = dict(evaluation.attributes)
         usecases = _governing_register(session, as_of=at)
-        if payload.get("kind") == "retrieval":
+        if payload.get("kind") in ("retrieval", "gateway"):
             from kognita._fleet import _run_checks
             _refresh_run(session, run)
             recheck += [c for c in _run_checks(session, run, envelope, evidence)
@@ -1385,6 +1385,10 @@ def continue_run(
                 evaluation=evaluation,
             )
         return ToolRun(evaluation=evaluation, data=None, approval_required=False)
+
+    if payload.get("kind") == "gateway":
+        from kognita.gateway import _resume_gateway
+        return _resume_gateway(session, payload, evaluation, run)
 
     if payload.get("kind") == "retrieval":
         _record_resume_decision(

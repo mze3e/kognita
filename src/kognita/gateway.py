@@ -51,6 +51,8 @@ every mode refuses.
 from __future__ import annotations
 
 import json
+import base64 as _base64
+from weakref import WeakValueDictionary as _WeakValueDictionary
 import re
 import sys
 import threading
@@ -833,6 +835,34 @@ def _model_evidence(
     )
 
 
+_held_gateways = _WeakValueDictionary()
+# Secrets are never written to a continuation. A resumed call forwards
+# without the caller's provider credential.
+_UNRETAINED_HEADERS = frozenset({"agent_credential", "authorization", "proxy-authorization",
+                                 "x-api-key", "api-key", "x-goog-api-key", "cookie"})
+
+
+def _gateway_binding(gateway):
+    return canonical_hash({
+        "upstream": gateway.upstream, "provider": gateway.provider,
+        "client": {key: sorted(value) if isinstance(value, frozenset) else value
+                   for key, value in vars(gateway.client).items()},
+        "purposes": list(gateway.purposes),
+        "pack": [type(gateway.pack).__module__, type(gateway.pack).__qualname__,
+                 getattr(gateway.pack, "name", None)],
+        "store": str(gateway.engine.url),
+    })
+
+
+def _resume_gateway(session, payload, evaluation, run):
+    gateway = _held_gateways.get(payload["_gateway_binding"])
+    if gateway is None:
+        raise ApprovalError("APPROVAL-CONTINUATION: bound gateway is unavailable")
+    return gateway._handle(session, "POST", payload["_gateway_path"],
+        payload["_gateway_headers"], _base64.b64decode(payload["_gateway_body"]),
+        run=run, _held=(payload, evaluation))
+
+
 class Gateway:
     """OpenAI-compatible proxy. ``transport`` replaces the network in tests.
 
@@ -875,6 +905,7 @@ class Gateway:
         }
         self._deferred: list[_DeferredEvidence] = []
         self._deferred_lock = threading.Lock()
+        _held_gateways[_gateway_binding(self)] = self
 
     def serve(self, host: str = "127.0.0.1", port: int = 8080) -> None:
         """Serve ``http://{host}:{port}/v1`` until the process stops.
@@ -996,6 +1027,7 @@ class Gateway:
         body: bytes,
         *,
         run: Run | None,
+        _held: Any = None,
     ) -> GatewayResponse:
         headers = _headers(raw_headers)
         if method.upper() != "POST":
@@ -1023,7 +1055,16 @@ class Gateway:
         principal, purpose, principal_checks = _bound_principal(
             self.client, headers, self.purposes
         )
-        identity_checks = identity_checks + principal_checks + _credential_checks(session, agent_name, headers)
+        if _held is None:
+            credential_checks = _credential_checks(session, agent_name, headers)
+        else:
+            from kognita.models import _WorkloadCredential
+            digest = _held[0].get("_credential_digest")
+            credential = session.get(_WorkloadCredential, digest, populate_existing=True) if digest else None
+            credential_checks = [] if credential and not credential.revoked and credential.agent_name == agent_name else [
+                Check(check="S2-CREDENTIAL", citation="S2-CREDENTIAL",
+                      regime="INTERNAL", result=CheckResult.FAIL)]
+        identity_checks = identity_checks + principal_checks + credential_checks
         arguments: dict[str, Any] = {}
         # Use the same path for authorization and transport. Only the missing
         # leading slash accepted by _upstream_url is normalized; ambiguous URL
@@ -1200,7 +1241,21 @@ class Gateway:
                 evaluation = _deny_for_budgets(evaluation, blocked)
 
         from kognita.approvals import _resume
-        evaluation = self._store(lambda: _resume(session, evaluation, self.evidence, now))
+        if _held is None:
+            evaluation = self._store(lambda: _resume(session, evaluation, self.evidence, now))
+        else:
+            approved = _held[1]
+            satisfied = {c.policy_id for c in approved.checks
+                         if c.result == CheckResult.REQUIRES_HUMAN}
+            fresh = [c for c in evaluation.checks if c.result != CheckResult.PASS
+                     and not (c.result == CheckResult.REQUIRES_HUMAN and c.policy_id in satisfied)]
+            # A resume is a new decision over the same approved request: it
+            # must get its own request/decision identity so _record() below
+            # inserts a fresh row instead of colliding with the HUMAN_APPROVAL
+            # decision this continuation was checkpointed against.
+            resumed_base = replace(approved, outcome=Outcome.ALLOW,
+                                    request_id=evaluation.request_id, decision_id=None)
+            evaluation = _with_checks(resumed_base, fresh)
 
         local = _is_local(self.upstream)
         egress_decision = (
@@ -1246,6 +1301,17 @@ class Gateway:
                 )
             try:
                 evaluation = self._record(session, evaluation, classification, bound_run, now)
+                if evaluation.outcome is Outcome.HUMAN_APPROVAL and bound_run is not None:
+                    from kognita.tools import _checkpoint, _approval_for_decision
+                    approval = _approval_for_decision(session, evaluation.decision_id or 0)
+                    self._store(lambda: _checkpoint(session, bound_run,
+                        envelope=envelope, evaluation=evaluation, approval_id=approval.id,
+                        evidence=self.evidence, kind="gateway", pack=self.pack,
+                        extra={"_gateway_binding": _gateway_binding(self),
+                               "_gateway_path": path,
+                               "_gateway_headers": {k: v for k, v in headers.items()
+                                                    if k not in _UNRETAINED_HEADERS},
+                               "_gateway_body": _base64.b64encode(body).decode("ascii")}))
                 if egress_model is not None:
                     self._store(
                         lambda: self._emit_model(

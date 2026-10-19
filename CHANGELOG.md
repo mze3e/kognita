@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Restrict gateway forwarding to supported model inference paths and bind the normalized path into authorization, approvals and evidence (r2 #1).
 - Resolve mapped client scope consistently for authority, client limits, anomaly monitoring, taint and evidence across MCP, gateway and governed tools (round 2 finding 5).
+- R2 #8: Checkpoint a held gateway `HUMAN_APPROVAL` as a durable Run continuation (pending approval id, exact request) and resume it through `continue_run()` with current credential, delegation and control checks, recording the release as its own decision instead of colliding with the original approval's decision row.
 - Require a bound run before delegated broker retrieval or sensitive model prompts can release content (round 1 finding 3).
 - Pin gateway admission checks for identical replay of successful decisions (r1 #9).
 - Record MCP HTTP socket abortion separately from confirmed cancellation and enforce S6C for uncancellable mutations (r1 #12).
