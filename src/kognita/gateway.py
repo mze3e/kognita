@@ -1090,12 +1090,6 @@ class Gateway:
         identity_checks += isolation_checks
         if any(c.result == CheckResult.FAIL for c in isolation_checks):
             bound_run = None
-        from kognita._isolation import _ingest
-        self._store(lambda: _ingest(session, bound_run, self.evidence,
-            external=_external_agent(session, agent_name),
-            client_data=_client_data(classification), text=prompt,
-            correlation_id='content:' + (bound_run.id if bound_run else canonical_hash(envelope.to_dict())),
-            _agent_name=agent_name))
         provider_name = self.provider or (urlparse(self.upstream).hostname or self.upstream)
         if provider_name and not attributes.get("provider"):
             attributes["provider"] = provider_name
@@ -1149,6 +1143,13 @@ class Gateway:
             engages=getattr(self.pack, "engages", None),
             as_of=now,
         )
+        envelope = replace(envelope, context=evaluation.envelope.context)
+        from kognita._isolation import _ingest
+        self._store(lambda: _ingest(session, bound_run, self.evidence,
+            external=_external_agent(session, agent_name),
+            client_data=bool(envelope.context.get("_effective_subjects", {}).get("client")) or _client_data(classification), text=prompt,
+            correlation_id='content:' + (bound_run.id if bound_run else canonical_hash(envelope.to_dict())),
+            _agent_name=agent_name))
         from kognita._isolation import _tool_checks
         if envelope.delegation_id and bound_run is None and _client_data(classification):
             identity_checks.append(Check(check="S5-RUN-REQUIRED", citation="S5-RUN-REQUIRED",

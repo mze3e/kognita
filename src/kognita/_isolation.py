@@ -97,7 +97,7 @@ def _tool_checks(session, envelope, spec, run, evidence, *, at=None):
     checks.extend(_assurance_checks(session, envelope, run))
     if (run and run.external or spec.external) and (spec.verb in ('draft', 'queue', 'send', 'execute') or spec.required_level > 1):
         deny('S5-EXTERNAL-AUTHORITY')
-    if (run and run.client_data or spec.client_data or 'client' in envelope.all_subjects()) and spec.public_content:
+    if (run and run.client_data or spec.client_data or bool(envelope.context.get('_effective_subjects', {}).get('client')) or 'client' in envelope.all_subjects()) and spec.public_content:
         deny('S5-PUBLIC-CONTENT')
     from kognita.classify import PatternClassifier
     if PatternClassifier()._injection(str(envelope.arguments)):

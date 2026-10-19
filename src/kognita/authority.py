@@ -262,6 +262,35 @@ def _mapped_subjects(arguments, paths):
     return resolved
 
 
+def _resolve_subjects(envelope, snapshot):
+    """Resolve manifest and argument subjects before any governance consumer."""
+    from dataclasses import replace
+    agent = snapshot.agents.get(envelope.agent_name)
+    permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
+    mapped = _mapped_subjects(envelope.arguments, permission.get("_subject_paths", {})) if isinstance(permission, dict) else None
+    subjects = {k: {str(v)} for k, v in envelope.all_subjects().items()}
+    valid = mapped is not None
+    for key, values in (mapped or {}).items():
+        valid = valid and (key not in subjects or subjects[key] == values)
+        subjects.setdefault(key, set()).update(values)
+    dimensions = {"client"} | set(subjects)
+    selected = next((r for r in snapshot._authority if r[0] == envelope.delegation_id and r[1] == "delegation"), None)
+    if selected:
+        dimensions.update(selected[3].get("allowed_data", {}))
+    for dimension in dimensions:
+        named = _argument_values(envelope.arguments, dimension)
+        valid = valid and named is not None
+        if named:
+            subjects.setdefault(dimension, set()).update(named)
+    normalized = dict(envelope.subjects)
+    for key, values in subjects.items():
+        if len(values) == 1 and key not in envelope.all_subjects():
+            normalized[key] = next(iter(values))
+    context = {**envelope.context, "_effective_subjects": {k: sorted(v) for k, v in subjects.items()},
+               "_subject_resolution_valid": valid}
+    return replace(envelope, subjects=normalized, context=context)
+
+
 def _checks(envelope, snapshot, at):
     def check(rule, ok, human=False):
         return _Check(check=rule, regime="INTERNAL", citation=rule,
@@ -285,25 +314,14 @@ def _checks(envelope, snapshot, at):
     agent = snapshot.agents.get(envelope.agent_name)
     permission = (agent.tool_allowlist or {}).get(envelope.tool, {}) if agent else {}
     verb = permission.get("verb") if isinstance(permission, dict) else None
-    subjects = {k: [v] for k, v in envelope.all_subjects().items()}
-    mapped = _mapped_subjects(envelope.arguments, permission.get("_subject_paths", {})) if isinstance(permission, dict) else None
-    mapping_valid = mapped is not None and _covers(d.allowed_data, mapped)
-    if mapped is not None:
-        mapping_valid = mapping_valid and all(k not in subjects or set(subjects[k]) == v for k, v in mapped.items())
-    # A tool argument naming a delegation's own dimension (a client it is
-    # scoped to, or any other `allowed_data` dimension) overrides the
-    # delegation's implied value only in appearance: it must be covered by
-    # `allowed_data`, however deep it is nested, or the call is for someone
-    # else's data and is denied rather than silently rescoped. `client` is
-    # always one such dimension (`delegate` requires it), so this alone
-    # enforces the exact-match the delegation's own client needs.
+    subjects = envelope.context.get("_effective_subjects", {k: [v] for k, v in envelope.all_subjects().items()})
+    mapping_valid = envelope.context.get("_subject_resolution_valid", False)
     valid = (mapping_valid and _lineage_valid(selected[0], rows, at) and _live(selected[3], at) and d.agent == envelope.agent_name
         and d.human == envelope.principal and d.purpose == envelope.purpose
         and d.jurisdiction == envelope.actor_location and verb in d.allowed_actions
         and _covers(d.allowed_data, subjects)
         and subjects.get("client", [d.client]) == [d.client]
-        and all((named := _argument_values(envelope.arguments, dim)) is not None and named <= set(allowed)
-                for dim, allowed in d.allowed_data.items()))
+        )
     if '_parent' in selected[3]:
         valid = valid and envelope.tool in selected[3].get('_tools', [])
         valid = valid and permission.get('required_level', 7) <= selected[3].get('_level', -1)
