@@ -5,8 +5,8 @@ stop a tool: a ``block`` directive is an error returned to the model, and an
 ``approve`` directive escalates to Hermes's human gate, which fails closed on
 denial or timeout. :meth:`HermesAdapter.pre_tool_call` sends the call through
 :func:`kognita.tools.run_governed`. The tool Hermes would run is not the body
-of that call. On ``ALLOW`` the hook returns no directive and Hermes executes.
-On anything else it does not.
+of that call. When admission or an approved re-invocation is released, the
+hook returns no directive and Hermes executes. Otherwise it withholds the tool.
 
 Hermes's ``pre_llm_call`` and ``pre_api_request`` hooks cannot veto, so a model
 call is not governed by returning a value from them. hermes-agent 0.19 points a
@@ -64,7 +64,7 @@ class HermesAdapter:
             return {"released": True}
 
         result = self.binding.call_tool(str(tool_name), arguments, released)
-        if result.outcome is Outcome.HUMAN_APPROVAL:
+        if not result.released and result.outcome is Outcome.HUMAN_APPROVAL:
             return {
                 "action": "approve",
                 "message": _message(result),
