@@ -1,11 +1,10 @@
 """The decide and gateway path that framework adapters call.
 
-Tool calls go through :func:`kognita.tools.run_governed`, which calls
-:func:`kognita.governance.decide` and does not run the tool body unless the
-outcome is ``ALLOW``. Model calls go through :meth:`kognita.gateway.Gateway.handle`,
-which decides before any byte is forwarded. Anything else — a denial, an
-escalation, a human approval, a missing evaluation — is not released, and the
-result carries the citations from the checks that decided it.
+Tool calls go through :func:`kognita.tools.run_governed`: admission or a
+granted approval releases the body. Model calls go through
+:meth:`kognita.gateway.Gateway.handle`, which decides before forwarding.
+Denials, escalations, pending approvals and missing evaluations withhold
+the result, with citations from the checks that decided it.
 """
 
 from __future__ import annotations
@@ -124,11 +123,12 @@ class Binding:
         arguments: Mapping[str, Any],
         fn: Callable[..., Any],
     ) -> GovernedResult:
-        """Authorise ``name``, then call ``fn`` only when the outcome is ``ALLOW``."""
+        """Authorise ``name``, then call ``fn`` only when released."""
         from kognita.envelope import Envelope
 
+        ran: list[Any] = []
         def body(envelope: Envelope, evaluation: Evaluation, session: Any) -> Any:
-            args = envelope.arguments
+            ran.append(args := envelope.arguments)
             return fn(**args) if args else fn()
 
         if not _verify(self.session, self.agent_name or "", self.agent_credential):
@@ -161,7 +161,8 @@ class Binding:
             )
         except Exception as exc:
             return _refused(f"the tool was refused before it ran: {exc}")
-        released = result.outcome is Outcome.ALLOW and not result.approval_required
+        released = bool(ran) and not result.approval_required and result.outcome in (
+            Outcome.ALLOW, Outcome.HUMAN_APPROVAL)
         return GovernedResult(
             released=released,
             outcome=result.outcome,
