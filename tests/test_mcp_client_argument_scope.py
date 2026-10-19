@@ -53,10 +53,17 @@ def test_matching_client_argument_is_allowed(session, evidence, engine):
     from test_mcp import _proxy, _Upstream, _call
 
     did, credential = _delegated(session, evidence)
+    # Client-scoped MCP reads now require durable run provenance.
+    from kognita.tools import Run
+    from kognita.envelope import Envelope
+    from kognita._fleet import _run_checks
+    run = Run()
+    _run_checks(session, run, Envelope(principal="alice", purpose="COLLABORATION",
+        tool="read_note", agent_name="dossier-agent", delegation_id=did), evidence)
     backend = _Upstream()
     proxy = _proxy(engine, evidence, backend)
     response = proxy.handle("POST", "/mcp",
-        {"agent_name": "dossier-agent", "agent_credential": credential, "delegation_id": did},
+        {"agent_name": "dossier-agent", "agent_credential": credential, "delegation_id": did, "run_id": run.id},
         _call(arguments={"client_id": "123"}), session=session)
 
     assert response.status == 200, response.evaluation.failures()

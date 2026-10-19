@@ -67,9 +67,17 @@ def test_mapped_arguments_enforced(session, evidence, engine, paths, arguments, 
     approve_deployment(session, agent.name, deployment=_DEPLOYMENT,
         evidence=evidence, actor_id=agent.owner_exec)
     credential = issue(session, agent.name, evidence=evidence, actor_id=agent.owner_exec)
+    # Bind client reads so these cases continue to exercise subject mapping.
+    from kognita.tools import Run
+    from kognita.envelope import Envelope
+    from kognita._fleet import _run_checks
+    run = Run()
+    _run_checks(session, run, Envelope(principal="alice", purpose="COLLABORATION",
+        tool="read_note", agent_name=agent.name, delegation_id=did), evidence)
     backend = _Upstream()
     response = _proxy(engine, evidence, backend).handle("POST", "/mcp",
-        {"agent_name": "dossier-agent", "agent_credential": credential, "delegation_id": did},
+        {"agent_name": "dossier-agent", "agent_credential": credential, "delegation_id": did,
+         "run_id": run.id},
         _call(arguments=arguments), session=session)
     assert response.evaluation.outcome is (Outcome.ALLOW if allowed else Outcome.DENY)
     assert len(backend.calls) == int(allowed)

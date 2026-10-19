@@ -1016,6 +1016,11 @@ def run_governed(
     from kognita._fleet import _external_agent
     _ingest(session, run, evidence, external=_external_agent(session, envelope.agent_name), client_data=bool(envelope.context.get("_effective_subjects", {}).get("client")) or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
             text=argument_text, correlation_id=evaluation.request_id, _agent_name=envelope.agent_name)
+    if (envelope.context.get("_require_client_run") and envelope.delegation_id and run is None
+            and (envelope.context.get("_effective_subjects", {}).get("client")
+                 or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"))):
+        evaluation = _with_checks(evaluation, [Check(check="S5-RUN-REQUIRED",
+            citation="S5-RUN-REQUIRED", regime="INTERNAL", result=CheckResult.FAIL)])
     evaluation = _with_checks(evaluation, _tool_checks(session, envelope, spec, run, evidence, at=at))
     from kognita._actions import _checks as _action_checks
     evaluation = _with_checks(evaluation, _action_checks(spec))

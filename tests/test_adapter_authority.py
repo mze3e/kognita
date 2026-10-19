@@ -67,12 +67,21 @@ def test_adapter_model_and_tool_authority(session, evidence, engine, adapter_cls
     adapter = adapter_cls(binding)
     mcp_backend = _McpUpstream()
     proxy = _proxy(engine, evidence, mcp_backend)
+    # Share durable client-data provenance across adapter and nested MCP calls.
+    from kognita.tools import Run
+    from kognita.envelope import Envelope
+    from kognita._fleet import _run_checks
+    mcp_run = Run()
+    _run_checks(session, mcp_run, Envelope(principal="alice", purpose="COLLABORATION",
+        tool="read_note", agent_name=binding.agent_name, delegation_id=did), evidence)
+    binding.run = mcp_run
 
     def read_note():
         response = proxy.handle("POST", "/mcp", {
             "agent_name": binding.agent_name,
             "agent_credential": binding.agent_credential or "",
             "delegation_id": binding.delegation_id,
+            "run_id": mcp_run.id,
         }, _call(arguments={"client_id": "123"}), session=session)
         assert response.evaluation.outcome is Outcome.ALLOW
         return "notes"
