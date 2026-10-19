@@ -676,12 +676,17 @@ class McpProxy:
                 from kognita.models import Agent, RunRecord
                 from sqlmodel import select
                 from kognita.credentials import verify
-                current = sess.exec(select(Agent).where(Agent.name == agent_name)
-                    .execution_options(populate_existing=True)).first()
-                if not current or current.kill_switch:
-                    return False
-                if not verify(sess, agent_name, headers.get('agent_credential', '')):
-                    return False
+                if admitted:
+                    _, live_trigger, live_checks = _identity(self.client, headers)
+                    if _admitted_trigger(live_trigger, live_checks) != admitted:
+                        return False
+                else:
+                    current = sess.exec(select(Agent).where(Agent.name == agent_name)
+                        .execution_options(populate_existing=True)).first()
+                    if not current or current.kill_switch:
+                        return False
+                    if not verify(sess, agent_name, headers.get('agent_credential', '')):
+                        return False
                 if bound_run is not None:
                     row = sess.get(RunRecord, bound_run.id, populate_existing=True)
                     if row is None or row.control_state != 'live':
