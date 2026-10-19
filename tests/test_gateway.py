@@ -235,9 +235,11 @@ def test_allow_redacts_forwards_restores_and_classifies(session, evidence):
     assert response.response_classifier["model"] == PATTERN_MODEL
     assert response.response_classifier["version"] == PATTERN_VERSION
     assert response.response_classifier["confidence"] == INDICATOR_CONFIDENCE
-    assert response.response_classifier["input_hash"] == hash_text(f"{MODEL}\nassistant\n{restored_answer}")
-    assert spy.seen[0] == prompt
-    assert spy.seen[-1] == f"{MODEL}\nassistant\n{restored_answer}"
+    # Parsed object keys are classifier input alongside values.
+    response_text = f"model\n{MODEL}\nchoices\nmessage\nrole\nassistant\ncontent\n{restored_answer}"
+    assert response.response_classifier["input_hash"] == hash_text(response_text)
+    assert spy.seen[0] == f"model\n{MODEL}\nmessages\nrole\nuser\ncontent\n{prompt}"
+    assert spy.seen[-1] == response_text
     assert response.evaluation is not None
     assert response.evaluation.outcome is Outcome.ALLOW
     assert response.evaluation.envelope.tool == "model_call"
@@ -291,7 +293,7 @@ def test_evidence_holds_hashes_not_content(session, evidence):
     assert egress.payload["manifest_hash"] == model_call.payload["manifest_hash"]
     assert egress.payload["note"] == "Payload content is not copied to the evidence plane."
     recorded = model_call.payload["response_classifier"]
-    assert recorded["input_hash"] == hash_text(f"{MODEL}\nReply to {SECRET} tomorrow")
+    assert recorded["input_hash"] == hash_text(f"model\n{MODEL}\nchoices\nmessage\ncontent\nReply to {SECRET} tomorrow")
     assert SECRET not in canonical_json(recorded)
     decision = session.exec(select(GovernanceDecision)).one()
     assert SECRET not in canonical_json(decision.attributes)
