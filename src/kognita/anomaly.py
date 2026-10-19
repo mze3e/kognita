@@ -41,7 +41,10 @@ def _observe(session, evaluation, evidence, at, *, _documents=None, _classificat
         for key, increment in [('actions', int(_documents is None)), ('documents', len(_documents or [])),
                                ('denials', int(denied and _documents is None)), ('probing', int(probing and _documents is None))]:
             body[key] = body.get(key, 0) + increment
-        for key, value in [('clients', env.all_subjects().get('client')), ('tools', env.tool),
+        clients = evaluation.attributes.get('_s4_clients',
+            [env.all_subjects()['client']] if 'client' in env.all_subjects() else [])
+        body['clients'] = sorted(set(body.get('clients', [])) | set(clients))[:1001]
+        for key, value in [('tools', env.tool),
                            ('data_classes', evaluation.attributes.get('classification'))]:
             values = set(body.get(key, []))
             if isinstance(value, str) and value:
@@ -61,9 +64,10 @@ def _observe(session, evaluation, evidence, at, *, _documents=None, _classificat
         window = session.get(_AnomalyWindow, agent.name, populate_existing=True)
         cutoff = _utc(at).timestamp() - 86400
         recent = [r for r in (window.body if window else []) if r[0] > cutoff]
-        client = env.all_subjects().get('client')
-        if _documents is None or _documents or client and client not in {r[3] for r in recent}:
-            recent.append([_utc(at).timestamp(), int(_documents is None), len(_documents or []), client])
+        for index, client in enumerate(clients or [None]):
+            if _documents is None or _documents or client and client not in {r[3] for r in recent}:
+                recent.append([_utc(at).timestamp(), int(_documents is None and index == 0),
+                               len(_documents or []) if index == 0 else 0, client])
         if window is None:
             window = _AnomalyWindow(agent_name=agent.name)
         window.body = recent[-2001:]

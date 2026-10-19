@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - R2 #6: Persist pending tool actions and declared compensations before execution; keep recovery incomplete while actions are in flight.
 
 - Restrict gateway forwarding to supported model inference paths and bind the normalized path into authorization, approvals and evidence (r2 #1).
+- Resolve mapped client scope consistently for authority, client limits, anomaly monitoring, taint and evidence across MCP, gateway and governed tools (round 2 finding 5).
 - Require a bound run before delegated broker retrieval or sensitive model prompts can release content (round 1 finding 3).
 - Pin gateway admission checks for identical replay of successful decisions (r1 #9).
 - Record MCP HTTP socket abortion separately from confirmed cancellation and enforce S6C for uncancellable mutations (r1 #12).

@@ -85,9 +85,7 @@ def _checks(env, snapshot, at, *, _exclude=None):
             gate(rule, sum(start < t <= at if start != day else day <= t <= at for t, _, _, _ in rows) < limit)
     if b.max_clients is not None:
         clients = {c for _, cs, _, _ in rows for c in cs}
-        current = env.all_subjects().get('client')
-        if current:
-            clients.add(current)
+        clients.update(env.context.get('_effective_subjects', {}).get('client', []))
         gate('S4-MAX-CLIENTS', len(clients) <= b.max_clients)
     if b.max_value is not None:
         value = env.arguments.get('value')

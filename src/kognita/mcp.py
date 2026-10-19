@@ -623,12 +623,9 @@ class McpProxy:
         if admitted:
             context["system_trigger"] = admitted
         from kognita._isolation import _assurance
-        # A single client named in the tool arguments becomes the envelope's
-        # client subject, so authority._checks sees the call's real target
-        # rather than defaulting to the delegation's own client. Conflicting,
-        # unresolved (too deeply nested) or absent names are left to
-        # authority._checks, which reads the arguments directly and fails
-        # closed on a mismatch.
+        # Preserve the argument-derived subject reference for pack loaders.
+        # decide resolves the complete effective scope, including manifest
+        # mappings, for all governance consumers.
         argument_clients = _argument_values(envelope_arguments, "client")
         subjects = {"client": next(iter(argument_clients))} if argument_clients and len(argument_clients) == 1 else {}
         envelope = Envelope(

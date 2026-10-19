@@ -262,6 +262,8 @@ def decide(
     """
     at = as_of or utcnow()
     request_id = request_id or str(uuid.uuid4())
+    from kognita.authority import _resolve_subjects
+    envelope = _resolve_subjects(envelope, snapshot)
     attrs = dict(attributes or {})
     agent = snapshot.agents.get(envelope.agent_name)
     if agent is not None:
@@ -272,7 +274,7 @@ def decide(
     if envelope.agent_name:
         attrs["_authority_grants"] = _grant_ids(envelope, snapshot, at)
     if envelope.agent_name:
-        attrs["_s4_clients"] = [envelope.all_subjects()["client"]] if "client" in envelope.all_subjects() else []
+        attrs["_s4_clients"] = envelope.context["_effective_subjects"].get("client", [])
     value = envelope.arguments.get("value", 0)
     from math import isfinite
     attrs["_s4_value"] = value if type(value) in (int, float) and isfinite(value) and value >= 0 else 0
@@ -369,6 +371,8 @@ def _standing_checks(
     granted later does not outrank a kill switch or a revocation that came
     first. Only failures and escalations are returned.
     """
+    from kognita.authority import _resolve_subjects
+    envelope = _resolve_subjects(envelope, snapshot)
     attrs = dict(attributes or {})
     checks: list[Check] = []
     agent = snapshot.agents.get(envelope.agent_name)

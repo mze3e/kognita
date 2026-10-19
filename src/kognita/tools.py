@@ -813,6 +813,7 @@ def _release_tool(
     from kognita._isolation import _ingest
     _ingest(session, run, evidence, external=spec.external,
             client_data=spec.client_data or spec.classification in (Classification.C2, Classification.C3)
+            or bool(envelope.context.get("_effective_subjects", {}).get("client"))
             or "client" in envelope.all_subjects(), text=canonical_json(data),
             correlation_id=evaluation.request_id, _agent_name=envelope.agent_name)
     from kognita._limits import _minimize
@@ -836,7 +837,7 @@ def _release_tool(
         payload={
             "tool": spec.name,
             "delegation_id": envelope.delegation_id,
-            "subjects": envelope.all_subjects(),
+            "subjects": evaluation.envelope.all_subjects(),
             "outcome": evaluation.outcome.value,
             "approval_required": evaluation.approval_required,
             "response_hash": response_hash,
@@ -971,6 +972,7 @@ def run_governed(
             classifier=classifier,
         )
 
+    from dataclasses import replace
     evaluation = decide(
         envelope,
         snap,
@@ -982,6 +984,9 @@ def run_governed(
         engages=getattr(pack, "engages", None),
         as_of=as_of,
     )
+    # Keep the submitted subjects for step-up/checkpoint identity; consumers use
+    # the resolved scope shared by the decision.
+    envelope = replace(envelope, context=evaluation.envelope.context)
     if envelope.agent_name:
         from kognita.models import _WorkloadCredential
         from kognita.credentials import verify
@@ -1008,7 +1013,7 @@ def run_governed(
         # A foreign run must not be tainted, spent or checkpointed by this call.
         run = None
     from kognita._fleet import _external_agent
-    _ingest(session, run, evidence, external=_external_agent(session, envelope.agent_name), client_data="client" in envelope.all_subjects() or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
+    _ingest(session, run, evidence, external=_external_agent(session, envelope.agent_name), client_data=bool(envelope.context.get("_effective_subjects", {}).get("client")) or attributes.get("classification") in (Classification.C2, Classification.C3, "C2", "C3"),
             text=argument_text, correlation_id=evaluation.request_id, _agent_name=envelope.agent_name)
     evaluation = _with_checks(evaluation, _tool_checks(session, envelope, spec, run, evidence, at=at))
     from kognita._actions import _checks as _action_checks
