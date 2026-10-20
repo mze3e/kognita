@@ -89,14 +89,97 @@ Monitoring is required at every tier. On the review date the use case is denied.
 
 **Every decision cites its rule.** Each check carries the regime and citation it came from. A check without a citation is an assertion, not a decision, and the conformance kit enforces it.
 
-**Agents are registered, and can be stopped.** An agent that is not in the registry is denied. Each registered agent carries a version, an accountable owner and a materiality tier, and has a kill switch that denies its next request:
+**Agents are registered, and can be stopped.** An agent that is not in the registry is denied. Registration includes `deployment_date` and `model`, alongside its version, accountable owner and materiality tier. Missing identity denies with `S1-IDENTITY`; a changed deployment needs owner approval (`S1-DEPLOYMENT`). Each agent has a kill switch that denies its next request:
 
 ```console
 DENY  Kill switch engaged — accountable owner: Head of Wealth Advisory
 DENY  Agent inventory — 'AGENT-UNKNOWN' is not registered
 ```
 
-Through `kognita serve`, a call with no agent name is denied. An agent name is accepted only when the bound client configuration lists it. An approved system trigger is admitted, and it is not treated as a human.
+Through `kognita serve`, a call needs an admitted agent identity or an approved system trigger. An agent name is accepted only when the bound client configuration lists it.
+
+**Workload credentials bind calls to agents.** Gateway and MCP calls carry `agent_name` and `agent_credential` headers. Missing, mismatched or revoked secrets deny with `S2-CREDENTIAL`. Only digests are stored. Rotate by issuing a replacement and revoking the old secret; there is no separate rotation API. The owner performs these operations and commits the transaction:
+
+```python
+from kognita.credentials import issue, verify, revoke
+
+secret = issue(session, "research-agent", evidence=evidence, actor_id=owner)
+assert verify(session, "research-agent", secret)
+replacement = issue(session, "research-agent", evidence=evidence, actor_id=owner)
+revoke(session, "research-agent", secret, evidence=evidence, actor_id=owner)
+session.commit()
+```
+
+**Delegation checks both parties.** A live human entitlement and a live agent delegation must cover the action, subjects and time window (`S3-HUMAN-ENTITLEMENT`, `S3-DELEGATION`). The delegation cannot exceed the human grant. Calls select it through `Envelope.delegation_id` or the `delegation_id` header. After the grant and delegation in [the authority example](docs/delegated-authority.md), task completion ends that authority:
+
+```python
+from kognita.authority import complete_task
+
+complete_task(session, "meeting-123", evidence=evidence, actor_id="alice")
+```
+
+**Autonomy is evidence-gated.** Levels L0-L6 constrain approved tool verbs. Deployment starts at L0; L4 actions require human approval. `kognita.autonomy.promote` requires measured outcomes, owner approval and an independent validator. `kognita.autonomy.step_down` checks sustained drift and lowers the level one step (`S1-DRIFT`). Deploy the [identity manifest](docs/AGENT_IDENTITY.md), including its deployment date and model:
+
+```console
+$ kognita agent deploy --manifest agent.json --db kognita.db --actor owner@example.org
+```
+
+**Authority can be reconstructed.** Evidence links an action to its human grants, delegations and identity at decision time, including authority that later ended. Use the decision request ID:
+
+```console
+$ kognita evidence authority <action_id> --db kognita.db
+```
+
+**Blast radius is bounded across runs.** `BlastRadius` caps clients, value, daily actions, minute/hour rates, channels, jurisdictions and expiry. `max_daily_transactions` counts released `execute` calls on the UTC day (`S4-DAILY-TRANSACTIONS`). `products` restricts resolved product subjects and arguments (`S4-PRODUCTS`). These limits need deployment approval. For example, the [manifest limits](docs/AGENT_IDENTITY.md) include:
+
+```python
+from kognita.models import BlastRadius
+
+limits = BlastRadius(max_daily_transactions=10, products=["approved-research"])
+```
+
+**Taint stays with the task.** External content blocks writes and tools above L1 (`S5-EXTERNAL-AUTHORITY`). Client data blocks public publishing (`S5-PUBLIC-CONTENT`). Labels persist across reloads and child runs. Declare external tool results at registration, as in the [isolation tests](tests/test_isolation_s5.py):
+
+```python
+registry.register("tool", lambda *_: {"document": "harmless"}, external=True,
+                  classification=Classification.C0)
+```
+
+**Anomalies contain agents.** Volume, privilege probing, new tool sequences and data-class changes can quarantine an agent, revoke its credentials and stop work (`S6-VOLUME`, `S6-PRIVILEGE-PROBING`). Release requires an accountable human. Fleet delegation narrows authority, reserves child budgets and inherits taint and restrictions. With the bounded scope from the [fleet tests](tests/test_fleet_s6b.py):
+
+```python
+child = run.delegate_to("child", scope, session=session, evidence=evidence, now=NOW)
+```
+
+**System triggers need approval.** Gateway and MCP clients admit only configured triggers (`S2-SYSTEM-TRIGGER`). A trigger remains a system actor and cannot bypass agent credentials or policy. The [trigger tests](tests/test_system_triggers.py) configure admission with:
+
+```python
+from kognita.gateway import ClientConfiguration
+
+client = ClientConfiguration(principal="alice", purpose="COLLABORATION",
+                             system_triggers=frozenset({"nightly-refresh"}))
+```
+
+**Propose before applying.** `propose_document` records a diff without changing its target. `apply_proposal_tool` requires the exact persisted, live human approval and applies it once (`PROPOSAL-BINDING`, `PROPOSAL-APPROVAL`). With the proposal and approval from the [public API tests](tests/test_proposal_public_api.py):
+
+```python
+from kognita import propose_document, apply_proposal_tool
+
+propose_document(session, proposal, evidence=evidence, correlation_id="public")
+apply_proposal_tool(session, proposal, target, approval, diff_hash=digest,
+                    approver_id="owner", actor_type=ActorType.HUMAN,
+                    evidence=evidence, correlation_id="public", now=NOW)
+```
+
+**Recovery compensates released work.** Reversible library tools register a compensation callback. MCP write tools declare `reversible: true` and a named `compensation` tool in the approved tool allowlist. `recover_run` stops the run and compensates latest actions first; failed compensation leaves it paused, and retries skip completed actions (`S6C-RECOVER`). With the callbacks and attached interaction from the [recovery tests](tests/test_recovery_retry.py):
+
+```python
+from kognita.intervention import recover_run
+
+registry.register(name, lambda *_: "ok", reversible=True, compensation=undo(name))
+recover_run(session, run.id, evidence=evidence, human="human",
+            citation="S6C-RECOVER", now=NOW)
+```
 
 **Decisions are pure and replayable.** `decide()` writes nothing and takes the instant as a parameter. Policies are effective-dated rows, so *"what would this have decided in March?"* has an answer:
 
@@ -149,7 +232,7 @@ result.decision   # REDACT
 
 **Classifier-derived envelopes.** `ask()` classifies the question, and `run_governed()` classifies free-text arguments, with the pattern classifier in core. A typed attribute wins. Identity, purpose, and subject are not taken from the text. The recorded model, version, label, calibrated confidence, and input hash are what `decide()` replays, so replay does not run the classifier. Below a `CLASSIFIER_CONFIDENCE` threshold the outcome is `ESCALATE`, never `ALLOW`. A citation that acted on a classifier label names both the policy rule and that label.
 
-**The AI gateway.** `kognita serve` fronts an OpenAI-compatible provider. Agents point `base_url` at the gateway. It decides before any byte is forwarded, redacts through the egress guard, restores redacted spans, and classifies the response. `MODEL_CALL` and `EGRESS` evidence record hashes and references, not the prompt or the response. If the evidence store cannot record the call, the default `--failure-mode FAIL_CLOSED` refuses it and does not call the provider. `DEGRADED` may proceed only for a local model and content below classification C2 (C2 is client-identifying), and writes the decision and the model evidence once the store accepts writes. The gateway overhead benchmark drops its warm-up calls, then fails unless the 95th percentile of the remaining sample is under 50 ms and the mean is under 25 ms. Classifier inference and the upstream stand-in are excluded. A single slow call is printed and is not the gate.
+**The AI gateway.** `kognita serve` fronts an OpenAI-compatible provider. The forwarded inference paths are exactly `/v1/chat/completions`, `/v1/completions`, `/v1/responses` and `/v1/embeddings`. File, image and audio attachments are refused with `S5-UNSUPPORTED-CONTENT`. Agents point `base_url` at the gateway. It decides before any byte is forwarded, redacts through the egress guard, restores redacted spans, and classifies the response. `MODEL_CALL` and `EGRESS` evidence record hashes and references, not the prompt or the response. If the evidence store cannot record the call, the default `--failure-mode FAIL_CLOSED` refuses it and does not call the provider. `DEGRADED` may proceed only for a local model and content below classification C2 (C2 is client-identifying), and writes the decision and the model evidence once the store accepts writes. The gateway overhead benchmark drops its warm-up calls, then fails unless the 95th percentile of the remaining sample is under 50 ms and the mean is under 25 ms. Classifier inference and the upstream stand-in are excluded. A single slow call is printed and is not the gate.
 
 ```console
 $ kognita serve --provider openai-compatible --upstream https://api.openai.com \
@@ -160,6 +243,15 @@ $ kognita serve --provider openai-compatible --upstream https://api.openai.com \
 
 The gateway holds the provider credential; the agent never does. `--provider-key`, or `KOGNITA_PROVIDER_KEY` when the flag is omitted, is sent upstream as `Authorization: Bearer <key>` on every forwarded call. A caller that presents a provider credential of its own (`authorization`, `x-api-key`, `api-key`, or `x-goog-api-key`) is denied with `S2-PROVIDER-KEY` and raises a `provider-key finding` review flag, with the value never copied into that flag, a decision, a held continuation, or a log line. With no key configured, the gateway forwards no provider credential at all.
 
+**Tier 2 and above require gateway ingress.** A tier 2+ use case is registered with `UseCaseSpec(deployment_mode="gateway")` and runs only through `kognita serve` or the MCP proxy. Calling `run_governed()` or `ask()` for it directly from library code is denied with `S2-DEPLOYMENT-MODE`, as the [library execution tests](tests/test_library_execution_gates.py) check:
+
+```python
+evaluation = run_governed(session, envelope, registry=registry, pack=pack,
+                          evidence=evidence, purposes=["COLLABORATION"]).evaluation
+assert evaluation.outcome is Outcome.DENY
+assert "S2-DEPLOYMENT-MODE" in [c.citation for c in evaluation.failures()]
+```
+
 **The MCP proxy.** `kognita serve --mcp --root-config config.json` fronts the MCP servers named in that file. The file also names the policy pack, the evidence database, and the default actor context. Every call becomes an envelope and is authorised with `run_governed()`. The backend is contacted only when the call is released: an allow, or a human approval that already has a live grant. A denial, an escalation, and an ungranted human approval return the outcome and the citations. If the evidence store cannot record the call, the proxy refuses it and does not forward. It has no degraded mode.
 
 **Flagship demo.** `kognita scaffold --template governed-agent` creates a small app and a SQLite policy and evidence store.
@@ -168,15 +260,15 @@ The gateway holds the provider credential; the agent never does. `--provider-key
 
 ## Continuous Learning and Drift
 
-The [roadmap](docs/ROADMAP.md) schedules this loop after 0.3:
+The outcome and recorder parts shipped in v0.4.1. Autonomy gates shipped in v0.5.0. The [roadmap](docs/ROADMAP.md) plans institutional memory for 0.6:
 
-**Outcome metrics per use case (0.4).** Each use case names one primary metric — cycle time, decision quality, or reliability — with a baseline and a target. A Knowledge Lead owns the quality standard. The three metrics are computed from the interaction record. Cycle time is mean seconds from the interaction opening to the final decision. A named primary metric with no measurement is a breach. Autonomy gates that consume those metrics are still 0.5.
+**Outcome metrics per use case (0.4).** Each use case names one primary metric (cycle time, decision quality, or reliability) with a baseline and a target. A Knowledge Lead owns the quality standard. The three metrics are computed from the interaction record. Cycle time is mean seconds from the interaction opening to the final decision. A named primary metric with no measurement is a breach. Autonomy gates that consume those metrics shipped in 0.5.
 
 **Flight recorder (0.4).** `kognita recorder` lists recent runs from the evidence chain, shows one run's decisions and citations, and exports a run as self-verifying JSON. Alerts cover a budget breach, repeated denials from one actor, a chain break, and classifier confidence drift. RM acceptance, edit, rejection, and wrong-client rates are counted from evidence. A missing measurement is unmeasured. `kognita serve --otel` exports decisions, denials, latency, token use, and tool failures when `kognita[otel]` is installed and `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Injection attempts and entitlement blocks are unmeasured until an event records them. An export failure is reported and does not change the decision.
 
-**Autonomy earns its expansion (0.5).** Raising an agent's autonomy level requires thresholds on those metrics. The evidence is necessary, not sufficient: the accountable owner still approves. If the metrics fall below a lower threshold, the agent's effective level steps down one step.
+**Autonomy earns its expansion (0.5, shipped).** Raising an agent's autonomy level requires thresholds on those metrics. The evidence is necessary, not sufficient: the accountable owner still approves. If three consecutive observation windows breach the lower thresholds or show sustained decline, the agent's effective level steps down one step.
 
-**Institutional memory (0.6).** A pattern in RM corrections or outcomes becomes a proposed change. The Knowledge Lead approves it as a new dated version. Learning is versioned, never edited in place.
+**Institutional memory (0.6, planned).** A pattern in RM corrections or outcomes becomes a proposed change. The Knowledge Lead approves it as a new dated version. Learning is versioned, never edited in place.
 
 ## Domain packs
 
@@ -258,15 +350,24 @@ Kognita governs policies, guidelines and governance records: the rules, the regi
 ## Layout
 
 ```
-kognita            the decision engine: decisions, evidence, approvals,
-                   retrieval, egress, tools, the AI gateway and the MCP proxy.
-                   Four dependencies, no network.
-kognita.testing    the conformance kit
-kognita.adapters   provider-backed embedders                 [openai]
-                   framework adapters                         [hermes-agent]
-                                                              [openai-agents]
-                                                              [langgraph]
-                                                              [pydantic-ai]
+kognita              the decision engine: decisions, evidence, approvals,
+                     retrieval, egress, tools, the AI gateway and the MCP proxy.
+                     Four dependencies, no network.
+kognita.registry     agent identity, deployment approval and kill switches
+kognita.credentials  workload secret issue, verification and revocation
+kognita.authority    human grants, bounded delegation and task completion
+kognita.autonomy     evidence-gated promotion and automatic step-down
+kognita.models       BlastRadius and persisted governance records
+kognita.tools        Run budgets, child delegation and reversible tools
+kognita.anomaly      automatic baseline checks and containment
+kognita.intervention human run controls, recovery and compensation
+kognita.approvals    proposal review and approved application
+kognita.testing      the conformance kit
+kognita.adapters     provider-backed embedders                 [openai]
+                     framework adapters                         [hermes-agent]
+                                                                [openai-agents]
+                                                                [langgraph]
+                                                                [pydantic-ai]
 ```
 
 `import kognita` never loads a graph database or a provider SDK, and `tests/test_packaging.py` asserts it.
