@@ -307,7 +307,7 @@ The invariants are importable, so external packs run them in their own repositor
 
 ## Known limitations
 
-Kognita is alpha. These are known limitations in v0.5.1. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
+Kognita is alpha. These are known limitations in v0.5.2. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
 
 - **The gateway refuses attachments.** File, image and audio content parts cannot be inspected locally, so they are refused (S5-UNSUPPORTED-CONTENT).
 - **Degraded-mode evidence is held in the gateway process.** Restarting before the evidence store recovers drops buffered evidence. `FAIL_CLOSED` is the default; MCP has no degraded mode.
@@ -376,6 +376,6 @@ kognita.adapters     provider-backed embedders                 [openai]
 
 ## Status
 
-**Alpha.** v0.5.1 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+**Alpha.** v0.5.2 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 MIT licensed.
