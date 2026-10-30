@@ -260,7 +260,7 @@ assert "S2-DEPLOYMENT-MODE" in [c.citation for c in evaluation.failures()]
 
 ## Continuous Learning and Drift
 
-The outcome and recorder parts shipped in v0.4.1. Autonomy gates shipped in v0.5.0. The [roadmap](docs/ROADMAP.md) plans institutional memory for 0.6:
+The outcome and recorder parts shipped in v0.4.1. Autonomy gates shipped in v0.5.0. Institutional memory is in this tree with the rest of the 0.6 claims controls. It is not a numbered release yet. The [roadmap](docs/ROADMAP.md) checklist is the current status:
 
 **Outcome metrics per use case (0.4).** Each use case names one primary metric (cycle time, decision quality, or reliability) with a baseline and a target. A Knowledge Lead owns the quality standard. The three metrics are computed from the interaction record. Cycle time is mean seconds from the interaction opening to the final decision. A named primary metric with no measurement is a breach. Autonomy gates that consume those metrics shipped in 0.5.
 
@@ -268,134 +268,160 @@ The outcome and recorder parts shipped in v0.4.1. Autonomy gates shipped in v0.5
 
 **Autonomy earns its expansion (0.5, shipped).** Raising an agent's autonomy level requires thresholds on those metrics. The evidence is necessary, not sufficient: the accountable owner still approves. If three consecutive observation windows breach the lower thresholds or show sustained decline, the agent's effective level steps down one step.
 
-**Institutional memory (0.6, planned).** A pattern in RM corrections or outcomes becomes a proposed change. The Knowledge Lead approves it as a new dated version. Learning is versioned, never edited in place.
+**Institutional memory.** A pattern in RM corrections or outcomes becomes a proposed change. The Knowledge Lead approves it as a new dated version. Learning is versioned, never edited in place. Memory writes record the institutional standard that is in force. Model and tool events record the use-case `standard_version` instead. See [Claims](#claims).
 
-## Domain packs
+## Claims
 
-The core is domain-blind. A pack supplies what it cannot know: what a request's *attributes* are, and how to load the *subjects* it refers to.
-
-```python
-class MyPack:
-    name = "my-domain"
-    def load_subjects(self, envelope, session): ...
-    def resolve_attributes(self, envelope, subjects): ...
-    def rules(self): return build_registry(MY_EVALUATORS)
-```
-
-Policies are data: effective-dated rows with a JSON payload, interpreted by the evaluator registered for their `rule_type`. The core ships seven primitives (allowlist, denylist, required flag, required human approval, two-signature approval, classifier confidence (`CLASSIFIER_CONFIDENCE`), prohibited); a pack registers whatever its regimes need beyond them.
-
-### Conformance
-
-The conformance kit is a set of assertions every domain pack must satisfy: whatever a pack's rules say, they are decided fail-closed, cited and evidenced.
-
-```bash
-pytest --pyargs kognita.testing.conformance      # the kit against its bundled pack
-```
-
-```python
-from kognita.testing import ConformanceCase, Harness
-
-class TestMyPack(ConformanceCase):
-    @pytest.fixture(autouse=True)
-    def _bind(self):
-        self.harness = Harness(pack=MyPack(), purposes=PURPOSES, seed=seed)
-        self.allow_envelope = Envelope(...)
-        self.deny_envelope = Envelope(...)
-```
-
-The invariants are importable, so external packs run them in their own repositories.
-
-## Known limitations
-
-Kognita is alpha. These are known limitations in v0.5.2. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
-
-- **The gateway refuses attachments.** File, image and audio content parts cannot be inspected locally, so they are refused (S5-UNSUPPORTED-CONTENT).
-- **Degraded-mode evidence is held in the gateway process.** Restarting before the evidence store recovers drops buffered evidence. `FAIL_CLOSED` is the default; MCP has no degraded mode.
-- **Schema migration is limited.** `create_all` applies supported additive columns and SQLite compatibility updates, not arbitrary schema migrations. Import a domain pack's models before creating its tables.
-- **Append-only evidence triggers are SQLite-only.** Other databases do not receive those trigger protections.
-- **Policy citations default to empty at model level.** `decide()` escalates empty citations with CITATION-REQUIRED and preserves denials.
-- **Anomaly buckets use UTC calendar days**, except the rolling 24-hour volume window.
-- **Circuit-breaker window boundaries lack a regression test.**
-- **Run budgets can overshoot by one call.** Post-call usage is accounted for before response release.
-
-## Where it's heading
-
-The direction is **supervisory examinability**: a regulator should be able to pick one AI-assisted client interaction and reconstruct it from evidence alone. Why this client, why this product, what data the AI used, which model produced it, what the agent was authorised to do, which controls ran, what the human saw and changed, who decided, what the client was told, and whether all of that can be reproduced later.
-
-The test every release is measured against:
-
-> **Can the bank explain, control, stop and reconstruct every material AI action that affects a client?**
-
-**0.3 "Gateways, the Run and Replay" is shipped** in v0.3.0: the AI gateway, the MCP proxy, classifier-derived envelopes, run budgets, suspend and resume, pinned evidence, `kognita evidence reconstruct`, degraded gateway mode, and the Tier 0 defect closures.
-
-**0.4 "Ingestion, Policy Language and the Client Lifecycle" is shipped** in v0.4.1: structured ingestion with passage-level citations, the policy language, the use-case register, the client interaction record, outcomes and the review queue, communication and intervention controls, the circuit breaker and revocation, starter packs, the flight recorder, and the hermes-agent, openai-agents, langgraph and pydantic-ai adapters.
-
-**0.5 "Agents, Authority and Fleets" is released as an alpha** in v0.5.1: authenticated agent identity and workload credentials, delegated authority with dual checks, autonomy levels with evidence-gated promotion and step-down, blast-radius limits, taint isolation, anomaly containment, agent delegation and fleet controls, reversibility, and a threat model. The 0.5 definition-of-done items are complete; v0.5.1 strengthens these controls. See Known limitations for remaining gaps.
-
-Planned, not yet built:
-
-- **0.6: Claims and institutional memory.** Typed, sourced, current claims checked before an RM relies on them; approved-source grounding; supervised memory that turns lessons into shared standards; governed business definitions.
-- **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
-
-The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop and institutional memory.
-
-The design rule behind all of it: **never rely on the LLM to enforce a control that can be enforced outside the LLM.**
-
-## What Kognita does not hold
-
-Kognita governs policies, guidelines and governance records: the rules, the registers and the evidence. It does not host client data, document stores, agent memory or a knowledge graph, and it does not ship connectors to file stores. Those stay in the bank's systems, and Kognita decides and evidences access to them.
-
-> **Removed after 0.3.0.** The Graphiti and Kuzu graph engine (`kognita.graph`, the `[graph]` extra, and the `[anthropic]`, `[groq]` and `[gemini]` extras that only installed it) is no longer part of the package. Pin `kognita[graph]==0.3.0` if you still need it. Details: [docs/decisions/0008-remove-the-graph-engine.md](docs/decisions/0008-remove-the-graph-engine.md).
-
-## Layout
-
-```
-kognita              the decision engine: decisions, evidence, approvals,
-                     retrieval, egress, tools, the AI gateway and the MCP proxy.
-                     Four dependencies, no network.
-kognita.registry     agent identity, deployment approval and kill switches
-kognita.credentials  workload secret issue, verification and revocation
-kognita.authority    human grants, bounded delegation and task completion
-kognita.autonomy     evidence-gated promotion and automatic step-down
-kognita.models       BlastRadius and persisted governance records
-kognita.tools        Run budgets, child delegation and reversible tools
-kognita.anomaly      automatic baseline checks and containment
-kognita.intervention human run controls, recovery and compensation
-kognita.approvals    proposal review and approved application
-kognita.testing      the conformance kit
-kognita.adapters     provider-backed embedders                 [openai]
-                     framework adapters                         [hermes-agent]
-                                                                [openai-agents]
-                                                                [langgraph]
-                                                                [pydantic-ai]
-```
-
-`import kognita` never loads a graph database or a provider SDK, and `tests/test_packaging.py` asserts it.
-
-> **Moved in 0.2.** `kognita.core.*` → `kognita.*`. Details: [docs/decisions/0003-the-top-level-namespace.md](docs/decisions/0003-the-top-level-namespace.md).
-
-## Status
-
-**Alpha.** v0.5.2 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
-
-MIT licensed.
-
-### Typed claims
+The blocks below write `claims.db`, `facts.db` and `memory.db` in the current
+directory. Delete a file before running its block again.
 
 `kognita.claims` provides `Claim`, `ClaimType`, `ValidatorStatus` and the
 `record_claim`, `release_claim`, `relabel_claim`, `list_claims` functions.
 Record claims with a session, an evidence writer and an `interaction_id`. Content
-is retained separately from its hash in the evidence chain. Release checks load
-the stored claim by ID and deny unlabelled claims for RM and client audiences.
-Relabelling as a verified fact requires both source references and VERIFIED status.
-Validator status limits RM and client audiences again, as described under Verification gate.
+is retained separately from its hash in the evidence chain. `kognita claims`
+inspects records. It does not record or release them.
 
-`definition_ref`, when the claim text uses a registered term, must cite the
-current governed version. Release checks that citation.
-Successful RM releases appear in `kognita evidence reconstruct`.
+`release_claim` loads the stored claim and checks, in this order: a stale
+status, the audience (`rm` or `client`), the label, the approved source, the
+calculation citation, the verification record, then the governed definition.
+The first failure is the reason code. A pass is `C1-LABELLED`.
 
-Inspect records with `kognita claims show <claim_id> --db <path>` or
-`kognita claims list --client <id> --interaction <id> --db <path>`.
+Relabelling as a verified fact requires both source references and `VERIFIED`
+status. A stale claim cannot be relabelled back into circulation.
+`definition_ref` is one `(term, version)` pair. When the text uses a registered
+term, that pair must be the version in force. Text that uses two governed terms
+cannot cite both. Successful RM releases appear in `kognita evidence reconstruct`.
+
+```python
+from datetime import datetime, timezone
+from sqlmodel import Session
+
+from kognita import (
+    CalculationService, CheckResult, Claim, ClaimType, ValidatorStatus, Verifier,
+    register_calculation_service, register_verifier, verify_claim,
+)
+from kognita.claims import record_claim, release_claim
+from kognita.db import create_all, make_engine
+from kognita.definitions import GovernedTerm, register_term
+from kognita.evidence import EvidenceWriter
+from kognita.models import UseCase
+from kognita.sources import Source, register_source
+
+engine = make_engine("claims.db")
+create_all(engine)
+writer = EvidenceWriter(engine)
+when = datetime(2026, 10, 1, tzinfo=timezone.utc)
+
+with Session(engine) as session:
+    session.add(UseCase(
+        usecase_id="advice",
+        record={
+            "usecase_id": "advice",
+            "approved_sources": ["house-view"],
+            "proposed_tier": 2,
+            "verifier": "v-check",
+            "version": 1,
+        },
+        effective_from=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    ))
+    session.flush()
+    register_source(session, Source(
+        "house-view", "house view", "overweight", "CIO desk", when,
+    ), evidence=writer, interaction_id="i1")
+    register_calculation_service(session, CalculationService(
+        "nav-desk", "NAV desk", "3", "Finance", ("nav",),
+    ), evidence=writer, interaction_id="i1")
+    register_term(session, GovernedTerm(
+        "AUM", "catalogue:aum", "Finance", "1",
+        datetime(2026, 1, 1, tzinfo=timezone.utc),
+    ), evidence=writer, interaction_id="i1")
+    register_verifier(session, Verifier(
+        "v-check", "verifier-agent", "check-model", "check-2026.10", "check-provider",
+    ), evidence=writer, interaction_id="i1")
+
+    record_claim(session, Claim("c-bare", "client-1", "The house view is overweight."),
+                 evidence=writer, interaction_id="i1")
+    assert release_claim(session, "c-bare", evidence=writer, interaction_id="i1",
+                         usecase_id="advice").check == "C1-UNLABELLED"
+
+    record_claim(session, Claim(
+        "c-model", "client-1", "The house view is overweight.", ClaimType.INFERENCE,
+        source_system="model", source_record="weights",
+        validator_status=ValidatorStatus.VERIFIED,
+    ), evidence=writer, interaction_id="i1")
+    assert release_claim(session, "c-model", evidence=writer, interaction_id="i1",
+                         usecase_id="advice").check == "C3-MODEL"
+
+    record_claim(session, Claim(
+        "c-nav", "client-1", "The NAV is 1.2.", ClaimType.VERIFIED_FACT,
+        source_system="house-view", source_record="overweight",
+        validator_status=ValidatorStatus.VERIFIED,
+        agent_id="briefing-agent", model_version="house-v3",
+    ), evidence=writer, interaction_id="i1")
+    assert release_claim(session, "c-nav", evidence=writer, interaction_id="i1",
+                         usecase_id="advice", authoritative_figure=True).check == "C6-UNCITED"
+
+    record_claim(session, Claim(
+        "c-open", "client-1", "The house view is overweight.", ClaimType.INFERENCE,
+        source_system="house-view", source_record="overweight",
+        agent_id="briefing-agent", model_version="house-v3",
+    ), evidence=writer, interaction_id="i1")
+    assert release_claim(session, "c-open", evidence=writer, interaction_id="i1",
+                         usecase_id="advice").check == "C7-UNVERIFIED"
+
+    record_claim(session, Claim(
+        "c-aum", "client-1", "AUM is steady.", ClaimType.VERIFIED_FACT,
+        source_system="house-view", source_record="overweight",
+        validator_status=ValidatorStatus.VERIFIED,
+        agent_id="briefing-agent", model_version="house-v3",
+    ), evidence=writer, interaction_id="i1")
+    verify_claim(session, "c-aum", ValidatorStatus.VERIFIED, verifier_id="v-check",
+                 agent_id="briefing-agent", model="prod-model", model_version="house-v3",
+                 provider="prod-provider", evidence=writer, interaction_id="i1",
+                 usecase_id="advice")
+    assert release_claim(session, "c-aum", evidence=writer, interaction_id="i1",
+                         usecase_id="advice").check == "C12-MISSING"
+
+    record_claim(session, Claim(
+        "c-ok", "client-1", "AUM is steady and the NAV is 1.2.", ClaimType.VERIFIED_FACT,
+        source_system="house-view", source_record="overweight",
+        calculation_method="nav-desk@3", validator_status=ValidatorStatus.VERIFIED,
+        agent_id="briefing-agent", model_version="house-v3",
+        definition_ref=("AUM", "1"),
+    ), evidence=writer, interaction_id="i1")
+    verify_claim(session, "c-ok", ValidatorStatus.VERIFIED, verifier_id="v-check",
+                 agent_id="briefing-agent", model="prod-model", model_version="house-v3",
+                 provider="prod-provider", evidence=writer, interaction_id="i1",
+                 usecase_id="advice")
+    released = release_claim(session, "c-ok", evidence=writer, interaction_id="i1",
+                             usecase_id="advice", audience="rm")
+    assert released.check == "C1-LABELLED" and released.result is CheckResult.PASS
+    session.commit()
+```
+
+Source kinds are `CIO research`, `house view`, `product documentation`,
+`market data` and `policy`. `source_system` is the source id and
+`source_record` is the version. `model` is never a source.
+
+```sh
+kognita claims show c-ok --db claims.db
+kognita claims list --client client-1 --interaction i1 --db claims.db
+```
+
+### Gateway and communication release
+
+A tier 2 use case, and any use case `is_material` treats as high materiality,
+does not return model prose until each prose string was recorded and released
+to the `rm` audience. The match is the stripped text. Structural response
+fields are not claims. A missing record, a record that was not released, a
+release for another audience, or different text is `C1-UNKNOWN`, and the body
+is not returned. Degraded mode cannot read the store, so that prose is refused
+the same way.
+
+A client communication at house view or above uses audience `client`. The
+public lane checks house view, which is its highest level. Record the sentence
+and release it to that audience before the gateway or the send. The tests are
+`tests/test_dod_release.py`.
 
 ## Fact freshness
 
@@ -406,6 +432,46 @@ requires a session, evidence writer, retention store and correlation id.
 supplied refresher and checks its result again; a missing or failed refresher
 suppresses the fact. `WARN` admits stale facts with an explicit warning flag.
 Expired, superseded or not-yet-effective research is always withheld.
+
+```python
+from datetime import datetime, timedelta, timezone
+from sqlmodel import Session
+
+from kognita import Classification, Fact, FreshnessRule, StaleAction, admit_fact
+from kognita.db import create_all, make_engine
+from kognita.evidence import EvidenceWriter
+from kognita.models import UseCase
+from kognita.retention import RetentionStore
+
+when = datetime(2026, 10, 1, tzinfo=timezone.utc)
+engine = make_engine("facts.db")
+create_all(engine)
+assert UseCase(usecase_id="advice").stale_action is StaleAction.SUPPRESS
+with Session(engine) as session:
+    admitted, warning = admit_fact(
+        Fact("Moderate Growth", "suitability", "wealth-ops", when,
+             Classification.C2, "suitability:read", timedelta(days=180)),
+        UseCase(usecase_id="advice"), "suitability",
+        {"suitability": FreshnessRule("suitability", max_age=timedelta(days=365))},
+        session=session, evidence=EvidenceWriter(engine), retention=RetentionStore(),
+        correlation_id="facts", now=when,
+    )
+    assert admitted is not None and warning is False
+    stale, warning = admit_fact(
+        Fact("Moderate Growth", "suitability", "wealth-ops", when - timedelta(days=400),
+             Classification.C2, "suitability:read", None),
+        UseCase(usecase_id="advice"), "suitability",
+        {"suitability": FreshnessRule("suitability", max_age=timedelta(days=365))},
+        session=session, evidence=EvidenceWriter(engine), retention=RetentionStore(),
+        correlation_id="facts", now=when,
+    )
+    assert stale is None and warning is False
+```
+
+Fact-shaped retrieval items (`kind` `FACT`) and fact-shaped tool or gateway
+results call `admit_fact` on the way out. The default action removes a stale
+fact. A value that is not a fact is left as it is. `tests/test_facts.py` and
+`tests/test_dod_release.py` cover the gate.
 
 Policy files may contain a top-level freshness mapping (optionally beside a
 `rules:` list):
@@ -592,6 +658,10 @@ kognita export exclude --db kognita.db --client client-1 --reason "Opt out" --ac
 kognita export request --db kognita.db --purpose "Quality evaluation" --anonymisation "control-17" --validation "report-42" --requester analyst --approval reviewer --record interaction:journey-1
 ```
 
+The request above exits 2. `interaction:journey-1` is not in the store, so the
+reason is `LEARNING_UNKNOWN_RECORD`. A known interaction id is required before
+the same command can approve a selection.
+
 ### Sensitive attributes and vulnerable clients
 
 `detect_sensitive` labels religion, health, political views, ethnicity, sexuality
@@ -599,7 +669,15 @@ and vulnerability using built-in patterns. A bank classifier callable may extend
 or replace detection (`classifier=`, `extend=False` for replacement). Detection
 errors deny access. Use-case `permitted_sensitive` defaults to an empty set and
 is stored under `sensitive:` in its record. CONTENT_POLICY YAML also accepts a
-`sensitive:` list as an additional constraint.
+`sensitive:` list as an additional constraint. `decide()` runs the same check
+on tool arguments and on a `content` attribute.
+
+```python
+from kognita import check_sensitive, detect_sensitive
+
+assert "health" in detect_sensitive("The client discussed their health.")
+assert check_sensitive("The client discussed their health.").check == "SENSITIVE_NOT_PERMITTED"
+```
 
 `check_sensitive` blocks unpermitted categories and unsupported diagnoses.
 `raise_vulnerability_flag` retains an explained signal and routes it to RM review.
@@ -620,7 +698,22 @@ Set `UseCaseSpec(require_reasoning_trace=True, ...)` to require an account for
 material use cases at tier 3 and above. Missing accounts enter risk-based review
 with reason `REASONING_TRACE_MISSING` and the named risk owner. Without review
 criteria, delivery is held for review. Trace content follows retention and erasure
-rules, while its hash remains in the evidence chain.
+rules, while its hash remains in the evidence chain. A policy rule that names a
+reasoning trace is rejected:
+
+```python
+from kognita.policy import parse_rule
+
+rule, findings = parse_rule({
+    "id": "trace-test",
+    "regime": "INTERNAL",
+    "rule_type": "PROHIBITED",
+    "rule": {"reasoning_trace": "permitted"},
+    "citation": "Decisions stay on cited rules",
+    "effective_from": "2026-01-01T00:00:00Z",
+}, source="policy.yaml")
+assert rule is None and "reasoning trace" in findings[0].message
+```
 
 ## Memory governance
 
@@ -650,6 +743,53 @@ standard, memory outputs record `standard_version` for the version actually in
 force. Citing a superseded or not-yet-effective version is refused. Content
 stays in the retention store. The evidence chain stores the hash.
 
+An inference cannot be written straight into relationship memory. With no
+institutional standard in force, a verified fact still records
+`standard_version` as an empty string. That field is the memory catalogue, not
+the use-case record.
+
+```python
+from datetime import datetime, timedelta, timezone
+from sqlmodel import Session, select
+
+from kognita import MemoryRecord, MemoryScope, write_memory
+from kognita.db import create_all, make_engine
+from kognita.evidence import EvidenceWriter
+from kognita.models import EvidenceEvent
+from kognita.vocabulary import EventType
+
+when = datetime(2026, 10, 1, tzinfo=timezone.utc)
+engine = make_engine("memory.db")
+create_all(engine)
+writer = EvidenceWriter(engine)
+with Session(engine) as session:
+    try:
+        write_memory(session, MemoryRecord(
+            "client-1", "Client may be considering a sale", "inferred preference",
+            timedelta(days=30), when + timedelta(days=30), "RM desk",
+            MemoryScope.RELATIONSHIP,
+        ), evidence=writer, correlation_id="memory", now=when)
+    except ValueError as exc:
+        assert str(exc) == "MEMORY_DIRECT_WRITE"
+    write_memory(session, MemoryRecord(
+        "client-1", "The client asked for income", "verified fact",
+        timedelta(days=30), when + timedelta(days=30), "RM desk",
+        MemoryScope.RELATIONSHIP,
+    ), evidence=writer, correlation_id="memory", now=when)
+    event = session.exec(select(EvidenceEvent).where(
+        EvidenceEvent.event_type == EventType.MEMORY_WRITE
+    )).all()[-1]
+    assert event.payload["standard_version"] == ""
+```
+
+Gateway `MODEL_CALL` events and governed tool outputs record the
+`standard_version` on the in-force use-case record, or that row's version when
+the field is absent. A request header or tool argument of the same name is
+ignored. A closed use-case row is not the version that is recorded. Approving
+an institutional standard changes the agent deployment. It does not rewrite
+the use-case record. `tests/test_memory.py` and `tests/test_dod_release.py`
+cover both recordings.
+
 ## Evaluation evidence
 
 Kognita records evaluation results. It does not run the harness. `EvaluationResult`
@@ -678,11 +818,18 @@ not open the gate. A tier 2 use case with no thresholds is denied. Tier 1 agents
 are not gated. A missing, unreadable or partial result is denied.
 
 ```sh
-kognita eval record --db kognita.db --agent briefing-agent --version 1.2.0 --model-version house-v3 --level system --metric accuracy=0.95 --metric hallucination_rate=0.02
-kognita agent deploy --manifest briefing.yaml --db kognita.db --actor owner
+kognita eval record --db kognita.db --agent briefing-agent --version 1.2.0 --model-version house-v3 --level system \
+  --metric accuracy=0.95 --metric groundedness=0.95 --metric completeness=0.95 \
+  --metric relevance=0.95 --metric hallucination_rate=0.02 --metric freshness=0.95 \
+  --metric policy_compliance=0.95 --metric entitlement=0.95 \
+  --metric action_correctness=0.95 --metric escalation=0.95
 ```
 
-Repeat `--metric` for every metric. A partial result is refused.
+Every metric is required. A partial result, including one that names only
+accuracy and hallucination rate, exits 2 with `EVALUATION_METRICS_INVALID`.
+`kognita agent deploy` then calls `check_activation`. A tier 2 agent with no
+agent-level or system-level result for that version and model exits 2 with
+`EVALUATION_REQUIRED`. A model-level result does not open the gate.
 
 `fairness_report` and `kognita eval report` compute recommendation, contact and
 prioritisation rates from origination evidence. The population is the segment
@@ -695,5 +842,140 @@ metrics are decision quality and reliability, so a disparity is flagged rather
 than registered as one of those metrics.
 
 ```sh
-kognita eval report --db kognita.db --usecase client-intelligence --threshold 0.1 --proxy postcode --segments segments.json
+kognita eval report --db kognita.db --usecase client-intelligence --threshold 0.1 --proxy postcode --segments segments.json --register-metric
 ```
+
+`segments.json` maps each attribute to client ids and values, and every proxy
+name has to be one of those attributes. An empty map is refused.
+`--register-metric` is accepted and `monitored_metric` in the report stays
+null. There is no register for a disparity metric.
+
+## Domain packs
+
+The core is domain-blind. A pack supplies what it cannot know: what a request's *attributes* are, and how to load the *subjects* it refers to.
+
+```python
+class MyPack:
+    name = "my-domain"
+    def load_subjects(self, envelope, session): ...
+    def resolve_attributes(self, envelope, subjects): ...
+    def rules(self): return build_registry(MY_EVALUATORS)
+```
+
+Policies are data: effective-dated rows with a JSON payload, interpreted by the evaluator registered for their `rule_type`. The core ships seven primitives (allowlist, denylist, required flag, required human approval, two-signature approval, classifier confidence (`CLASSIFIER_CONFIDENCE`), prohibited); a pack registers whatever its regimes need beyond them.
+
+### Conformance
+
+The conformance kit is a set of assertions every domain pack must satisfy: whatever a pack's rules say, they are decided fail-closed, cited and evidenced.
+
+```bash
+pytest --pyargs kognita.testing.conformance      # the kit against its bundled pack
+```
+
+```python
+from kognita.testing import ConformanceCase, Harness
+
+class TestMyPack(ConformanceCase):
+    @pytest.fixture(autouse=True)
+    def _bind(self):
+        self.harness = Harness(pack=MyPack(), purposes=PURPOSES, seed=seed)
+        self.allow_envelope = Envelope(...)
+        self.deny_envelope = Envelope(...)
+```
+
+The invariants are importable, so external packs run them in their own repositories.
+
+## Known limitations
+
+Kognita is alpha. These are known limitations in v0.5.2. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
+
+- **The gateway refuses attachments.** File, image and audio content parts cannot be inspected locally, so they are refused (S5-UNSUPPORTED-CONTENT).
+- **Degraded-mode evidence is held in the gateway process.** Restarting before the evidence store recovers drops buffered evidence. `FAIL_CLOSED` is the default; MCP has no degraded mode.
+- **Schema migration is limited.** `create_all` applies supported additive columns and SQLite compatibility updates, not arbitrary schema migrations. Import a domain pack's models before creating its tables.
+- **Append-only evidence triggers are SQLite-only.** Other databases do not receive those trigger protections.
+- **Policy citations default to empty at model level.** `decide()` escalates empty citations with CITATION-REQUIRED and preserves denials.
+- **Anomaly buckets use UTC calendar days**, except the rolling 24-hour volume window.
+- **Circuit-breaker window boundaries lack a regression test.**
+- **Run budgets can overshoot by one call.** Post-call usage is accounted for before response release.
+
+The 0.6 controls are in this tree. These limits are part of how they work:
+
+- **Material text is not turned into a claim for you.** A tier 2 or high-materiality gateway response, and a client communication at house view or above, is released only when that exact text was already recorded and released for the audience. Degraded gateway mode cannot read the store, so it refuses that prose with `C1-UNKNOWN`.
+- **Freshness applies to fact-shaped values.** Retrieval items of kind `FACT`, and tool or gateway values that carry a fact contract, go through `admit_fact`. Other text is not freshness-gated.
+- **A claim cites one definition.** `definition_ref` is one term and one version. Text that uses two governed terms cannot cite both, so release is denied.
+- **Two standard versions.** Memory writes record the institutional standard in force. Gateway `MODEL_CALL` events and governed tool outputs record the `standard_version` on the in-force use-case record, or the use-case version when that field is absent. Approving a standard does not by itself rewrite the use-case record. A caller-supplied version is not copied onto the event.
+- **A tier 1 use case can permit a shared model.** `permit_same_model` set to true allows a verifier on the producer's model, version, or provider at tier 1 only. The verifier still cannot check its own claims. Tier 2 and above ignore the permit.
+- **Fairness is a report, not a monitored metric.** Disparities are flagged to the risk owner. `--register-metric` does not create a metric. The 0.5 monitored metrics remain decision quality and reliability.
+
+## Where it's heading
+
+The direction is **supervisory examinability**: a regulator should be able to pick one AI-assisted client interaction and reconstruct it from evidence alone. Why this client, why this product, what data the AI used, which model produced it, what the agent was authorised to do, which controls ran, what the human saw and changed, who decided, what the client was told, and whether all of that can be reproduced later.
+
+The test every release is measured against:
+
+> **Can the bank explain, control, stop and reconstruct every material AI action that affects a client?**
+
+**0.3 "Gateways, the Run and Replay" is shipped** in v0.3.0: the AI gateway, the MCP proxy, classifier-derived envelopes, run budgets, suspend and resume, pinned evidence, `kognita evidence reconstruct`, degraded gateway mode, and the Tier 0 defect closures.
+
+**0.4 "Ingestion, Policy Language and the Client Lifecycle" is shipped** in v0.4.1: structured ingestion with passage-level citations, the policy language, the use-case register, the client interaction record, outcomes and the review queue, communication and intervention controls, the circuit breaker and revocation, starter packs, the flight recorder, and the hermes-agent, openai-agents, langgraph and pydantic-ai adapters.
+
+**0.5 "Agents, Authority and Fleets" is released as an alpha** in v0.5.1: authenticated agent identity and workload credentials, delegated authority with dual checks, autonomy levels with evidence-gated promotion and step-down, blast-radius limits, taint isolation, anomaly containment, agent delegation and fleet controls, reversibility, and a threat model. The 0.5 definition-of-done items are complete; v0.5.1 strengthens these controls. See Known limitations for remaining gaps.
+
+The 0.6 claims controls are in this tree: typed claims, freshness, approved sources, calculation provenance, verification, memory, learning exports, sensitive attributes, evaluation, and reasoning traces. The package on PyPI is still v0.5.2. See [Claims](#claims) and the [0.6 checklist](docs/ROADMAP.md).
+
+Planned, not yet built:
+
+- **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
+
+The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop and institutional memory.
+
+The design rule behind all of it: **never rely on the LLM to enforce a control that can be enforced outside the LLM.**
+
+## What Kognita does not hold
+
+Kognita governs policies, guidelines and governance records: the rules, the registers and the evidence. It does not host client data, document stores, agent memory or a knowledge graph, and it does not ship connectors to file stores. Those stay in the bank's systems, and Kognita decides and evidences access to them.
+
+> **Removed after 0.3.0.** The Graphiti and Kuzu graph engine (`kognita.graph`, the `[graph]` extra, and the `[anthropic]`, `[groq]` and `[gemini]` extras that only installed it) is no longer part of the package. Pin `kognita[graph]==0.3.0` if you still need it. Details: [docs/decisions/0008-remove-the-graph-engine.md](docs/decisions/0008-remove-the-graph-engine.md).
+
+## Layout
+
+```
+kognita              the decision engine: decisions, evidence, approvals,
+                     retrieval, egress, tools, the AI gateway and the MCP proxy.
+                     Four dependencies, no network.
+kognita.claims       typed claims and release checks
+kognita.facts        fact contract and freshness
+kognita.sources      approved sources and supersession
+kognita.calculations registered calculation services
+kognita.verification independent claim verification
+kognita.definitions  governed business terms
+kognita.memory       working, relationship and institutional memory
+kognita.learning     learning export controls
+kognita.sensitive    special-category and vulnerability gates
+kognita.evaluation   recorded evaluation results and fairness rates
+kognita.registry     agent identity, deployment approval and kill switches
+kognita.credentials  workload secret issue, verification and revocation
+kognita.authority    human grants, bounded delegation and task completion
+kognita.autonomy     evidence-gated promotion and automatic step-down
+kognita.models       BlastRadius and persisted governance records
+kognita.tools        Run budgets, child delegation and reversible tools
+kognita.anomaly      automatic baseline checks and containment
+kognita.intervention human run controls, recovery and compensation
+kognita.approvals    proposal review and approved application
+kognita.testing      the conformance kit
+kognita.adapters     provider-backed embedders                 [openai]
+                     framework adapters                         [hermes-agent]
+                                                                [openai-agents]
+                                                                [langgraph]
+                                                                [pydantic-ai]
+```
+
+`import kognita` never loads a graph database or a provider SDK, and `tests/test_packaging.py` asserts it.
+
+> **Moved in 0.2.** `kognita.core.*` → `kognita.*`. Details: [docs/decisions/0003-the-top-level-namespace.md](docs/decisions/0003-the-top-level-namespace.md).
+
+## Status
+
+**Alpha.** v0.5.2 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+
+MIT licensed.

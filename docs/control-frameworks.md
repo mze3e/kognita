@@ -11,6 +11,8 @@
 
 The frameworks overlap heavily. Statuses below are measured against the current roadmap.
 
+The 0.6 claim controls named in those rows are in this working tree. The checklist, and the module and test for each item, is the 0.6 Definition of Done in [ROADMAP.md](ROADMAP.md). The package version is still 0.5.2. Fairness reporting includes proxy attributes. A disparity is flagged to the risk owner and is not registered as a monitored metric.
+
 ## The Overarching Test
 
 > **Can the bank explain, control, stop and reconstruct every material AI action that affects a client?**
@@ -54,10 +56,10 @@ The frameworks use labels that clash with Kognita's own:
 | 2 | Explicit delegated authority | Added | Approvals bind to an envelope hash; agent-to-agent grants planned | Delegated authority object (0.5) |
 | 3 | Purpose-bound access | Partial | Purpose in every envelope; closed vocabulary optional and fails open when unset | Tier 0 fix (0.3); use-case register (0.4) |
 | 4 | Least-privilege data and tool entitlements | Partial | Zones and classification ceilings filter data before scoring; explicit tool registry | Per-agent tool allow-lists and field minimization (0.5) |
-| 5 | Trusted client and portfolio truth layer | Boundary | Retrieval returns entitled, cited items | Fact provenance and freshness contract (0.6) |
-| 6 | Evidence and provenance for material claims | Partial | Citations on decisions; retrieval evidence | Pinned evidence (0.3); claim provenance envelope (0.6) |
-| 7 | Fact, inference and recommendation separation | Added | None | Claim types (0.6) |
-| 8 | Deterministic financial calculations | Boundary | None | Calculation provenance enforcement (0.6) |
+| 5 | Trusted client and portfolio truth layer | Boundary | Retrieval returns entitled, cited items. Fact-shaped values go through `admit_fact` (`kognita.facts`, `tests/test_dod_release.py`) | Fact provenance and freshness contract (0.6) |
+| 6 | Evidence and provenance for material claims | Partial | Citations on decisions; retrieval evidence. A released claim is required before material gateway or house-view text goes out (`kognita.claims`, `tests/test_dod_release.py`) | Pinned evidence (0.3); claim provenance envelope (0.6) |
+| 7 | Fact, inference and recommendation separation | Added | Unlabelled claims are blocked from RM and client release (`kognita.claims`, `tests/test_claims.py`) | Claim types (0.6) |
+| 8 | Deterministic financial calculations | Boundary | An authoritative figure without a registered service is blocked (`kognita.calculations`, `tests/test_calculations.py`) | Calculation provenance enforcement (0.6) |
 | 9 | Runtime policy enforcement outside the LLM | Covered | `decide()` is deterministic, pure, replayable, fail-closed | Core |
 | 10 | Sandboxed, bounded execution | Partial | Run budgets planned | Blast-radius limits (0.5); sandbox constraints (0.5) |
 | 11 | Human approval for high-impact decisions | Partial | HUMAN_APPROVAL outcome; two-signature approvals | Suspend/resume (0.3); autonomy levels (0.5) |
@@ -78,8 +80,8 @@ The frameworks use labels that clash with Kognita's own:
 | 7 | Runtime policy enforcement | **Covered** | Core |
 | 8 | Human approval for consequential client actions | Partial | Suspend/resume (0.3); RM review (0.4); autonomy levels (0.5) |
 | 9 | "Why this client?" and "why this recommendation?" | Partial | Origination evidence (0.4); bare scores rejected |
-| 10 | Approved-source grounding and research expiry | Partial | Approved-source grounding (0.6); supersession (0.6) |
-| 11 | Complete provenance and audit trail | Planned | Pinned evidence (0.3); interaction record (0.4); claims (0.6) |
+| 10 | Approved-source grounding and research expiry | Partial | Approved-source grounding and supersession are in the tree (`kognita.sources`, `tests/test_sources.py`, `tests/test_source_supersede.py`) |
+| 11 | Complete provenance and audit trail | Planned | Pinned evidence (0.3); interaction record (0.4); claim release and reconstruction are in the tree (`kognita.claims`, `tests/test_claims.py`) |
 | 12 | Pause, override, revoke and kill | Partial | Intervention controls (0.4); granular revocation (0.4) |
 | 13 | Agent-behaviour monitoring and automated containment | Partial | Anomaly detection and containment (0.5) |
 | 14 | Third-party dependency and exit controls | Partial | Provider register (0.7); dependency map (0.7) |
@@ -159,12 +161,16 @@ Each use case registers:
 
 ### 3. Institutional Memory (0.6)
 
+These controls are in the working tree (`kognita.memory`, `tests/test_memory.py`).
+
 - A pattern in RM corrections or outcomes becomes a *proposed change* to the shared standard through the proposal model (ADR 0007), carrying evidence: which interactions, which corrections, which metrics moved.
 - The **Knowledge Lead** approves or rejects it. Approved changes produce a new deployment version, so the standard is versioned, effective-dated, and re-approved like any behaviour change.
 - **Standards are effective-dated:** Every output records which standard version produced it, and an expired or superseded standard cannot be used.
 - Client data never crosses into institutional memory; feedback-loop controls apply to any learning that leaves Kognita.
 
 ### 4. Governed Business Definitions (0.6)
+
+These controls are in the working tree (`kognita.definitions`, `tests/test_definitions.py`).
 
 - The bank registers governed terms (AUM, concentration, etc.) with an authoritative definition and version.
 - Claims using governed terms must cite the registered definition and version, or are blocked (same pattern as calculation provenance).
@@ -238,13 +244,13 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 |---|---|---|---|---|
 | 5.2, fn 28 | Pilots and phased rollouts: time and user limits, success criteria, close monitoring | Added | Pilot status with end date, named users and success criteria (gap 6) | 0.4 |
 | 5.3 | Contingency plans for high-risk AI; kill-switch activation protocols tested regularly | Partial | Per-agent kill switch (Core); gateway failure mode per use case (0.3); kill-switch drills (gap 7, 0.4); failure drills for providers and tools (0.7) | Core, 0.3, 0.4, 0.7 |
-| 5.4(a)(b)(c) | Data fit for purpose, representative, high quality | Boundary | Fact contract and freshness checks on facts used at run time (0.6); training and test data quality is the bank's | 0.6 |
+| 5.4(a)(b)(c) | Data fit for purpose, representative, high quality | Boundary | Fact contract and freshness checks on fact-shaped retrieval and tool results (`kognita.facts`, `tests/test_facts.py`, `tests/test_dod_release.py`); training and test data quality is the bank's | 0.6 |
 | 5.4(d) | Data classification guides use | Covered | Classification ceilings and zones filter data before retrieval; classifier envelopes at the decision boundary | Core, 0.3 |
 | 5.4(e) | Data security, including destruction of outputs no longer required | Covered | Content-addressed retention store with retention per use case; erasure deletes bytes and keeps the chain verifiable | 0.3 |
 | 5.4(f) | Data privacy, consent for sensitive personal data | Partial | Egress redaction; purpose-bound access; consent records are the bank's | Core |
 | 5.4(g) | Auditability and lineage of data | Partial | Retrieval records content hash and embedding model per item; training-data lineage is the bank's | 0.3 |
 | 5.5, 5.6 | Transparency and explainability proportionate to materiality; inform customers; redress | Planned | Cited decisions (Core); reconstruction report (0.3); reasons instead of scores, client AI-disclosure rules (0.4) | Core, 0.3, 0.4 |
-| 5.7, 5.8 | Define fair outcomes; fairness assessments on protected attributes and proxies | Partial | Fairness reporting across bank-defined segments, including proxy attributes, as a monitored metric (gap 8). The definition of fair is the bank's | 0.6 |
+| 5.7, 5.8 | Define fair outcomes; fairness assessments on protected attributes and proxies | Partial | Fairness reporting across bank-defined segments, including proxy attributes (`kognita.evaluation`, `tests/test_evaluation.py`). A disparity is flagged. It is not a monitored metric (gap 8). The definition of fair is the bank's | 0.6 |
 | 5.9(a)(b) | Roles for human oversight; authority and ability to intervene | Planned | Owner roles (0.4); intervention controls: observe, pause, override, restrict, recover (0.4) | 0.4 |
 | 5.9(c) | Design for oversight; escalate where reliability conditions are met | Covered | `ESCALATE` below a classifier confidence threshold; `HUMAN_APPROVAL` holds | 0.3 |
 | 5.9(d) | Logs of oversight; review of interventions, incidents and near misses; automation bias | Planned | Approval rate and time, edit and rejection rates, outcomes and near misses | 0.4 |
@@ -255,7 +261,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | 5.11(d) | Notification and assessment of third-party changes | Planned | Pinned provider model version per call (0.3); silent model-change detection (0.7) | 0.3, 0.7 |
 | 5.11(e) | Contingency for third-party failure or discontinued support | Planned | Gateway failure mode (0.3); failover and failure drills (0.7) | 0.3, 0.7 |
 | 5.12, 5.13 | Selection of systems, models and features | Out of scope | — | — |
-| 5.14 | Evaluation thresholds agreed by business owners, developers and reviewers | Boundary | Evaluation evidence gate requires recorded results before release; the harness is the bank's | 0.6 |
+| 5.14 | Evaluation thresholds agreed by business owners, developers and reviewers | Boundary | Evaluation evidence gate requires a recorded agent or system result before tier 2 activation (`kognita.evaluation.check_activation`, `tests/test_evaluation.py`); the harness is the bank's | 0.6 |
 | 5.15 | Guardrails tested for agent failure modes | Planned | Conformance kit (Core); adversarial suite (0.5) | Core, 0.5 |
 | 5.16(a) | Secure deployment: input validation, API authentication, encryption, DLP | Partial | Egress guard and gateway decide before forwarding (0.3); agent workload credentials (0.5); infrastructure hardening is the bank's | 0.3, 0.5 |
 | 5.16(b) | Role-based access, MFA, separation of duties | Partial | Two-signature approval for separation of duties (Core); human authentication is the bank's identity provider | Core |
@@ -269,7 +275,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | 5.23(d) | Records of monitoring; access logged; prompts, responses, model versions | Covered | Hash-chained evidence; `MODEL_CALL` records provider, model version, prompt template version, prompt and response hashes, with content in the retention store | 0.3 |
 | 5.24 | Re-validation, independent for high materiality; triggered by alerts and changes | Planned | Review dates per tier; revalidation on material change (0.4); drift findings count toward review (0.5) | 0.4, 0.5 |
 | 5.25(a)(b) | Significance of changes; re-approval; version control and rollback | Planned | Policy rows effective-dated, edits refused (0.3); behaviour-version hash over prompt, tools, permissions and data needs re-approval (0.5) | 0.3, 0.5 |
-| 5.25(c) | Enhanced controls on automatic updates | Planned | Learned changes to standards need Knowledge Lead approval and become new versions (0.6) | 0.6 |
+| 5.25(c) | Enhanced controls on automatic updates | Planned | Learned changes to standards need Knowledge Lead approval and become new versions (`kognita.memory.approve_standard`, `tests/test_memory.py`). Model and tool events record the use-case `standard_version` (`tests/test_dod_release.py`) | 0.6 |
 | 5.26 | Retirement and decommissioning | Added | A retired use case is a DENY; retirement stops its agents, applies retention and notifies dependants (gap 9) | 0.4 |
 
 ### Section 6: AI Capability and Capacity
@@ -290,7 +296,7 @@ All twelve were adopted into the roadmap on 8 October 2026: gaps 1 to 7 and 9 to
 5. **Shared inventory identifiers (4.6).** Data-asset and vendor identifiers that match the bank's data inventory and outsourcing register, so entries cross-reference.
 6. **Pilot scope (5.2, fn 28).** A pilot status with an end date, a named user list and success criteria. Calls outside the user list or after the end date are denied.
 7. **Kill-switch drills (5.3).** High-materiality use cases record kill-switch activation drills as evidence, with an overdue drill flagged like a past review date.
-8. **Proxy attributes in fairness (5.8, fn 36).** Fairness reporting covers attributes that substitute for or correlate with protected attributes, and fairness can be a monitored metric with thresholds.
+8. **Proxy attributes in fairness (5.8, fn 36).** Fairness reporting covers attributes that substitute for or correlate with protected attributes, and that report is in the tree (`tests/test_evaluation.py::test_fairness_flags_disparities_including_proxies`). Registering fairness as a monitored metric with tiered thresholds is not met: the 0.5 gates monitor decision quality and reliability only, and `register_monitored` does not create a metric.
 9. **Decommissioning (5.26).** Retiring a use case also revokes its agents' credentials, applies the retention policy to its records, and notifies dependent use cases.
 10. **Per-provider suspend (5.11).** Suspend or limit a provider at the gateway across all use cases, separate from failover, so the bank can act when residual risk exceeds appetite.
 11. **Concentration measure before October 2027 (3.4(b), fn 18).** Bring the count of material use cases depending on a single provider forward from the 0.7 dependency map into the 0.4 register, since it belongs to the Section 3 risk appetite.
@@ -323,7 +329,7 @@ This is Kognita's design rule stated from the outside. The mapping below uses th
 | Limit privileges | Partial | Entitlement filtering and a tool registry (shipped); per-agent tool allow-lists, per-verb action permissions, blast-radius limits (0.5) | Core, 0.5 |
 | Log activity | Covered | Hash-chained evidence of every decision, model call, tool call and egress | Core, 0.3 |
 | Create containment boundaries | Partial | AI gateway, MCP proxy and egress guard (shipped); anomaly containment and tainted-content tracking (0.5) | 0.3, 0.5 |
-| Chain-of-thought transparency as a non-negotiable, but not sufficient | Added | Reasoning traces recorded where the provider returns them, required per use case, shown in `reconstruct`, and never a basis for a decision | 0.6 item 13 |
+| Chain-of-thought transparency as a non-negotiable, but not sufficient | Added | Reasoning traces recorded where the provider returns them, required per use case, shown in `reconstruct`, and never a basis for a decision. In the tree (`kognita.gateway`, `tests/test_reasoning_traces.py`) | 0.6 item 13 |
 | Models may test each other, without nested black boxes | Partial | Verification gate requires a registered verifier at tier 2 and above (0.6 item 7); the decision itself never rests on a model | 0.6 |
 | Controls outside the model; a program cannot bypass or tamper with what enforces its permissions | Added | Gateway and proxy mode sit outside the agent. Tier 2 and above must run through the gateways, with provider and tool credentials held only by them; library mode runs inside the agent's process and is limited to lower tiers | 0.5 item 15 |
 | Separate the model, the harness and the action space | Covered | AI gateway fronts the model; MCP proxy fronts the tools; the harness is the agent framework, reached through adapters | 0.3 |
@@ -332,7 +338,7 @@ This is Kognita's design rule stated from the outside. The mapping below uses th
 
 | Principle | Status | Kognita | Release |
 |---|---|---|---|
-| Model diversity: no sole dependency, no model verifying its own work | Partial | Single-provider dependency count (0.4); concentration report and governed failover (0.7). Verifier independence added: a verifier on the producer's model or provider is denied | 0.4, 0.6 item 7, 0.7 |
+| Model diversity: no sole dependency, no model verifying its own work | Partial | Single-provider dependency count (0.4); concentration report and governed failover (0.7). Verifier independence is in the tree: a verifier on the producer's model or provider is denied, with a tier 1 `permit_same_model` exception (`kognita.verification`, `tests/test_verification.py`) | 0.4, 0.6 item 7, 0.7 |
 | Observe everything: tamper-proof, human-readable evidence; reproduce an outcome without the model attesting to it | Partial | Hash chain with pinned policy, retrieval, model and tool hashes, and a readable reconstruction report; replay never re-runs the model (shipped). Today the chain is tamper-evident; Ed25519 signing and external anchoring make it tamper-proof | 0.3, 0.7 |
 | Verifiability: test failures, attacks, edge cases and system changes | Partial | Conformance kit (shipped); kill-switch drills (0.4); adversarial suite and re-approval on behaviour change (0.5); evaluation evidence gate (0.6); failure drills (0.7) | Core, 0.4 to 0.7 |
 | Independent controls over access and actions | Covered | Policies are bank-owned, effective-dated data evaluated outside the model | Core |
@@ -345,8 +351,8 @@ This is Kognita's design rule stated from the outside. The mapping below uses th
 
 1. **Non-bypassable enforcement** (0.5 item 15): tier 2 and above must run through the AI gateway and MCP proxy; credentials are held only by the gateways; divergence between declared and observed calls is a finding.
 2. **Stopping actions in flight** (0.5 item 16): every tool declares a maximum duration; a pause, revocation or kill switch cancels in-flight tool calls where the tool supports it; tools that cannot be cancelled must be reversible or split into steps.
-3. **Verifier independence** (0.6 item 7): a verifier may not use the producer's model, model version or provider.
-4. **Reasoning traces** (0.6 item 13): recorded and retained where the provider returns them, required by policy at higher tiers, never a basis for a decision.
+3. **Verifier independence** (0.6 item 7): a verifier may not use the producer's model, model version or provider. In the tree (`kognita.verification`, `tests/test_verification.py`). Tier 1 may set `permit_same_model`. Self-verification stays denied.
+4. **Reasoning traces** (0.6 item 13): recorded and retained where the provider returns them, required by policy at higher tiers, never a basis for a decision. In the tree (`kognita.gateway`, `tests/test_reasoning_traces.py`).
 5. **Structured incident report** (0.7): what happened, who was affected, which controls failed, and the runtime change behind it, with a redacted variant for sharing.
 
 ---

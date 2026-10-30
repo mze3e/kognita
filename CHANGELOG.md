@@ -34,6 +34,10 @@ Release 0.6 "Claims" work: material claims are typed, grounded in approved sourc
 
 - Retained provider reasoning traces, reconstruction as the model's own account, required-trace risk review, and rejection of trace-based policy rules.
 
+### Documentation
+
+- README documents the 0.6 claims controls, including release order, gateway enforcement and `standard_version` recording, with examples checked against the library and CLI. The 0.6 checklist names the module and test for each item. No checklist item was unticked. Fairness reporting is not a monitored metric.
+
 ## [0.5.2] - 2026-10-20
 
 ### Documentation

@@ -810,7 +810,7 @@ Kognita is not an evaluation harness. It records evaluation results and enforces
 - Kognita measures the dimensions only it can see from evidence: entitlement blocks, escalation correctness, action correctness, stale-data use, permission and client-boundary compliance, delegation behaviour and retries
 - **Three levels of evaluation:** the model; the agent (task planning, tool selection, permission compliance, delegation, retries, escalation); and the end-to-end system (model, retrieval, tools, data, agent, policies, UI and human interaction). A good model can still produce an unsafe system, so the gate accepts system-level results
 - **Bias and fairness reporting:** recommendation, contact and prioritisation rates computed from origination evidence across segments the bank defines, such as nationality, age group, language, portfolio size, channel and RM team. Disparities above a threshold are flagged to the risk owner. This matters most for client prioritisation, prospect scoring, product recommendations and vulnerability detection
-- **Proxy attributes:** segments include attributes the bank identifies as substitutes for, or highly correlated with, protected attributes, such as postcode or language standing in for nationality. A disparity metric can be registered as a monitored metric with tiered thresholds, so fairness drift is caught like quality drift (0.5 item 3). What counts as a fair outcome is the bank's definition
+- **Proxy attributes:** segments include attributes the bank identifies as substitutes for, or highly correlated with, protected attributes, such as postcode or language standing in for nationality. The report names those proxies and flags a disparity to the risk owner (`kognita.evaluation.fairness_report`). A disparity is not registered as a monitored metric: the 0.5 gates watch decision quality and reliability only, and `register_monitored` does not create one. What counts as a fair outcome is the bank's definition
 - **The continuous loop:** evaluate, deploy, observe, test, challenge, intervene, learn, re-authorise. Validation does not end at deployment
 
 ### 12. Governed Business Definitions
@@ -829,23 +829,26 @@ Reasoning transparency is necessary but not sufficient: a model's stated reasoni
 - A reasoning trace is never a basis for a decision: no policy may allow an action because the model's reasoning says it is permitted. Decisions stay on cited rules and verified claims
 
 ### Definition of Done
-- [x] Claim provenance envelope on every material claim, reconstructable. A tier 2 or high-materiality gateway response, and a communication at house view or above, is refused with `C1-UNKNOWN` unless that text was recorded and released for the audience. `reconstruct` lists a released RM claim.
-- [x] Stale data refreshed, suppressed or flagged per policy; never silently used. Fact-shaped retrieval items and tool results call `admit_fact`. The use case `stale_action` defaults to `SUPPRESS`.
-- [x] Unlabelled claims blocked from RM and client
-- [x] Authoritative figures without a registered calculation service blocked
-- [x] Verification gate required at tier 2 and above, with statuses enforced
-- [x] AI inferences cannot reach relationship memory without RM verification
-- [x] Special-category inferences blocked unless permitted
-- [x] Activation blocked without evaluation results above threshold
-- [x] A regulated claim citing only model knowledge is blocked
-- [x] Superseding a house view invalidates dependent recommendations and lists affected clients
-- [x] Exporting interactions for learning without approval is denied; exclusions hold
-- [x] A vulnerability flag cannot change treatment without RM review
-- [x] Fairness report produced across bank-defined segments, including proxy attributes
-- [x] A learned change to a standard cannot take effect without Knowledge Lead approval; outputs record the standard version that produced them. Gateway `MODEL_CALL` events and governed tool outputs record the in-force `standard_version`. A caller-supplied version is not recorded.
-- [x] A figure using a governed term without citing the current registered definition is blocked
-- [x] A verifier on the same model or provider as the producer is denied
-- [x] Reasoning traces are retained where the provider returns them; a required trace that is missing is flagged; no policy decision cites a trace
+
+Each line was checked against the code and tests in this tree. All seventeen stay ticked.
+
+- [x] Claim provenance envelope on every material claim, reconstructable. A tier 2 or high-materiality gateway response, and a communication at house view or above, is refused with `C1-UNKNOWN` unless that text was recorded and released for the audience. `reconstruct` lists a released RM claim. Evidence: `kognita.claims` / `tests/test_claims.py::test_release`, `tests/test_dod_release.py::test_gateway_refuses_material_text_until_a_claim_is_released`, `tests/test_dod_release.py::test_communication_refuses_a_house_view_without_a_released_claim`.
+- [x] Stale data refreshed, suppressed or flagged per policy; never silently used. Fact-shaped retrieval items and tool results call `admit_fact`. The use case `stale_action` defaults to `SUPPRESS`. Evidence: `kognita.facts` / `tests/test_facts.py::test_fresh_and_stale_defaults`, `tests/test_dod_release.py::test_tool_and_retrieval_do_not_use_stale_facts`, `tests/test_dod_release.py::test_stale_fact_refresh_and_warning_are_explicit`.
+- [x] Unlabelled claims blocked from RM and client. Evidence: `kognita.claims.release_claim` / `tests/test_claims.py::test_release`.
+- [x] Authoritative figures without a registered calculation service blocked. Evidence: `kognita.calculations.check_calculation` / `tests/test_calculations.py::test_release_blocks_uncited_figures`.
+- [x] Verification gate required at tier 2 and above, with statuses enforced. Evidence: `kognita.verification` / `tests/test_verification.py::test_tier_gate_denies_release_without_a_real_verifier`, `tests/test_verification.py::test_recorded_status_limits_audience`.
+- [x] AI inferences cannot reach relationship memory without RM verification. Evidence: `kognita.memory` / `tests/test_memory.py::test_direct_inference_write_is_denied`, `tests/test_memory.py::test_relationship_inference_requires_rm_verification`.
+- [x] Special-category inferences blocked unless permitted. Evidence: `kognita.sensitive.check_sensitive` / `tests/test_sensitive.py::test_categories_and_default_denial`, `tests/test_sensitive.py::test_communication_has_sensitive_gate_without_policy_opt_in`.
+- [x] Activation blocked without evaluation results above threshold. Evidence: `kognita.evaluation.check_activation` / `tests/test_evaluation.py::test_missing_results_and_thresholds_deny`, `tests/test_evaluation.py::test_cli_record_deploy_and_report`.
+- [x] A regulated claim citing only model knowledge is blocked. Evidence: `kognita.sources.check_grounding` / `tests/test_sources.py::test_release`.
+- [x] Superseding a house view invalidates dependent recommendations and lists affected clients. Evidence: `kognita.sources.supersede_source` / `tests/test_source_supersede.py::test_supersede_stales_dependents_and_lists_affected`.
+- [x] Exporting interactions for learning without approval is denied; exclusions hold. Evidence: `kognita.learning.request_export` / `tests/test_learning.py::test_missing_control_denied_and_evidenced`, `tests/test_learning.py::test_persistent_exclusion_covers_related_records`.
+- [x] A vulnerability flag cannot change treatment without RM review. Evidence: `kognita.sensitive.change_treatment` / `tests/test_sensitive.py::test_treatment_requires_exact_recorded_human_decision`.
+- [x] Fairness report produced across bank-defined segments, including proxy attributes. Evidence: `kognita.evaluation.fairness_report` / `tests/test_evaluation.py::test_fairness_flags_disparities_including_proxies`. The report flags a disparity. It does not register one as a monitored metric.
+- [x] A learned change to a standard cannot take effect without Knowledge Lead approval; outputs record the standard version that produced them. Gateway `MODEL_CALL` events and governed tool outputs record the in-force `standard_version`. A caller-supplied version is not recorded. Evidence: `kognita.memory.approve_standard` / `tests/test_memory.py::test_knowledge_lead_approval_versions_the_deployment`, `tests/test_dod_release.py::test_outputs_record_the_in_force_standard_not_a_caller_version`, `tests/test_dod_release.py::test_a_closed_standard_is_not_the_one_recorded`.
+- [x] A figure using a governed term without citing the current registered definition is blocked. Evidence: `kognita.definitions.check_definition` / `tests/test_definitions.py::test_current_citation_releases_and_a_missing_one_does_not`.
+- [x] A verifier on the same model or provider as the producer is denied. Evidence: `kognita.verification.check_independence` / `tests/test_verification.py::test_overlap_and_self_verification_fail_closed`. Tier 1 may set `permit_same_model` (item 7). Self-verification stays denied, and tier 2 and above ignore the permit.
+- [x] Reasoning traces are retained where the provider returns them; a required trace that is missing is flagged; no policy decision cites a trace. Evidence: `kognita.gateway` / `tests/test_reasoning_traces.py::test_gateway_trace_retention`, `tests/test_reasoning_traces.py::test_required_trace_cannot_skip_review`, `tests/test_reasoning_traces.py::test_policy_rejects_trace_conditions`.
 
 ---
 
