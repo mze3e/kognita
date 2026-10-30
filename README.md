@@ -446,6 +446,30 @@ A `CONTENT_POLICY` YAML rule can further restrict citations with
 attribute. This policy list supplements the use-case approval and lifecycle
 checks performed at claim release.
 
+### House-view change propagation
+
+`supersede_source` marks one registered source version as superseded and appends
+`SOURCE_SUPERSEDED`. Every claim that cites that version, including a citation
+that names the source and no version, is retained again with `validator_status`
+`STALE`. An open recommendation on the same interaction is invalidated the same
+way. `release_claim` then fails with `C1-STALE`. An RM approval or a client
+send that would distribute it is refused. A later relabel cannot put that claim
+back into circulation.
+
+`affected_by_source` and `kognita evidence affected --source <id>` list the
+affected clients, previous recommendations, previous communications and
+outstanding opportunities. `--from` and `--to` are optional with `--source`.
+The model, policy and use case query still requires both bounds. A source that
+was never registered is an error, not an empty list.
+
+```sh
+kognita source register --db store.db --id house-view --kind "house view" --version neutral --owner "CIO desk" --effective 2026-08-01T00:00:00+00:00
+kognita source register --db store.db --id house-view --kind "house view" --version overweight --owner "CIO desk" --effective 2026-10-01T00:00:00+00:00
+kognita source supersede --db store.db --id house-view --version neutral --by overweight
+kognita source list --db store.db
+kognita evidence affected --db store.db --source house-view
+```
+
 ### Calculation provenance
 
 `CalculationService` registers the bank service that produces an authoritative

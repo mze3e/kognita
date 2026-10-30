@@ -76,6 +76,29 @@ def _read(session, event):
     return Claim(**_json.loads(body))
 
 
+_SNAPSHOT_ACTIONS = ("record", "relabel", "release", "invalidate")
+
+
+def _latest_events(session, interaction_id=None):
+    events = _events(session)
+    if interaction_id is not None:
+        from kognita.reconstruct import _events_for
+        events = _events_for(session, interaction_id, events)
+    latest = {}
+    for event in events:
+        payload = event.payload or {}
+        action = payload.get("action")
+        verified = action == "verify" and payload.get("allowed") is True
+        if (
+            event.event_type in (_EventType.CLAIM, _EventType.CLAIM_VERIFIED)
+            and payload.get("claim_id")
+            and payload.get("claim_hash")
+            and (action in _SNAPSHOT_ACTIONS or verified)
+        ):
+            latest[payload["claim_id"]] = event
+    return latest
+
+
 def list_claims(
     session: _Session,
     *,
@@ -83,22 +106,18 @@ def list_claims(
     interaction_id: str | None = None,
 ) -> list[Claim]:
     """Latest recorded snapshots, optionally scoped to a client or journey."""
-    events = _events(session)
-    if interaction_id is not None:
-        from kognita.reconstruct import _events_for
-        events = _events_for(session, interaction_id, events)
-    latest = {}
-    for event in events:
-        action = event.payload.get("action")
-        verified = action == "verify" and event.payload.get("allowed") is True
-        if (
-            event.event_type in (_EventType.CLAIM, _EventType.CLAIM_VERIFIED)
-            and event.payload.get("claim_hash")
-            and (action in ("record", "relabel", "release") or verified)
-        ):
-            latest[event.payload["claim_id"]] = event
-    claims = [_read(session, event) for event in latest.values()]
+    claims = [_read(session, event) for event in _latest_events(session, interaction_id).values()]
     return [c for c in claims if client_id is None or c.client_id == client_id]
+
+
+def _invalidate(session, claim, evidence):
+    """Retain a stale snapshot. A claim that is already stale stays stale."""
+    if claim.validator_status == ValidatorStatus.STALE:
+        return claim
+    event = _latest_events(session).get(claim.claim_id)
+    if event is None:
+        raise ValueError("C1-UNKNOWN: claim is not recorded")
+    return _write(session, _replace(claim, validator_status=ValidatorStatus.STALE), evidence, event.correlation_id, "invalidate")
 
 
 def _get(session, claim_id):
@@ -147,11 +166,15 @@ def release_claim(
     if type(authoritative_figure) is not bool:
         raise ValueError("C6-INVALID: authoritative_figure must be a boolean")
     claim = _get(session, claim_id)
-    reason = "C1-LABELLED" if claim.claim_type is not None else "C1-UNLABELLED"
     citation = "Claims: every released claim must be typed and cite a current approved source"
-    if audience not in ("rm", "client"):
+    if claim.validator_status == ValidatorStatus.STALE:
+        reason = "C1-STALE"
+    elif audience not in ("rm", "client"):
         reason = "C1-AUDIENCE"
-    if reason == "C1-LABELLED":
+    elif claim.claim_type is None:
+        reason = "C1-UNLABELLED"
+    else:
+        reason = "C1-LABELLED"
         from kognita.sources import check_grounding
         grounding = check_grounding(session, claim, usecase_id=usecase_id,
                                     evidence=evidence, interaction_id=interaction_id)
@@ -192,6 +215,9 @@ def relabel_claim(
 ) -> Claim:
     """Append a successor label; promotion to fact needs source and verification."""
     old = _get(session, claim_id)
+    next_status = old.validator_status if validator_status is None else ValidatorStatus(validator_status)
+    if old.validator_status == ValidatorStatus.STALE and next_status != ValidatorStatus.STALE:
+        raise ValueError("C1-STALE: a stale claim cannot be relabelled into circulation")
     new = _replace(old, claim_type=ClaimType(claim_type),
                    source_system=old.source_system if source_system is None else source_system,
                    source_record=old.source_record if source_record is None else source_record,

@@ -203,6 +203,13 @@ def review(
         )
     if outcome in _ACCEPTING:
         _refuse_contact(interaction_id, session)
+        from kognita.sources import _distribution_block
+        blocked = _distribution_block(session, interaction.id)
+        if blocked:
+            raise ReviewError(
+                "an open recommendation that depends on a superseded source cannot be approved "
+                f"({blocked}) (Claims: a superseded source invalidates open recommendations)"
+            )
     boundary = _boundary(session, interaction)
     gate = approval_gate(session, interaction, at)
     shown = _shown_at(requested_at, at)
@@ -324,6 +331,13 @@ def confirm_review(
         raise ReviewError(
             f"interaction {interaction_id} has no marked review to confirm "
             "(RM review: two-signature approval)"
+        )
+    from kognita.sources import _distribution_block
+    blocked = _distribution_block(session, interaction.id)
+    if blocked:
+        raise ReviewError(
+            "an open recommendation that depends on a superseded source cannot be approved "
+            f"({blocked}) (Claims: a superseded source invalidates open recommendations)"
         )
     if not party or party == row.rm:
         raise ReviewError(

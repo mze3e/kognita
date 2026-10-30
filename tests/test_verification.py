@@ -185,7 +185,8 @@ def test_recorded_status_limits_audience(store, audience, status, allowed):
     assert _verify(store, status=status).result == CheckResult.PASS
     released = release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1", audience=audience)
     assert released.result == (CheckResult.PASS if allowed else CheckResult.FAIL)
-    assert released.check == ("C1-LABELLED" if allowed else "C7-AUDIENCE")
+    blocked = "C1-STALE" if status == ValidatorStatus.STALE else "C7-AUDIENCE"
+    assert released.check == ("C1-LABELLED" if allowed else blocked)
 
 
 @pytest.mark.parametrize("tier,permit,changes,reason", [
@@ -393,7 +394,8 @@ def test_default_audience_without_a_verifier_at_tier_1(store, audience, status, 
         )
     released = release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1", audience=audience)
     assert released.result == (CheckResult.PASS if allowed else CheckResult.FAIL)
-    assert released.check == ("C1-LABELLED" if allowed else "C7-AUDIENCE")
+    blocked = "C1-STALE" if status == ValidatorStatus.STALE else "C7-AUDIENCE"
+    assert released.check == ("C1-LABELLED" if allowed else blocked)
 
 
 def test_policy_maps_are_intersected_and_unknown_keys_grant_nothing(store):

@@ -93,6 +93,8 @@ class EventType(str, Enum):
 
     CLAIM = "CLAIM"
     CLAIM_VERIFIED = "CLAIM_VERIFIED"
+    #: A registered source version was superseded and its dependents were invalidated.
+    SOURCE_SUPERSEDED = "SOURCE_SUPERSEDED"
     LEARNING_EXPORT = "LEARNING_EXPORT"
     #: A governed memory write: working context, a verified relationship record,
     #: or an approved institutional standard. Proposals are not writes.
