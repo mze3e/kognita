@@ -128,6 +128,7 @@ _SCHEMAS: dict[str, dict[str, Any]] = {
     "CONTENT_POLICY": {
         "required_maps": (),
         "optional_lists": (
+            "sources",
             "levels",
             "lanes",
             "required_disclosures",
@@ -938,6 +939,7 @@ def _content_policy_messages(rule: dict[str, Any]) -> list[str]:
     """A content policy that checks nothing, or names an unknown level, does not validate."""
     messages: list[str] = []
     substantive = (
+        "sources",
         "required_disclosures",
         "prohibited_claims",
         "approved_tones",

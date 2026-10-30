@@ -10,7 +10,9 @@ from kognita.claims import record_claim, release_claim, relabel_claim, list_clai
 from kognita.cli import main
 from kognita.db import create_all, make_engine
 from kognita.evidence import EvidenceWriter, verify_chain
-from kognita.models import EvidenceEvent
+from kognita.models import EvidenceEvent, UseCase
+from kognita.sources import Source, register_source
+from datetime import datetime, timezone
 from kognita.reconstruct import reconstruct, render_reconstruction
 from kognita.retention import RetentionStore
 from kognita.vocabulary import CheckResult, EventType
@@ -22,12 +24,16 @@ def store(tmp_path):
     engine = make_engine(path)
     create_all(engine)
     with Session(engine) as session:
-        yield session, EvidenceWriter(engine), path
+        writer = EvidenceWriter(engine)
+        session.add(UseCase(usecase_id="u1", record={"usecase_id": "u1", "approved_sources": ["crm"]}))
+        session.flush()
+        register_source(session, Source("crm", "policy", "r1", "owner", datetime(2020, 1, 1, tzinfo=timezone.utc)), evidence=writer, interaction_id="setup")
+        yield session, writer, path
 
 
 def _record(store, claim_type=ClaimType.INFERENCE):
     session, writer, _ = store
-    claim = Claim("c1", "client1", "Client may be considering a sale", claim_type)
+    claim = Claim("c1", "client1", "Client may be considering a sale", claim_type, source_system="crm", source_record="r1")
     record_claim(session, claim, evidence=writer, interaction_id="i1")
     return claim
 
@@ -37,7 +43,7 @@ def _record(store, claim_type=ClaimType.INFERENCE):
 def test_release(store, audience, typed):
     session, writer, _ = store
     _record(store, ClaimType.INFERENCE if typed else None)
-    check = release_claim(session, "c1", evidence=writer, interaction_id="i1", audience=audience)
+    check = release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1", audience=audience)
     assert check.result == (CheckResult.PASS if typed else CheckResult.FAIL)
     assert check.check == ("C1-LABELLED" if typed else "C1-UNLABELLED")
     report = reconstruct(session, "i1")
@@ -79,7 +85,7 @@ def test_cannot_overwrite_or_release_fabricated_claim(store):
         record_claim(session, replace(claim, claim_type=ClaimType.VERIFIED_FACT), evidence=writer, interaction_id="i1")
     with pytest.raises(ValueError, match="C1-UNKNOWN"):
         release_claim(session, "invented", evidence=writer, interaction_id="i1")
-    assert release_claim(session, "c1", evidence=writer, interaction_id="i1", audience="other").result == CheckResult.FAIL
+    assert release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1", audience="other").result == CheckResult.FAIL
     assert list_claims(session, client_id="other") == []
     assert list_claims(session, interaction_id="other") == []
     assert list_claims(session, interaction_id="i1") == [claim]
@@ -88,7 +94,7 @@ def test_cannot_overwrite_or_release_fabricated_claim(store):
 def test_retention_and_cli(store, capsys):
     session, writer, path = store
     claim = _record(store)
-    event = session.exec(select(EvidenceEvent)).first()
+    event = next(e for e in session.exec(select(EvidenceEvent)) if e.payload.get("action") == "record")
     assert claim.claim not in json.dumps(event.payload)
     body = RetentionStore().read(session, event.payload["claim_hash"])
     assert json.loads(body)["claim"] == claim.claim
@@ -100,14 +106,14 @@ def test_retention_and_cli(store, capsys):
     assert main(["claims", "show", "missing", "--db", path]) == 2
     RetentionStore().erase(session, event.payload["claim_hash"], evidence=writer, actor_id="admin")
     with pytest.raises(ValueError, match="C1-CONTENT"):
-        release_claim(session, "c1", evidence=writer, interaction_id="i1")
+        release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1")
     verify_chain(session)
 
 
 def test_reconstruction_keeps_the_label_seen(store):
     session, writer, _ = store
     _record(store)
-    release_claim(session, "c1", evidence=writer, interaction_id="i1")
+    release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1")
     relabel_claim(session, "c1", ClaimType.VERIFIED_FACT, evidence=writer,
                   interaction_id="i1", source_system="crm", source_record="r1",
                   validator_status=ValidatorStatus.VERIFIED)
@@ -119,13 +125,13 @@ def test_changed_retained_content_fails_closed(store):
     from kognita.models import RetainedContent
     session, writer, _ = store
     _record(store)
-    event = session.exec(select(EvidenceEvent)).first()
+    event = next(e for e in session.exec(select(EvidenceEvent)) if e.payload.get("action") == "record")
     row = session.get(RetainedContent, event.payload["claim_hash"])
     row.body = row.body.replace("INFERENCE", "VERIFIED_FACT")
     session.add(row)
     session.flush()
     with pytest.raises(ValueError, match="C1-CONTENT"):
-        release_claim(session, "c1", evidence=writer, interaction_id="i1")
+        release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1")
 
 
 @pytest.mark.parametrize("field,value", [("claim_type", "invented"), ("validator_status", "invented")])
@@ -137,6 +143,6 @@ def test_invalid_labels_are_not_accepted(field, value):
 def test_list_includes_claims_released_on_another_interaction(store):
     session, writer, _ = store
     claim = _record(store)
-    release_claim(session, "c1", evidence=writer, interaction_id="i2")
+    release_claim(session, "c1", evidence=writer, interaction_id="i2", usecase_id="u1")
     assert list_claims(session, interaction_id="i2") == [claim]
     assert reconstruct(session, "i2")["claims"][0]["claim_id"] == "c1"

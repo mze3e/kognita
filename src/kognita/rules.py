@@ -402,6 +402,7 @@ def content_policy(policy: Any, context: RuleContext) -> list[Check]:
     """
     rule = policy.rule if isinstance(policy.rule, dict) else {}
     substantive = (
+        "sources",
         "required_disclosures",
         "prohibited_claims",
         "approved_tones",
@@ -442,6 +443,14 @@ def content_policy(policy: Any, context: RuleContext) -> list[Check]:
             )
         ]
     checks: list[Check] = []
+    if "sources" in rule:
+        permitted = _texts(rule.get("sources"))
+        cited = context.attributes.get("source_system")
+        checks.append(_content_check(
+            policy, "CONTENT_POLICY: sources",
+            ok=bool(permitted) and isinstance(cited, str) and cited.strip().casefold() != "model" and cited in permitted,
+            detail="claim source must be in the policy sources list",
+        ))
     if "required_disclosures" in rule:
         required = _texts(rule.get("required_disclosures"))
         if required is None:

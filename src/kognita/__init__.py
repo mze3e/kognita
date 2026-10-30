@@ -55,6 +55,7 @@ from kognita.claims import Claim, ClaimType, ValidatorStatus
 from kognita.facts import (
     Fact, FreshnessRule, ResearchLifecycle, StaleAction, admit_fact, is_stale,
 )
+from kognita.sources import Source, SourceRegister
 from kognita.canonical import canonical_hash, canonical_json
 from kognita.classify import FixedClassifier, PatternClassifier, most_sensitive
 from kognita.config import (
@@ -179,6 +180,8 @@ def __dir__() -> list[str]:
 
 
 __all__ = [
+    "Source",
+    "SourceRegister",
     "Claim", "ClaimType", "ValidatorStatus",
     "Fact",
     "FreshnessRule",

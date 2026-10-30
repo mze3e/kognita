@@ -364,6 +364,7 @@ class UseCaseSpec:
     investor_impact: str = ""
     permitted_data_classes: tuple[str, ...] = ()
     approved_models: tuple[str, ...] = ()
+    approved_sources: tuple[str, ...] = ()
     agent_authority: str = ""
     retention_days: int | None = None
     business_process: str = ""
@@ -502,6 +503,7 @@ class RegisteredUseCase:
     stale_action: StaleAction = StaleAction.SUPPRESS
     content_hash: str = ""
     approved_models: tuple[str, ...] = ()
+    approved_sources: tuple[str, ...] = ()
     model_providers: tuple[str, ...] = ()
     ai_endpoints: tuple[str, ...] = ()
     unmediated: bool = False
@@ -991,6 +993,7 @@ def build_record(
         "investor_impact": spec.investor_impact,
         "permitted_data_classes": _sorted_texts(spec.permitted_data_classes),
         "approved_models": _names(spec.approved_models),
+        "approved_sources": _names(spec.approved_sources),
         "agent_authority": spec.agent_authority,
         "retention_days": spec.retention_days,
         "business_process": spec.business_process,
@@ -1080,6 +1083,7 @@ def from_record(
         record=dict(record),
         content_hash=content_hash,
         approved_models=tuple(record.get("approved_models") or ()),
+        approved_sources=tuple(record.get("approved_sources") or ()),
         model_providers=tuple(record.get("model_providers") or ()),
         ai_endpoints=tuple(record.get("ai_endpoints") or ()),
         unmediated=bool(record.get("unmediated")),

@@ -429,3 +429,18 @@ existing access controls still authorize the fact's entitlement. Each admission
 records a `RETRIEVAL` event with `action: FACT_ADMISSION`, a reason code, admission
 and warning flags, and a content hash. Fact and research content live in the
 retention store, including the original and refreshed fact when applicable.
+
+### Approved-source grounding
+
+Claim releases to RMs and clients require `usecase_id` and a current approved
+source. Register `Source` snapshots with `register_source`, set the use case's
+`approved_sources` to permitted source IDs, and cite the exact ID and version
+in the claim's `source_system` and `source_record`. `release_claim` checks the
+stored register automatically. Missing approval, model knowledge, future dates,
+supersession and expiry fail closed with C3 reason codes. Source snapshots and
+grounding decisions are retained by hash in the evidence chain.
+
+A `CONTENT_POLICY` YAML rule can further restrict citations with
+`sources: [research-id, policy-id]`, checked against the `source_system`
+attribute. This policy list supplements the use-case approval and lifecycle
+checks performed at claim release.
