@@ -275,10 +275,14 @@ def test_sustained_drift_steps_down_on_next_snapshot_once_and_alerts(session, en
 @pytest.mark.parametrize("change", ["expiry", "deployment", "tool", "step_down", "none"])
 def test_l4_hold_rechecks_current_authority_before_execution(session, evidence, change):
     agent = _agent(session, evidence, level=4, verb="queue", required=4)
+    from fixtures.evaluation import evaluation_thresholds, satisfy_evaluation
     from test_usecases import _tier3
     from kognita.breaker import schedule_kill_switch_drill
     _open(session, evidence)
-    _activate(session, evidence, _tier3(usecase_id="research-summary", agents=("agent",)), signoff_by="Noel Independent")
+    _activate(session, evidence, _tier3(
+        usecase_id="research-summary", agents=("agent",),
+        evaluation_thresholds=evaluation_thresholds(),
+    ), signoff_by="Noel Independent")
     schedule_kill_switch_drill(session, "research-summary", due_at=NOW + timedelta(days=30),
         evidence=evidence, actor_id="owner", citation="test drill", now=NOW)
     registry = ToolRegistry()
@@ -301,6 +305,7 @@ def test_l4_hold_rechecks_current_authority_before_execution(session, evidence, 
     if change == "expiry":
         agent.review_date = NOW - timedelta(seconds=1)
     elif change == "deployment":
+        satisfy_evaluation(session, evidence, agent)
         approve_deployment(session, "agent", deployment={**_DEPLOYMENT, "instructions": "new"},
                            evidence=evidence, actor_id="owner")
     elif change == "tool":

@@ -29,7 +29,11 @@ def _legacy_workload_credentials():
 
 
 def _review_required(session, evidence, execution=False):
-    spec = (_tier3 if execution else _tier2)(usecase_id='READ', purpose='READ', approved_models=())
+    from fixtures.evaluation import evaluation_thresholds
+    spec = (_tier3 if execution else _tier2)(
+        usecase_id='READ', purpose='READ', approved_models=(),
+        evaluation_thresholds=evaluation_thresholds(),
+    )
     revise(session, spec, evidence=evidence, actor_id='Jane Smith', at=NOW)
     approve_rating(session, 'READ', spec.control_function, evidence=evidence, at=NOW)
     activate(session, 'READ', evidence=evidence, actor_id=spec.control_function, at=NOW, status='live', **({'signoff_by': 'Independent Risk'} if execution else {}))
@@ -58,6 +62,8 @@ def _tool(session, evidence, *, execute=False, review=False):
         _change(session, agent, 4, evidence, 'owner', 'AUTONOMY_PROMOTED', {})
         permissions['read_note']['_sandbox'] = {'network': ['api.example.org:443']}
         agent.tool_allowlist = permissions
+        from fixtures.evaluation import satisfy_evaluation
+        satisfy_evaluation(session, evidence, agent)
         approve_deployment(session, 'worker', deployment=permissions['_deployment'], evidence=evidence, actor_id='owner')
     if execute:
         from kognita.breaker import schedule_kill_switch_drill

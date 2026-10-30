@@ -87,6 +87,13 @@ from kognita.egress import (
 )
 from kognita.embedding import HashingEmbedder, cosine, lexical_overlap
 from kognita.envelope import Check, Envelope, Evaluation, RuleContext, envelope_hash
+from kognita.evaluation import (
+    EvaluationResult,
+    FairnessReport,
+    check_activation,
+    fairness_report,
+    record_evaluation,
+)
 from kognita.evidence import (
     ChainBreak,
     EvidenceWriter,
@@ -226,6 +233,11 @@ __all__ = [
     "StaleAction",
     "admit_fact",
     "is_stale",
+    "EvaluationResult",
+    "FairnessReport",
+    "record_evaluation",
+    "check_activation",
+    "fairness_report",
     "ExportRequest",
     "Exclusion",
     "request_export",

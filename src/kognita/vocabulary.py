@@ -120,6 +120,8 @@ class EventType(str, Enum):
     NEAR_MISS = "NEAR_MISS"
     #: Risk-based review: a screen, a place on the review queue, or a review outcome.
     REVIEW = "REVIEW"
+    #: An evaluation result recorded against an agent version and a model version.
+    EVALUATION_RECORDED = "EVALUATION_RECORDED"
 
 
 #: Communication levels, least consequential first. The roadmap names each one.

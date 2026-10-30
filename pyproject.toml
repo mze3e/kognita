@@ -173,6 +173,7 @@ source_modules = [
     "kognita.egress",
     "kognita.embedding",
     "kognita.envelope",
+    "kognita.evaluation",
     "kognita.evidence",
     "kognita.facts",
     "kognita.gateway",

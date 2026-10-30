@@ -1296,6 +1296,26 @@ def build_parser() -> argparse.ArgumentParser:
     deploy.add_argument("--actor", default="", help="local operator identity; defaults to the manifest owner")
     deploy.set_defaults(func=_agent_deploy)
 
+    evaluation = sub.add_parser("eval", help="record evaluation results and report fairness")
+    evaluation_sub = evaluation.add_subparsers(dest="eval_command", required=True)
+    eval_record = evaluation_sub.add_parser("record", help="record an evaluation result")
+    eval_record.add_argument("--db", default="kognita.db")
+    eval_record.add_argument("--agent", required=True)
+    eval_record.add_argument("--version", required=True)
+    eval_record.add_argument("--model-version", required=True)
+    eval_record.add_argument("--level", required=True, choices=["model", "agent", "system"])
+    eval_record.add_argument("--metric", action="append", default=[], help="name=value")
+    eval_record.set_defaults(func=_cmd_eval_record)
+    eval_report = evaluation_sub.add_parser("report", help="fairness rates from origination evidence")
+    eval_report.add_argument("--db", default="kognita.db")
+    eval_report.add_argument("--segments", help="JSON file of attribute, client, value")
+    eval_report.add_argument("--segment", action="append", default=[], help="attribute=client:value")
+    eval_report.add_argument("--proxy", action="append", default=[])
+    eval_report.add_argument("--threshold", required=True)
+    eval_report.add_argument("--usecase", default="")
+    eval_report.add_argument("--register-metric", action="store_true")
+    eval_report.set_defaults(func=_cmd_eval_report)
+
     learning_export = sub.add_parser("export", help="govern record selection for learning")
     export_sub = learning_export.add_subparsers(dest="export_command", required=True)
     export_request = export_sub.add_parser("request", help="request an evidenced selection manifest")
@@ -1806,28 +1826,137 @@ def _agent_deploy(args):
         raise ValueError("S1-PROMOTION: deploy at L0; raise autonomy through promote()")
     engine = make_engine(args.db)
     create_all(engine)
-    with session_scope(engine) as session:
-        current = get(session, manifest["name"])
-        if current is not None and (current.owner_exec != args.actor or
-                                    manifest["owner_exec"] != current.owner_exec):
-            raise ValueError("S1-DEPLOYMENT: existing accountable owner required")
-        agent = register(session, name=manifest["name"], owner_exec=manifest["owner_exec"],
-                         version=manifest.get("version", "0.1.0"),
-                         risk_class=manifest.get("risk_class", "MEDIUM"),
-                         materiality_tier=manifest.get("materiality_tier", "T2"))
-        from kognita.registry import _provider_key_finding
-        manifest = _provider_key_finding(session, agent.name, manifest, EvidenceWriter(engine))
-        for key in ("purpose", "use_cases", "permitted_systems", "tool_allowlist", "blast_radius", "field_allowlist",
-                    "review_date", "environment", "principal", "deployment_date", "model"):
-            value = manifest.get(key)
-            if key in ("review_date", "deployment_date") and value is not None:
-                value = datetime.fromisoformat(str(value))
-            setattr(agent, key, value)
-        type(agent).model_validate(agent.model_dump())
-        approve_deployment(session, agent.name, deployment=manifest["deployment"],
-                           evidence=EvidenceWriter(engine), actor_id=args.actor)
-        session.flush()
-        _print_json({"name": agent.name, "deployment_hash": agent.deployment_hash})
+    try:
+        with session_scope(engine) as session:
+            current = get(session, manifest["name"])
+            if current is not None and (current.owner_exec != args.actor or
+                                        manifest["owner_exec"] != current.owner_exec):
+                raise ValueError("S1-DEPLOYMENT: existing accountable owner required")
+            agent = register(session, name=manifest["name"], owner_exec=manifest["owner_exec"],
+                             version=manifest.get("version", "0.1.0"),
+                             risk_class=manifest.get("risk_class", "MEDIUM"),
+                             materiality_tier=manifest.get("materiality_tier", "T2"))
+            from kognita.registry import _provider_key_finding
+            manifest = _provider_key_finding(session, agent.name, manifest, EvidenceWriter(engine))
+            for key in ("purpose", "use_cases", "permitted_systems", "tool_allowlist", "blast_radius", "field_allowlist",
+                        "review_date", "environment", "principal", "deployment_date", "model"):
+                value = manifest.get(key)
+                if key in ("review_date", "deployment_date") and value is not None:
+                    value = datetime.fromisoformat(str(value))
+                setattr(agent, key, value)
+            type(agent).model_validate(agent.model_dump())
+            approve_deployment(session, agent.name, deployment=manifest["deployment"],
+                               evidence=EvidenceWriter(engine), actor_id=args.actor)
+            session.flush()
+            payload = {"name": agent.name, "deployment_hash": agent.deployment_hash}
+    except ValueError as exc:
+        if str(exc).startswith("EVALUATION_"):
+            _print_json({"action": "DENIED", "reason": str(exc)})
+            return 2
+        raise
+    _print_json(payload)
+    return 0
+
+
+def _metric_pairs(items: list[str]) -> dict[str, float]:
+    metrics: dict[str, float] = {}
+    for item in items:
+        name, sep, raw = item.partition("=")
+        if not sep or not name or name in metrics:
+            raise ValueError("EVALUATION_METRICS_INVALID")
+        try:
+            if raw.lower() in {"true", "false"}:
+                raise ValueError("bool")
+            metrics[name] = float(raw)
+        except ValueError as exc:
+            raise ValueError("EVALUATION_METRICS_INVALID") from exc
+    return metrics
+
+
+def _cmd_eval_record(args: argparse.Namespace) -> int:
+    from kognita.evaluation import EvaluationResult, record_evaluation
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    try:
+        result = EvaluationResult(
+            agent_id=args.agent,
+            version=args.version,
+            model_version=args.model_version,
+            level=args.level,
+            metrics=_metric_pairs(args.metric),
+        )
+        with session_scope(engine) as session:
+            record_evaluation(session, result, evidence=EvidenceWriter(engine))
+    except ValueError as exc:
+        _print_json({"action": "DENIED", "reason": str(exc)})
+        return 2
+    _print_json({
+        "action": "RECORDED",
+        "agent_id": result.agent_id,
+        "version": result.version,
+        "model_version": result.model_version,
+        "level": result.level,
+        "metrics": dict(result.metrics),
+    })
+    return 0
+
+
+def _segment_pairs(items: list[str]) -> dict[str, dict[str, str]]:
+    segments: dict[str, dict[str, str]] = {}
+    for item in items:
+        name, sep, rest = item.partition("=")
+        client, colon, value = rest.partition(":")
+        if not sep or not colon or not name.strip() or not client.strip() or not value.strip():
+            raise ValueError("FAIRNESS_SEGMENTS_REQUIRED")
+        segments.setdefault(name.strip(), {})[client.strip()] = value.strip()
+    return segments
+
+
+def _cmd_eval_report(args: argparse.Namespace) -> int:
+    from kognita.evaluation import fairness_report
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    try:
+        threshold = float(args.threshold)
+        if str(args.threshold).lower() in {"true", "false"}:
+            raise ValueError("bool")
+        segments = _segment_pairs(args.segment)
+        if args.segments:
+            loaded = json.loads(Path(args.segments).read_text(encoding="utf-8"))
+            if not isinstance(loaded, dict):
+                raise ValueError("FAIRNESS_SEGMENTS_REQUIRED")
+            for name, mapping in loaded.items():
+                if not isinstance(mapping, dict):
+                    raise ValueError("FAIRNESS_SEGMENTS_REQUIRED")
+                bucket = segments.setdefault(str(name), {})
+                for client, value in mapping.items():
+                    bucket[str(client)] = value
+        with session_scope(engine) as session:
+            report = fairness_report(
+                session,
+                segments=segments,
+                disparity_threshold=threshold,
+                proxy_attributes=tuple(args.proxy),
+                evidence=EvidenceWriter(engine),
+                usecase_id=args.usecase,
+                register_monitored=args.register_metric,
+            )
+            payload = {
+                "action": "REPORTED",
+                "flagged": report.flagged,
+                "threshold": report.threshold,
+                "proxy_attributes": list(report.proxy_attributes),
+                "risk_owners": list(report.risk_owners),
+                "rates": [dict(row) for row in report.rates],
+                "disparities": [dict(row) for row in report.disparities],
+                "monitored_metric": report.monitored_metric,
+            }
+    except (ValueError, json.JSONDecodeError, OSError) as exc:
+        _print_json({"action": "DENIED", "reason": str(exc)})
+        return 2
+    _print_json(payload)
     return 0
 
 

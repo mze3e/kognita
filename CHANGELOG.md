@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Govern working, relationship and institutional memory. Inferences become relationship records only after RM verification of a proposal. A Knowledge Lead approval issues a new effective-dated standard and deployment version. Outputs record `standard_version`.
+- Evaluation evidence gate for tier 2 and higher agents. `kognita eval record` stores agent, system, or model results, and `kognita agent deploy` refuses activation until an agent-level or system-level result for that agent version and model version meets every use-case `evaluation_thresholds` value. `kognita eval report` computes recommendation, contact, and prioritisation rates from origination evidence across bank-defined segments, including proxy attributes, and flags disparities above the threshold to the risk owner.
 
 - Registered calculation services and fail-closed release checks. An authoritative figure must cite a registered service in `calculation_method`. Kognita performs no financial math.
 - Verification gate for material claim release: a registered independent verifier is required at tier 2 and above, both models are pinned in evidence, and validator status limits RM and client audiences.

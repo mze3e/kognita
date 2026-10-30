@@ -310,6 +310,12 @@ def _optional_number(value: Any) -> float | None:
     return float(value)
 
 
+def _stored_thresholds(value: object) -> dict[str, float]:
+    from kognita.evaluation import validate_thresholds
+
+    return validate_thresholds(value)
+
+
 def _names(values: Sequence[str]) -> list[str]:
     return sorted({str(item).strip() for item in values if str(item).strip()})
 
@@ -392,6 +398,7 @@ class UseCaseSpec:
     primary_metric: str = ""
     baseline: float | None = None
     target: float | None = None
+    evaluation_thresholds: Mapping[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -523,6 +530,7 @@ class RegisteredUseCase:
     primary_metric: str = ""
     baseline: float | None = None
     target: float | None = None
+    evaluation_thresholds: dict[str, float] = field(default_factory=dict)
 
     @property
     def owner(self) -> str:
@@ -711,6 +719,12 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
         or spec.retention_days < 0
     ):
         add(f"'{usecase_id}' retention period must be a non-negative number of days")
+    from kognita.evaluation import validate_thresholds
+
+    try:
+        validate_thresholds(spec.evaluation_thresholds)
+    except ValueError as exc:
+        add(str(exc))
     return tuple(found)
 
 
@@ -1034,6 +1048,7 @@ def build_record(
         "primary_metric": spec.primary_metric.strip(),
         "baseline": spec.baseline,
         "target": spec.target,
+        "evaluation_thresholds": _stored_thresholds(spec.evaluation_thresholds),
     }
 
 
@@ -1113,6 +1128,7 @@ def from_record(
         primary_metric=str(record.get("primary_metric") or ""),
         baseline=_optional_number(record.get("baseline")),
         target=_optional_number(record.get("target")),
+        evaluation_thresholds=dict(record.get("evaluation_thresholds") or {}),
     )
 
 
