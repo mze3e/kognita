@@ -471,3 +471,20 @@ records. Use `export exclude --record <id>` to persist a record exclusion.
 kognita export exclude --db kognita.db --client client-1 --reason "Opt out" --actor operator
 kognita export request --db kognita.db --purpose "Quality evaluation" --anonymisation "control-17" --validation "report-42" --requester analyst --approval reviewer --record interaction:journey-1
 ```
+
+### Sensitive attributes and vulnerable clients
+
+`detect_sensitive` labels religion, health, political views, ethnicity, sexuality
+and vulnerability using built-in patterns. A bank classifier callable may extend
+or replace detection (`classifier=`, `extend=False` for replacement). Detection
+errors deny access. Use-case `permitted_sensitive` defaults to an empty set and
+is stored under `sensitive:` in its record. CONTENT_POLICY YAML also accepts a
+`sensitive:` list as an additional constraint.
+
+`check_sensitive` blocks unpermitted categories and unsupported diagnoses.
+`raise_vulnerability_flag` retains an explained signal and routes it to RM review.
+Even a permitted vulnerability cannot enter ordinary relationship processing.
+`change_treatment` requires a completed human RM review for the same interaction,
+with an approval packet whose `proposed_action` is the canonical JSON text from
+`canonical_json({"flag_id": flag.flag_id, "treatment": treatment})`. The authorization is evidenced;
+the bank applies the approved treatment. A flag alone never authorizes a change.

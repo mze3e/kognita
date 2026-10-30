@@ -556,6 +556,25 @@ class UseCase(SQLModel, table=True):
     def approved_sources(self) -> tuple[str, ...]:
         return tuple(self.record.get("approved_sources") or ())
 
+    def __init__(self, **data: Any) -> None:
+        if "permitted_sensitive" in data:
+            from kognita.sensitive import _categories
+            record = dict(data.get("record") or {})
+            record["sensitive"] = sorted(_categories(data.pop("permitted_sensitive")))
+            data["record"] = record
+        super().__init__(**data)
+
+    @property
+    def permitted_sensitive(self) -> set[str]:
+        """Special categories explicitly permitted by this version's record."""
+        from kognita.sensitive import _categories
+        return _categories(self.record.get("sensitive", []))
+
+    @permitted_sensitive.setter
+    def permitted_sensitive(self, value: set[str]) -> None:
+        from kognita.sensitive import _categories
+        self.record = {**self.record, "sensitive": sorted(_categories(value))}
+
     def is_effective(self, at: datetime) -> bool:
         """Whether this version is in force at ``at`` (half-open interval)."""
         start = as_utc(self.effective_from)

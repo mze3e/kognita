@@ -189,6 +189,7 @@ source_modules = [
     "kognita.recorder",
     "kognita.review",
     "kognita.retention",
+    "kognita.sensitive",
     "kognita.revocation",
     "kognita.retrieval",
     "kognita.rules",

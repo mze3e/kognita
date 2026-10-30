@@ -1054,7 +1054,9 @@ def _policy_checks(
         subject_id=str(attributes.get("client_id") or "") or None,
     )
     context = RuleContext(envelope=envelope, attributes=dict(attributes), as_of=at)
-    found: list[Check] = []
+    from kognita.sensitive import check_sensitive
+    entry = load_register(session, as_of=at).get(envelope.purpose)
+    found: list[Check] = [check_sensitive(attributes.get("content"), entry)]
     rows = session.exec(select(Policy)).all()
     for policy in rows:
         if policy.rule_type not in ("CONTENT_POLICY", "AI_DISCLOSURE"):

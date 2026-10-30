@@ -404,6 +404,7 @@ def content_policy(policy: Any, context: RuleContext) -> list[Check]:
     substantive = (
         "sources",
         "required_disclosures",
+        "sensitive",
         "prohibited_claims",
         "approved_tones",
         "permitted_jurisdictions",
@@ -451,6 +452,10 @@ def content_policy(policy: Any, context: RuleContext) -> list[Check]:
             ok=bool(permitted) and isinstance(cited, str) and cited.strip().casefold() != "model" and cited in permitted,
             detail="claim source must be in the policy sources list",
         ))
+    if "sensitive" in rule:
+        from types import SimpleNamespace
+        from kognita.sensitive import check_sensitive
+        checks.append(check_sensitive(content, SimpleNamespace(permitted_sensitive=rule["sensitive"])))
     if "required_disclosures" in rule:
         required = _texts(rule.get("required_disclosures"))
         if required is None:

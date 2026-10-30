@@ -288,6 +288,8 @@ def decide(
     from kognita._limits import _checks as _limit_checks
     checks.extend(_limit_checks(envelope, snapshot, at))
     checks.extend(_authority_checks(envelope, snapshot, at))
+    from kognita.sensitive import _checks as _sensitive_checks
+    checks.extend(_sensitive_checks(envelope, usecases, attrs))
     checks.extend(registry_checks(envelope, snapshot, at=at, usecases=usecases))
     checks.extend(usecase_checks(envelope, usecases or UseCaseRegister(), at))
     if usecases is None:
@@ -385,6 +387,8 @@ def _standing_checks(
     from kognita._limits import _checks as _limit_checks
     checks.extend(_limit_checks(envelope, snapshot, at, _exclude=_request_id))
     checks.extend(_authority_checks(envelope, snapshot, at))
+    from kognita.sensitive import _checks as _sensitive_checks
+    checks.extend(_sensitive_checks(envelope, usecases, attrs))
     checks.extend(registry_checks(envelope, snapshot, at=at, usecases=usecases))
     if usecases is not None:
         checks.extend(usecase_checks(envelope, usecases, at))
