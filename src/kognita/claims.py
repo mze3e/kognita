@@ -240,4 +240,100 @@ def relabel_claim(
     return _write(session, new, evidence, interaction_id, "relabel")
 
 
+# Keys that name a transport field, not a statement an RM or client could rely on.
+_STRUCTURAL_KEYS = frozenset({
+    "model",
+    "id",
+    "object",
+    "role",
+    "finish_reason",
+    "system_fingerprint",
+    "type",
+    "status",
+    "index",
+    "logprobs",
+    "created",
+})
+_RELEASE_CITATION = (
+    "Claims: material content is released only with a recorded claim that was released"
+)
+
+
+def _material_texts(payload: object) -> list[str]:
+    """Prose values in a model response. Structural fields are not claims."""
+    found: list[str] = []
+
+    def walk(value: object, key: str | None) -> None:
+        if isinstance(value, str):
+            if key not in _STRUCTURAL_KEYS and value.strip():
+                found.append(value.strip())
+            return
+        if isinstance(value, dict):
+            for name, item in value.items():
+                walk(item, name if isinstance(name, str) else None)
+            return
+        if isinstance(value, (list, tuple)):
+            for item in value:
+                walk(item, key)
+
+    if isinstance(payload, str):
+        if payload.strip():
+            found.append(payload.strip())
+        return found
+    walk(payload, None)
+    return found
+
+
+def _release_covers(session: _Session, content: str, *, audience: str) -> _Check:
+    """Fail closed unless this text has a recorded claim released to ``audience``.
+
+    A blank body is not a claim. A recorded claim that was not released, a
+    release for a different audience, or a release whose retained text differs
+    does not cover the content.
+    """
+    def finish(reason: str, passed: bool) -> _Check:
+        return _Check(
+            check=reason,
+            regime="INTERNAL",
+            result=_CheckResult.PASS if passed else _CheckResult.FAIL,
+            citation=_RELEASE_CITATION,
+        )
+
+    if audience not in ("rm", "client"):
+        return finish("C1-AUDIENCE", False)
+    if not isinstance(content, str) or not content.strip():
+        return finish("C1-LABELLED", True)
+    wanted = content.strip()
+    try:
+        events = _events(session)
+    except Exception:
+        return finish("C1-UNKNOWN", False)
+    recorded: set[str] = set()
+    latest: dict[str, _EvidenceEvent] = {}
+    for event in events:
+        payload = event.payload or {}
+        if event.event_type not in (_EventType.CLAIM, _EventType.CLAIM_VERIFIED):
+            continue
+        claim_id = payload.get("claim_id")
+        if not isinstance(claim_id, str) or not claim_id:
+            continue
+        if payload.get("action") == "record":
+            recorded.add(claim_id)
+        if payload.get("action") == "release" and payload.get("audience") == audience:
+            latest[claim_id] = event
+    for claim_id, event in latest.items():
+        payload = event.payload or {}
+        if claim_id not in recorded:
+            continue
+        if payload.get("allowed") is not True or payload.get("reason") != "C1-LABELLED":
+            continue
+        try:
+            claim = _read(session, event)
+        except (ValueError, TypeError, KeyError):
+            continue
+        if claim.claim_type is not None and claim.claim.strip() == wanted:
+            return finish("C1-LABELLED", True)
+    return finish("C1-UNKNOWN", False)
+
+
 __all__ = ["Claim", "ClaimType", "ValidatorStatus", "record_claim", "release_claim", "relabel_claim", "list_claims"]

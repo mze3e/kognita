@@ -78,6 +78,7 @@ class Retrieved:
     block_char_start: int | None = None
     block_char_end: int | None = None
     classification_rule: str = ""
+    warning: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -94,6 +95,7 @@ class Retrieved:
             "charspan": _span(self.char_start, self.char_end),
             "block_charspan": _span(self.block_char_start, self.block_char_end),
             "score": self.score,
+            **({"warning": True} if self.warning else {}),
         }
 
 
@@ -155,6 +157,36 @@ def passage_snippet(body: str, query: str) -> str:
     return paragraphs[best]
 
 
+def _admit_retrieved(session: Session, item: KnowledgeItem, *, use_case: str,
+                     evidence: EvidenceWriter | None, correlation_id: str) -> tuple[bool, bool]:
+    """Run a FACT item through ``admit_fact``. Other kinds are unchanged.
+
+    A FACT item that cannot be admitted is not returned. A warning means the
+    use case asked for the stale value to be shown, not used quietly.
+    """
+    if str(item.kind).upper() != "FACT":
+        return True, False
+    import json
+    from kognita.facts import _admit_observed
+    try:
+        body = json.loads(item.body)
+    except (TypeError, ValueError):
+        body = None
+    if not isinstance(body, dict):
+        body = {"value": item.body, "source": item.source_label, "data_type": item.kind or "FACT"}
+    body.setdefault("data_type", item.kind or "FACT")
+    if not body.get("source"):
+        body["source"] = item.source_label
+    admitted = _admit_observed(
+        session, body, use_case=use_case, evidence=evidence,
+        correlation_id=correlation_id or "retrieval",
+        now=evidence.clock() if evidence is not None else None,
+    )
+    if not isinstance(admitted, dict):
+        return False, False
+    return True, admitted.get("warning") is True
+
+
 def ceiling_for(is_admin: bool) -> Classification:
     """The classification ceiling a principal carries.
 
@@ -203,6 +235,7 @@ def retrieve(
 
     hits: list[Retrieved] = []
     ranked: list[tuple[KnowledgeItem, float]] = []
+    selected: list[tuple[KnowledgeItem, float, bool]] = []
     if candidates:
         vector_index = index or NumpyVectorIndex()
         query_vector = embedder.embed(query)
@@ -220,6 +253,14 @@ def retrieve(
             if score >= min_score:
                 ranked.append((item, score))
         ranked.sort(key=lambda pair: (-pair[1], pair[0].id or 0))
+
+        for item, score in ranked[:top_k]:
+            kept, warning = _admit_retrieved(
+                session, item, use_case=use_case, evidence=evidence, correlation_id=correlation_id,
+            )
+            if not kept:
+                continue
+            selected.append((item, score, warning))
 
         hits = [
             Retrieved(
@@ -239,12 +280,13 @@ def retrieve(
                 block_char_start=item.block_char_start,
                 block_char_end=item.block_char_end,
                 classification_rule=item.classification_rule,
+                warning=warning,
             )
-            for item, score in ranked[:top_k]
+            for item, score, warning in selected
         ]
 
     if evidence is not None:
-        returned = ranked[:top_k]
+        returned = [(item, score) for item, score, _warning in selected]
         store = RetentionStore()
         items = []
         for item, _score in returned:

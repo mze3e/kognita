@@ -1551,6 +1551,25 @@ def _view(row: UseCase) -> RegisteredUseCase:
     )
 
 
+def _standard_version(session: Session, usecase_id: str, at: datetime | None = None) -> str:
+    """The quality standard in force for this use case.
+
+    An explicit ``standard_version`` on the in-force record wins. Otherwise the
+    use-case version is the standard. A closed row is not in force, so a
+    superseded standard is not the one recorded on output.
+    """
+    when = _aware(at or utcnow())
+    entry = load_register(session, as_of=when).get((usecase_id or "").strip())
+    if entry is None:
+        return ""
+    recorded = entry.record.get("standard_version")
+    if isinstance(recorded, str) and recorded.strip():
+        return recorded.strip()
+    if type(recorded) is int:
+        return str(recorded)
+    return str(entry.version)
+
+
 def load_register(
     session: Session, *, as_of: datetime | None = None
 ) -> UseCaseRegister:

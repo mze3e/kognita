@@ -394,6 +394,7 @@ def send_public_content(
         client_id=attributes["client_id"],
         approved_research=attributes["approved_research"],
         run_id=run_id.strip(),
+        content=content,
         at=at,
     )
     checks.extend(_policy_checks(session, attributes, at, tool="send_public_content"))
@@ -641,6 +642,9 @@ def _client_checks(
                 "research attribution present",
             )
         )
+    if rank >= _HOUSE_VIEW:
+        from kognita.claims import _release_covers
+        checks.append(_release_covers(session, content, audience="client"))
     if rank >= _RECOMMENDATION:
         checks.append(_suitability_check(session, interaction_id))
         present = attributes.get("risk_language") is True
@@ -883,10 +887,15 @@ def _public_checks(
     client_id: str,
     approved_research: str,
     run_id: str,
+    content: str,
     at: datetime,
 ) -> list[Check]:
     del at
-    checks = [
+    checks = []
+    if level == "house view":
+        from kognita.claims import _release_covers
+        checks.append(_release_covers(session, content, audience="client"))
+    checks.extend([
         _structural(
             "COMMUNICATION_LEVEL",
             level in _PUBLIC_LEVELS,
@@ -900,7 +909,7 @@ def _public_checks(
             provenance,
         ),
         _channel_check(session, channel_key, channel_label, public=True),
-    ]
+    ])
     if client_id:
         checks.append(
             _structural(

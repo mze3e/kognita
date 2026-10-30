@@ -235,6 +235,72 @@ def _allow(session, evidence, interaction_id):
     )
 
 
+_MATERIAL_LEVELS = frozenset({
+    "house view",
+    "contextualised insight",
+    "investment discussion",
+    "product recommendation",
+    "transaction",
+})
+
+
+def _cover(session, evidence, content, *, audience="client"):
+    """Record and release ``content`` so a material send has a claim."""
+    from datetime import datetime, timezone
+    from uuid import uuid4
+
+    from sqlmodel import select
+
+    from kognita.claims import Claim, ClaimType, ValidatorStatus, record_claim, release_claim
+    from kognita.models import UseCase
+    from kognita.sources import Source, register_source
+
+    existing = session.exec(select(UseCase).where(UseCase.usecase_id == "claim-cover")).first()
+    if existing is None:
+        session.add(UseCase(
+            usecase_id="claim-cover",
+            version=1,
+            record={
+                "usecase_id": "claim-cover",
+                "approved_sources": ["desk"],
+                "proposed_tier": 1,
+                "version": 1,
+            },
+            effective_from=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        ))
+        session.flush()
+        register_source(
+            session,
+            Source("desk", "policy", "v1", "owner", datetime(2020, 1, 1, tzinfo=timezone.utc)),
+            evidence=evidence,
+            interaction_id="claim-cover",
+        )
+    claim_id = "c-" + uuid4().hex
+    record_claim(
+        session,
+        Claim(
+            claim_id,
+            "client-1",
+            content,
+            ClaimType.INFERENCE,
+            source_system="desk",
+            source_record="v1",
+            validator_status=ValidatorStatus.VERIFIED,
+        ),
+        evidence=evidence,
+        interaction_id="claim-cover",
+    )
+    released = release_claim(
+        session,
+        claim_id,
+        evidence=evidence,
+        interaction_id="claim-cover",
+        audience=audience,
+        usecase_id="claim-cover",
+    )
+    assert released.result is CheckResult.PASS, released.check
+
+
 def _send(session, evidence, interaction_id, **kwargs):
     values = {
         "channel": "Secure Message",
@@ -246,6 +312,8 @@ def _send(session, evidence, interaction_id, **kwargs):
         "now": FROZEN_NOW,
     }
     values.update(kwargs)
+    if values["level"] in _MATERIAL_LEVELS:
+        _cover(session, evidence, values["content"])
     return send_client_communication(
         session, interaction_id, evidence=evidence, **values
     )
@@ -815,6 +883,7 @@ def test_public_lane_refuses_a_named_client(harness):
             client_id="client-1",
             now=FROZEN_NOW,
         )
+        _cover(session, harness.evidence, "The published house view.")
         published = send_public_content(
             session,
             evidence=harness.evidence,
@@ -850,6 +919,8 @@ def _publish(session, evidence, **kwargs):
         "now": FROZEN_NOW,
     }
     values.update(kwargs)
+    if values["level"] == "house view":
+        _cover(session, evidence, values["content"])
     return send_public_content(session, evidence=evidence, **values)
 
 
