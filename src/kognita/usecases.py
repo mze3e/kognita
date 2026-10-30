@@ -88,7 +88,7 @@ from kognita.models import (
 from kognita.registry import get as get_agent
 from kognita.registry import set_kill_switch
 from kognita.retention import RetentionStore
-from kognita.vocabulary import ActorType, CheckResult, EventType
+from kognita.vocabulary import ActorType, CheckResult, EventType, StaleAction
 
 #: Who is accountable, beyond the five owner roles. A seat names a person.
 #: An agent cannot sit in one.
@@ -351,6 +351,7 @@ class UseCaseSpec:
     residual_materiality: str = "low"
     approval_gate: str = "none"
     review_sampling_rate: float = 0.0
+    stale_action: StaleAction = StaleAction.SUPPRESS
     deployment_mode: str | None = None
     maximum_autonomy: int = 0
     _autonomy_gates: Mapping[str, Any] = field(default_factory=dict)
@@ -498,6 +499,7 @@ class RegisteredUseCase:
     client_population: str
     intended_use: str
     record: dict[str, Any]
+    stale_action: StaleAction = StaleAction.SUPPRESS
     content_hash: str = ""
     approved_models: tuple[str, ...] = ()
     model_providers: tuple[str, ...] = ()
@@ -611,6 +613,8 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
     def add(text: str) -> None:
         found.append(_cite(usecase_id, text))
 
+    if spec.stale_action not in tuple(StaleAction):
+        add("FACT_STALE_ACTION_INVALID: stale_action must be REFRESH, SUPPRESS or WARN")
     if spec.deployment_mode not in (None, "gateway", "library"):
         add("S2-DEPLOYMENT-MODE: deployment_mode must be gateway or library")
     if spec.deployment_mode == "library" and derived_tier(spec) >= 2:
@@ -975,6 +979,7 @@ def build_record(
         "approval_gate": spec.approval_gate,
         "review_sampling_rate": float(spec.review_sampling_rate),
         "maximum_autonomy": int(spec.maximum_autonomy),
+        "stale_action": StaleAction(spec.stale_action).value,
         "deployment_mode": spec.deployment_mode,
         "_autonomy_gates": dict(spec._autonomy_gates),
         "_autonomy_step_down": dict(spec._autonomy_step_down),
@@ -1057,6 +1062,7 @@ def from_record(
         residual_materiality=str(record.get("residual_materiality") or ""),
         approval_gate=str(record.get("approval_gate") or ""),
         review_sampling_rate=float(record.get("review_sampling_rate") or 0),
+        stale_action=StaleAction(record.get("stale_action", "SUPPRESS")),
         deployment_mode=record.get("deployment_mode"),
         maximum_autonomy=int(record.get("maximum_autonomy") or 0),
         monitoring=bool(record.get("monitoring")),
@@ -1578,6 +1584,7 @@ def _supersede(
         usecase_id=usecase_id,
         version=version,
         record=record,
+        stale_action=StaleAction(record.get("stale_action", "SUPPRESS")),
         deployment_mode=record.get("deployment_mode"),
         effective_from=at,
     )
@@ -1973,6 +1980,7 @@ def activate(
 
 _MATERIAL_FIELDS = (
     "deployment_mode",
+    "stale_action",
     "autonomy",
     "maximum_autonomy",
     "jurisdiction",

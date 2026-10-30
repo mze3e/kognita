@@ -15,7 +15,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 
 from kognita.canonical import canonical_hash, canonical_json
 from kognita.envelope import Check, Envelope
+from kognita.facts import FreshnessRule
 from kognita.exceptions import KognitaError
 from kognita.governance import PolicySnapshot, decide
 from kognita.models import Policy, as_utc, utcnow
@@ -223,6 +224,7 @@ class PolicySet:
     rules: tuple[RuleDocument, ...]
     scenarios: tuple[ScenarioDocument, ...] = ()
     source: str = ""
+    freshness: tuple[FreshnessRule, ...] = ()
 
     def by_id(self) -> dict[str, RuleDocument]:
         return {rule.id: rule for rule in self.rules}
@@ -1218,6 +1220,34 @@ def _is_change_text(text: str) -> bool:
     return any(_HEADING_RE.match(line) for line in text.splitlines())
 
 
+def _freshness_data(data: Any) -> tuple[Any, tuple[FreshnessRule, ...]]:
+    if not isinstance(data, dict) or "freshness" not in data:
+        return data, ()
+    if set(data) - {"freshness", "rules"} or not isinstance(data["freshness"], dict):
+        raise PolicyLanguageError([Finding("type", "freshness requires a mapping and optional rules")])
+    rules = []
+    for name, threshold in data["freshness"].items():
+        if isinstance(threshold, dict) and set(threshold) == {"max_age"}:
+            threshold = threshold["max_age"]
+        # Numeric thresholds are seconds; strings accept s, m, h, d suffixes.
+        try:
+            if isinstance(threshold, bool):
+                raise ValueError()
+            if isinstance(threshold, str):
+                match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)([smhd])", threshold)
+                if match is None:
+                    raise ValueError()
+                seconds = float(match[1]) * {"s": 1, "m": 60, "h": 3600, "d": 86400}[match[2]]
+            elif isinstance(threshold, (int, float)):
+                seconds = threshold
+            else:
+                raise ValueError()
+            rules.append(FreshnessRule(name, max_age=timedelta(seconds=seconds)))
+        except (ValueError, TypeError, OverflowError, AttributeError) as exc:
+            raise PolicyLanguageError([Finding("type", f"invalid freshness threshold for {name!r}")]) from exc
+    return data.get("rules", []), tuple(rules)
+
+
 def _rules_from_data(
     data: Any, source: str
 ) -> tuple[list[RuleDocument], list[Finding]]:
@@ -1289,6 +1319,7 @@ def _read_dir(directory: Path) -> PolicySet:
     rules: list[RuleDocument] = []
     scenarios: list[ScenarioDocument] = []
     findings: list[Finding] = []
+    freshness: dict[str, FreshnessRule] = {}
     for path in _policy_paths(directory):
         text = _read_text(path)
         if _is_change_text(text):
@@ -1313,6 +1344,11 @@ def _read_dir(directory: Path) -> PolicySet:
             findings.extend(item_findings)
             scenarios.extend(found)
             continue
+        data, fresh = _freshness_data(data)
+        for item in fresh:
+            if item.data_type in freshness:
+                raise PolicyLanguageError([Finding("type", f"duplicate freshness rule {item.data_type!r}")])
+            freshness[item.data_type] = item
         found_rules, item_findings = _rules_from_data(data, str(path))
         findings.extend(item_findings)
         rules.extend(found_rules)
@@ -1330,7 +1366,8 @@ def _read_dir(directory: Path) -> PolicySet:
     _raise_if(findings)
     _raise_if(_duplicate_ids(rules))
     return PolicySet(
-        rules=tuple(rules), scenarios=tuple(scenarios), source=str(directory)
+        rules=tuple(rules), scenarios=tuple(scenarios), source=str(directory),
+        freshness=tuple(freshness.values())
     )
 
 
@@ -1389,11 +1426,12 @@ def read_policy_set(path: str | Path) -> PolicySet:
         raise PolicyLanguageError(
             [Finding("parse", f"{target} is a change file; pass it with --policy")]
         )
+    data, freshness = _freshness_data(data)
     rules, findings = _rules_from_data(data, str(target))
     _raise_if(findings)
     _raise_if(_duplicate_ids(rules))
     scenarios = _scenarios_for(rules, target.parent)
-    return PolicySet(rules=tuple(rules), scenarios=tuple(scenarios), source=str(target))
+    return PolicySet(rules=tuple(rules), scenarios=tuple(scenarios), source=str(target), freshness=freshness)
 
 
 def source_hash(path: str | Path) -> str:
@@ -1931,6 +1969,7 @@ def apply_change(
         rules=tuple(ordered),
         scenarios=current.scenarios,
         source=current.source,
+        freshness=current.freshness,
     )
     if directory is not None:
         moment = when or utcnow()
@@ -1972,7 +2011,11 @@ def _write_policy_files(directory: Path, before: PolicySet, after: PolicySet) ->
         path = Path(source) if source else None
         if not kept:
             if path is not None and path.is_file():
-                path.unlink()
+                data = parse_yaml(_read_text(path))
+                if isinstance(data, dict) and "freshness" in data:
+                    _write_rules(path, [])
+                else:
+                    path.unlink()
             continue
         if path is None:
             continue
@@ -1991,7 +2034,11 @@ def _write_policy_files(directory: Path, before: PolicySet, after: PolicySet) ->
 
 def _write_rules(path: Path, rules: list[RuleDocument]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    if len(rules) == 1:
+    existing = parse_yaml(_read_text(path)) if path.is_file() else None
+    if isinstance(existing, dict) and "freshness" in existing:
+        text = emit_yaml({"freshness": existing["freshness"],
+                          "rules": [rule_to_data(rule) for rule in rules]}) + "\n"
+    elif len(rules) == 1:
         text = emit_yaml(rule_to_data(rules[0])) + "\n"
     else:
         text = emit_yaml([rule_to_data(rule) for rule in rules]) + "\n"
