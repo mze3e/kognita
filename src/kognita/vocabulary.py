@@ -91,6 +91,8 @@ class ActorType(str, Enum):
 class EventType(str, Enum):
     """The kinds of event the evidence plane records."""
 
+    CLAIM = "CLAIM"
+    CLAIM_VERIFIED = "CLAIM_VERIFIED"
     POLICY_DECISION = "POLICY_DECISION"
     TOOL_CALL = "TOOL_CALL"
     RETRIEVAL = "RETRIEVAL"

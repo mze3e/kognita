@@ -1214,6 +1214,32 @@ def _cmd_evidence_authority(args):
     return 0
 
 
+def _cmd_claims(args):
+    from dataclasses import asdict
+    from kognita.claims import list_claims
+    engine = make_engine(args.db)
+    create_all(engine)
+    try:
+        with session_scope(engine) as session:
+            claims = list_claims(
+                session,
+                client_id=getattr(args, "client", None),
+                interaction_id=getattr(args, "interaction", None),
+            )
+    except (ValueError, ChainBreak) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if hasattr(args, "claim_id"):
+        claims = [c for c in claims if c.claim_id == args.claim_id]
+        if not claims:
+            print("C1-UNKNOWN: claim is not recorded", file=sys.stderr)
+            return 2
+        print(canonical_json(asdict(claims[0])))
+    else:
+        print(canonical_json([asdict(c) for c in claims]))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
@@ -1231,6 +1257,18 @@ def build_parser() -> argparse.ArgumentParser:
     doctor = sub.add_parser("doctor", help="report installed extras and store health")
     doctor.add_argument("--db", help="optional store to check the evidence chain of")
     doctor.set_defaults(func=cmd_doctor)
+
+    claims = sub.add_parser("claims", help="inspect recorded claims")
+    claims_sub = claims.add_subparsers(dest="claims_command", required=True)
+    show_claim = claims_sub.add_parser("show")
+    show_claim.add_argument("claim_id")
+    show_claim.add_argument("--db", default="kognita.db")
+    show_claim.set_defaults(func=_cmd_claims)
+    list_claim = claims_sub.add_parser("list")
+    list_claim.add_argument("--client")
+    list_claim.add_argument("--interaction")
+    list_claim.add_argument("--db", default="kognita.db")
+    list_claim.set_defaults(func=_cmd_claims)
 
     evidence = sub.add_parser("evidence", help="evidence plane operations")
     evidence_sub = evidence.add_subparsers(dest="evidence_command", required=True)

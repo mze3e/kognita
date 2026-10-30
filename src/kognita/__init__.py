@@ -51,6 +51,7 @@ from kognita.approvals import (
     reject,
 )
 from kognita.broker import BrokerAnswer, ask, default_route_resolver
+from kognita.claims import Claim, ClaimType, ValidatorStatus
 from kognita.canonical import canonical_hash, canonical_json
 from kognita.classify import FixedClassifier, PatternClassifier, most_sensitive
 from kognita.config import (
@@ -175,6 +176,7 @@ def __dir__() -> list[str]:
 
 
 __all__ = [
+    "Claim", "ClaimType", "ValidatorStatus",
     # decisions
     "Envelope",
     "Check",
