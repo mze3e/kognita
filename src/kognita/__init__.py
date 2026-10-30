@@ -51,6 +51,11 @@ from kognita.approvals import (
     reject,
 )
 from kognita.broker import BrokerAnswer, ask, default_route_resolver
+from kognita.calculations import (
+    CalculationService,
+    check_calculation,
+    register_calculation_service,
+)
 from kognita.claims import Claim, ClaimType, ValidatorStatus
 from kognita.facts import (
     Fact, FreshnessRule, ResearchLifecycle, StaleAction, admit_fact, is_stale,
@@ -194,6 +199,9 @@ __all__ = [
     "Source",
     "SourceRegister",
     "Claim", "ClaimType", "ValidatorStatus",
+    "CalculationService",
+    "register_calculation_service",
+    "check_calculation",
     "Fact",
     "FreshnessRule",
     "ResearchLifecycle",
