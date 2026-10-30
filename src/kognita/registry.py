@@ -209,6 +209,9 @@ def approve_deployment(
     from kognita._limits import _validate
     _validate(agent)
     _deployment_hash(agent, deployment)
+    from kognita.evaluation import check_activation
+
+    check_activation(session, agent)
     deployment = json.loads(canonical_json(deployment))
     candidate = Agent.model_validate(agent.model_dump())
     candidate.tool_allowlist = {**(agent.tool_allowlist or {}), "_deployment": deployment}

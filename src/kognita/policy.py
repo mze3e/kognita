@@ -14,7 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -228,6 +228,7 @@ class PolicySet:
     scenarios: tuple[ScenarioDocument, ...] = ()
     source: str = ""
     freshness: tuple[FreshnessRule, ...] = ()
+    evaluation: dict[str, float] = field(default_factory=dict)
 
     def by_id(self) -> dict[str, RuleDocument]:
         return {rule.id: rule for rule in self.rules}
@@ -1260,9 +1261,31 @@ def _is_change_text(text: str) -> bool:
     return any(_HEADING_RE.match(line) for line in text.splitlines())
 
 
-def _freshness_data(data: Any) -> tuple[Any, tuple[FreshnessRule, ...]]:
+def _split_evaluation(data: Any) -> tuple[Any, dict[str, float]]:
+    """Take a top-level ``evaluation:`` mapping off a policy document."""
+    if not isinstance(data, dict) or "evaluation" not in data:
+        return data, {}
+    if set(data) - {"evaluation", "freshness", "rules"} or not isinstance(data["evaluation"], dict):
+        raise PolicyLanguageError([Finding(
+            "type", "evaluation requires a mapping and optional rules or freshness",
+        )])
+    from kognita.evaluation import validate_thresholds
+
+    try:
+        parsed = validate_thresholds(data["evaluation"])
+    except ValueError as exc:
+        raise PolicyLanguageError([Finding("type", str(exc))]) from exc
+    rest = {key: value for key, value in data.items() if key != "evaluation"}
+    return (rest or []), parsed
+
+
+def _freshness_data(data: Any) -> tuple[Any, tuple[FreshnessRule, ...], dict[str, float]]:
+    had_evaluation = isinstance(data, dict) and "evaluation" in data
+    data, evaluation = _split_evaluation(data)
+    if had_evaluation and isinstance(data, dict) and set(data) <= {"rules"}:
+        return data.get("rules", []), (), evaluation
     if not isinstance(data, dict) or "freshness" not in data:
-        return data, ()
+        return data, (), evaluation
     if set(data) - {"freshness", "rules"} or not isinstance(data["freshness"], dict):
         raise PolicyLanguageError([Finding("type", "freshness requires a mapping and optional rules")])
     rules = []
@@ -1285,7 +1308,7 @@ def _freshness_data(data: Any) -> tuple[Any, tuple[FreshnessRule, ...]]:
             rules.append(FreshnessRule(name, max_age=timedelta(seconds=seconds)))
         except (ValueError, TypeError, OverflowError, AttributeError) as exc:
             raise PolicyLanguageError([Finding("type", f"invalid freshness threshold for {name!r}")]) from exc
-    return data.get("rules", []), tuple(rules)
+    return data.get("rules", []), tuple(rules), evaluation
 
 
 def _rules_from_data(
@@ -1360,6 +1383,7 @@ def _read_dir(directory: Path) -> PolicySet:
     scenarios: list[ScenarioDocument] = []
     findings: list[Finding] = []
     freshness: dict[str, FreshnessRule] = {}
+    evaluation: dict[str, float] = {}
     for path in _policy_paths(directory):
         text = _read_text(path)
         if _is_change_text(text):
@@ -1384,11 +1408,15 @@ def _read_dir(directory: Path) -> PolicySet:
             findings.extend(item_findings)
             scenarios.extend(found)
             continue
-        data, fresh = _freshness_data(data)
+        data, fresh, thresholds = _freshness_data(data)
         for item in fresh:
             if item.data_type in freshness:
                 raise PolicyLanguageError([Finding("type", f"duplicate freshness rule {item.data_type!r}")])
             freshness[item.data_type] = item
+        for key, value in thresholds.items():
+            if key in evaluation:
+                raise PolicyLanguageError([Finding("type", f"duplicate evaluation threshold {key!r}")])
+            evaluation[key] = value
         found_rules, item_findings = _rules_from_data(data, str(path))
         findings.extend(item_findings)
         rules.extend(found_rules)
@@ -1407,7 +1435,7 @@ def _read_dir(directory: Path) -> PolicySet:
     _raise_if(_duplicate_ids(rules))
     return PolicySet(
         rules=tuple(rules), scenarios=tuple(scenarios), source=str(directory),
-        freshness=tuple(freshness.values())
+        freshness=tuple(freshness.values()), evaluation=evaluation,
     )
 
 
@@ -1466,12 +1494,15 @@ def read_policy_set(path: str | Path) -> PolicySet:
         raise PolicyLanguageError(
             [Finding("parse", f"{target} is a change file; pass it with --policy")]
         )
-    data, freshness = _freshness_data(data)
+    data, freshness, evaluation = _freshness_data(data)
     rules, findings = _rules_from_data(data, str(target))
     _raise_if(findings)
     _raise_if(_duplicate_ids(rules))
     scenarios = _scenarios_for(rules, target.parent)
-    return PolicySet(rules=tuple(rules), scenarios=tuple(scenarios), source=str(target), freshness=freshness)
+    return PolicySet(
+        rules=tuple(rules), scenarios=tuple(scenarios), source=str(target),
+        freshness=freshness, evaluation=evaluation,
+    )
 
 
 def source_hash(path: str | Path) -> str:
@@ -2010,6 +2041,7 @@ def apply_change(
         scenarios=current.scenarios,
         source=current.source,
         freshness=current.freshness,
+        evaluation=dict(current.evaluation),
     )
     if directory is not None:
         moment = when or utcnow()
@@ -2052,7 +2084,7 @@ def _write_policy_files(directory: Path, before: PolicySet, after: PolicySet) ->
         if not kept:
             if path is not None and path.is_file():
                 data = parse_yaml(_read_text(path))
-                if isinstance(data, dict) and "freshness" in data:
+                if isinstance(data, dict) and ({"freshness", "evaluation"} & set(data)):
                     _write_rules(path, [])
                 else:
                     path.unlink()
@@ -2075,9 +2107,14 @@ def _write_policy_files(directory: Path, before: PolicySet, after: PolicySet) ->
 def _write_rules(path: Path, rules: list[RuleDocument]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     existing = parse_yaml(_read_text(path)) if path.is_file() else None
-    if isinstance(existing, dict) and "freshness" in existing:
-        text = emit_yaml({"freshness": existing["freshness"],
-                          "rules": [rule_to_data(rule) for rule in rules]}) + "\n"
+    sidecar = {}
+    if isinstance(existing, dict):
+        if "freshness" in existing:
+            sidecar["freshness"] = existing["freshness"]
+        if "evaluation" in existing:
+            sidecar["evaluation"] = existing["evaluation"]
+    if sidecar:
+        text = emit_yaml({**sidecar, "rules": [rule_to_data(rule) for rule in rules]}) + "\n"
     elif len(rules) == 1:
         text = emit_yaml(rule_to_data(rules[0])) + "\n"
     else:

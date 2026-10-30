@@ -583,3 +583,51 @@ from a proposal that is not yet a record. Where a use case has an approved
 standard, memory outputs record `standard_version` for the version actually in
 force. Citing a superseded or not-yet-effective version is refused. Content
 stays in the retention store. The evidence chain stores the hash.
+
+## Evaluation evidence
+
+Kognita records evaluation results. It does not run the harness. `EvaluationResult`
+binds `agent_id`, the agent version, `model_version`, a level of `model`, `agent`
+or `system`, and metrics for accuracy, groundedness, completeness, relevance,
+hallucination rate, freshness, policy compliance, entitlement, action correctness
+and escalation. `record_evaluation` retains the result and appends
+`EVALUATION_RECORDED`.
+
+A use case carries `evaluation_thresholds`. Policy files accept the same numbers
+under `evaluation:` (optionally beside `freshness:` and `rules:`). Hallucination
+rate is lower-is-better. Every other metric is higher-is-better. Values are
+between 0 and 1.
+
+```yaml
+evaluation:
+  accuracy: 0.9
+  groundedness: 0.9
+  hallucination_rate: 0.05
+```
+
+Activating or changing a tier 2 or higher agent, including `kognita agent deploy`,
+is denied unless the latest agent-level or system-level result for that agent
+version and model version meets every linked threshold. A model-only result does
+not open the gate. A tier 2 use case with no thresholds is denied. Tier 1 agents
+are not gated. A missing, unreadable or partial result is denied.
+
+```sh
+kognita eval record --db kognita.db --agent briefing-agent --version 1.2.0 --model-version house-v3 --level system --metric accuracy=0.95 --metric hallucination_rate=0.02
+kognita agent deploy --manifest briefing.yaml --db kognita.db --actor owner
+```
+
+Repeat `--metric` for every metric. A partial result is refused.
+
+`fairness_report` and `kognita eval report` compute recommendation, contact and
+prioritisation rates from origination evidence. The population is the segment
+map the bank supplies, such as nationality, age group, language, portfolio size,
+channel or RM team. Proxy attributes, such as postcode standing in for
+nationality, are named with the segments and marked on the report. A disparity
+above the threshold is flagged to the use case risk owner. Clients who were
+originated but left off a map are reported as unassigned. The 0.5 monitored
+metrics are decision quality and reliability, so a disparity is flagged rather
+than registered as one of those metrics.
+
+```sh
+kognita eval report --db kognita.db --usecase client-intelligence --threshold 0.1 --proxy postcode --segments segments.json
+```

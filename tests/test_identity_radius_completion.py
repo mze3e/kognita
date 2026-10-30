@@ -36,11 +36,12 @@ def _setup(session, evidence, engine, path, *, transaction=False, limits=None):
     object.__setattr__(agent, 'model', 'approved-model')
     agent.blast_radius = limits
     if transaction:
+        from fixtures.evaluation import evaluation_thresholds, satisfy_evaluation
         from test_usecases import _tier3
         from kognita.usecases import load_register, revise, approve_rating, activate
         entry = load_register(session, as_of=NOW).get('COLLABORATION')
         spec = _tier3(usecase_id='COLLABORATION', purpose='COLLABORATION',
-            approved_models=entry.approved_models)
+            approved_models=entry.approved_models, evaluation_thresholds=evaluation_thresholds())
         revise(session, spec, evidence=evidence, actor_id='Jane Smith', at=NOW)
         approve_rating(session, spec.usecase_id, spec.control_function, evidence=evidence, at=NOW)
         activate(session, spec.usecase_id, evidence=evidence, actor_id=spec.control_function,
@@ -60,6 +61,7 @@ def _setup(session, evidence, engine, path, *, transaction=False, limits=None):
             permissions=['execute'], reversible=True, compensation='undo')
         agent.tool_allowlist = permissions
         _change(session, agent, 4, evidence, agent.owner_exec, 'AUTONOMY_PROMOTED', {})
+        satisfy_evaluation(session, evidence, agent)
     approve_deployment(session, agent.name, deployment=agent.tool_allowlist['_deployment'],
         evidence=evidence, actor_id=agent.owner_exec)
     scope = {'client': ['123'], 'product': ['permitted', 'other'], 'model': [MODEL]}
