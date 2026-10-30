@@ -517,6 +517,10 @@ checks performed at claim release.
 
 ### House-view change propagation
 
+Source commands accept `--source` as an alias for `--id`, and supersession
+accepts `--superseded-by` as an alias for `--by`. Lifecycle updates registered
+directly also invalidate dependent claims and open recommendations.
+
 `supersede_source` marks one registered source version as superseded and appends
 `SOURCE_SUPERSEDED`. Every claim that cites that version, including a citation
 that names the source and no version, is retained again with `validator_status`

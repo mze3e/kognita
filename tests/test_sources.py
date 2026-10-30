@@ -141,6 +141,109 @@ def test_release_rechecks_lifecycle_and_pins_grounding(store):
     assert pinned["approved_sources"] == ["research"]
     assert pinned["usecase_hash"]
     register_source(session, replace(source, superseded_by="2"), evidence=writer, interaction_id="update")
-    assert release_claim(session, "c", usecase_id="approved", evidence=writer, interaction_id="i").check == "C3-SUPERSEDED"
+    assert release_claim(session, "c", usecase_id="approved", evidence=writer, interaction_id="i").check == "C1-STALE"
     assert json.loads(RetentionStore().read(session, grounding.payload["grounding_hash"])) == pinned
     verify_chain(session)
+
+
+@pytest.mark.parametrize("audience", ["rm", "client"])
+def test_supersession_propagates_and_cannot_be_revived(store, audience):
+    from kognita import supersede_source, affected_by_source, ValidatorStatus
+    from kognita.claims import list_claims, relabel_claim
+    from kognita.vocabulary import EventType
+    session, writer = store
+    register_source(session, _source(), evidence=writer, interaction_id="setup")
+    record_claim(session, Claim("c", "client", "Outlook", ClaimType.INFERENCE,
+                 source_system="research", source_record="1", validator_status=ValidatorStatus.VERIFIED), evidence=writer, interaction_id="journey")
+    record_claim(session, Claim("other", "other-client", "Other", ClaimType.INFERENCE,
+                 source_system="other", source_record="1"), evidence=writer, interaction_id="other")
+    assert release_claim(session, "c", usecase_id="approved", audience=audience, evidence=writer, interaction_id="journey").result == CheckResult.PASS
+    supersede_source(session, "research", version="1", by="2", evidence=writer, interaction_id="change")
+    assert list_claims(session)[0].validator_status == ValidatorStatus.STALE
+    assert list_claims(session)[1].validator_status != ValidatorStatus.STALE
+    with pytest.raises(ValueError, match="C1-STALE"):
+        relabel_claim(session, "c", ClaimType.INFERENCE, validator_status=ValidatorStatus.VERIFIED, evidence=writer, interaction_id="journey")
+    assert release_claim(session, "c", usecase_id="approved", audience=audience, evidence=writer, interaction_id="journey").result == CheckResult.FAIL
+    report = affected_by_source(session, "research")
+    assert {row["client_id"] for row in report["clients"]} == {"client"}
+    assert any(e.event_type == EventType.SOURCE_SUPERSEDED for e in session.exec(select(EvidenceEvent)))
+    verify_chain(session)
+
+
+@pytest.mark.parametrize("source,successor", [("missing", "2"), ("research", ""), ("research", "1")])
+def test_supersession_invalid_requests(store, source, successor):
+    from kognita import supersede_source
+    session, writer = store
+    register_source(session, _source(), evidence=writer, interaction_id="setup")
+    with pytest.raises(ValueError, match="C3-"):
+        supersede_source(session, source, version="1", by=successor, evidence=writer, interaction_id="change")
+
+
+def test_source_cli(tmp_path, capsys):
+    from kognita.cli import main
+    path = str(tmp_path / "cli.db")
+    assert main(["source", "register", "--source", "research", "--version", "1", "--kind", "house view", "--owner", "Research", "--effective", "2020-01-01T00:00:00+00:00", "--db", path]) == 0
+    assert main(["source", "supersede", "--source", "research", "--version", "1", "--superseded-by", "2", "--db", path]) == 0
+    assert main(["source", "list", "--db", path]) == 0
+    assert '"superseded_by": "2"' in capsys.readouterr().out
+    assert main(["evidence", "affected", "--source", "research", "--db", path]) == 0
+    assert main(["evidence", "affected", "--source", "missing", "--db", path]) == 2
+    assert main(["evidence", "affected", "--model", "x", "--db", path]) == 2
+
+
+def test_supersession_revival_and_unrelated_claim(store):
+    from kognita import supersede_source, affected_by_source, ValidatorStatus
+    from kognita.claims import list_claims, relabel_claim
+    session, writer = store
+    source = _source()
+    register_source(session, source, evidence=writer, interaction_id="setup")
+    for ident, system in (("dependent", "research"), ("unrelated", "other")):
+        record_claim(session, Claim(ident, "client", "Outlook", ClaimType.INFERENCE,
+                                   source_system=system, source_record="1",
+                                   validator_status=ValidatorStatus.VERIFIED if system == "research" else ValidatorStatus.UNVERIFIED),
+                     evidence=writer, interaction_id="journey")
+    assert release_claim(session, "dependent", usecase_id="approved", evidence=writer, interaction_id="journey").result == CheckResult.PASS
+    supersede_source(session, "research", version="1", by="2", evidence=writer, interaction_id="change")
+    statuses = {c.claim_id: c.validator_status for c in list_claims(session)}
+    assert statuses["dependent"] == ValidatorStatus.STALE
+    assert statuses["unrelated"] == ValidatorStatus.UNVERIFIED
+    assert {row["client_id"] for row in affected_by_source(session, "research")["clients"]} == {"client"}
+    with pytest.raises(ValueError, match="C1-STALE"):
+        relabel_claim(session, "dependent", ClaimType.INFERENCE, validator_status=ValidatorStatus.VERIFIED,
+                      evidence=writer, interaction_id="journey")
+    assert release_claim(session, "dependent", usecase_id="approved", evidence=writer, interaction_id="journey").result == CheckResult.FAIL
+    with pytest.raises(ValueError, match="C3-IMMUTABLE"):
+        register_source(session, source, evidence=writer, interaction_id="revive")
+    with pytest.raises(ValueError, match="C3-UNKNOWN"):
+        supersede_source(session, "unknown", version="1", by="2", evidence=writer, interaction_id="change")
+    with pytest.raises(ValueError, match="C3-INVALID"):
+        supersede_source(session, "research", version="1", by="1", evidence=writer, interaction_id="change")
+    assert any(e.event_type.value == "SOURCE_SUPERSEDED" for e in session.exec(select(EvidenceEvent)))
+    verify_chain(session)
+
+
+def test_affected_records_follow_journey_not_client(store):
+    from kognita import affected_by_source
+    from kognita.interaction import open_interaction, attach
+    from kognita.vocabulary import EventType
+    session, writer = store
+    register_source(session, _source(), evidence=writer, interaction_id="setup")
+    open_interaction(session, client_id="client", interaction_id="journey", evidence=writer)
+    attach(session, "journey", correlation_id="analysis", evidence=writer)
+    record_claim(session, Claim("c", "client", "Outlook", ClaimType.INFERENCE,
+                 source_system="research", source_record="1"), evidence=writer, interaction_id="analysis")
+    for journey in ("journey", "unrelated"):
+        writer.emit(session, correlation_id=journey, event_type=EventType.ORIGINATION,
+                    payload={"interaction_id": journey, "client_id": "client", "outcome": "recommend"})
+        writer.emit(session, correlation_id=journey, event_type=EventType.CLIENT_COMMUNICATION,
+                    payload={"interaction_id": journey, "client_id": "client", "sent": True})
+    from kognita import supersede_source
+    supersede_source(session, "research", version="1", by="2", evidence=writer, interaction_id="change")
+    report = affected_by_source(session, "research")
+    assert len(report["recommendations"]) == len(report["communications"]) == 1
+    assert report["opportunities"] == []
+    writer.emit(session, correlation_id="journey", event_type=EventType.FINAL_DECISION,
+                payload={"interaction_id": "journey", "outcome": "reject"})
+    assert affected_by_source(session, "research")["opportunities"] == []
+    with pytest.raises(ValueError, match="C3-WINDOW"):
+        affected_by_source(session, "research", start=NOW, end=NOW)

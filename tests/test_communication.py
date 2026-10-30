@@ -1625,3 +1625,25 @@ def test_a_paused_run_does_not_resume_a_held_call(gov):
     assert finals == []
     assert "WITHHELD" in actions
     assert "RESUMED" not in actions
+
+
+def test_superseded_claim_blocks_previously_approved_send(harness):
+    from kognita import Claim, ClaimType, Source, supersede_source, affected_by_source
+    from kognita.claims import record_claim
+    from kognita.sources import register_source
+    with harness.session() as session:
+        interaction = _open(session, harness.evidence)
+        _content_policy(session)
+        _channel(session, harness.evidence)
+        _allow(session, harness.evidence, interaction.id)
+        register_source(session, Source("view", "house view", "1", "Research", FROZEN_NOW), evidence=harness.evidence, interaction_id="setup")
+        record_claim(session, Claim("view-claim", "client-1", "Outlook", ClaimType.INFERENCE, source_system="view", source_record="1"), evidence=harness.evidence, interaction_id=interaction.id)
+        assert _send(session, harness.evidence, interaction.id)["sent"] is True
+        supersede_source(session, "view", version="1", by="2", evidence=harness.evidence, interaction_id="change")
+        denied = _send(session, harness.evidence, interaction.id)
+        assert denied["sent"] is False
+        assert any(c["check"] == "SOURCE_CURRENT" and c["result"] == "fail" for c in denied["checks"])
+        report = affected_by_source(session, "view")
+        assert {row["client_id"] for row in report["clients"]} == {"client-1"}
+        assert len(report["communications"]) == 1
+        assert report["opportunities"] == []

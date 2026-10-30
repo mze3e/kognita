@@ -90,6 +90,8 @@ def register_source(session, source: Source, *, evidence, interaction_id: str) -
     digest = _RetentionStore().retain_value(session, _asdict(source), kind="source", correlation_id=interaction_id)
     evidence.emit(session, correlation_id=interaction_id, event_type=_EventType.CLAIM,
                   payload={"action": "register_source", "source_hash": digest})
+    if source.superseded_by and (old is None or not old.superseded_by):
+        _propagate(session, source, evidence, interaction_id)
     return source
 
 
@@ -224,7 +226,7 @@ def _open(events, interaction_id):
     return not sent and outcome not in ("reject", "deny")
 
 
-def _links(events):
+def _links(session, events):
     found = {}
     for event in events:
         if event.event_type not in (_EventType.CLAIM, _EventType.CLAIM_VERIFIED):
@@ -233,6 +235,12 @@ def _links(events):
         claim_id = body.get("claim_id")
         if body.get("action") in ("record", "relabel", "release", "invalidate") and isinstance(claim_id, str) and claim_id:
             found.setdefault(claim_id, set()).add(event.correlation_id)
+    from kognita.reconstruct import _events_for
+    for journey in session.exec(_select(_Interaction)):
+        correlations = {event.correlation_id for event in _events_for(session, journey.id, events)}
+        for ids in found.values():
+            if ids & correlations:
+                ids.add(journey.id)
     return found
 
 
@@ -280,7 +288,7 @@ def _iso(moment):
 
 def _open_recommendations(session, events, source_id, version, claim_ids):
     """Open recommendations and reviews that still depend on this version."""
-    links = _links(events)
+    links = _links(session, events)
     interactions = set()
     for claim_id in claim_ids:
         interactions.update(links.get(claim_id, ()))
@@ -344,6 +352,11 @@ def supersede_source(session, source_id, *, version, by, evidence, interaction_i
         raise ValueError("C3-IMMUTABLE: source version is already superseded")
     updated = _replace(current, superseded_by=by)
     register_source(session, updated, evidence=evidence, interaction_id=interaction_id)
+    return updated
+
+
+def _propagate(session, updated, evidence, interaction_id):
+    source_id, version, by = updated.source_id, updated.version, updated.superseded_by
     from kognita.claims import _invalidate, list_claims
     stale_claims = []
     for claim in sorted(list_claims(session), key=lambda item: item.claim_id):
@@ -367,7 +380,6 @@ def supersede_source(session, source_id, *, version, by, evidence, interaction_i
             "recommendations": recommendations,
         },
     )
-    return updated
 
 
 def _distribution_block(session, interaction_id):
@@ -392,7 +404,7 @@ def _distribution_block(session, interaction_id):
     try:
         from kognita.claims import ValidatorStatus, _latest_events, _read
         register = _load(session)
-        links = _links(events)
+        links = _links(session, events)
         for claim_id, event in _latest_events(session).items():
             if interaction_id not in links.get(claim_id, ()):
                 continue
@@ -429,7 +441,7 @@ def affected_by_source(session, source_id, *, start=None, end=None):
         raise ValueError("C3-UNKNOWN: source is not registered")
     from kognita.claims import _latest_events, list_claims
     events = _events(session)
-    links = _links(events)
+    links = _links(session, events)
     latest = _latest_events(session)
     claims = [claim for claim in list_claims(session) if _cites_stale(register, source_id, claim.source_system, claim.source_record)]
     interactions = set()

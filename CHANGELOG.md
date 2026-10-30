@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Source lifecycle CLI aliases and house-view supersession regression coverage, preserving stale release and distribution safeguards.
+
 ## [0.6.0] - 2026-10-30
 
 Release 0.6 "Claims" work: material claims are typed, grounded in approved sources, checked for calculation provenance, governed definitions and freshness, and verified by an independent verifier before they reach an RM or client. It also adds memory governance, learning export controls, sensitive-attribute and vulnerable-client safeguards, an evaluation evidence gate with fairness reporting, and retained reasoning traces. All seventeen 0.6 Definition of Done items are met; see docs/ROADMAP.md.
