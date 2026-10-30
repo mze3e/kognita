@@ -63,6 +63,7 @@ from kognita.verification import (
     register_verifier,
     verify_claim,
 )
+from kognita.definitions import GovernedTerm
 from kognita.facts import (
     Fact, FreshnessRule, ResearchLifecycle, StaleAction, admit_fact, is_stale,
 )
@@ -234,6 +235,7 @@ __all__ = [
     "register_calculation_service",
     "check_calculation",
     "Verifier", "register_verifier", "verify_claim", "check_independence",
+    "GovernedTerm",
     "Fact",
     "FreshnessRule",
     "ResearchLifecycle",

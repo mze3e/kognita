@@ -389,6 +389,9 @@ is retained separately from its hash in the evidence chain. Release checks load
 the stored claim by ID and deny unlabelled claims for RM and client audiences.
 Relabelling as a verified fact requires both source references and VERIFIED status.
 Validator status limits RM and client audiences again, as described under Verification gate.
+
+`definition_ref`, when the claim text uses a registered term, must cite the
+current governed version. Release checks that citation.
 Successful RM releases appear in `kognita evidence reconstruct`.
 
 Inspect records with `kognita claims show <claim_id> --db <path>` or
@@ -522,6 +525,44 @@ more than one such rule is in force, a status reaches an audience only if
 every rule allows it. Unknown statuses and audiences do not grant access.
 Release at tier 2 and above uses the verification record, so editing the claim
 status after verification does not widen the audience.
+
+## Governed business definitions
+
+`kognita.definitions` records the bank's terms. The catalogue still owns the
+meaning. `GovernedTerm` carries the term, the authoritative definition
+reference, the owner, the version, the effective time, and `superseded_by`.
+`register_term` retains that snapshot and appends its hash to the evidence chain.
+
+A claim whose text uses a registered term must set `definition_ref` to that
+term and the version in force. `release_claim` checks the stored claim. A
+missing citation, a superseded version, a version that is not yet effective,
+or two live versions with the same effective time all deny release to an RM
+or a client. A newer effective version retires the older one even when
+`superseded_by` is still blank. Matching ignores case, letter-shape lookalikes, and spaces or
+punctuation inserted inside the term, so a figure cannot avoid the citation
+by changing how the word is written. A longer word that only contains the
+term is not a use of it.
+
+`check_definition` is the same gate without a release. `C12-CITED` and
+`C12-CLEAR` pass. `C12-MISSING`, `C12-SUPERSEDED`, `C12-NOT-EFFECTIVE` and
+`C12-AMBIGUOUS` fail closed.
+
+```sh
+kognita definition register --db kognita.db --term AUM --definition-ref catalogue:aum --owner Finance --version 1 --effective 2026-01-01T00:00:00+00:00
+kognita definition list --db kognita.db
+kognita evidence affected --db kognita.db --definition AUM
+kognita evidence affected --db kognita.db --definition AUM --from 2026-01-01T00:00:00+00:00 --to 2026-06-01T00:00:00+00:00
+```
+
+`affected_by_definition` lists claims, recommendations and communications
+produced under a previous version. A claim is listed when it cites that
+version, or when its text uses the term and that version was in force at
+record time. A recommendation or communication is listed when its retained
+text uses the term and a previous version was in force when it was recorded.
+`--from` and `--to` are optional when
+`--definition` is set, and the window is half-open. Without `--definition`,
+`--from` and `--to` stay required. The id is the term or its definition
+reference. An unknown id is refused.
 
 ## Learning export controls
 

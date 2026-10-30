@@ -170,6 +170,7 @@ source_modules = [
     "kognita.communication",
     "kognita.credentials",
     "kognita.db",
+    "kognita.definitions",
     "kognita.egress",
     "kognita.embedding",
     "kognita.envelope",

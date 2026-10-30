@@ -1084,6 +1084,35 @@ def _cmd_affected_source(args: argparse.Namespace, source: str) -> int:
     return 0
 
 
+def _cmd_affected_definition(args: argparse.Namespace) -> int:
+    """List work produced under a previous definition. A window is optional."""
+    definition = (getattr(args, "definition", "") or "").strip()
+    if args.model or args.policy or args.usecase:
+        print(
+            "Affected: --definition does not combine with --model, --policy, or --usecase",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        start = _parse_when(args.start) if args.start else None
+        end = _parse_when(args.end) if args.end else None
+    except ValueError as exc:
+        print(f"Affected: {exc}", file=sys.stderr)
+        return 2
+    from kognita.definitions import affected_by_definition
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    try:
+        with session_scope(engine) as session:
+            report = affected_by_definition(session, definition, start=start, end=end)
+    except (ValueError, ChainBreak) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    _print_json(report)
+    return 0
+
+
 def cmd_evidence_affected(args: argparse.Namespace) -> int:
     """List affected clients for a model, policy, use case, or source."""
     source = (getattr(args, "source", "") or "").strip()
@@ -1091,11 +1120,7 @@ def cmd_evidence_affected(args: argparse.Namespace) -> int:
         return _cmd_affected_source(args, source)
     definition = (getattr(args, "definition", "") or "").strip()
     if definition:
-        handler = globals().get("_cmd_affected_definition")
-        if handler is not None:
-            return handler(args)
-        print("Affected clients: name one selector", file=sys.stderr)
-        return 2
+        return _cmd_affected_definition(args)
     if not (getattr(args, "start", "") or "") or not (getattr(args, "end", "") or ""):
         print("Affected clients: --from and --to are required", file=sys.stderr)
         return 2
@@ -1122,6 +1147,56 @@ def cmd_evidence_affected(args: argparse.Namespace) -> int:
         code = 2 if "name one of" in str(exc) else 1
         return code
     _print_json(report)
+    return 0
+
+
+def _cmd_definition_register(args: argparse.Namespace) -> int:
+    from dataclasses import asdict
+
+    from kognita.definitions import GovernedTerm, register_term
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    evidence = EvidenceWriter(engine)
+    try:
+        term = GovernedTerm(
+            args.term,
+            args.definition_ref,
+            args.owner,
+            args.version,
+            _parse_when(args.effective),
+            args.superseded_by or "",
+        )
+        with session_scope(engine) as session:
+            saved = register_term(
+                session, term, evidence=evidence, interaction_id=args.interaction,
+            )
+            payload = asdict(saved)
+    except (ValueError, ChainBreak) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(canonical_json(payload))
+    return 0
+
+
+def _cmd_definition_list(args: argparse.Namespace) -> int:
+    from dataclasses import asdict
+
+    from kognita.definitions import _registered_terms
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    try:
+        with session_scope(engine) as session:
+            terms = sorted(
+                _registered_terms(session),
+                key=lambda item: (item.term.casefold(), item.version),
+            )
+            payload = [asdict(item) for item in terms]
+    except (ValueError, ChainBreak) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(canonical_json(payload))
     return 0
 
 
@@ -1490,6 +1565,21 @@ def build_parser() -> argparse.ArgumentParser:
     source_list = source_sub.add_parser("list", help="list registered source versions")
     source_list.add_argument("--db", default="kognita.db")
     source_list.set_defaults(func=_cmd_source)
+    definition = sub.add_parser("definition", help="governed business definitions")
+    definition_sub = definition.add_subparsers(dest="definition_command", required=True)
+    register_definition = definition_sub.add_parser("register", help="register one term version")
+    register_definition.add_argument("--term", required=True)
+    register_definition.add_argument("--definition-ref", required=True)
+    register_definition.add_argument("--owner", required=True)
+    register_definition.add_argument("--version", required=True)
+    register_definition.add_argument("--effective", required=True)
+    register_definition.add_argument("--superseded-by", default="")
+    register_definition.add_argument("--interaction", default="definition")
+    register_definition.add_argument("--db", default="kognita.db")
+    register_definition.set_defaults(func=_cmd_definition_register)
+    list_definition = definition_sub.add_parser("list", help="list registered term versions")
+    list_definition.add_argument("--db", default="kognita.db")
+    list_definition.set_defaults(func=_cmd_definition_list)
 
     evidence = sub.add_parser("evidence", help="evidence plane operations")
     evidence_sub = evidence.add_subparsers(dest="evidence_command", required=True)
@@ -1529,13 +1619,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     affected = evidence_sub.add_parser(
         "affected",
-        help="list affected clients for a model, policy, use case, or source",
+        help="list affected clients for a model, policy, use case, or source, or work produced under a previous definition",
     )
     affected.add_argument("--db", default="kognita.db", help="store path or URL")
     affected.add_argument("--model", default="", help="model version, name, or card")
     affected.add_argument("--policy", default="", help="policy id")
     affected.add_argument("--usecase", default="", help="use case id")
     affected.add_argument("--source", default="", help="source id")
+    affected.add_argument(
+        "--definition", default="", help="governed term or its definition reference",
+    )
     affected.add_argument(
         "--from",
         dest="start",
