@@ -167,3 +167,11 @@ class FailureMode(str, Enum):
 
     FAIL_CLOSED = "FAIL_CLOSED"
     DEGRADED = "DEGRADED"
+
+
+class StaleAction(str, Enum):
+    """How a use case handles stale facts."""
+
+    REFRESH = "REFRESH"
+    SUPPRESS = "SUPPRESS"
+    WARN = "WARN"

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Typed, retained claim records with evidenced release checks, guarded fact relabelling, reconstruction and claims CLI inspection.
 
+- Fact contracts, policy freshness thresholds, fail-closed refresh and suppression, explicit stale warnings, research lifecycle checks, and retained admission evidence.
+
 ## [0.5.2] - 2026-10-20
 
 ### Documentation

@@ -392,3 +392,40 @@ Successful RM releases appear in `kognita evidence reconstruct`.
 
 Inspect records with `kognita claims show <claim_id> --db <path>` or
 `kognita claims list --client <id> --interaction <id> --db <path>`.
+
+## Fact freshness
+
+`Fact` records a value, source, owner, timestamp, classification, entitlement,
+and freshness threshold. `admit_fact` returns `(fact_or_none, warning)` and
+requires a session, evidence writer, retention store and correlation id.
+`UseCase.stale_action` defaults to `StaleAction.SUPPRESS`. `REFRESH` calls a
+supplied refresher and checks its result again; a missing or failed refresher
+suppresses the fact. `WARN` admits stale facts with an explicit warning flag.
+Expired, superseded or not-yet-effective research is always withheld.
+
+Policy files may contain a top-level freshness mapping (optionally beside a
+`rules:` list):
+
+```yaml
+freshness:
+  positions: 5m
+  house_view: 7d
+  market_prices: 30s
+  kyc: 365d
+  suitability: 180d
+```
+
+Thresholds accept seconds as numbers, or `s`, `m`, `h`, `d` suffixes. Load them
+with `read_policy_set`, then pass
+`{rule.data_type: rule for rule in policies.freshness}` to `admit_fact` or
+`is_stale`. Python callers can supply `FreshnessRule` with a `timedelta`
+`max_age` or a callable `rule(fact, now)` that must return exactly `True` for a
+fresh fact. A fact's own threshold can tighten policy. Unknown data types,
+missing timestamps, naive dates and failed rules count as stale.
+
+Callers supply the authoritative data type and, for research, its
+`ResearchLifecycle`. This gate checks freshness and contract completeness;
+existing access controls still authorize the fact's entitlement. Each admission
+records a `RETRIEVAL` event with `action: FACT_ADMISSION`, a reason code, admission
+and warning flags, and a content hash. Fact and research content live in the
+retention store, including the original and refreshed fact when applicable.

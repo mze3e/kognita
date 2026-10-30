@@ -39,6 +39,7 @@ from kognita.vocabulary import (
     Classification,
     EventType,
     Outcome,
+    StaleAction,
 )
 
 
@@ -537,6 +538,10 @@ class UseCase(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     usecase_id: str = Field(index=True)
     deployment_mode: str | None = None
+
+    stale_action: StaleAction = Field(
+        default=StaleAction.SUPPRESS, sa_column_kwargs={"server_default": "SUPPRESS"}
+    )
     version: int = 1
     record: dict[str, Any] = Field(
         default_factory=dict, sa_column=Column(JSON, nullable=False)
@@ -892,6 +897,11 @@ def usecase_content(row: UseCase) -> dict[str, Any]:
     start = as_utc(row.effective_from)
     return {
         "usecase_id": row.usecase_id,
+        # Preserve hashes of older rows whose implicit action was SUPPRESS.
+        **(
+            {"stale_action": row.stale_action}
+            if row.stale_action != StaleAction.SUPPRESS else {}
+        ),
         "version": row.version,
         "record": row.record,
         "effective_from": start.isoformat() if start else None,
