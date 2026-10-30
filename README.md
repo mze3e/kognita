@@ -501,7 +501,8 @@ and `check_independence`. A verifier has its own id, agent identity, model,
 model version, and provider. Register it before it can record a
 `ValidatorStatus` for a claim. `verify_claim` appends a `CLAIM_VERIFIED` event
 and pins both the producer model and the verifier model in that event and in
-the retention store.
+the retention store. Reconstruction also checks the retained verifier identity
+against its recorded hash.
 
 At tier 2 and above, the use case `verifier` field must name that registered
 verifier. Material release is denied when the field is missing, names an

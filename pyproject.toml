@@ -201,6 +201,7 @@ source_modules = [
     "kognita.tools",
     "kognita.usecases",
     "kognita.vectors",
+    "kognita.verification",
     "kognita.vocabulary",
 ]
 forbidden_modules = [

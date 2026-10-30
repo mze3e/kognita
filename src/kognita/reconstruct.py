@@ -62,7 +62,7 @@ QUESTIONS: tuple[str, ...] = (
 )
 
 _PIN_HASH_KEYS = ("prompt_hash", "response_hash", "reasoning_trace")
-_RETAINED_HASH_KEYS = ("rendered_hash", "diff_hash", "packet_hash", "claim_hash")
+_RETAINED_HASH_KEYS = ("rendered_hash", "diff_hash", "packet_hash", "claim_hash", "verifier_hash")
 _OK_PIN_STATUSES = frozenset({"matches", "retained", "erased", "empty", "recorded"})
 
 
