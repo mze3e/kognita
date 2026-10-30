@@ -552,6 +552,10 @@ class UseCase(SQLModel, table=True):
         default=None, sa_column=_nullable_utc_column()
     )
 
+    @property
+    def approved_sources(self) -> tuple[str, ...]:
+        return tuple(self.record.get("approved_sources") or ())
+
     def is_effective(self, at: datetime) -> bool:
         """Whether this version is in force at ``at`` (half-open interval)."""
         start = as_utc(self.effective_from)

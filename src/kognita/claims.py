@@ -133,17 +133,24 @@ def release_claim(
     evidence: _EvidenceWriter,
     interaction_id: str,
     audience: str = "rm",
+    usecase_id: str = "",
 ) -> _Check:
     """Check the stored label and evidence an RM or client release decision."""
     claim = _get(session, claim_id)
     reason = "C1-LABELLED" if claim.claim_type is not None else "C1-UNLABELLED"
     if audience not in ("rm", "client"):
         reason = "C1-AUDIENCE"
+    if reason == "C1-LABELLED":
+        from kognita.sources import check_grounding
+        grounding = check_grounding(session, claim, usecase_id=usecase_id,
+                                    evidence=evidence, interaction_id=interaction_id)
+        if grounding.result != _CheckResult.PASS:
+            reason = grounding.check
     passed = reason == "C1-LABELLED"
-    check = _Check(check=reason, regime="INTERNAL", result=_CheckResult.PASS if passed else _CheckResult.FAIL, citation="Claims: every released claim must be typed")
+    check = _Check(check=reason, regime="INTERNAL", result=_CheckResult.PASS if passed else _CheckResult.FAIL, citation="Claims: every released claim must be typed and cite a current approved source")
     digest = _RetentionStore().retain_value(session, _asdict(claim), kind="claim", correlation_id=interaction_id)
     evidence.emit(session, correlation_id=interaction_id, event_type=_EventType.CLAIM,
-                  payload={"action": "release", "claim_id": claim_id, "claim_hash": digest, "audience": audience, "allowed": passed, "reason": reason})
+                  payload={"action": "release", "claim_id": claim_id, "claim_hash": digest, "audience": audience, "usecase_id": usecase_id, "allowed": passed, "reason": reason})
     return check
 
 
