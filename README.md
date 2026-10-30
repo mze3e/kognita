@@ -379,3 +379,16 @@ kognita.adapters     provider-backed embedders                 [openai]
 **Alpha.** v0.5.2 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 MIT licensed.
+
+### Typed claims
+
+`kognita.claims` provides `Claim`, `ClaimType`, `ValidatorStatus` and the
+`record_claim`, `release_claim`, `relabel_claim`, `list_claims` functions.
+Record claims with a session, an evidence writer and an `interaction_id`. Content
+is retained separately from its hash in the evidence chain. Release checks load
+the stored claim by ID and deny unlabelled claims for RM and client audiences.
+Relabelling as a verified fact requires both source references and VERIFIED status.
+Successful RM releases appear in `kognita evidence reconstruct`.
+
+Inspect records with `kognita claims show <claim_id> --db <path>` or
+`kognita claims list --client <id> --interaction <id> --db <path>`.

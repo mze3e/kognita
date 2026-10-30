@@ -163,6 +163,7 @@ source_modules = [
     "kognita.broker",
     "kognita.canonical",
     "kognita.classify",
+    "kognita.claims",
     "kognita.communication",
     "kognita.credentials",
     "kognita.db",

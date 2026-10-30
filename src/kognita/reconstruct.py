@@ -62,7 +62,7 @@ QUESTIONS: tuple[str, ...] = (
 )
 
 _PIN_HASH_KEYS = ("prompt_hash", "response_hash")
-_RETAINED_HASH_KEYS = ("rendered_hash", "diff_hash", "packet_hash")
+_RETAINED_HASH_KEYS = ("rendered_hash", "diff_hash", "packet_hash", "claim_hash")
 _OK_PIN_STATUSES = frozenset({"matches", "retained", "erased", "empty", "recorded"})
 
 
@@ -137,8 +137,20 @@ def reconstruct(session: Session, interaction_id: str) -> dict[str, Any]:
 
     pins = _pins(session, decisions, selected)
     chain_intact = not any(item["kind"] == "chain" for item in findings)
+    claims = []
+    from dataclasses import asdict
+    from kognita.claims import _read
+    for event in selected:
+        payload = _payload(event)
+        if _is(event, EventType.CLAIM) and payload.get("action") == "release" and payload.get("allowed") is True and payload.get("audience") == "rm":
+            try:
+                claims.append(asdict(_read(session, event)))
+            except ValueError as exc:
+                claims.append({"claim_id": payload.get("claim_id"), "content": "unavailable"})
+                findings.append({"kind": "claim", "message": str(exc)})
     report = {
         "kognita_reconstruction": 1,
+        "claims": claims,
         "interaction_id": interaction_id,
         "chain": {"intact": chain_intact, "events_checked": checked},
         "findings": findings,
@@ -175,6 +187,12 @@ def render_reconstruction(report: dict[str, Any]) -> str:
         lines.append(
             f"Evidence chain: not intact, {chain.get('events_checked', 0)} events checked."
         )
+    lines.append("")
+    lines.append("Claims the RM saw")
+    for claim in report.get("claims", []):
+        lines.append(f"- {claim.get('claim_id')}: {claim.get('claim', 'content unavailable')} ({claim.get('claim_type', 'unavailable')})")
+    if not report.get("claims"):
+        lines.append("not recorded")
     lines.append("")
     lines.append("Findings")
     findings = report.get("findings") or []
