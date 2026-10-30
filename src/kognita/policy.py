@@ -133,6 +133,7 @@ _SCHEMAS: dict[str, dict[str, Any]] = {
             "lanes",
             "required_disclosures",
             "prohibited_claims",
+            "sensitive",
             "approved_tones",
             "permitted_jurisdictions",
             "permitted_channels",
@@ -941,6 +942,7 @@ def _content_policy_messages(rule: dict[str, Any]) -> list[str]:
     substantive = (
         "sources",
         "required_disclosures",
+        "sensitive",
         "prohibited_claims",
         "approved_tones",
         "permitted_jurisdictions",
@@ -950,6 +952,12 @@ def _content_policy_messages(rule: dict[str, Any]) -> list[str]:
     )
     if not any(key in rule for key in substantive):
         messages.append("a content policy names at least one constraint")
+    if "sensitive" in rule:
+        from kognita.sensitive import _categories
+        try:
+            _categories(rule["sensitive"])
+        except Exception:
+            messages.append("sensitive must list known special categories")
     levels = rule.get("levels")
     if isinstance(levels, list):
         unknown = [item for item in levels if item not in COMMUNICATION_LEVELS]

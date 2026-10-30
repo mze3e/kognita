@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Govern learning export requests with explicit controls, distinct approval, persistent client and record exclusions, and retained decision evidence, available through `kognita export request` and `kognita export exclude`.
 
+- Sensitive-category gates, pluggable detection and vulnerability signals requiring a recorded RM decision before treatment changes.
+
 ## [0.5.2] - 2026-10-20
 
 ### Documentation

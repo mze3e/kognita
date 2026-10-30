@@ -149,6 +149,10 @@ def reconstruct(session: Session, interaction_id: str) -> dict[str, Any]:
                 claims.append({"claim_id": payload.get("claim_id"), "content": "unavailable"})
                 findings.append({"kind": "claim", "message": str(exc)})
     report = {
+        "sensitive": [
+            _payload(event) for event in selected
+            if _payload(event).get("action") in ("VULNERABILITY_FLAG", "VULNERABILITY_TREATMENT")
+        ],
         "kognita_reconstruction": 1,
         "claims": claims,
         "interaction_id": interaction_id,
@@ -194,6 +198,8 @@ def render_reconstruction(report: dict[str, Any]) -> str:
     if not report.get("claims"):
         lines.append("not recorded")
     lines.append("")
+    for item in report.get("sensitive", []):
+        lines.append(f"{item.get('action')}: {item.get('flag_id')}, content {item.get('content_hash')}")
     lines.append("Findings")
     findings = report.get("findings") or []
     if not findings:
@@ -845,7 +851,8 @@ def _content_hashes(events: list[EvidenceEvent]) -> list[str]:
             if isinstance(value, str) and value and value not in seen:
                 seen.add(value)
                 found.append(value)
-        if _is(event, EventType.CLIENT_COMMUNICATION):
+        if (_is(event, EventType.CLIENT_COMMUNICATION)
+                or payload.get("action") in ("VULNERABILITY_FLAG", "VULNERABILITY_TREATMENT")):
             value = payload.get("content_hash")
             if isinstance(value, str) and value and value not in seen:
                 seen.add(value)

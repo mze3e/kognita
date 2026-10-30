@@ -362,6 +362,7 @@ class UseCaseSpec:
     human_decision_points: tuple[str, ...] = ()
     client_segments: tuple[str, ...] = ()
     investor_impact: str = ""
+    permitted_sensitive: set[str] = field(default_factory=set)
     permitted_data_classes: tuple[str, ...] = ()
     approved_models: tuple[str, ...] = ()
     approved_sources: tuple[str, ...] = ()
@@ -501,6 +502,7 @@ class RegisteredUseCase:
     intended_use: str
     record: dict[str, Any]
     stale_action: StaleAction = StaleAction.SUPPRESS
+    permitted_sensitive: set[str] = field(default_factory=set)
     content_hash: str = ""
     approved_models: tuple[str, ...] = ()
     approved_sources: tuple[str, ...] = ()
@@ -991,6 +993,7 @@ def build_record(
         "human_decision_points": _sorted_texts(spec.human_decision_points),
         "client_segments": _sorted_texts(spec.client_segments),
         "investor_impact": spec.investor_impact,
+        "sensitive": sorted(spec.permitted_sensitive),
         "permitted_data_classes": _sorted_texts(spec.permitted_data_classes),
         "approved_models": _names(spec.approved_models),
         "approved_sources": _names(spec.approved_sources),
@@ -1080,6 +1083,7 @@ def from_record(
         jurisdiction=str(record.get("jurisdiction") or ""),
         client_population=str(record.get("client_population") or ""),
         intended_use=str(record.get("intended_use") or ""),
+        permitted_sensitive=set(record.get("sensitive", [])),
         record=dict(record),
         content_hash=content_hash,
         approved_models=tuple(record.get("approved_models") or ()),
@@ -1103,6 +1107,8 @@ def registration_citations(
     register: UseCaseRegister,
 ) -> tuple[str, ...]:
     """Refusals that stop a use case being registered at all."""
+    from kognita.sensitive import _categories
+    _categories(spec.permitted_sensitive)
     found = list(vocabulary_citations(spec))
     if found:
         return tuple(found)

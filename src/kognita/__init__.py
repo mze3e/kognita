@@ -122,6 +122,10 @@ from kognita.models import (
 )
 from kognita.replay import replay_decision
 from kognita.reconstruct import reconstruct, render_reconstruction
+from kognita.sensitive import (
+    VulnerabilityFlag, detect_sensitive, check_sensitive,
+    raise_vulnerability_flag, change_treatment,
+)
 from kognita.retention import RetentionStore
 from kognita.retrieval import Retrieved, index_item, reindex, retrieve
 from kognita.rules import CORE_RULES, build_registry, rule
@@ -201,6 +205,8 @@ __all__ = [
     "request_export",
     "add_exclusion",
     "list_exclusions",
+    "VulnerabilityFlag", "detect_sensitive", "check_sensitive",
+    "raise_vulnerability_flag", "change_treatment",
     # decisions
     "Envelope",
     "Check",
