@@ -165,6 +165,7 @@ source_modules = [
     "kognita.classify",
     "kognita.claims",
     "kognita.calculations",
+    "kognita.verification",
     "kognita.sources",
     "kognita.communication",
     "kognita.credentials",

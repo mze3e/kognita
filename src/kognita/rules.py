@@ -378,6 +378,27 @@ def _content_check(
     )
 
 
+def _validator_audience_check(policy: Any, rule: dict, context: RuleContext) -> Check:
+    from kognita.verification import _normalize_map, _reaches
+    status = context.attributes.get("validator_status")
+    audience = context.attributes.get("audience")
+    ok = _reaches(
+        status,
+        audience if isinstance(audience, str) else "",
+        _normalize_map(rule.get("validator_audiences")),
+    )
+    return _content_check(
+        policy,
+        "CONTENT_POLICY: validator status",
+        ok=ok,
+        detail=(
+            "validator status is allowed for this audience"
+            if ok
+            else "validator status is not allowed for this audience"
+        ),
+    )
+
+
 @rule("CONTENT_POLICY")
 def content_policy(policy: Any, context: RuleContext) -> list[Check]:
     """Check disclosures, claims, tone, risk language, attribution, and jurisdiction.
@@ -392,13 +413,15 @@ def content_policy(policy: Any, context: RuleContext) -> list[Check]:
          "permitted_jurisdictions": ["SG"],
          "permitted_channels": ["secure message"],
          "require_risk_language": true,
-         "require_research_attribution": true}
+         "require_research_attribution": true,
+         "validator_audiences": {"VERIFIED": ["client", "rm"], "INFERRED": ["rm"]}}
 
     A level or lane list that does not include this send means the rule is not
     in force for it. An empty allowlist fails closed. A missing content body
     fails closed. The attributes are ``communication_level``, ``lane``,
     ``content``, ``tone``, ``channel``, ``recipient_jurisdiction``,
-    ``risk_language``, and ``research_attribution``.
+    ``risk_language``, ``research_attribution``, ``validator_status``, and
+    ``audience``.
     """
     rule = policy.rule if isinstance(policy.rule, dict) else {}
     substantive = (
@@ -411,6 +434,7 @@ def content_policy(policy: Any, context: RuleContext) -> list[Check]:
         "permitted_channels",
         "require_risk_language",
         "require_research_attribution",
+        "validator_audiences",
     )
     if not any(key in rule for key in substantive):
         return [
@@ -433,6 +457,10 @@ def content_policy(policy: Any, context: RuleContext) -> list[Check]:
         lane = str(context.attributes.get("lane") or "client")
         if parsed is None or lane not in parsed:
             return []
+    if "validator_audiences" in rule and not any(
+        key in rule for key in substantive if key != "validator_audiences"
+    ):
+        return [_validator_audience_check(policy, rule, context)]
     content = context.attributes.get("content")
     if not isinstance(content, str):
         return [
@@ -444,6 +472,8 @@ def content_policy(policy: Any, context: RuleContext) -> list[Check]:
             )
         ]
     checks: list[Check] = []
+    if "validator_audiences" in rule:
+        checks.append(_validator_audience_check(policy, rule, context))
     if "sources" in rule:
         permitted = _texts(rule.get("sources"))
         cited = context.attributes.get("source_system")

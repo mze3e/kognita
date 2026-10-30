@@ -388,6 +388,7 @@ Record claims with a session, an evidence writer and an `interaction_id`. Conten
 is retained separately from its hash in the evidence chain. Release checks load
 the stored claim by ID and deny unlabelled claims for RM and client audiences.
 Relabelling as a verified fact requires both source references and VERIFIED status.
+Validator status limits RM and client audiences again, as described under Verification gate.
 Successful RM releases appear in `kognita evidence reconstruct`.
 
 Inspect records with `kognita claims show <claim_id> --db <path>` or
@@ -465,6 +466,38 @@ a registered service whose covered figures include every detected keyword.
 `check_calculation` is the same gate. A missing, unknown, or non-covering
 service fails closed. The model may describe a result. The cited service is
 what makes the figure releasable.
+
+### Verification gate
+
+`kognita.verification` provides `Verifier`, `register_verifier`, `verify_claim`,
+and `check_independence`. A verifier has its own id, agent identity, model,
+model version, and provider. Register it before it can record a
+`ValidatorStatus` for a claim. `verify_claim` appends a `CLAIM_VERIFIED` event
+and pins both the producer model and the verifier model in that event and in
+the retention store.
+
+At tier 2 and above, the use case `verifier` field must name that registered
+verifier. Material release is denied when the field is missing, names an
+unknown verifier, or the claim has no successful verification from that
+verifier. The check reads the tier and the verifier id from the stored use
+case. `verify_claim` does not accept a caller-supplied tier or permit flag.
+
+Independence is denied when the verifier's agent identity is the producer, or
+when the model, model version, or provider matches the producer. Comparison
+trims and case-folds, so a space or a capital letter is not a different model.
+Tier 1 can allow a shared model, version, or provider only when the use case
+record sets `permit_same_model` to boolean true. The verifier still cannot
+verify its own claims. A later release repeats the independence check against
+the current tier, so a tier increase withdraws an earlier exception.
+
+With no `validator_audiences` map, only `VERIFIED` reaches a client, and only
+`VERIFIED` or `INFERRED` reaches an RM. `UNVERIFIED`, `CONFLICTING`, `STALE`,
+and `BLOCKED` reach neither. A `CONTENT_POLICY` rule may set
+`validator_audiences` to a map from those statuses to `rm` and `client`. When
+more than one such rule is in force, a status reaches an audience only if
+every rule allows it. Unknown statuses and audiences do not grant access.
+Release at tier 2 and above uses the verification record, so editing the claim
+status after verification does not widen the audience.
 
 ## Learning export controls
 

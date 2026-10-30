@@ -142,6 +142,7 @@ _SCHEMAS: dict[str, dict[str, Any]] = {
             "description",
             "require_risk_language",
             "require_research_attribution",
+            "validator_audiences",
         ),
     },
     "AI_DISCLOSURE": {
@@ -949,6 +950,7 @@ def _content_policy_messages(rule: dict[str, Any]) -> list[str]:
         "permitted_channels",
         "require_risk_language",
         "require_research_attribution",
+        "validator_audiences",
     )
     if not any(key in rule for key in substantive):
         messages.append("a content policy names at least one constraint")
@@ -975,6 +977,31 @@ def _content_policy_messages(rule: dict[str, Any]) -> list[str]:
         value = rule.get(field)
         if isinstance(value, list) and not value:
             messages.append(f"{field} must name at least one value")
+    messages.extend(_validator_audience_messages(rule))
+    return messages
+
+
+def _validator_audience_messages(rule: dict[str, Any]) -> list[str]:
+    """Status audiences name a known status and only rm or client."""
+    if "validator_audiences" not in rule:
+        return []
+    mapping = rule.get("validator_audiences")
+    if not isinstance(mapping, dict) or not mapping:
+        return ["validator_audiences must map each status to a list of audiences"]
+    from kognita.claims import ValidatorStatus
+    known = {item.value for item in ValidatorStatus}
+    messages: list[str] = []
+    for key, value in mapping.items():
+        if key not in known:
+            messages.append(f"unknown validator status {key!r}")
+        if (
+            not isinstance(value, list)
+            or any(
+                not isinstance(item, str) or item.strip().casefold() not in {"rm", "client"}
+                for item in value
+            )
+        ):
+            messages.append("validator_audiences values must list rm, client, or both")
     return messages
 
 

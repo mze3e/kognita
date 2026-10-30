@@ -6,7 +6,7 @@ import json
 import pytest
 from sqlmodel import Session, select
 
-from kognita import Claim, ClaimType, Source, SourceRegister
+from kognita import Claim, ClaimType, Source, SourceRegister, ValidatorStatus
 from kognita.claims import record_claim, release_claim
 from kognita.db import create_all, make_engine
 from kognita.evidence import EvidenceWriter, verify_chain
@@ -52,7 +52,8 @@ def test_release(store, audience, change, usecase, system, version, reason):
     session, writer = store
     register_source(session, _source(**change), evidence=writer, interaction_id="setup")
     claim = Claim("c", "client", "Investment outlook", ClaimType.INFERENCE,
-                  source_system=system, source_record=version)
+                  source_system=system, source_record=version,
+                  validator_status=ValidatorStatus.VERIFIED)
     record_claim(session, claim, evidence=writer, interaction_id="i")
     check = release_claim(session, "c", usecase_id=usecase, audience=audience, evidence=writer, interaction_id="i")
     assert check.check == reason
@@ -130,7 +131,8 @@ def test_release_rechecks_lifecycle_and_pins_grounding(store):
     source = _source()
     register_source(session, source, evidence=writer, interaction_id="setup")
     claim = Claim("c", "client", "Outlook", ClaimType.INFERENCE,
-                  source_system="research", source_record="1")
+                  source_system="research", source_record="1",
+                  validator_status=ValidatorStatus.VERIFIED)
     record_claim(session, claim, evidence=writer, interaction_id="i")
     assert release_claim(session, "c", usecase_id="approved", evidence=writer, interaction_id="i").result == CheckResult.PASS
     grounding = next(e for e in session.exec(select(EvidenceEvent)) if e.payload.get("action") == "check_grounding")

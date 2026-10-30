@@ -31,9 +31,9 @@ def store(tmp_path):
         yield session, writer, path
 
 
-def _record(store, claim_type=ClaimType.INFERENCE):
+def _record(store, claim_type=ClaimType.INFERENCE, validator_status=ValidatorStatus.UNVERIFIED):
     session, writer, _ = store
-    claim = Claim("c1", "client1", "Client may be considering a sale", claim_type, source_system="crm", source_record="r1")
+    claim = Claim("c1", "client1", "Client may be considering a sale", claim_type, source_system="crm", source_record="r1", validator_status=validator_status)
     record_claim(session, claim, evidence=writer, interaction_id="i1")
     return claim
 
@@ -42,7 +42,11 @@ def _record(store, claim_type=ClaimType.INFERENCE):
 @pytest.mark.parametrize("typed", [True, False])
 def test_release(store, audience, typed):
     session, writer, _ = store
-    _record(store, ClaimType.INFERENCE if typed else None)
+    _record(
+        store,
+        ClaimType.INFERENCE if typed else None,
+        ValidatorStatus.VERIFIED if typed else ValidatorStatus.UNVERIFIED,
+    )
     check = release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1", audience=audience)
     assert check.result == (CheckResult.PASS if typed else CheckResult.FAIL)
     assert check.check == ("C1-LABELLED" if typed else "C1-UNLABELLED")
@@ -112,7 +116,7 @@ def test_retention_and_cli(store, capsys):
 
 def test_reconstruction_keeps_the_label_seen(store):
     session, writer, _ = store
-    _record(store)
+    _record(store, validator_status=ValidatorStatus.INFERRED)
     release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1")
     relabel_claim(session, "c1", ClaimType.VERIFIED_FACT, evidence=writer,
                   interaction_id="i1", source_system="crm", source_record="r1",
@@ -142,7 +146,7 @@ def test_invalid_labels_are_not_accepted(field, value):
 
 def test_list_includes_claims_released_on_another_interaction(store):
     session, writer, _ = store
-    claim = _record(store)
+    claim = _record(store, validator_status=ValidatorStatus.INFERRED)
     release_claim(session, "c1", evidence=writer, interaction_id="i2", usecase_id="u1")
     assert list_claims(session, interaction_id="i2") == [claim]
     assert reconstruct(session, "i2")["claims"][0]["claim_id"] == "c1"
