@@ -1685,6 +1685,22 @@ class Gateway:
         )
         card_id = "" if card is None else card.card_id
         entry = register.get(purpose) if usecases is not None else None
+        if _response_is_material(entry):
+            from kognita.claims import _material_texts, _release_covers
+            prose = _material_texts(restored_payload if restored_payload is not None else response_source)
+            if prose and deferred is not None:
+                delivery_checks.append(Check(
+                    check="C1-UNKNOWN",
+                    regime="INTERNAL",
+                    result=CheckResult.FAIL,
+                    citation="Claims: material content is released only with a recorded claim that was released",
+                ))
+            elif prose:
+                for text in prose:
+                    claim_check = self._store(lambda text=text: _release_covers(session, text, audience="rm"))
+                    if claim_check.result is not CheckResult.PASS:
+                        delivery_checks.append(claim_check)
+                        break
         if entry is not None and entry.approved_models and not card_id:
             delivery_checks.append(Check(check="USE_CASE_MODEL", regime="INTERNAL",
                 result=CheckResult.FAIL, citation=_served_model_citation(entry, model=served_name or "", version=served_version or "")))
@@ -1710,6 +1726,14 @@ class Gateway:
                 deferred.evaluation = evaluation
             return finish(_denied(evaluation))
         from kognita._limits import _minimize
+        from kognita.facts import _admit_observed
+        outbound = restored_payload if restored_payload is not None else restored
+        outbound = self._store(lambda: _admit_observed(
+            session, outbound, use_case=purpose, evidence=None if deferred is not None else self.evidence,
+            correlation_id=evaluation.request_id, now=now,
+        ))
+        if outbound is None:
+            outbound = {}
         minimization_evidence = self.evidence
         if deferred is not None:
             from types import SimpleNamespace
@@ -1719,7 +1743,7 @@ class Gateway:
 
             minimization_evidence = SimpleNamespace(emit=_capture_minimization)
         delivered = self._store(lambda: _minimize(
-            session, envelope, restored_payload if restored_payload is not None else restored,
+            session, envelope, outbound,
             minimization_evidence, _request_id=evaluation.request_id))
         return finish(
             GatewayResponse(
@@ -2161,6 +2185,7 @@ class Gateway:
                     "reasoning_trace": trace_hash,
                     "model_card": card_id,
                     "model_card_hash": card_hash,
+                    "standard_version": _standard_version(session, use_case, at),
                 },
             )
         )
@@ -2216,6 +2241,25 @@ def _reasoning_trace(payload: Mapping[str, Any] | None) -> str:
         if isinstance(block, dict) and block.get("type") == "reasoning":
             text(block.get("summary"))
     return "\n".join(parts)
+
+
+def _standard_version(session: Session, usecase_id: str, at: datetime | None) -> str:
+    from kognita.usecases import _standard_version as _in_force
+    return _in_force(session, usecase_id, at)
+
+
+def _response_is_material(entry: Any) -> bool:
+    """Tier 2 and above, and high-materiality use cases, release material output."""
+    if entry is None:
+        return False
+    tier = getattr(entry, "proposed_tier", 0)
+    if type(tier) is int and tier >= 2:
+        return True
+    from kognita.usecases import is_material
+    try:
+        return bool(is_material(entry))
+    except (TypeError, ValueError, AttributeError):
+        return True
 
 
 def _actor_type(agent_name: str | None, trigger: str | None) -> ActorType:

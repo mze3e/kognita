@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Release 0.6 "Claims" work: material claims are typed, grounded in approved sources, checked for calculation provenance, governed definitions and freshness, and verified by an independent verifier before they reach an RM or client. It also adds memory governance, learning export controls, sensitive-attribute and vulnerable-client safeguards, an evaluation evidence gate with fairness reporting, and retained reasoning traces. Fourteen of the seventeen 0.6 Definition of Done items are met; see docs/ROADMAP.md.
+Release 0.6 "Claims" work: material claims are typed, grounded in approved sources, checked for calculation provenance, governed definitions and freshness, and verified by an independent verifier before they reach an RM or client. It also adds memory governance, learning export controls, sensitive-attribute and vulnerable-client safeguards, an evaluation evidence gate with fairness reporting, and retained reasoning traces. All seventeen 0.6 Definition of Done items are met; see docs/ROADMAP.md.
 
 ### Added
 
+- Material gateway responses and house-view communications are released only when a recorded claim was released for that audience. The denial cites `C1-UNKNOWN`.
+- Retrieval and tool results admit fact-shaped values through `admit_fact`. Stale facts are refreshed, flagged, or removed according to the use case `stale_action` (default `SUPPRESS`).
+- Gateway `MODEL_CALL` events and governed tool outputs record the in-force `standard_version`. A caller-supplied version is ignored, and a closed standard is not the one recorded.
 - Govern working, relationship and institutional memory. Inferences become relationship records only after RM verification of a proposal. A Knowledge Lead approval issues a new effective-dated standard and deployment version. Outputs record `standard_version`.
 - Evaluation evidence gate for tier 2 and higher agents. `kognita eval record` stores agent, system, or model results, and `kognita agent deploy` refuses activation until an agent-level or system-level result for that agent version and model version meets every use-case `evaluation_thresholds` value. `kognita eval report` computes recommendation, contact, and prioritisation rates from origination evidence across bank-defined segments, including proxy attributes, and flags disparities above the threshold to the risk owner.
 - House-view change propagation. `supersede_source` records `SOURCE_SUPERSEDED` and sets dependent open recommendations and claims to `validator_status` `STALE`, which blocks release. `affected_by_source` and `kognita evidence affected --source <id>` list affected clients, previous recommendations, previous communications and outstanding opportunities. `kognita source register`, `supersede` and `list` manage the register.

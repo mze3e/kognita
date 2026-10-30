@@ -829,8 +829,8 @@ Reasoning transparency is necessary but not sufficient: a model's stated reasoni
 - A reasoning trace is never a basis for a decision: no policy may allow an action because the model's reasoning says it is permitted. Decisions stay on cited rules and verified claims
 
 ### Definition of Done
-- [ ] Claim provenance envelope on every material claim, reconstructable
-- [ ] Stale data refreshed, suppressed or flagged per policy; never silently used
+- [x] Claim provenance envelope on every material claim, reconstructable. A tier 2 or high-materiality gateway response, and a communication at house view or above, is refused with `C1-UNKNOWN` unless that text was recorded and released for the audience. `reconstruct` lists a released RM claim.
+- [x] Stale data refreshed, suppressed or flagged per policy; never silently used. Fact-shaped retrieval items and tool results call `admit_fact`. The use case `stale_action` defaults to `SUPPRESS`.
 - [x] Unlabelled claims blocked from RM and client
 - [x] Authoritative figures without a registered calculation service blocked
 - [x] Verification gate required at tier 2 and above, with statuses enforced
@@ -842,7 +842,7 @@ Reasoning transparency is necessary but not sufficient: a model's stated reasoni
 - [x] Exporting interactions for learning without approval is denied; exclusions hold
 - [x] A vulnerability flag cannot change treatment without RM review
 - [x] Fairness report produced across bank-defined segments, including proxy attributes
-- [ ] A learned change to a standard cannot take effect without Knowledge Lead approval; outputs record the standard version that produced them
+- [x] A learned change to a standard cannot take effect without Knowledge Lead approval; outputs record the standard version that produced them. Gateway `MODEL_CALL` events and governed tool outputs record the in-force `standard_version`. A caller-supplied version is not recorded.
 - [x] A figure using a governed term without citing the current registered definition is blocked
 - [x] A verifier on the same model or provider as the producer is denied
 - [x] Reasoning traces are retained where the provider returns them; a required trace that is missing is flagged; no policy decision cites a trace

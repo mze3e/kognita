@@ -407,6 +407,7 @@ class EgressGuard:
                 "prompt_hash": prompt_hash,
                 "model_card": card_id,
                 "model_card_hash": card_hash,
+                "standard_version": _standard_version(session, use_case),
                 **({"citation": citation} if citation else {}),
             },
         )
@@ -424,6 +425,11 @@ class EgressGuard:
                 "note": "Payload content is not copied to the evidence plane.",
             },
         )
+
+
+def _standard_version(session: Any, use_case: str) -> str:
+    from kognita.usecases import _standard_version as _in_force
+    return _in_force(session, use_case)
 
 
 def _retain_received(

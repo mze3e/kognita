@@ -774,6 +774,11 @@ def _with_checks(evaluation: Evaluation, extra: Sequence[Check]) -> Evaluation:
     )
 
 
+def _standard_version(session: Session, usecase_id: str, at: datetime) -> str:
+    from kognita.usecases import _standard_version as _in_force
+    return _in_force(session, usecase_id, at)
+
+
 def _call_actor(envelope: Envelope) -> tuple[ActorType, str]:
     """Who the tool evidence names.
 
@@ -811,6 +816,11 @@ def _release_tool(
         if action_id is not None:
             _finish_action(session, action_id, evidence,
                            _lifecycle=getattr(spec, '_backend_lifecycle', None))
+    from kognita.facts import _admit_observed
+    data = _admit_observed(
+        session, data, use_case=envelope.purpose, evidence=evidence,
+        correlation_id=evaluation.request_id, now=_at or evaluation.as_of,
+    )
     from kognita._isolation import _ingest
     _ingest(session, run, evidence, external=spec.external,
             client_data=spec.client_data or spec.classification in (Classification.C2, Classification.C3)
@@ -842,6 +852,7 @@ def _release_tool(
             "outcome": evaluation.outcome.value,
             "approval_required": evaluation.approval_required,
             "response_hash": response_hash,
+            "standard_version": _standard_version(session, envelope.purpose, _at or evaluation.as_of),
             **run_ref,
         },
     )
