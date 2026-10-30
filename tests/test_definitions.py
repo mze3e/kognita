@@ -46,6 +46,7 @@ def _claim(text, ref=None, claim_id="c1"):
     return Claim(
         claim_id, "client-1", text, ClaimType.INFERENCE,
         source_system="crm", source_record="r1", definition_ref=ref,
+        validator_status=ValidatorStatus.VERIFIED,
     )
 
 
@@ -133,6 +134,7 @@ def test_term_outside_the_claim_text_does_not_require_a_citation(store):
     claim = Claim(
         "c-calc", "client-1", "Balance grew", ClaimType.INFERENCE,
         source_system="crm", source_record="r1", calculation_method="AUM",
+        validator_status=ValidatorStatus.VERIFIED,
     )
     assert _release(store, claim).result == CheckResult.PASS
     session, _, _ = store
@@ -257,7 +259,8 @@ def test_ambiguous_current_versions_fail_closed(store):
     claim = _claim("VaR is 3", ("VaR", "1"), claim_id="var")
     assert check_definition(session, claim).check == "C12-AMBIGUOUS"
     assert check_definition(session, _claim("VaR is 3", ("VaR", "2"), claim_id="var2")).check == "C12-AMBIGUOUS"
-    assert _release(store, claim).check == "C12-AMBIGUOUS"
+    # No figure in the text, so the calculation gate does not answer first.
+    assert _release(store, _claim("VaR rose", ("VaR", "1"), claim_id="var3")).check == "C12-AMBIGUOUS"
     with pytest.raises(ValueError, match="C12-AMBIGUOUS"):
         affected_by_definition(session, "VaR")
 
