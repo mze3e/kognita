@@ -11,7 +11,7 @@
 
 The frameworks overlap heavily. Statuses below are measured against the current roadmap.
 
-The 0.6 claim controls named in those rows are in this working tree. The checklist, and the module and test for each item, is the 0.6 Definition of Done in [ROADMAP.md](ROADMAP.md). The package version is still 0.5.2. Fairness reporting includes proxy attributes. A disparity is flagged to the risk owner and is not registered as a monitored metric.
+The 0.6 claim controls named in those rows ship in 0.6.0. The checklist, and the module and test for each item, is the 0.6 Definition of Done in [ROADMAP.md](ROADMAP.md). Fairness reporting includes proxy attributes. A disparity is flagged to the risk owner and is not registered as a monitored metric.
 
 ## The Overarching Test
 

@@ -887,7 +887,7 @@ The invariants are importable, so external packs run them in their own repositor
 
 ## Known limitations
 
-Kognita is alpha. These are known limitations in v0.5.2. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
+Kognita is alpha. These are known limitations in v0.6.0. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
 
 - **The gateway refuses attachments.** File, image and audio content parts cannot be inspected locally, so they are refused (S5-UNSUPPORTED-CONTENT).
 - **Degraded-mode evidence is held in the gateway process.** Restarting before the evidence store recovers drops buffered evidence. `FAIL_CLOSED` is the default; MCP has no degraded mode.
@@ -921,7 +921,7 @@ The test every release is measured against:
 
 **0.5 "Agents, Authority and Fleets" is released as an alpha** in v0.5.1: authenticated agent identity and workload credentials, delegated authority with dual checks, autonomy levels with evidence-gated promotion and step-down, blast-radius limits, taint isolation, anomaly containment, agent delegation and fleet controls, reversibility, and a threat model. The 0.5 definition-of-done items are complete; v0.5.1 strengthens these controls. See Known limitations for remaining gaps.
 
-The 0.6 claims controls are in this tree: typed claims, freshness, approved sources, calculation provenance, verification, memory, learning exports, sensitive attributes, evaluation, and reasoning traces. The package on PyPI is still v0.5.2. See [Claims](#claims) and the [0.6 checklist](docs/ROADMAP.md).
+The 0.6 claims controls ship in v0.6.0: typed claims, freshness, approved sources, calculation provenance, verification, memory, learning exports, sensitive attributes, evaluation, and reasoning traces. See [Claims](#claims) and the [0.6 checklist](docs/ROADMAP.md).
 
 Planned, not yet built:
 
@@ -976,6 +976,6 @@ kognita.adapters     provider-backed embedders                 [openai]
 
 ## Status
 
-**Alpha.** v0.5.2 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+**Alpha.** v0.6.0 is on PyPI. See the [changelog](CHANGELOG.md) for what changed and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 MIT licensed.
