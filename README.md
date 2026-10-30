@@ -444,3 +444,30 @@ A `CONTENT_POLICY` YAML rule can further restrict citations with
 `sources: [research-id, policy-id]`, checked against the `source_system`
 attribute. This policy list supplements the use-case approval and lifecycle
 checks performed at claim release.
+
+## Learning export controls
+
+Interactions, RM edits and outcomes are excluded from external training,
+fine-tuning and evaluation by default. `ExportRequest` requires a purpose,
+anonymisation and validation evidence references, a requester and a distinct
+approver identity. The trusted calling application supplies these identities.
+`request_export` returns an approved record selection manifest or a denial with
+reason codes. It does not send data to a pipeline. Commit the transaction for
+both approved and denied requests to preserve their evidence.
+
+Select stored records with `interaction:<id>`, `review:<id>` or
+`outcome:<evidence sequence>`. `add_exclusion` and `list_exclusions` manage
+permanent client or record exclusions. Client exclusions cover all three record
+types; excluding an interaction also covers its reviews and outcomes. Missing
+or damaged exclusion evidence denies export. Request-local exclusions can only
+add restrictions. Request details are retained by hash; the chain records each
+decision and exclusion.
+
+The CLI commits approved and denied requests, prints a JSON decision, and returns
+exit code 0 for approval or 2 for denial. Repeat `--record` to select multiple
+records. Use `export exclude --record <id>` to persist a record exclusion.
+
+```sh
+kognita export exclude --db kognita.db --client client-1 --reason "Opt out" --actor operator
+kognita export request --db kognita.db --purpose "Quality evaluation" --anonymisation "control-17" --validation "report-42" --requester analyst --approval reviewer --record interaction:journey-1
+```

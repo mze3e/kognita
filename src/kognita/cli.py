@@ -1217,6 +1217,28 @@ def _cmd_evidence_authority(args):
 def _cmd_claims(args):
     from dataclasses import asdict
     from kognita.claims import list_claims
+def _cmd_export_request(args: argparse.Namespace) -> int:
+    from kognita.learning import ExportRequest, request_export
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    with session_scope(engine) as session:
+        result = request_export(
+            session,
+            ExportRequest(
+                purpose=args.purpose, anonymisation=args.anonymisation,
+                validation=args.validation, approval=args.approval,
+                requester=args.requester, records=tuple(args.record),
+            ),
+            evidence=EvidenceWriter(engine),
+        )
+    _print_json(result)
+    return 0 if result["action"] == "APPROVED" else 2
+
+
+def _cmd_export_exclude(args: argparse.Namespace) -> int:
+    from kognita.learning import Exclusion, add_exclusion
+
     engine = make_engine(args.db)
     create_all(engine)
     try:
@@ -1237,6 +1259,19 @@ def _cmd_claims(args):
         print(canonical_json(asdict(claims[0])))
     else:
         print(canonical_json([asdict(c) for c in claims]))
+            exclusion = add_exclusion(
+                session,
+                Exclusion(reason=args.reason, client_id=args.client, record_id=args.record),
+                evidence=EvidenceWriter(engine), actor_id=args.actor,
+            )
+    except ValueError as exc:
+        _print_json({"action": "DENIED", "reason_codes": [str(exc)]})
+        return 2
+    _print_json({
+        "action": "EXCLUDED", "client_id": exclusion.client_id,
+        "record_id": exclusion.record_id, "reason": exclusion.reason,
+        "recorded_at": exclusion.recorded_at.isoformat(),
+    })
     return 0
 
 
@@ -1253,6 +1288,24 @@ def build_parser() -> argparse.ArgumentParser:
     deploy.add_argument("--db", default="kognita.db")
     deploy.add_argument("--actor", default="", help="local operator identity; defaults to the manifest owner")
     deploy.set_defaults(func=_agent_deploy)
+
+    learning_export = sub.add_parser("export", help="govern record selection for learning")
+    export_sub = learning_export.add_subparsers(dest="export_command", required=True)
+    export_request = export_sub.add_parser("request", help="request an evidenced selection manifest")
+    export_request.add_argument("--db", default="kognita.db", help="store path or URL")
+    for control in ("purpose", "anonymisation", "validation", "approval", "requester"):
+        export_request.add_argument(f"--{control}", default="")
+    export_request.add_argument("--record", action="append", default=[], help="record id (repeatable)")
+    export_request.set_defaults(func=_cmd_export_request)
+
+    export_exclude = export_sub.add_parser("exclude", help="permanently exclude a client or record")
+    export_exclude.add_argument("--db", default="kognita.db", help="store path or URL")
+    target = export_exclude.add_mutually_exclusive_group(required=True)
+    target.add_argument("--client", default="")
+    target.add_argument("--record", default="")
+    export_exclude.add_argument("--reason", required=True)
+    export_exclude.add_argument("--actor", required=True)
+    export_exclude.set_defaults(func=_cmd_export_exclude)
 
     doctor = sub.add_parser("doctor", help="report installed extras and store health")
     doctor.add_argument("--db", help="optional store to check the evidence chain of")

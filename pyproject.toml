@@ -176,6 +176,7 @@ source_modules = [
     "kognita.gateway",
     "kognita.governance",
     "kognita.interaction",
+    "kognita.learning",
     "kognita.intervention",
     "kognita.mcp",
     "kognita.origination",

@@ -101,6 +101,13 @@ from kognita.governance import (
     resolve_outcome,
     supersede_policy,
 )
+from kognita.learning import (
+    ExportRequest,
+    Exclusion,
+    request_export,
+    add_exclusion,
+    list_exclusions,
+)
 from kognita.models import (
     Agent,
     Approval,
@@ -189,6 +196,11 @@ __all__ = [
     "StaleAction",
     "admit_fact",
     "is_stale",
+    "ExportRequest",
+    "Exclusion",
+    "request_export",
+    "add_exclusion",
+    "list_exclusions",
     # decisions
     "Envelope",
     "Check",
