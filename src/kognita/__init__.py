@@ -113,6 +113,17 @@ from kognita.learning import (
     add_exclusion,
     list_exclusions,
 )
+from kognita.memory import (
+    MemoryRecord,
+    MemoryScope,
+    Standard,
+    approve_standard,
+    current_standard,
+    propose_memory,
+    propose_standard,
+    verify_memory,
+    write_memory,
+)
 from kognita.models import (
     Agent,
     Approval,
@@ -213,6 +224,15 @@ __all__ = [
     "request_export",
     "add_exclusion",
     "list_exclusions",
+    "MemoryRecord",
+    "MemoryScope",
+    "Standard",
+    "write_memory",
+    "propose_memory",
+    "verify_memory",
+    "propose_standard",
+    "approve_standard",
+    "current_standard",
     "VulnerabilityFlag", "detect_sensitive", "check_sensitive",
     "raise_vulnerability_flag", "change_treatment",
     # decisions
