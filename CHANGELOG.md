@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sensitive-category gates, pluggable detection and vulnerability signals requiring a recorded RM decision before treatment changes.
 
+- Retained provider reasoning traces, reconstruction as the model's own account, required-trace risk review, and rejection of trace-based policy rules.
+
 ## [0.5.2] - 2026-10-20
 
 ### Documentation

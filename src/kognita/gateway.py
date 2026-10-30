@@ -1634,8 +1634,10 @@ class Gateway:
             # may deliver; the retained response is screened on recovery.
             from kognita.review import _criteria_at, CITE_HOLD
             criteria = _criteria_at(session, purpose, now)
-            held = (None if criteria is None or
-                (criteria.record or {}).get("timing") == "after delivery" else CITE_HOLD)
+            entry = register.get(purpose)
+            trace_required = bool(entry and entry.require_reasoning_trace and entry.proposed_tier >= 3)
+            held = (None if not trace_required and (criteria is None or
+                (criteria.record or {}).get("timing") == "after delivery") else CITE_HOLD)
         if held:
             delivery_checks.append(Check(check="REVIEW", regime="INTERNAL",
                 result=CheckResult.FAIL, citation=held))
@@ -2115,6 +2117,11 @@ class Gateway:
                 use_case=use_case,
                 correlation_id=evaluation.request_id,
             )
+        trace = _reasoning_trace(response_payload) if sent else ""
+        trace_hash = store.retain_text(
+            session, trace, kind="reasoning_trace", use_case=use_case,
+            correlation_id=evaluation.request_id,
+        ) if trace else ""
         common: dict[str, Any] = {
             "delegation_id": evaluation.envelope.delegation_id,
             "destination": self.upstream,
@@ -2151,6 +2158,7 @@ class Gateway:
                     "model_version": model_version,
                     "prompt_template_version": prompt_template_version,
                     "prompt_hash": prompt_hash,
+                    "reasoning_trace": trace_hash,
                     "model_card": card_id,
                     "model_card_hash": card_hash,
                 },
@@ -2170,6 +2178,44 @@ class Gateway:
                 },
             )
         )
+
+
+def _reasoning_trace(payload: Mapping[str, Any] | None) -> str:
+    """Extract provider accounts only from documented response locations."""
+    parts: list[str] = []
+
+    def text(value: Any) -> None:
+        if isinstance(value, str) and value.strip():
+            parts.append(value)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    text(item.get("text"))
+        elif isinstance(value, dict):
+            text(value.get("summary"))
+            text(value.get("text"))
+
+    def blocks(value: Any) -> list[Any]:
+        return value if isinstance(value, list) else []
+
+    def account(value: Any) -> None:
+        if isinstance(value, dict):
+            text(value.get("reasoning"))
+            text(value.get("reasoning_content"))
+
+    if not payload:
+        return ""
+    account(payload)
+    for choice in blocks(payload.get("choices")):
+        if isinstance(choice, dict):
+            account(choice.get("message"))
+    for block in blocks(payload.get("content")):
+        if isinstance(block, dict) and block.get("type") == "thinking":
+            text(block.get("thinking"))
+    for block in blocks(payload.get("output")):
+        if isinstance(block, dict) and block.get("type") == "reasoning":
+            text(block.get("summary"))
+    return "\n".join(parts)
 
 
 def _actor_type(agent_name: str | None, trigger: str | None) -> ActorType:

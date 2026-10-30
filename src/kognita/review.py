@@ -946,15 +946,33 @@ def screen_interaction(
     }
 
 
+def _missing_reasoning_trace(session, entry, payload):
+    if not (entry and entry.require_reasoning_trace and entry.proposed_tier >= 3):
+        return False
+    from kognita.retention import RetentionStore
+    from kognita.canonical import hash_text
+    digest = payload.get("reasoning_trace")
+    if not isinstance(digest, str) or not digest:
+        return True
+    trace = RetentionStore().read(session, digest)
+    return not trace or not trace.strip() or hash_text(trace) != digest
+
+
 def _screen_retained_response(session, evaluation, *, evidence, response_text, output_hash="", interaction_id=None, now=None, _register=None):
     """Screen responses for use cases with a configured review obligation."""
     at = now or evidence.clock()
     register = _register or load_register(session, as_of=at)
     entry = register.get(evaluation.envelope.purpose)
+    calls = session.exec(select(EvidenceEvent).where(
+        EvidenceEvent.correlation_id == evaluation.request_id,
+        EvidenceEvent.event_type == EventType.MODEL_CALL)).all()
+    calls = [call for call in calls if not output_hash or _payload(call).get("response_hash") == output_hash]
+    missing_trace = any(_missing_reasoning_trace(session, entry, _payload(call)) for call in calls)
     # An explicit human review/approval gate requires risk screening even if
     # its criteria are missing. Missing criteria enter the before-delivery queue.
     if (_criteria_at(session, evaluation.envelope.purpose, at) is None
-            and (entry is None or entry.approval_gate == "none")):
+            and (entry is None or entry.approval_gate == "none")
+            and not missing_trace):
         return None
     from kognita.interaction import open_interaction, attach
     ident = interaction_id or evaluation.request_id
@@ -1107,6 +1125,7 @@ def enqueue_for_review(
             "action": "QUEUED",
             "interaction_id": interaction.id,
             "usecase_id": interaction.use_case,
+            "risk_owner": entry.risk_owner if entry is not None else "",
             "risk_tier": tier,
             "risk": risk,
             "timing": when,
@@ -1369,6 +1388,9 @@ def _screen_one(
         if interaction.use_case
         else None
     )
+    if (event is not None and event.event_type == EventType.MODEL_CALL
+            and _missing_reasoning_trace(session, entry, payload)):
+        reasons.append("REASONING_TRACE_MISSING: required model account not returned")
     rate = float(entry.review_sampling_rate) if entry is not None else None
     criteria_version = criteria.version if criteria is not None else 0
     high = bool(reasons)
@@ -1417,6 +1439,7 @@ def _screen_one(
         "action": "SCREENED",
         "interaction_id": interaction.id,
         "usecase_id": interaction.use_case,
+        "risk_owner": entry.risk_owner if entry is not None else "",
         "risk_tier": entry.proposed_tier if entry is not None else None,
         "response_hash": response_hash,
         "classifier": recorded or {},

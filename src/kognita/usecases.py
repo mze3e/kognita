@@ -357,6 +357,7 @@ class UseCaseSpec:
     _autonomy_gates: Mapping[str, Any] = field(default_factory=dict)
     _autonomy_step_down: Mapping[str, Any] = field(default_factory=dict)
     monitoring: bool = False
+    require_reasoning_trace: bool = False
     explanation_depth: str = "citation"
     validators: tuple[str, ...] = ()
     human_decision_points: tuple[str, ...] = ()
@@ -504,6 +505,7 @@ class RegisteredUseCase:
     stale_action: StaleAction = StaleAction.SUPPRESS
     permitted_sensitive: set[str] = field(default_factory=set)
     content_hash: str = ""
+    require_reasoning_trace: bool = False
     approved_models: tuple[str, ...] = ()
     approved_sources: tuple[str, ...] = ()
     model_providers: tuple[str, ...] = ()
@@ -647,6 +649,8 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
         add(f"approval gate '{spec.approval_gate}' is not recognised")
     if spec.explanation_depth not in EXPLANATION_DEPTHS:
         add(f"explanation depth '{spec.explanation_depth}' is not recognised")
+    if not isinstance(spec.require_reasoning_trace, bool):
+        add("require_reasoning_trace must be a bool")
     if isinstance(spec.maximum_autonomy, bool) or not isinstance(
         spec.maximum_autonomy, int
     ):
@@ -987,6 +991,7 @@ def build_record(
         "deployment_mode": spec.deployment_mode,
         "_autonomy_gates": dict(spec._autonomy_gates),
         "_autonomy_step_down": dict(spec._autonomy_step_down),
+        "require_reasoning_trace": spec.require_reasoning_trace,
         "monitoring": bool(spec.monitoring),
         "explanation_depth": spec.explanation_depth,
         "validators": _sorted_texts(spec.validators),
@@ -1071,6 +1076,7 @@ def from_record(
         stale_action=StaleAction(record.get("stale_action", "SUPPRESS")),
         deployment_mode=record.get("deployment_mode"),
         maximum_autonomy=int(record.get("maximum_autonomy") or 0),
+        require_reasoning_trace=record.get("require_reasoning_trace", False),
         monitoring=bool(record.get("monitoring")),
         explanation_depth=str(record.get("explanation_depth") or ""),
         validators=tuple(record.get("validators") or ()),
