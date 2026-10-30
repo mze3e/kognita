@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Govern working, relationship and institutional memory. Inferences become relationship records only after RM verification of a proposal. A Knowledge Lead approval issues a new effective-dated standard and deployment version. Outputs record `standard_version`.
+
 - Registered calculation services and fail-closed release checks. An authoritative figure must cite a registered service in `calculation_method`. Kognita performs no financial math.
 - Verification gate for material claim release: a registered independent verifier is required at tier 2 and above, both models are pinned in evidence, and validator status limits RM and client audiences.
 

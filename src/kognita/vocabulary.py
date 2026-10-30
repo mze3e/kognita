@@ -94,6 +94,9 @@ class EventType(str, Enum):
     CLAIM = "CLAIM"
     CLAIM_VERIFIED = "CLAIM_VERIFIED"
     LEARNING_EXPORT = "LEARNING_EXPORT"
+    #: A governed memory write: working context, a verified relationship record,
+    #: or an approved institutional standard. Proposals are not writes.
+    MEMORY_WRITE = "MEMORY_WRITE"
     POLICY_DECISION = "POLICY_DECISION"
     TOOL_CALL = "TOOL_CALL"
     RETRIEVAL = "RETRIEVAL"

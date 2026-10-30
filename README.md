@@ -555,3 +555,31 @@ material use cases at tier 3 and above. Missing accounts enter risk-based review
 with reason `REASONING_TRACE_MISSING` and the named risk owner. Without review
 criteria, delivery is held for review. Trace content follows retention and erasure
 rules, while its hash remains in the evidence chain.
+
+## Memory governance
+
+`MemoryScope` is `WORKING`, `RELATIONSHIP` or `INSTITUTIONAL`. A `MemoryRecord`
+names one client and a closed type: `verified fact`, `inferred preference` or
+`AI hypothesis`. It carries a retention period, an expiry and a correction path.
+
+Working memory is written with `write_memory` for a live run linked to that
+one client. It stops being writable when the run is recovered, revoked or past
+its wall clock, and an expiry later than the run is refused. Relationship
+inferences cannot be written directly. `propose_memory` holds the diff.
+`verify_memory` turns it into a record only when a different human verifies
+the same client. A verified fact may be written directly. A second client id,
+or another client's content, is refused.
+
+Institutional learning uses `propose_standard` and `approve_standard`. The
+proposal carries evidence references. Only the in-force use case's Knowledge
+Lead can approve, and that person cannot be the proposer. Approval stores a
+new standard version, closes the previous version and changes the agent
+deployment hash. The manifest's memory behaviour records the standard id and
+version. Prompt text is left as it was. `current_standard` returns the single
+in-force version. A future, superseded or expired standard is refused.
+
+Client ids and client content are refused in a standard, including text copied
+from a proposal that is not yet a record. Where a use case has an approved
+standard, memory outputs record `standard_version` for the version actually in
+force. Citing a superseded or not-yet-effective version is refused. Content
+stays in the retention store. The evidence chain stores the hash.
