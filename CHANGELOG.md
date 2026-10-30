@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A claim invalidated after its release, for example by superseding its source, no longer covers text on the gateway or communication paths. The cover check reads the latest snapshot of each claim.
+- The claim cover check no longer re-verifies the whole evidence chain on every material response; it reads only claim events. Chain verification stays in `reconstruct`, replay and `evidence verify`.
+- A value that carries `value` and `as_of` but lacks the rest of the fact contract is admitted, and so suppressed, instead of passing through as plain data.
+- `verify_claim` pins the producer: the provider, model and version must match a recorded `MODEL_CALL`, or the verification is denied `C7-PIN`.
+
 ### Added
 
 - Source lifecycle CLI aliases and house-view supersession regression coverage, preserving stale release and distribution safeguards.

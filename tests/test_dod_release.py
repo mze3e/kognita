@@ -352,3 +352,39 @@ def test_a_closed_standard_is_not_the_one_recorded(session, evidence):
     model = [event for event in _events(session, EventType.MODEL_CALL) if event.payload.get("sent")][-1]
     assert model.payload["standard_version"] == "std-new"
     assert model.payload["standard_version"] != "std-old"
+
+
+def test_a_superseded_source_stops_the_gateway_sending_the_released_text(session, evidence):
+    from kognita.sources import supersede_source
+
+    _ignored, _backend, headers = _setup(session, evidence)
+    _tier_two(session, evidence)
+    _cover(session, evidence, ANSWER, audience="rm")
+    gateway = _gateway(session.get_bind(), evidence, _Upstream(_response(ANSWER)))
+    assert gateway.handle("POST", PATH, headers, _body("hello"), session=session).status == 200
+    supersede_source(session, "desk", version="v1", by="v2", evidence=evidence, interaction_id="hv")
+    after = gateway.handle("POST", PATH, headers, _body("hello"), session=session)
+    assert after.status == 403
+    assert ANSWER.encode() not in after.body
+
+
+def test_release_cover_does_not_verify_the_whole_chain(session, evidence, monkeypatch):
+    import kognita.claims as claims
+
+    _cover(session, evidence, ANSWER, audience="rm")
+
+    def boom(_session):
+        raise AssertionError("the request path must not verify the chain")
+
+    monkeypatch.setattr(claims, "_verify_chain", boom)
+    assert claims._release_covers(session, ANSWER, audience="rm").check == "C1-LABELLED"
+
+
+def test_a_value_with_an_as_of_date_but_no_owner_is_not_passed_through(session, evidence):
+    from kognita.facts import _admit_observed
+
+    payload = {"value": 42, "source": "positions-system", "as_of": PAST.isoformat()}
+    ensure_live_purposes(session, evidence, ("COLLABORATION",), at=NOW)
+    result = _admit_observed(session, payload, use_case="COLLABORATION", evidence=evidence,
+                             correlation_id="c", now=NOW)
+    assert result is None

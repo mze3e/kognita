@@ -260,7 +260,7 @@ assert "S2-DEPLOYMENT-MODE" in [c.citation for c in evaluation.failures()]
 
 ## Continuous Learning and Drift
 
-The outcome and recorder parts shipped in v0.4.1. Autonomy gates shipped in v0.5.0. Institutional memory is in this tree with the rest of the 0.6 claims controls. It is not a numbered release yet. The [roadmap](docs/ROADMAP.md) checklist is the current status:
+The outcome and recorder parts shipped in v0.4.1. Autonomy gates shipped in v0.5.0. Institutional memory shipped in v0.6.0 with the rest of the 0.6 claims controls. The [roadmap](docs/ROADMAP.md) checklist is the current status:
 
 **Outcome metrics per use case (0.4).** Each use case names one primary metric (cycle time, decision quality, or reliability) with a baseline and a target. A Knowledge Lead owns the quality standard. The three metrics are computed from the interaction record. Cycle time is mean seconds from the interaction opening to the final decision. A named primary metric with no measurement is a breach. Autonomy gates that consume those metrics shipped in 0.5.
 

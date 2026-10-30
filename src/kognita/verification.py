@@ -220,6 +220,24 @@ def _producer(agent_id: object, model: object, model_version: object, provider: 
     }
 
 
+def _pinned_producer(session, producer: dict[str, str]) -> bool:
+    """True when a recorded ``MODEL_CALL`` names this provider, model and version.
+
+    The producer is read from what the gateway pinned in evidence, so a caller
+    cannot name a different provider than the one that answered.
+    """
+    from sqlmodel import select as _sel
+    from kognita.models import EvidenceEvent as _Ev
+    from kognita.vocabulary import EventType as _Et
+    wanted = (_norm(producer["provider"]), _norm(producer["model"]), _norm(producer["model_version"]))
+    for event in session.exec(_sel(_Ev).where(_Ev.event_type == _Et.MODEL_CALL)):
+        body = event.payload or {}
+        seen = (_norm(body.get("provider")), _norm(body.get("model")), _norm(body.get("model_version")))
+        if seen == wanted:
+            return True
+    return False
+
+
 def _decide(
     claim: _Claim,
     verifier: Verifier | None,
@@ -228,6 +246,7 @@ def _decide(
     verifier_id: object,
     entry,
     tier: int,
+    session=None,
 ) -> str:
     named = _named_verifier(entry)
     supplied = _text(verifier_id)
@@ -243,6 +262,8 @@ def _decide(
         return "C7-PIN"
     if _norm(claim.agent_id) != _norm(producer["agent_id"]) or _norm(claim.model_version) != _norm(producer["model_version"]):
         return "C7-PRODUCER"
+    if session is not None and not _pinned_producer(session, producer):
+        return "C7-PIN"
     independence = check_independence(
         verifier,
         agent_id=producer["agent_id"],
@@ -295,6 +316,7 @@ def verify_claim(
         verifier_id=verifier_id,
         entry=entry,
         tier=tier,
+        session=session,
     )
     allowed = reason == "C7-RECORDED"
     body = {
