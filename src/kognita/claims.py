@@ -49,6 +49,7 @@ class Claim:
     confidence: float | None = None
     validator_status: ValidatorStatus = ValidatorStatus.UNVERIFIED
     policy_status: str = ""
+    standard_version: str = ""
     definition_ref: tuple[str, str] | None = None
 
     def __post_init__(self) -> None:
@@ -200,6 +201,14 @@ def release_claim(
         definition = check_definition(session, claim, evidence=evidence, interaction_id=interaction_id)
         if definition.result != _CheckResult.PASS:
             reason = definition.check
+    if reason == "C1-LABELLED":
+        from kognita.memory import _output_standard
+        try:
+            version = _output_standard(session, agent_id=claim.agent_id, usecase_id=usecase_id,
+                                       standard_version=claim.standard_version)
+            claim = _replace(claim, standard_version=version)
+        except ValueError:
+            reason = "MEMORY_STANDARD"
     passed = reason == "C1-LABELLED"
     if definition is not None and definition.result != _CheckResult.PASS:
         check = definition

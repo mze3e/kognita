@@ -62,7 +62,7 @@ QUESTIONS: tuple[str, ...] = (
 )
 
 _PIN_HASH_KEYS = ("prompt_hash", "response_hash", "reasoning_trace")
-_RETAINED_HASH_KEYS = ("rendered_hash", "diff_hash", "packet_hash", "claim_hash", "verifier_hash")
+_RETAINED_HASH_KEYS = ("rendered_hash", "diff_hash", "packet_hash", "claim_hash", "verifier_hash", "memory_hash")
 _OK_PIN_STATUSES = frozenset({"matches", "retained", "erased", "empty", "recorded"})
 
 
@@ -857,6 +857,7 @@ def _content_hashes(events: list[EvidenceEvent]) -> list[str]:
                 seen.add(value)
                 found.append(value)
         if (_is(event, EventType.CLIENT_COMMUNICATION)
+                or _is(event, EventType.MEMORY_WRITE)
                 or payload.get("action") in ("VULNERABILITY_FLAG", "VULNERABILITY_TREATMENT")):
             value = payload.get("content_hash")
             if isinstance(value, str) and value and value not in seen:

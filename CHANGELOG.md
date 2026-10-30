@@ -11,6 +11,8 @@ Release 0.6 "Claims" work: material claims are typed, grounded in approved sourc
 
 ### Added
 
+- Memory standard pins are checked on claim release and model egress against retained standards and the approved deployment.
+
 - Material gateway responses and house-view communications are released only when a recorded claim was released for that audience. The denial cites `C1-UNKNOWN`.
 - Retrieval and tool results admit fact-shaped values through `admit_fact`. Stale facts are refreshed, flagged, or removed according to the use case `stale_action` (default `SUPPRESS`).
 - Gateway `MODEL_CALL` events and governed tool outputs record the in-force `standard_version`. A caller-supplied version is ignored, and a closed standard is not the one recorded.
