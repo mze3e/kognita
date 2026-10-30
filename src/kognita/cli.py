@@ -979,8 +979,126 @@ def _revocation_target(args: argparse.Namespace) -> tuple[str, str]:
     raise RevocationError("Revocation: name one dimension")
 
 
+def _source_view(source):
+    from dataclasses import asdict
+
+    body = asdict(source)
+    for key, value in list(body.items()):
+        if isinstance(value, datetime):
+            body[key] = value.isoformat()
+    return body
+
+
+def _cmd_source(args: argparse.Namespace) -> int:
+    """Register, supersede, or list approved sources."""
+    from sqlmodel import select
+
+    from kognita.models import EvidenceEvent
+    from kognita.sources import Source, _load, register_source, supersede_source
+
+    engine = make_engine(args.db)
+    create_all(engine)
+    evidence = EvidenceWriter(engine)
+    command = args.source_command
+    try:
+        with session_scope(engine) as session:
+            if command == "list":
+                rows = sorted(
+                    (_source_view(item) for item in _load(session).entries),
+                    key=lambda row: (row["source_id"], row["version"]),
+                )
+                _print_json(rows)
+                return 0
+            if command == "register":
+                source = Source(
+                    args.id,
+                    args.kind,
+                    args.version,
+                    args.owner,
+                    _parse_when(args.effective),
+                    expiry=_parse_when(args.expiry) if args.expiry else None,
+                )
+                registered = register_source(
+                    session, source, evidence=evidence, interaction_id=args.interaction
+                )
+                _print_json(_source_view(registered))
+                return 0
+            updated = supersede_source(
+                session,
+                args.id,
+                version=args.version,
+                by=args.by,
+                evidence=evidence,
+                interaction_id=args.interaction,
+            )
+            event = session.exec(
+                select(EvidenceEvent)
+                .where(EvidenceEvent.event_type == EventType.SOURCE_SUPERSEDED)
+                .order_by(EvidenceEvent.sequence.desc())
+            ).first()
+            payload = event.payload if event is not None else {}
+            _print_json({
+                "source_id": updated.source_id,
+                "version": updated.version,
+                "superseded_by": updated.superseded_by,
+                "claims": list(payload.get("claims") or []),
+                "recommendations": list(payload.get("recommendations") or []),
+            })
+    except (ValueError, ChainBreak) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    return 0
+
+
+def _cmd_affected_source(args: argparse.Namespace, source: str) -> int:
+    """List dependents of one source. A window is optional."""
+    from kognita.sources import affected_by_source
+
+    definition = (getattr(args, "definition", "") or "").strip()
+    if definition or any((getattr(args, name, "") or "").strip() for name in ("model", "policy", "usecase")):
+        print("Affected clients: name one selector", file=sys.stderr)
+        return 2
+    start = end = None
+    if (getattr(args, "start", "") or "") or (getattr(args, "end", "") or ""):
+        if not args.start or not args.end:
+            print(
+                "Affected clients: --from and --to are both required when either is set",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            start = _parse_when(args.start)
+            end = _parse_when(args.end)
+        except ValueError as exc:
+            print(f"Affected clients: {exc}", file=sys.stderr)
+            return 2
+    engine = make_engine(args.db)
+    create_all(engine)
+    try:
+        with session_scope(engine) as session:
+            report = affected_by_source(session, source, start=start, end=end)
+    except (ValueError, ChainBreak) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    _print_json(report)
+    return 0
+
+
 def cmd_evidence_affected(args: argparse.Namespace) -> int:
-    """List clients who received model output or released tool output in a window."""
+    """List affected clients for a model, policy, use case, or source."""
+    source = (getattr(args, "source", "") or "").strip()
+    if source:
+        return _cmd_affected_source(args, source)
+    definition = (getattr(args, "definition", "") or "").strip()
+    if definition:
+        handler = globals().get("_cmd_affected_definition")
+        if handler is not None:
+            return handler(args)
+        print("Affected clients: name one selector", file=sys.stderr)
+        return 2
+    if not (getattr(args, "start", "") or "") or not (getattr(args, "end", "") or ""):
+        print("Affected clients: --from and --to are required", file=sys.stderr)
+        return 2
     try:
         start = _parse_when(args.start)
         end = _parse_when(args.end)
@@ -1350,6 +1468,29 @@ def build_parser() -> argparse.ArgumentParser:
     list_claim.add_argument("--db", default="kognita.db")
     list_claim.set_defaults(func=_cmd_claims)
 
+    source_cmd = sub.add_parser("source", help="approved sources and house-view changes")
+    source_sub = source_cmd.add_subparsers(dest="source_command", required=True)
+    source_register = source_sub.add_parser("register", help="register one approved source version")
+    source_register.add_argument("--id", required=True)
+    source_register.add_argument("--kind", required=True)
+    source_register.add_argument("--version", required=True)
+    source_register.add_argument("--owner", required=True)
+    source_register.add_argument("--effective", required=True, help="ISO timestamp")
+    source_register.add_argument("--expiry", default="", help="ISO timestamp")
+    source_register.add_argument("--interaction", default="source")
+    source_register.add_argument("--db", default="kognita.db")
+    source_register.set_defaults(func=_cmd_source)
+    source_supersede = source_sub.add_parser("supersede", help="supersede one source version")
+    source_supersede.add_argument("--id", required=True)
+    source_supersede.add_argument("--version", required=True)
+    source_supersede.add_argument("--by", required=True, help="successor version")
+    source_supersede.add_argument("--interaction", default="source")
+    source_supersede.add_argument("--db", default="kognita.db")
+    source_supersede.set_defaults(func=_cmd_source)
+    source_list = source_sub.add_parser("list", help="list registered source versions")
+    source_list.add_argument("--db", default="kognita.db")
+    source_list.set_defaults(func=_cmd_source)
+
     evidence = sub.add_parser("evidence", help="evidence plane operations")
     evidence_sub = evidence.add_subparsers(dest="evidence_command", required=True)
 
@@ -1388,14 +1529,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     affected = evidence_sub.add_parser(
         "affected",
-        help="list clients who received model or released tool output in a window",
+        help="list affected clients for a model, policy, use case, or source",
     )
     affected.add_argument("--db", default="kognita.db", help="store path or URL")
     affected.add_argument("--model", default="", help="model version, name, or card")
     affected.add_argument("--policy", default="", help="policy id")
     affected.add_argument("--usecase", default="", help="use case id")
-    affected.add_argument("--from", dest="start", required=True, help="window start, inclusive")
-    affected.add_argument("--to", dest="end", required=True, help="window end, exclusive")
+    affected.add_argument("--source", default="", help="source id")
+    affected.add_argument(
+        "--from",
+        dest="start",
+        default="",
+        help="window start, inclusive; required unless --source or --definition is set",
+    )
+    affected.add_argument(
+        "--to",
+        dest="end",
+        default="",
+        help="window end, exclusive; required unless --source or --definition is set",
+    )
     affected.set_defaults(func=cmd_evidence_affected)
 
     serve = sub.add_parser("serve", help="run the AI gateway or the MCP proxy")

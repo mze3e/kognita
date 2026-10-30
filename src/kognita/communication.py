@@ -568,6 +568,12 @@ def _client_checks(
                 "do not contact is not in force",
             )
         )
+    from kognita.sources import _distribution_block
+    blocked = _distribution_block(session, interaction_id)
+    citation = "Claims: a superseded source invalidates open recommendations"
+    if blocked:
+        citation = f"{citation}: {blocked}"
+    checks.append(_structural("SOURCE_CURRENT", blocked is None, citation, ""))
     hold = review_blocks_delivery(session, interaction_id)
     if hold:
         checks.append(
