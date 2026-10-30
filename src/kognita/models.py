@@ -556,11 +556,36 @@ class UseCase(SQLModel, table=True):
     def approved_sources(self) -> tuple[str, ...]:
         return tuple(self.record.get("approved_sources") or ())
 
+    @property
+    def verifier(self) -> str:
+        """Registered verifier required before tier 2 material output is released."""
+        return str(self.record.get("verifier") or "").strip()
+
+    @property
+    def permit_same_model(self) -> bool:
+        """True only when tier 1 explicitly allows a shared model, version, or provider."""
+        return self.record.get("permit_same_model") is True
+
     def __init__(self, **data: Any) -> None:
+        record = dict(data.get("record") or {})
+        changed = False
         if "permitted_sensitive" in data:
             from kognita.sensitive import _categories
-            record = dict(data.get("record") or {})
             record["sensitive"] = sorted(_categories(data.pop("permitted_sensitive")))
+            changed = True
+        if "verifier" in data:
+            verifier = data.pop("verifier")
+            if not isinstance(verifier, str):
+                raise ValueError("C7-INVALID: use case verifier must be a string")
+            record["verifier"] = verifier.strip()
+            changed = True
+        if "permit_same_model" in data:
+            permit = data.pop("permit_same_model")
+            if type(permit) is not bool:
+                raise ValueError("C7-INVALID: permit_same_model must be a boolean")
+            record["permit_same_model"] = permit
+            changed = True
+        if changed:
             data["record"] = record
         super().__init__(**data)
 

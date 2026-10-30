@@ -57,6 +57,12 @@ from kognita.calculations import (
     register_calculation_service,
 )
 from kognita.claims import Claim, ClaimType, ValidatorStatus
+from kognita.verification import (
+    Verifier,
+    check_independence,
+    register_verifier,
+    verify_claim,
+)
 from kognita.facts import (
     Fact, FreshnessRule, ResearchLifecycle, StaleAction, admit_fact, is_stale,
 )
@@ -202,6 +208,7 @@ __all__ = [
     "CalculationService",
     "register_calculation_service",
     "check_calculation",
+    "Verifier", "register_verifier", "verify_claim", "check_independence",
     "Fact",
     "FreshnessRule",
     "ResearchLifecycle",

@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from sqlmodel import Session, select
 
-from kognita import CalculationService, Claim, ClaimType, check_calculation, register_calculation_service
+from kognita import CalculationService, Claim, ClaimType, ValidatorStatus, check_calculation, register_calculation_service
 from kognita.claims import record_claim, release_claim
 from kognita.db import create_all, make_engine
 from kognita.evidence import EvidenceWriter, verify_chain
@@ -43,6 +43,7 @@ def _claim(text, method="", claim_id="c1", **changes):
     claim = Claim(
         claim_id, "client", text, ClaimType.INFERENCE,
         source_system="crm", source_record="r1", calculation_method=method,
+        validator_status=ValidatorStatus.VERIFIED,
     )
     return replace(claim, **changes) if changes else claim
 

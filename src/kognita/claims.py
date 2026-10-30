@@ -89,9 +89,12 @@ def list_claims(
         events = _events_for(session, interaction_id, events)
     latest = {}
     for event in events:
+        action = event.payload.get("action")
+        verified = action == "verify" and event.payload.get("allowed") is True
         if (
             event.event_type in (_EventType.CLAIM, _EventType.CLAIM_VERIFIED)
-            and event.payload.get("action") in ("record", "relabel", "release")
+            and event.payload.get("claim_hash")
+            and (action in ("record", "relabel", "release") or verified)
         ):
             latest[event.payload["claim_id"]] = event
     claims = [_read(session, event) for event in latest.values()]
@@ -136,7 +139,7 @@ def release_claim(
     usecase_id: str = "",
     authoritative_figure: bool = False,
 ) -> _Check:
-    """Check the stored label and evidence an RM or client release decision.
+    """Check the stored label, validator status, and evidence an RM or client release.
 
     ``authoritative_figure`` marks a figure the caller is presenting. A number
     and a figure keyword in the stored claim text mark one as well.
@@ -163,6 +166,11 @@ def release_claim(
         if calculation.result != _CheckResult.PASS:
             reason = calculation.check
             citation = calculation.citation
+    if reason == "C1-LABELLED":
+        from kognita.verification import _release_reason
+        denial = _release_reason(session, claim, audience=audience, usecase_id=usecase_id)
+        if denial:
+            reason = denial
     passed = reason == "C1-LABELLED"
     check = _Check(check=reason, regime="INTERNAL", result=_CheckResult.PASS if passed else _CheckResult.FAIL, citation=citation)
     digest = _RetentionStore().retain_value(session, _asdict(claim), kind="claim", correlation_id=interaction_id)

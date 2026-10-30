@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Registered calculation services and fail-closed release checks. An authoritative figure must cite a registered service in `calculation_method`. Kognita performs no financial math.
+- Verification gate for material claim release: a registered independent verifier is required at tier 2 and above, both models are pinned in evidence, and validator status limits RM and client audiences.
 
 - Approved-source registers, retained source lifecycle evidence and fail-closed grounding checks on RM and client claim releases.
 
