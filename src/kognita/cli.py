@@ -1217,6 +1217,29 @@ def _cmd_evidence_authority(args):
 def _cmd_claims(args):
     from dataclasses import asdict
     from kognita.claims import list_claims
+    engine = make_engine(args.db)
+    create_all(engine)
+    try:
+        with session_scope(engine) as session:
+            claims = list_claims(
+                session,
+                client_id=getattr(args, "client", None),
+                interaction_id=getattr(args, "interaction", None),
+            )
+    except (ValueError, ChainBreak) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    if hasattr(args, "claim_id"):
+        claims = [c for c in claims if c.claim_id == args.claim_id]
+        if not claims:
+            print("C1-UNKNOWN: claim is not recorded", file=sys.stderr)
+            return 2
+        print(canonical_json(asdict(claims[0])))
+    else:
+        print(canonical_json([asdict(c) for c in claims]))
+    return 0
+
+
 def _cmd_export_request(args: argparse.Namespace) -> int:
     from kognita.learning import ExportRequest, request_export
 
@@ -1243,22 +1266,6 @@ def _cmd_export_exclude(args: argparse.Namespace) -> int:
     create_all(engine)
     try:
         with session_scope(engine) as session:
-            claims = list_claims(
-                session,
-                client_id=getattr(args, "client", None),
-                interaction_id=getattr(args, "interaction", None),
-            )
-    except (ValueError, ChainBreak) as exc:
-        print(str(exc), file=sys.stderr)
-        return 2
-    if hasattr(args, "claim_id"):
-        claims = [c for c in claims if c.claim_id == args.claim_id]
-        if not claims:
-            print("C1-UNKNOWN: claim is not recorded", file=sys.stderr)
-            return 2
-        print(canonical_json(asdict(claims[0])))
-    else:
-        print(canonical_json([asdict(c) for c in claims]))
             exclusion = add_exclusion(
                 session,
                 Exclusion(reason=args.reason, client_id=args.client, record_id=args.record),
