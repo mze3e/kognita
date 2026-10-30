@@ -1696,8 +1696,19 @@ class Gateway:
                     citation="Claims: material content is released only with a recorded claim that was released",
                 ))
             elif prose:
+                from kognita.models import Interaction as _Interaction
+                named = (headers.get("interaction_id") or "").strip()
+                journey = session.get(_Interaction, named) if named else None
+                # The client comes from the interaction record, never from a
+                # header, and only when that record is for this use case.
+                if journey is not None and journey.use_case != purpose:
+                    journey = None
                 for text in prose:
-                    claim_check = self._store(lambda text=text: _release_covers(session, text, audience="rm"))
+                    claim_check = self._store(lambda text=text: _release_covers(
+                        session, text, audience="rm", usecase_id=purpose,
+                        client_id=journey.client_id if journey is not None else "",
+                        interaction_id=journey.id if journey is not None else "",
+                    ))
                     if claim_check.result is not CheckResult.PASS:
                         delivery_checks.append(claim_check)
                         break

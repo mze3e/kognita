@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `release_scope` on a use case sets how tightly a claim release is tied to its target: `usecase` (default; the release must name the request's use case), `client` (and the claim must be about the request's client) or `interaction` (and the release must have been made in the request's interaction). The gateway reads an `interaction_id` header and takes the client from the stored interaction, never from a header, and only when that interaction is for the request's purpose. Public-lane sends take `usecase_id`. An unknown scope fails closed as `interaction`.
+
 ### Fixed
 
 - A claim invalidated after its release, for example by superseding its source, no longer covers text on the gateway or communication paths. The cover check reads the latest snapshot of each claim.

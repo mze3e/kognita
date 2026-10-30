@@ -358,6 +358,11 @@ class UseCaseSpec:
     approval_gate: str = "none"
     review_sampling_rate: float = 0.0
     stale_action: StaleAction = StaleAction.SUPPRESS
+    #: How tightly a claim release is tied to its target: "usecase" (the
+    #: release names this use case), "client" (and the claim is about the
+    #: request's client) or "interaction" (and it was released in the
+    #: request's interaction).
+    release_scope: str = "usecase"
     deployment_mode: str | None = None
     maximum_autonomy: int = 0
     _autonomy_gates: Mapping[str, Any] = field(default_factory=dict)
@@ -512,6 +517,7 @@ class RegisteredUseCase:
     intended_use: str
     record: dict[str, Any]
     stale_action: StaleAction = StaleAction.SUPPRESS
+    release_scope: str = "usecase"
     permitted_sensitive: set[str] = field(default_factory=set)
     content_hash: str = ""
     require_reasoning_trace: bool = False
@@ -631,6 +637,8 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
     def add(text: str) -> None:
         found.append(_cite(usecase_id, text))
 
+    if spec.release_scope not in ("usecase", "client", "interaction"):
+        add("RELEASE_SCOPE_INVALID: release_scope must be usecase, client or interaction")
     if spec.stale_action not in tuple(StaleAction):
         add("FACT_STALE_ACTION_INVALID: stale_action must be REFRESH, SUPPRESS or WARN")
     if spec.deployment_mode not in (None, "gateway", "library"):
@@ -1006,6 +1014,7 @@ def build_record(
         "review_sampling_rate": float(spec.review_sampling_rate),
         "maximum_autonomy": int(spec.maximum_autonomy),
         "stale_action": StaleAction(spec.stale_action).value,
+        "release_scope": spec.release_scope,
         "deployment_mode": spec.deployment_mode,
         "_autonomy_gates": dict(spec._autonomy_gates),
         "_autonomy_step_down": dict(spec._autonomy_step_down),
@@ -1095,6 +1104,7 @@ def from_record(
         approval_gate=str(record.get("approval_gate") or ""),
         review_sampling_rate=float(record.get("review_sampling_rate") or 0),
         stale_action=StaleAction(record.get("stale_action", "SUPPRESS")),
+        release_scope=str(record.get("release_scope") or "usecase"),
         deployment_mode=record.get("deployment_mode"),
         maximum_autonomy=int(record.get("maximum_autonomy") or 0),
         require_reasoning_trace=record.get("require_reasoning_trace", False),
@@ -2040,6 +2050,7 @@ def activate(
 _MATERIAL_FIELDS = (
     "deployment_mode",
     "stale_action",
+    "release_scope",
     "autonomy",
     "maximum_autonomy",
     "jurisdiction",

@@ -115,7 +115,7 @@ def test_gateway_refuses_material_text_until_a_claim_is_released(session, eviden
     assert any(check.check == "C1-UNKNOWN" for check in denied.evaluation.checks)
     assert ANSWER.encode() not in denied.body
 
-    _cover(session, evidence, ANSWER, audience="rm")
+    _cover(session, evidence, ANSWER, audience="rm", usecase_id="COLLABORATION")
     allowed = gateway.handle("POST", PATH, headers, _body("hello"), session=session)
     assert allowed.status == 200, allowed.body
     assert ANSWER.encode() in allowed.body
@@ -130,6 +130,8 @@ def test_gateway_refuses_material_text_until_a_claim_is_released(session, eviden
 
 @pytest.mark.parametrize("bypass", ["unrecorded", "unreleased", "wrong audience", "other text", "forged"])
 def test_gateway_claim_bypasses_fail_closed(session, evidence, bypass):
+    _ignored, _backend, headers = _setup(session, evidence)
+    _tier_two(session, evidence)
     if bypass == "unreleased":
         record_claim(
             session,
@@ -138,9 +140,9 @@ def test_gateway_claim_bypasses_fail_closed(session, evidence, bypass):
             interaction_id="i",
         )
     elif bypass == "wrong audience":
-        _cover(session, evidence, ANSWER, audience="client")
+        _cover(session, evidence, ANSWER, audience="client", usecase_id="COLLABORATION")
     elif bypass == "other text":
-        _cover(session, evidence, "A different sentence.", audience="rm")
+        _cover(session, evidence, "A different sentence.", audience="rm", usecase_id="COLLABORATION")
     elif bypass == "forged":
         evidence.emit(
             session,
@@ -155,8 +157,6 @@ def test_gateway_claim_bypasses_fail_closed(session, evidence, bypass):
                 "claim_hash": "0" * 64,
             },
         )
-    _ignored, _backend, headers = _setup(session, evidence)
-    _tier_two(session, evidence)
     upstream = _Upstream(_response(ANSWER))
     gateway = _gateway(session.get_bind(), evidence, upstream)
     response = gateway.handle("POST", PATH, headers, _body("hello"), session=session)
@@ -184,7 +184,7 @@ def test_communication_refuses_a_house_view_without_a_released_claim(harness):
             research_attribution="house view 2026-10-01",
             now=FROZEN_NOW,
         )
-        _cover(session, harness.evidence, "The house view downgraded the banks.")
+        _cover(session, harness.evidence, "The house view downgraded the banks.", interaction_id=interaction.id)
         allowed = send_client_communication(
             session,
             interaction.id,
@@ -359,7 +359,7 @@ def test_a_superseded_source_stops_the_gateway_sending_the_released_text(session
 
     _ignored, _backend, headers = _setup(session, evidence)
     _tier_two(session, evidence)
-    _cover(session, evidence, ANSWER, audience="rm")
+    _cover(session, evidence, ANSWER, audience="rm", usecase_id="COLLABORATION")
     gateway = _gateway(session.get_bind(), evidence, _Upstream(_response(ANSWER)))
     assert gateway.handle("POST", PATH, headers, _body("hello"), session=session).status == 200
     supersede_source(session, "desk", version="v1", by="v2", evidence=evidence, interaction_id="hv")
@@ -371,13 +371,13 @@ def test_a_superseded_source_stops_the_gateway_sending_the_released_text(session
 def test_release_cover_does_not_verify_the_whole_chain(session, evidence, monkeypatch):
     import kognita.claims as claims
 
-    _cover(session, evidence, ANSWER, audience="rm")
+    _cover(session, evidence, ANSWER, audience="rm", usecase_id="COLLABORATION")
 
     def boom(_session):
         raise AssertionError("the request path must not verify the chain")
 
     monkeypatch.setattr(claims, "_verify_chain", boom)
-    assert claims._release_covers(session, ANSWER, audience="rm").check == "C1-LABELLED"
+    assert claims._release_covers(session, ANSWER, audience="rm", usecase_id="COLLABORATION").check == "C1-LABELLED"
 
 
 def test_a_value_with_an_as_of_date_but_no_owner_is_not_passed_through(session, evidence):
@@ -388,3 +388,89 @@ def test_a_value_with_an_as_of_date_but_no_owner_is_not_passed_through(session, 
     result = _admit_observed(session, payload, use_case="COLLABORATION", evidence=evidence,
                              correlation_id="c", now=NOW)
     assert result is None
+
+
+def _scoped_cover(session, evidence, scope):
+    """A tier 1 use case with ``scope``, one claim for client-1 released in interaction i-1."""
+    from datetime import datetime, timezone
+
+    from kognita.models import UseCase
+
+    session.add(UseCase(
+        usecase_id="scoped", version=1,
+        record={"usecase_id": "scoped", "approved_sources": ["desk"], "proposed_tier": 1,
+                "version": 1, "release_scope": scope},
+        effective_from=datetime(2020, 1, 1, tzinfo=timezone.utc),
+    ))
+    session.flush()
+    register_source(session, Source("desk", "policy", "v1", "owner", PAST), evidence=evidence,
+                    interaction_id="i-1")
+    _cover(session, evidence, "Scoped text.", audience="rm", usecase_id="scoped",
+           interaction_id="i-1", client_id="client-1")
+
+
+@pytest.mark.parametrize(
+    "scope, asked, covered",
+    [
+        ("usecase", dict(usecase_id="scoped"), True),
+        ("usecase", dict(usecase_id="other"), False),
+        ("usecase", dict(), False),
+        ("client", dict(usecase_id="scoped", client_id="client-1"), True),
+        ("client", dict(usecase_id="scoped", client_id="client-2"), False),
+        ("client", dict(usecase_id="scoped"), False),
+        ("interaction", dict(usecase_id="scoped", interaction_id="i-1"), True),
+        ("interaction", dict(usecase_id="scoped", interaction_id="i-2"), False),
+        ("interaction", dict(usecase_id="scoped"), False),
+        ("bogus", dict(usecase_id="scoped", client_id="client-1"), False),
+    ],
+)
+def test_release_scope_modes(session, evidence, scope, asked, covered):
+    from kognita.claims import _release_covers
+
+    _scoped_cover(session, evidence, scope)
+    check = _release_covers(session, "Scoped text.", audience="rm", **asked)
+    assert (check.check == "C1-LABELLED") is covered, check.check
+
+
+def test_release_scope_must_be_a_known_value():
+    from test_usecases import _spec
+    from kognita.usecases import vocabulary_citations
+
+    assert any("RELEASE_SCOPE_INVALID" in item for item in vocabulary_citations(_spec(release_scope="everyone")))
+    assert not any("RELEASE_SCOPE_INVALID" in item for item in vocabulary_citations(_spec(release_scope="client")))
+
+
+def test_gateway_interaction_scope_takes_the_client_from_the_record(session, evidence):
+    from datetime import datetime, timezone
+
+    from kognita.interaction import open_interaction
+
+    _ignored, _backend, headers = _setup(session, evidence)
+    _tier_two(session, evidence)
+    open_interaction(session, client_id="client-1", use_case="COLLABORATION",
+                     interaction_id="i-1", evidence=evidence)
+    open_interaction(session, client_id="client-2", use_case="COLLABORATION",
+                     interaction_id="i-2", evidence=evidence)
+    _cover(session, evidence, ANSWER, audience="rm", usecase_id="COLLABORATION",
+           interaction_id="i-1", client_id="client-1")
+    live = session.exec(
+        select(UseCase).where(UseCase.usecase_id == "COLLABORATION", UseCase.effective_to.is_(None))
+    ).one()
+    now = datetime.now(timezone.utc)
+    live.effective_to = now
+    session.add(live)
+    session.add(UseCase(
+        usecase_id="COLLABORATION", version=live.version + 1,
+        record={**live.record, "version": live.version + 1, "release_scope": "interaction"},
+        effective_from=now,
+    ))
+    session.flush()
+    gateway = _gateway(session.get_bind(), evidence, _Upstream(_response(ANSWER)))
+
+    def send(**extra):
+        return gateway.handle("POST", PATH, {**headers, **extra}, _body("hello"), session=session)
+
+    assert send(interaction_id="i-1").status == 200
+    assert send().status == 403
+    assert send(interaction_id="i-2").status == 403
+    assert send(interaction_id="does-not-exist").status == 403
