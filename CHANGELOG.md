@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Registered calculation services and fail-closed release checks. An authoritative figure must cite a registered service in `calculation_method`. Kognita performs no financial math.
 - Verification gate for material claim release: a registered independent verifier is required at tier 2 and above, both models are pinned in evidence, and validator status limits RM and client audiences.
+- Governed business definitions. Register a term with its authoritative definition reference, owner, version and effective date. A claim that uses a registered term must cite the current version in `definition_ref`, or release is denied. `kognita definition register` and `kognita definition list` maintain the register. `kognita evidence affected --definition <id>` lists claims, recommendations and communications produced under a previous version; `--from` and `--to` are optional with that filter.
 
 - Approved-source registers, retained source lifecycle evidence and fail-closed grounding checks on RM and client claim releases.
 
