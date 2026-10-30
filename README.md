@@ -445,6 +445,27 @@ A `CONTENT_POLICY` YAML rule can further restrict citations with
 attribute. This policy list supplements the use-case approval and lifecycle
 checks performed at claim release.
 
+### Calculation provenance
+
+`CalculationService` registers the bank service that produces an authoritative
+figure. `register_calculation_service` retains that snapshot by hash. Kognita
+performs no financial math. The fields are `service_id`, `name`, `version`,
+`owner`, and `figures_covered`.
+
+`figures_covered` uses these ids: `performance`, `pnl` (P&L), `nav`,
+`concentration`, `allocation`, `fx`, `leverage`, `var` (VaR), `maturity`
+(maturity values), `interest`, `exposure`, `tax`, and `suitability`
+(suitability scores).
+
+`release_claim(..., authoritative_figure=False)` blocks RM and client release
+when that flag is set, or when the stored claim text contains a number and
+one of those figure keywords. The number and the keyword may sit anywhere in
+the claim. `calculation_method` must then be exactly `service_id@version` for
+a registered service whose covered figures include every detected keyword.
+`check_calculation` is the same gate. A missing, unknown, or non-covering
+service fails closed. The model may describe a result. The cited service is
+what makes the figure releasable.
+
 ## Learning export controls
 
 Interactions, RM edits and outcomes are excluded from external training,

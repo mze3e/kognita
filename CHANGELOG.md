@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Registered calculation services and fail-closed release checks. An authoritative figure must cite a registered service in `calculation_method`. Kognita performs no financial math.
+
 - Approved-source registers, retained source lifecycle evidence and fail-closed grounding checks on RM and client claim releases.
 
 - Typed, retained claim records with evidenced release checks, guarded fact relabelling, reconstruction and claims CLI inspection.

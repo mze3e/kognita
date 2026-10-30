@@ -134,10 +134,18 @@ def release_claim(
     interaction_id: str,
     audience: str = "rm",
     usecase_id: str = "",
+    authoritative_figure: bool = False,
 ) -> _Check:
-    """Check the stored label and evidence an RM or client release decision."""
+    """Check the stored label and evidence an RM or client release decision.
+
+    ``authoritative_figure`` marks a figure the caller is presenting. A number
+    and a figure keyword in the stored claim text mark one as well.
+    """
+    if type(authoritative_figure) is not bool:
+        raise ValueError("C6-INVALID: authoritative_figure must be a boolean")
     claim = _get(session, claim_id)
     reason = "C1-LABELLED" if claim.claim_type is not None else "C1-UNLABELLED"
+    citation = "Claims: every released claim must be typed and cite a current approved source"
     if audience not in ("rm", "client"):
         reason = "C1-AUDIENCE"
     if reason == "C1-LABELLED":
@@ -146,11 +154,20 @@ def release_claim(
                                     evidence=evidence, interaction_id=interaction_id)
         if grounding.result != _CheckResult.PASS:
             reason = grounding.check
+    if reason == "C1-LABELLED":
+        from kognita.calculations import check_calculation
+        calculation = check_calculation(
+            session, claim, authoritative_figure=authoritative_figure,
+            evidence=evidence, interaction_id=interaction_id,
+        )
+        if calculation.result != _CheckResult.PASS:
+            reason = calculation.check
+            citation = calculation.citation
     passed = reason == "C1-LABELLED"
-    check = _Check(check=reason, regime="INTERNAL", result=_CheckResult.PASS if passed else _CheckResult.FAIL, citation="Claims: every released claim must be typed and cite a current approved source")
+    check = _Check(check=reason, regime="INTERNAL", result=_CheckResult.PASS if passed else _CheckResult.FAIL, citation=citation)
     digest = _RetentionStore().retain_value(session, _asdict(claim), kind="claim", correlation_id=interaction_id)
     evidence.emit(session, correlation_id=interaction_id, event_type=_EventType.CLAIM,
-                  payload={"action": "release", "claim_id": claim_id, "claim_hash": digest, "audience": audience, "usecase_id": usecase_id, "allowed": passed, "reason": reason})
+                  payload={"action": "release", "claim_id": claim_id, "claim_hash": digest, "audience": audience, "usecase_id": usecase_id, "authoritative_figure": authoritative_figure, "allowed": passed, "reason": reason})
     return check
 
 
