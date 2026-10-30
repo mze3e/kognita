@@ -460,3 +460,21 @@ rule:
     assert allowed[0].result == CheckResult.PASS
     assert blocked[0].result == CheckResult.FAIL
     assert missing[0].result == CheckResult.FAIL
+
+
+@pytest.mark.parametrize("tampered", [False, True])
+def test_reconstruction_checks_retained_verifier_identity(store, tampered):
+    from kognita.reconstruct import reconstruct
+
+    session, writer = store
+    register_verifier(session, _verifier(), evidence=writer, interaction_id="identity")
+    event = session.exec(select(EvidenceEvent)).one()
+    digest = event.payload["verifier_hash"]
+    if tampered:
+        retained = session.get(RetainedContent, digest)
+        retained.body = "{}"
+        session.add(retained)
+        session.flush()
+    report = reconstruct(session, "identity")
+    findings = [item for item in report["findings"] if item["kind"] == "retained_content"]
+    assert bool(findings) == tampered
