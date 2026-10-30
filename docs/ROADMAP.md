@@ -831,21 +831,21 @@ Reasoning transparency is necessary but not sufficient: a model's stated reasoni
 ### Definition of Done
 - [ ] Claim provenance envelope on every material claim, reconstructable
 - [ ] Stale data refreshed, suppressed or flagged per policy; never silently used
-- [ ] Unlabelled claims blocked from RM and client
-- [ ] Authoritative figures without a registered calculation service blocked
-- [ ] Verification gate required at tier 2 and above, with statuses enforced
-- [ ] AI inferences cannot reach relationship memory without RM verification
-- [ ] Special-category inferences blocked unless permitted
-- [ ] Activation blocked without evaluation results above threshold
-- [ ] A regulated claim citing only model knowledge is blocked
-- [ ] Superseding a house view invalidates dependent recommendations and lists affected clients
-- [ ] Exporting interactions for learning without approval is denied; exclusions hold
-- [ ] A vulnerability flag cannot change treatment without RM review
-- [ ] Fairness report produced across bank-defined segments, including proxy attributes
+- [x] Unlabelled claims blocked from RM and client
+- [x] Authoritative figures without a registered calculation service blocked
+- [x] Verification gate required at tier 2 and above, with statuses enforced
+- [x] AI inferences cannot reach relationship memory without RM verification
+- [x] Special-category inferences blocked unless permitted
+- [x] Activation blocked without evaluation results above threshold
+- [x] A regulated claim citing only model knowledge is blocked
+- [x] Superseding a house view invalidates dependent recommendations and lists affected clients
+- [x] Exporting interactions for learning without approval is denied; exclusions hold
+- [x] A vulnerability flag cannot change treatment without RM review
+- [x] Fairness report produced across bank-defined segments, including proxy attributes
 - [ ] A learned change to a standard cannot take effect without Knowledge Lead approval; outputs record the standard version that produced them
-- [ ] A figure using a governed term without citing the current registered definition is blocked
-- [ ] A verifier on the same model or provider as the producer is denied
-- [ ] Reasoning traces are retained where the provider returns them; a required trace that is missing is flagged; no policy decision cites a trace
+- [x] A figure using a governed term without citing the current registered definition is blocked
+- [x] A verifier on the same model or provider as the producer is denied
+- [x] Reasoning traces are retained where the provider returns them; a required trace that is missing is flagged; no policy decision cites a trace
 
 ---
 

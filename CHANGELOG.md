@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Release 0.6 "Claims" work: material claims are typed, grounded in approved sources, checked for calculation provenance, governed definitions and freshness, and verified by an independent verifier before they reach an RM or client. It also adds memory governance, learning export controls, sensitive-attribute and vulnerable-client safeguards, an evaluation evidence gate with fairness reporting, and retained reasoning traces. Fourteen of the seventeen 0.6 Definition of Done items are met; see docs/ROADMAP.md.
+
 ### Added
 
 - Govern working, relationship and institutional memory. Inferences become relationship records only after RM verification of a proposal. A Knowledge Lead approval issues a new effective-dated standard and deployment version. Outputs record `standard_version`.
@@ -298,7 +300,8 @@ Known open review findings (fixes are planned for 0.5.1):
 - Multi-provider LLM support (Anthropic, OpenAI, Groq, Gemini, Ollama)
 - Streamlit demo application
 
-[Unreleased]: https://github.com/mze3e/kognita/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/mze3e/kognita/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/mze3e/kognita/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/mze3e/kognita/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mze3e/kognita/compare/v0.4.1...v0.5.0
 [0.4.0]: https://github.com/mze3e/kognita/compare/v0.3.0...v0.4.0
