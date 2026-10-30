@@ -488,3 +488,16 @@ Even a permitted vulnerability cannot enter ordinary relationship processing.
 with an approval packet whose `proposed_action` is the canonical JSON text from
 `canonical_json({"flag_id": flag.flag_id, "treatment": treatment})`. The authorization is evidenced;
 the bank applies the approved treatment. A flag alone never authorizes a change.
+
+### Reasoning traces
+
+The AI gateway retains provider reasoning summaries and thinking blocks by hash
+in the `MODEL_CALL` field `reasoning_trace`. Evidence reconstruction displays
+these beside the output as the "model's own account". They are evidence only:
+policy rules that reference a reasoning trace are rejected.
+
+Set `UseCaseSpec(require_reasoning_trace=True, ...)` to require an account for
+material use cases at tier 3 and above. Missing accounts enter risk-based review
+with reason `REASONING_TRACE_MISSING` and the named risk owner. Without review
+criteria, delivery is held for review. Trace content follows retention and erasure
+rules, while its hash remains in the evidence chain.

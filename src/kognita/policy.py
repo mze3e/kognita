@@ -1022,6 +1022,9 @@ def parse_rule(data: Any, *, source: str) -> tuple[RuleDocument | None, list[Fin
         payload_messages: list[str] = []
     else:
         payload_messages = _payload_messages(rule_type, data.get("rule"))
+    if any("reasoningtrace" in re.sub(r"[^a-z0-9]", "", item.lower())
+           for item in _walk_strings(data.get("rule"))):
+        findings.append(Finding("reasoning_trace", "rules may not reference a reasoning trace", ident))
     findings.extend(_findings_for(payload_messages, ident))
     if "citation" not in data or not isinstance(data.get("citation"), str):
         findings.append(Finding("type", "citation must be a string", ident))

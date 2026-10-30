@@ -61,7 +61,7 @@ QUESTIONS: tuple[str, ...] = (
     "Can the bank reproduce that evidence later?",
 )
 
-_PIN_HASH_KEYS = ("prompt_hash", "response_hash")
+_PIN_HASH_KEYS = ("prompt_hash", "response_hash", "reasoning_trace")
 _RETAINED_HASH_KEYS = ("rendered_hash", "diff_hash", "packet_hash", "claim_hash")
 _OK_PIN_STATUSES = frozenset({"matches", "retained", "erased", "empty", "recorded"})
 
@@ -447,6 +447,7 @@ def _model_view(session: Session, event: EvidenceEvent) -> dict[str, Any]:
     payload = _payload(event)
     prompt = _content_record(session, _hash_field(payload, "prompt_hash"))
     response = _content_record(session, _hash_field(payload, "response_hash"))
+    trace = _content_record(session, _hash_field(payload, "reasoning_trace"))
     return {
         "sequence": event.sequence,
         "provider": payload.get("provider"),
@@ -459,6 +460,8 @@ def _model_view(session: Session, event: EvidenceEvent) -> dict[str, Any]:
         "response_hash": response["content_hash"],
         "response_status": response["status"],
         "response": response.get("body"),
+        "reasoning_trace": trace,
+        "reasoning_trace_label": "model's own account",
     }
 
 
@@ -770,7 +773,9 @@ def _pins(
                     "status": "recorded",
                 }
             )
-        for key, kind in (("prompt_hash", "prompt"), ("response_hash", "response")):
+        for key, kind in (("prompt_hash", "prompt"), ("response_hash", "response"), ("reasoning_trace", "reasoning_trace")):
+            if key == "reasoning_trace" and (not _is(event, EventType.MODEL_CALL) or not _payload(event).get(key)):
+                continue
             if key == "prompt_hash" and not _is(event, EventType.MODEL_CALL):
                 continue
             if key == "response_hash" and not (
@@ -1250,6 +1255,11 @@ def _render_model(answer: Any) -> list[str]:
         )
         if model.get("response_status") == "retained" and model.get("response"):
             lines.append(str(model["response"]))
+        trace = model.get("reasoning_trace") or {}
+        if trace.get("content_hash"):
+            lines.append(f"Reasoning trace (model's own account): {trace.get('status')}, hash {trace.get('content_hash')}.")
+            if trace.get("status") == "retained":
+                lines.append(str(trace.get("body") or ""))
         if model.get("response_status") == "erased":
             lines.append(
                 f"Response content erased; hash {model.get('response_hash')} kept."
