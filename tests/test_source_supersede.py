@@ -134,6 +134,12 @@ def test_supersede_stales_dependents_and_lists_affected(store):
         check = release_claim(session, claim_id, evidence=writer, interaction_id=opened.id, usecase_id="advice")
         assert check.check == "C1-STALE"
         assert check.result == CheckResult.FAIL
+    live_claim = by_id["c-live"]
+    relabel_claim(
+        session, "c-live", live_claim.claim_type, evidence=writer, interaction_id=live.id,
+        source_system=live_claim.source_system, source_record=live_claim.source_record,
+        validator_status=ValidatorStatus.INFERRED,
+    )
     assert release_claim(
         session, "c-live", evidence=writer, interaction_id=live.id, usecase_id="advice",
     ).result == CheckResult.PASS
