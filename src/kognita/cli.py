@@ -1626,6 +1626,34 @@ def _cmd_backup(args):
     return 0
 
 
+def _cmd_provider(args):
+    from sqlmodel import select
+    from kognita.providers import ProviderRecord, _register, _view
+
+    engine = make_engine(args.db)
+    try:
+        create_all(engine)
+        with session_scope(engine) as session:
+            if args._provider_command == "register":
+                details = json.loads(Path(args.path).read_text())
+                provider = details.get("provider") if isinstance(details, dict) else None
+                _print_json(_view(_register(session, provider, details)))
+            elif args._provider_command == "list":
+                _print_json([_view(row) for row in session.exec(
+                    select(ProviderRecord).order_by(ProviderRecord.provider)).all()])
+            else:
+                row = session.get(ProviderRecord, args.provider)
+                if row is None:
+                    raise ValueError("R3-UNREGISTERED: provider is not registered")
+                _print_json(_view(row))
+        return 0
+    except (ValueError, OSError) as exc:
+        print(f"R3-UNREGISTERED: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        engine.dispose()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
@@ -1997,6 +2025,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="directory to create (default: governed-agent)",
     )
     scaffold.set_defaults(func=cmd_scaffold)
+
+    provider = sub.add_parser("provider", help="ICT third-party provider register")
+    provider_sub = provider.add_subparsers(dest="_provider_command", required=True)
+    for command in ("register", "list", "show"):
+        provider_command = provider_sub.add_parser(command)
+        provider_command.add_argument("--db", default="kognita.db")
+        if command == "register":
+            provider_command.add_argument("path", help="JSON provider contract record")
+        elif command == "show":
+            provider_command.add_argument("provider")
+        provider_command.set_defaults(func=_cmd_provider)
 
     usecase = sub.add_parser("usecase", help="use-case register")
     usecase_sub = usecase.add_subparsers(dest="usecase_command", required=True)

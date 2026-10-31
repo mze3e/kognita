@@ -21,9 +21,16 @@ NOW = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
 
 
 @pytest.fixture
-def engine():
+def engine(request):
     engine = make_engine()
     create_all(engine)
+    if request.module.__name__ != "test_providers" and not request.node.name.startswith("test_unregistered_provider"):
+        from kognita.providers import _register
+        from test_providers import _details
+        with Session(engine) as session:
+            for provider in ("api.openai.com", "127.0.0.1"):
+                _register(session, provider, _details())
+            session.commit()
     return engine
 
 
@@ -159,3 +166,31 @@ def _legacy_authority_prerequisites(request, monkeypatch):
     import kognita.tools as tools
     if hasattr(tools, "_standing_checks"):
         monkeypatch.setattr(tools, "_standing_checks", standing_authorized)
+
+
+@pytest.fixture(autouse=True)
+def _legacy_provider_contracts(request, monkeypatch):
+    """Supply explicit contracts for tests predating R3 admission."""
+    if request.module.__name__ == "test_providers" or request.node.name.startswith("test_unregistered_provider"):
+        return
+    from urllib.parse import urlparse
+    from kognita.gateway import Gateway
+    from kognita.providers import _register, ProviderRecord
+    from test_providers import _details
+
+    original = Gateway.__init__
+
+    def configured(self, *args, **kwargs):
+        original(self, *args, **kwargs)
+        provider = self.provider or (urlparse(self.upstream).hostname or self.upstream)
+        current = request.getfixturevalue("session") if "session" in request.fixturenames else None
+        if current is not None and current.get_bind() is self.engine:
+            if current.get(ProviderRecord, provider) is None:
+                _register(current, provider, _details())
+        else:
+            with Session(self.engine) as session:
+                if session.get(ProviderRecord, provider) is None:
+                    _register(session, provider, _details())
+                    session.commit()
+
+    monkeypatch.setattr(Gateway, "__init__", configured)

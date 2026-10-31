@@ -1209,6 +1209,13 @@ class Gateway:
         if provider_name and not attributes.get("provider"):
             attributes["provider"] = provider_name
 
+        from kognita.providers import _registered
+        if not self._store(lambda: _registered(session, provider_name)):
+            identity_checks.append(Check(
+                check="R3-UNREGISTERED", citation="R3-UNREGISTERED",
+                regime="INTERNAL", result=CheckResult.FAIL,
+            ))
+
         snapshot = self._store(lambda: load_snapshot(session, as_of=now, _evidence=self.evidence, _agent_name=agent_name or ""))
         agent = snapshot.agents.get(agent_name)
         if agent is not None:

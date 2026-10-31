@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- R3 and R6 local ICT third-party provider register with complete contract details, incident history and regulatory cooperation; `kognita provider register|list|show`. Gateway admission denies unregistered or incomplete providers with `R3-UNREGISTERED` before forwarding. Contract details use private JSON storage pending public field-name approval.
+
 - T4 independent TypeScript verifier `@kognita/verify` and `kognita-verify` CLI with zero runtime dependencies, built-in Ed25519 and SHA-256, shared Python agreement fixtures, and Node 22 CI. No npm publication workflow.
 
 - T3 public external review API (`request_review_period`, `annotate`, `submit_review`) with immutable sequence periods, annotations, reviewer signatures checked against the authenticated R2 registry, and `EXTERNAL_REVIEW_SUBMITTED` evidence. Independent verification checks reviewer signatures.

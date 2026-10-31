@@ -1459,3 +1459,25 @@ def test_a_deferred_withhold_is_appended_when_the_store_recovers(
     assert secret not in json.dumps([event.payload for event in events])
     with Session(engine) as fresh:
         assert verify_chain(fresh) == len(events)
+
+
+@pytest.mark.parametrize("provider", [None, "configured-provider"])
+def test_unregistered_provider_denied_before_upstream(session, evidence, provider):
+    from kognita.providers import _register as register_provider
+    from test_providers import _details
+
+    _register(session)
+    provider_name = provider or "api.openai.com"
+    _live(session, provider=provider_name)
+    upstream = _Upstream(b'{"model":"gateway-model","choices":[]}')
+    gateway = _gateway(session.get_bind(), evidence, upstream, provider=provider)
+    response = gateway.handle("POST", PATH, {"agent_name": "dossier-agent", "provider": "registered-spoof"}, _body(BENIGN))
+    assert response.evaluation.outcome is Outcome.DENY
+    assert any(check.citation == "R3-UNREGISTERED" for check in response.evaluation.checks)
+    assert not upstream.calls
+    assert verify_chain(session) > 0
+    register_provider(session, provider_name, _details())
+    session.commit()
+    response = gateway.handle("POST", PATH, {"agent_name": "dossier-agent"}, _body(BENIGN))
+    assert not any(check.citation == "R3-UNREGISTERED" for check in response.evaluation.checks)
+    assert upstream.calls

@@ -195,6 +195,7 @@ source_modules = [
     "kognita.migrations",
     "kognita.models",
     "kognita.protocols",
+    "kognita.providers",
     "kognita.postgres",
     "kognita.registry",
     "kognita.replay",
