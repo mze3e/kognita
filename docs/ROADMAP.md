@@ -894,7 +894,7 @@ Each line is ticked only when the code and tests in this tree show it, with an e
 - [x] T5 Schema versioning: events carry `schema_version`; migrations run in one transaction; old events stay readable and verify. Evidence: `kognita.migrations` / `tests/test_migrations.py::test_interrupted_migration_leaves_db_unchanged`, `tests/test_migrations.py::test_v1_events_readable_after`; `kognita.evidence` / `tests/test_schema_version.py::test_new_events_carry_version`.
 - [ ] T6 External anchoring: the chain head is published through an `AnchorSink`; a rewrite after an anchor is detected.
 - [ ] R1 Backup and restore to a point in time, verifying chain and retention store; restore drill runs in CI.
-- [ ] R2 Key rotation, revocation and escrow record; verification works across rotations.
+- [x] R2 Key rotation, revocation and escrow record; verification works across rotations. Evidence: `kognita.signing`, `kognita.evidence`, `kognita.cli` / `tests/test_key_rotation.py::test_verify_across_rotations_and_escrow`, `tests/test_key_rotation.py::test_revocation_time_and_revoked_writes`, `tests/test_key_rotation.py::test_cli_rotate_revoke_list`.
 - [ ] R3 Model-provider register; routing to an unregistered provider is DENY (`R3-UNREGISTERED`).
 - [ ] R4 Incident playbooks: detect, contain and investigate steps for each of the nine agent incident types.
 - [ ] R5 Provider failover only to models approved for the use case, evidenced (`R5-FAILOVER`, `R5-UNAPPROVED-FALLBACK`).

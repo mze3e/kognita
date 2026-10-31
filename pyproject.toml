@@ -344,5 +344,6 @@ forbidden_modules = [
 name = "optional trust drivers stay behind lazy boundaries"
 type = "forbidden"
 source_modules = ["kognita"]
+# R2 registry replay uses the same lazy signing boundary; no driver imports elsewhere.
 forbidden_modules = ["cryptography", "psycopg"]
 ignore_imports = ["kognita.signing -> cryptography"]

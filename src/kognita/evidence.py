@@ -231,6 +231,14 @@ class EvidenceWriter:
                 header['signature'] = signature
             elif previous is not None and previous.signature is not None:
                 raise ValueError('T1: unsigned write would break a signed chain')
+            if signature is not None or event_type in (EventType.KEY_ROTATED, EventType.KEY_REVOKED):
+                from kognita.signing import _registry
+                _rows = export_chain(session)['events']
+                _rows.append(dict(header, payload=body))
+                try:
+                    _registry(_rows)
+                except ChainBreak as exc:
+                    raise ValueError(str(exc)) from exc
             event = EvidenceEvent(
                 signature=signature,
                 key_id=header.get('key_id'),
@@ -386,6 +394,8 @@ def verify_chain(session: Session, *, public_key: bytes | None = None) -> int:
     """
     events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
     required = public_key is not None or any(event.signature is not None for event in events)
+    from kognita.signing import _registry
+    _registry(export_chain(session)['events'], public_key)
     expected_prev = GENESIS_HASH
     for index, event in enumerate(events, start=1):
         if event.sequence != index:
@@ -398,7 +408,7 @@ def verify_chain(session: Session, *, public_key: bytes | None = None) -> int:
             raise ChainBreak(event.sequence, "event hash does not match its contents")
         required = _check_signature(
             _event_header(event),
-            public_key, required, event.sequence,
+            None, required, event.sequence,
         ) or required
         expected_prev = event.event_hash
     head = evidence_head(session)
@@ -510,6 +520,8 @@ def verify_export(export: dict[str, Any], *, public_key: bytes | None = None) ->
     expected_prev = GENESIS_HASH
     rows = export.get("events", [])
     required = public_key is not None or any(row.get("signature") is not None for row in rows)
+    from kognita.signing import _registry
+    _registry(rows, public_key)
     for index, row in enumerate(rows, start=1):
         if row["sequence"] != index:
             raise ChainBreak(row["sequence"], f"expected sequence {index}")
@@ -530,7 +542,7 @@ def verify_export(export: dict[str, Any], *, public_key: bytes | None = None) ->
         }
         _version_header(header, row.get("schema_version", 1), row["sequence"])
         _signature_header(header, row.get('signature'), row.get('key_id'), row.get('schema_version', 1), row['sequence'])
-        required = _check_signature(header, public_key, required, row['sequence']) or required
+        required = _check_signature(header, None, required, row['sequence']) or required
         if canonical_hash(header) != row["event_hash"]:
             raise ChainBreak(row["sequence"], "event hash does not match its contents")
         expected_prev = row["event_hash"]
