@@ -180,6 +180,7 @@ source_modules = [
     "kognita.anchoring",
     "kognita.backup",
     "kognita.evidence",
+    "kognita.external_review",
     "kognita.signing",
     "kognita.facts",
     "kognita.gateway",

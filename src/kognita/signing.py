@@ -152,4 +152,12 @@ def _registry(rows, public_key=None):
             raise
         except Exception as exc:
             raise ChainBreak(sequence, 'R2: key lifecycle refused: ' + str(exc)) from exc
+    if public_key is not None:
+        from kognita.external_review import _verify_review
+        for row in rows:
+            if row['event_type'] == 'EXTERNAL_REVIEW_SUBMITTED':
+                try:
+                    _verify_review(row, registry, rows)
+                except ValueError as exc:
+                    raise ChainBreak(row['sequence'], str(exc)) from exc
     return registry
