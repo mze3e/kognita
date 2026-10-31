@@ -347,9 +347,10 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "optional trust drivers stay behind lazy boundaries"
+name = "core and gateway trust drivers stay behind lazy boundaries"
 type = "forbidden"
 source_modules = ["kognita"]
+# Includes the R7 gateway and use-case register decision path.
 # R2 replay uses the lazy signing boundary. Postgres uses SQLAlchemy driver
 # loading only; even kognita.postgres must not import psycopg directly.
 forbidden_modules = ["cryptography", "psycopg", "psycopg_binary", "psycopg_pool"]

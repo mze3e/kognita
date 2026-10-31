@@ -899,7 +899,7 @@ Each line is ticked only when the code and tests in this tree show it, with an e
 - [ ] R4 Incident playbooks: detect, contain and investigate steps for each of the nine agent incident types.
 - [ ] R5 Provider failover only to models approved for the use case, evidenced (`R5-FAILOVER`, `R5-UNAPPROVED-FALLBACK`).
 - [x] R6 Provider register additions: incident history and regulatory cooperation. Evidence: `kognita.providers` / `tests/test_providers.py::test_contract_and_incident_history_round_trip`, `tests/test_providers.py::test_incomplete_record_refused`.
-- [ ] R7 Silent model-change detection is a revalidation trigger; calls fall back or stop per use case (`R7-MODEL-CHANGED`).
+- [x] R7 Silent model-change detection is a revalidation trigger; calls fall back or stop per use case (`R7-MODEL-CHANGED`). `failover` selects an approved card on the configured provider; other targets stop. Evidence: `kognita.gateway`, `kognita.usecases` / `tests/test_model_change.py::test_model_change_stops_and_triggers_revalidation`, `tests/test_model_change.py::test_model_change_falls_back_with_bounded_admission`, `tests/test_model_change.py::test_other_approved_model_still_triggers_revalidation`, `tests/test_model_change.py::test_trigger_write_failure_withholds_response`, `tests/test_model_change.py::test_degraded_change_trigger_is_written_on_recovery`.
 - [ ] R8 AI dependency map, declared vs observed; divergence is a finding (`R8-UNDECLARED`, `R8-UNUSED`).
 - [ ] R9 Concentration risk report per model provider, cloud, framework, vector platform and orchestration layer.
 - [ ] R10 Failure simulations as drills for the eight failure kinds, each verifying the failure mode and evidence completeness.

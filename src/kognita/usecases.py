@@ -377,6 +377,8 @@ class UseCaseSpec:
     permitted_sensitive: set[str] = field(default_factory=set)
     permitted_data_classes: tuple[str, ...] = ()
     approved_models: tuple[str, ...] = ()
+    # R7: an approved fallback card ID on the configured provider; empty stops.
+    failover: str = ""
     approved_sources: tuple[str, ...] = ()
     verifier: str = ""
     permit_same_model: bool = False
@@ -522,6 +524,7 @@ class RegisteredUseCase:
     content_hash: str = ""
     require_reasoning_trace: bool = False
     approved_models: tuple[str, ...] = ()
+    failover: str = ""
     approved_sources: tuple[str, ...] = ()
     verifier: str = ""
     permit_same_model: bool = False
@@ -1028,6 +1031,7 @@ def build_record(
         "sensitive": sorted(spec.permitted_sensitive),
         "permitted_data_classes": _sorted_texts(spec.permitted_data_classes),
         "approved_models": _names(spec.approved_models),
+        "failover": spec.failover if isinstance(spec.failover, str) else "",
         "approved_sources": _names(spec.approved_sources),
         "verifier": spec.verifier.strip() if isinstance(spec.verifier, str) else "",
         "permit_same_model": spec.permit_same_model is True,
@@ -1124,6 +1128,7 @@ def from_record(
         record=dict(record),
         content_hash=content_hash,
         approved_models=tuple(record.get("approved_models") or ()),
+        failover=record.get("failover") if isinstance(record.get("failover"), str) else "",
         approved_sources=tuple(record.get("approved_sources") or ()),
         verifier=str(record.get("verifier") or "").strip(),
         permit_same_model=record.get("permit_same_model") is True,
