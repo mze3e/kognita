@@ -89,6 +89,7 @@ from kognita.revocation import revocation_checks
 from kognita.rules import build_registry
 from kognita.usecases import (
     _served_model_citation,
+    _matching_cards,
     endpoint_named,
     load_register,
     model_card_link,
@@ -184,6 +185,7 @@ class _DeferredEvidence:
     save_run: bool = False
     model: _DeferredModel | None = None
     model_card_denial: _ModelCardDenial | None = None
+    _revalidation: dict[str, Any] | None = None
     _minimization: dict[str, Any] | None = None
     _delivery: dict[str, Any] | None = None
 
@@ -1073,6 +1075,7 @@ class Gateway:
         *,
         run: Run | None,
         _held: Any = None,
+        _model_retry: bool = False,
     ) -> GatewayResponse:
         headers = _headers(raw_headers)
         if method.upper() != "POST":
@@ -1656,6 +1659,54 @@ class Gateway:
         served_name, served_version = _reported_model(
             payload["model"], restored_payload
         )
+        entry = register.get(purpose)
+        expected = _matching_cards(entry, envelope, register) if entry is not None else ()
+        changed = bool(expected) and not any(
+            card.provider == provider_name and card.model == served_name
+            and card.version == served_version for card in expected
+        )
+        if changed:
+            fallback = next((card for card in register.model_cards
+                if entry.failover == card.card_id and card.card_id in entry.approved_models
+                and card.provider == provider_name
+                and card.card_id not in {item.card_id for item in expected}), None)
+            retry = fallback is not None and not _model_retry and deferred is None and not delivery_checks
+            event = dict(
+                correlation_id=evaluation.request_id,
+                event_type=EventType.REVALIDATION_TRIGGERED,
+                actor_type=ActorType.SYSTEM, actor_id="gateway",
+                classification=classification,
+                payload={"rule_id": "R7-MODEL-CHANGED", "use_case": purpose,
+                    "approved_models": [card.card_id for card in expected],
+                    "model": served_name, "model_version": served_version,
+                    "action": "fall back" if retry else "stop",
+                    "fallback": fallback.card_id if retry else ""},
+            )
+            if deferred is None:
+                self._store(lambda: self.evidence.emit(session, **event))
+            else:
+                deferred._revalidation = event
+            # Keep the existing model-card check for readers of earlier evidence.
+            if resolve_model_card(register, provider=provider_name, model=served_name,
+                    version=served_version or "", use_case=purpose) is None:
+                delivery_checks.append(Check(check="USE_CASE_MODEL", regime="INTERNAL",
+                    result=CheckResult.FAIL, citation=_served_model_citation(
+                        entry, model=served_name, version=served_version or "")))
+            delivery_checks.append(Check(check="R7-MODEL-CHANGED", regime="INTERNAL",
+                result=CheckResult.FAIL, citation="R7-MODEL-CHANGED: served model differs from the approved version"))
+            evaluation = (self._store(lambda: _response_outcome(session, evaluation, delivery_checks, self.evidence))
+                if deferred is None else _deferred_response_outcome(evaluation, delivery_checks))
+            if deferred is not None:
+                deferred.evaluation = evaluation
+            denied = finish(_json_response(403, {"outcome": Outcome.DENY.value,
+                "error": "R7-MODEL-CHANGED: served model changed; no model card for the requested version",
+                "request_id": evaluation.request_id}, evaluation=evaluation))
+            if retry:
+                retry_payload = dict(payload, model=fallback.model)
+                retry_headers = dict(headers, model_version=fallback.version)
+                return self._handle(session, method, path, retry_headers,
+                    json.dumps(retry_payload).encode(), run=bound_run, _model_retry=True)
+            return denied
         stopped = self._served_model_stopped(
             evaluation,
             snapshot=snapshot,
@@ -1829,6 +1880,8 @@ class Gateway:
                 run_id=run_id,
             )
         )
+        if item._revalidation is not None:
+            self._store(lambda: self.evidence.emit(session, **item._revalidation))
         if item._delivery is not None:
             self._store(lambda: self._retain_delivery(session, recorded, classification, item._delivery))
         if item._minimization is not None:

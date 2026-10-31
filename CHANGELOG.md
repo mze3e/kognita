@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- R3 and R6 local ICT third-party provider register with complete contract details, incident history and regulatory cooperation; `kognita provider register|list|show`. Gateway admission denies unregistered or incomplete providers with `R3-UNREGISTERED` before forwarding. Contract details use private JSON storage pending public field-name approval.
+- R7 gateway detection of served model changes against the card selected at admission, with `R7-MODEL-CHANGED` refusal and `REVALIDATION_TRIGGERED` evidence, including deferred recovery. Use-case `failover` defaults to stopping; setting an approved card ID permits one fallback attempt through full admission on the configured provider. Cross-provider targets stop until governed provider routing is implemented.
+
+- R3 and R6 local ICT third-party provider register with complete contract details, incident history and regulatory cooperation; `kognita provider register|list|show`. Gateway admission denies unregistered or incomplete providers with `R3-UNREGISTERED` before forwarding. Contract details are stored as JSON payload keys.
 
 - T4 independent TypeScript verifier `@kognita/verify` and `kognita-verify` CLI with zero runtime dependencies, built-in Ed25519 and SHA-256, shared Python agreement fixtures, and Node 22 CI. No npm publication workflow.
 
