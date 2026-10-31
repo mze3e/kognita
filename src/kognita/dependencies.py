@@ -28,7 +28,8 @@ def _map(session):
             if not entry.approved_models:
                 paths.append({'business_service': entry.record.get('business_process') or entry.usecase_id,
                     'use_case': entry.usecase_id, 'agent': agent.name, 'model': None,
-                    'provider': None, 'cloud': None, 'vector_platform': entry.record.get('vector_platform'),
+                    'provider': None, 'cloud': entry.cloud or None, 'framework': entry.framework or None,
+                    'orchestration': entry.orchestration or None, 'vector_platform': entry.vector_platform or None,
                     'tools': sorted(agent.tool_allowlist or {}),
                     'data_sources': sorted(set(entry.approved_sources) | set(entry.record.get('data_sources') or []))})
             for provider in entry.model_providers:
@@ -41,7 +42,8 @@ def _map(session):
                 paths.append({'business_service': entry.record.get('business_process') or entry.usecase_id,
                     'use_case': entry.usecase_id, 'agent': agent.name, 'model': card_id,
                     'provider': card.provider if card else None,
-                    'cloud': card.record.get('cloud') if card else None,
+                    'cloud': entry.cloud or (card.record.get('cloud') if card else None),
+                    'framework': entry.framework or None, 'orchestration': entry.orchestration or None,
                     'vector_platform': entry.record.get('vector_platform'),
                     'tools': sorted(agent.tool_allowlist or {}),
                     'data_sources': sorted(set(entry.approved_sources) | set(entry.record.get('data_sources') or []))})
@@ -109,6 +111,12 @@ def _map(session):
         for value in sorted(values)]
     return {'use_cases': [{'use_case': entry.usecase_id,
                 'business_service': entry.record.get('business_process') or entry.usecase_id,
+                'business_criticality': entry.business_criticality,
+                'provider': sorted(set(entry.model_providers) | {cards[name].provider
+                    for name in entry.approved_models if name in cards}),
+                'cloud': entry.cloud, 'framework': entry.framework,
+                'vector_platform': entry.vector_platform, 'orchestration': entry.orchestration,
+                'unresolved_models': sorted(set(entry.approved_models) - set(cards)),
                 'agents': sorted(set(entry.agents) | {agent.name for agent in agents
                     if entry.usecase_id in (agent.use_cases or [])}),
                 'models': sorted(entry.approved_models),
@@ -117,3 +125,36 @@ def _map(session):
         'scope': 'Current registers versus all retained verified call evidence. Unused means unobserved in this evidence, not safe to remove. Infrastructure metadata absent from registers is unknown; permissions do not prove calls.',
         'paths': paths, 'declared': [_edge(value) for value in sorted(declared)],
         'observed': [_edge(value) for value in sorted(observed)], 'findings': findings}
+
+
+def _concentration(session):
+    """Count distinct critical use cases per declared dependency, including unknowns."""
+    mapped = _map(session)
+    entries = [entry for entry in mapped['use_cases']
+               if entry['business_criticality'] == 'critical']
+    total = len(entries)
+    dimensions = {}
+    for name in ('provider', 'cloud', 'framework', 'vector_platform', 'orchestration'):
+        groups, unknown = {}, []
+        for entry in entries:
+            values = entry[name] if name == 'provider' else [entry[name]]
+            if any(not isinstance(value, str) for value in values):
+                raise ValueError(f'R9: invalid {name} declaration')
+            values = {value.strip() for value in values if value.strip()}
+            if not values or (name == 'provider' and entry['unresolved_models']):
+                unknown.append(entry['use_case'])
+            for value in values:
+                groups.setdefault(value, set()).add(entry['use_case'])
+        dimensions[name] = {
+            'dependencies': [{'dependency': value, 'use_cases': sorted(ids),
+                              'count': len(ids), 'share': len(ids) / total}
+                             for value, ids in sorted(groups.items())],
+            'unknown_use_cases': sorted(unknown),
+            'unknown_count': len(unknown),
+            'unknown_share': len(unknown) / total if total else None,
+        }
+    return {'scope': 'Current registered use cases with business_criticality=critical, including all statuses. '
+            'Shares count distinct use cases per declared dependency, not traffic or permissions. '
+            'Dependencies may overlap; missing declarations remain unknown. No critical use cases means shares are undefined.',
+            'total_critical_use_cases': total, 'dimensions': dimensions,
+            'findings': mapped['findings']}
