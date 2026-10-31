@@ -210,6 +210,7 @@ class EvidenceWriter:
             recorded_at = self.clock()
             payload_hash = canonical_hash(body)
             header = {
+                "schema_version": 2,
                 "sequence": sequence,
                 "correlation_id": correlation_id,
                 "event_type": event_type.value,
@@ -221,6 +222,7 @@ class EvidenceWriter:
                 "recorded_at": recorded_at.isoformat(),
             }
             event = EvidenceEvent(
+                schema_version=2,
                 sequence=sequence,
                 correlation_id=correlation_id,
                 event_type=event_type,
@@ -266,6 +268,7 @@ class EvidenceWriter:
             recorded = as_utc(event.recorded_at)
             snapshot = {
                 "kind": "evidence",
+                "schema_version": event.schema_version,
                 "sequence": event.sequence,
                 "correlation_id": event.correlation_id,
                 "event_type": EventType(event.event_type).value,
@@ -293,19 +296,19 @@ def recompute_event_hash(event: EvidenceEvent) -> str:
     altering recorded_at breaks the hash and is caught by verify_chain.
     """
     recorded_at = as_utc(event.recorded_at)
-    return canonical_hash(
-        {
-            "sequence": event.sequence,
-            "correlation_id": event.correlation_id,
-            "event_type": EventType(event.event_type).value,
-            "actor_type": ActorType(event.actor_type).value,
-            "actor_id": event.actor_id,
-            "classification": Classification(event.classification).value,
-            "payload_hash": event.payload_hash,
-            "prev_hash": event.prev_hash,
-            "recorded_at": recorded_at.isoformat() if recorded_at else None,
-        }
-    )
+    header = {
+        "sequence": event.sequence,
+        "correlation_id": event.correlation_id,
+        "event_type": EventType(event.event_type).value,
+        "actor_type": ActorType(event.actor_type).value,
+        "actor_id": event.actor_id,
+        "classification": Classification(event.classification).value,
+        "payload_hash": event.payload_hash,
+        "prev_hash": event.prev_hash,
+        "recorded_at": recorded_at.isoformat() if recorded_at else None,
+    }
+    _version_header(header, event.schema_version, event.sequence)
+    return canonical_hash(header)
 
 
 class ChainBreak(Exception):
@@ -315,6 +318,14 @@ class ChainBreak(Exception):
         super().__init__(f"evidence chain broken at sequence {sequence}: {reason}")
         self.sequence = sequence
         self.reason = reason
+
+
+def _version_header(header: dict[str, Any], schema_version: Any, sequence: int) -> None:
+    """Keep v1 hashes unchanged and reject unsupported schemas (T5)."""
+    if type(schema_version) is not int or schema_version not in (1, 2):
+        raise ChainBreak(sequence, "T5: unsupported schema_version")
+    if schema_version >= 2:
+        header["schema_version"] = schema_version
 
 
 def verify_chain(session: Session) -> int:
@@ -402,6 +413,7 @@ def export_chain(
 
     rows = [
         {
+            "schema_version": e.schema_version,
             "sequence": e.sequence,
             "correlation_id": e.correlation_id,
             "event_type": EventType(e.event_type).value,
@@ -460,6 +472,7 @@ def verify_export(export: dict[str, Any]) -> int:
             "prev_hash": row["prev_hash"],
             "recorded_at": row.get("recorded_at"),
         }
+        _version_header(header, row.get("schema_version", 1), row["sequence"])
         if canonical_hash(header) != row["event_hash"]:
             raise ChainBreak(row["sequence"], "event hash does not match its contents")
         expected_prev = row["event_hash"]
