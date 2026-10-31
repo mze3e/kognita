@@ -377,6 +377,7 @@ class UseCaseSpec:
     permitted_sensitive: set[str] = field(default_factory=set)
     permitted_data_classes: tuple[str, ...] = ()
     approved_models: tuple[str, ...] = ()
+    failure_mode: str = "FAIL_CLOSED"
     # R5/R7: an approved fallback card ID on the configured provider; empty stops.
     failover: str = ""
     approved_sources: tuple[str, ...] = ()
@@ -648,6 +649,8 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
     def add(text: str) -> None:
         found.append(_cite(usecase_id, text))
 
+    if spec.failure_mode not in ("FAIL_CLOSED", "DEGRADED"):
+        add("R10: failure_mode must be FAIL_CLOSED or DEGRADED")
     if spec.release_scope not in ("usecase", "client", "interaction"):
         add("RELEASE_SCOPE_INVALID: release_scope must be usecase, client or interaction")
     if spec.stale_action not in tuple(StaleAction):
@@ -1042,6 +1045,7 @@ def build_record(
         "sensitive": sorted(spec.permitted_sensitive),
         "permitted_data_classes": _sorted_texts(spec.permitted_data_classes),
         "approved_models": _names(spec.approved_models),
+        "failure_mode": spec.failure_mode,
         "failover": spec.failover if isinstance(spec.failover, str) else "",
         "approved_sources": _names(spec.approved_sources),
         "verifier": spec.verifier.strip() if isinstance(spec.verifier, str) else "",

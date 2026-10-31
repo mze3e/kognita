@@ -31,6 +31,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from enum import Enum as _Enum
 from typing import Any, Sequence
 
 from sqlalchemy import or_
@@ -1208,6 +1209,7 @@ __all__ = [
     "DRILL_DAYS",
     "BreakerError",
     "OpenDrill",
+    "DrillKind",
     "affected_clients",
     "circuit_breaker_checks",
     "drill_checks",
@@ -1218,3 +1220,214 @@ __all__ = [
     "schedule_kill_switch_drill",
     "set_breaker_threshold",
 ]
+
+
+class DrillKind(str, _Enum):
+    """Offline faults exercised through the governance execution paths."""
+
+    MODEL_UNAVAILABLE = "model_unavailable"
+    VENDOR_OUTAGE = "vendor_outage"
+    API_OUTAGE = "api_outage"
+    RETRIEVAL_FAILURE = "retrieval_failure"
+    IDENTITY_SERVICE_FAILURE = "identity_service_failure"
+    CORRUPTED_CONTEXT = "corrupted_context"
+    COMPROMISED_MODEL = "compromised_model"
+    TOOL_FAILURE = "tool_failure"
+
+
+def _failure_probe(session, kind, entry, register, evidence, correlation):
+    import json
+    from datetime import timedelta
+    from kognita.gateway import Gateway, ClientConfiguration, _UpstreamUnavailable
+    from kognita.vocabulary import FailureMode, Classification
+
+    mode = FailureMode(entry.record.get("failure_mode", "FAIL_CLOSED"))
+    cards = [card for card in register.model_cards
+             if card.card_id in entry.approved_models and card.card_id != entry.failover]
+    if not cards:
+        raise BreakerError("R10: use case has no approved primary model")
+    primary = cards[0]
+    calls = []
+
+    def transport(method, url, headers, body):
+        request = json.loads(body)
+        calls.append(request["model"])
+        if len(calls) == 1:
+            if kind == DrillKind.COMPROMISED_MODEL:
+                return 200, {}, json.dumps({"model": primary.model,
+                    "model_version": "drill-changed", "choices": []}).encode()
+            fault = TimeoutError("injected API timeout") if kind == DrillKind.API_OUTAGE else ConnectionError("injected outage")
+            raise _UpstreamUnavailable(str(fault)) from fault
+        fallback = next((card for card in register.model_cards
+                         if card.card_id == entry.failover), None)
+        if fallback is None or request["model"] != fallback.model:
+            raise BreakerError("R5-UNAPPROVED-FALLBACK: unexpected drill route")
+        return 200, {}, json.dumps({"model": fallback.model,
+            "model_version": fallback.version,
+            "choices": [{"message": {"content": "offline drill answer"}}]}).encode()
+
+    model_kinds = {DrillKind.MODEL_UNAVAILABLE, DrillKind.VENDOR_OUTAGE,
+                   DrillKind.API_OUTAGE, DrillKind.COMPROMISED_MODEL}
+    if kind in model_kinds:
+        client = ClientConfiguration(principal="drill", purpose=entry.usecase_id,
+            system_trigger="drill", actor_location="SG")
+        gateway = Gateway(engine=session.get_bind(), evidence=evidence,
+            upstream="http://127.0.0.1", provider=primary.provider,
+            client=client, purposes=(entry.usecase_id,), transport=transport,
+            failure_mode={entry.usecase_id: mode})
+        headers = {"model_version": primary.version}
+        response = gateway.handle("POST", "/v1/chat/completions", headers,
+            json.dumps({"model": primary.model, "messages": [
+                {"role": "user", "content": "public market hours"}]}).encode(), session=session)
+        if not calls:
+            raise BreakerError("R10: model fault was not reached")
+        released = response.status == 200
+        if released and (not entry.failover or len(calls) != 2):
+            raise BreakerError("R5-UNAPPROVED-FALLBACK: output without approved fallback")
+        if not released and response.status not in (403, 502):
+            raise BreakerError("R10: unexpected gateway result")
+        expected_release = kind in model_kinds and bool(entry.failover)
+        if released != expected_release:
+            raise BreakerError("R10: configured failover assertion failed")
+        return released, calls
+
+    if kind == DrillKind.RETRIEVAL_FAILURE:
+        from kognita.facts import Fact, FreshnessRule, admit_fact
+        from kognita.retention import RetentionStore
+        from kognita.retrieval import retrieve
+        from kognita.models import KnowledgeItem
+        reached = []
+        class _UnavailableEmbedder:
+            model = "drill"
+            def embed(self, text):
+                reached.append(True)
+                raise ConnectionError("injected retrieval outage")
+        session.add(KnowledgeItem(title="drill", body="context", zones=["drill"],
+                                  classification=Classification.C0))
+        session.flush()
+        try:
+            retrieve(session, "context", zone="drill", embedder=_UnavailableEmbedder(),
+                     evidence=evidence, correlation_id=correlation, use_case=entry.usecase_id)
+        except ConnectionError:
+            pass
+        if not reached:
+            raise BreakerError("R10: retrieval fault was not reached")
+        # No valid source was returned. The real fact contract must suppress
+        # this regardless of stale-data policy, including WARN.
+        fact = Fact(None, "", "drill", evidence.clock(), Classification.C0,
+                    "public", timedelta(seconds=1))
+        admitted, warning = admit_fact(fact, entry, "drill", {},
+            session=session, evidence=evidence, retention=RetentionStore(),
+            correlation_id=correlation, now=evidence.clock())
+        if admitted is not None or warning:
+            raise BreakerError("R10: failed retrieval released a fact")
+    elif kind == DrillKind.CORRUPTED_CONTEXT:
+        from kognita.retention import RetentionStore
+        from kognita.models import RetainedContent
+        from kognita.reconstruct import _content_record
+        digest = RetentionStore().retain_text(session, "approved context",
+            kind="context", use_case=entry.usecase_id, correlation_id=correlation)
+        row = session.get(RetainedContent, digest)
+        row.body = "injected corrupted context"
+        session.add(row)
+        session.flush()
+        if _content_record(session, digest)["status"] != "mismatch":
+            raise BreakerError("R10: integrity check missed corrupt context")
+        evidence.emit(session, correlation_id=correlation, event_type=EventType.REVIEW,
+            payload={"rule_id": "R10", "integrity": "mismatch", "released": False})
+    else:
+        from kognita.tools import ToolRegistry, run_governed
+        from kognita.gateway import _GatewayPack
+        registry = ToolRegistry()
+        reached = []
+        def failed(envelope, evaluation, session):
+            reached.append(True)
+            raise ConnectionError("injected tool failure")
+        checks = ()
+        if kind == DrillKind.IDENTITY_SERVICE_FAILURE:
+            from kognita.gateway import _credential_checks
+            class _UnavailableIdentity:
+                def get(self, *args, **kwargs):
+                    reached.append(True)
+                    raise ConnectionError("injected identity store outage")
+            checks = _credential_checks(_UnavailableIdentity(), "drill", {"agent_credential": "offline"})
+            if not reached or not all(check.result == CheckResult.FAIL for check in checks):
+                raise BreakerError("R10: identity fault was not reached")
+            reached.clear()
+        registry.register("drill", failed, classification=Classification.C0, public_content=True)
+        result = None
+        try:
+            result = run_governed(session, Envelope(principal="drill", purpose=entry.usecase_id,
+                tool="drill", context={"system_trigger": "drill"}),
+                registry=registry, evidence=evidence, pack=_GatewayPack(),
+                extra_checks=checks, now=evidence.clock())
+        except ConnectionError:
+            if kind != DrillKind.TOOL_FAILURE or not reached:
+                raise
+        if kind == DrillKind.IDENTITY_SERVICE_FAILURE:
+            if reached or result is None or result.outcome != Outcome.DENY or result.data is not None:
+                raise BreakerError("R10: identity failure released a tool")
+        else:
+            if not reached:
+                raise BreakerError("R10: tool fault was not reached")
+            evidence.emit(session, correlation_id=correlation, event_type=EventType.TOOL_CALL,
+                payload={"rule_id": "R10", "outcome": "DENY", "released": False,
+                         "error": "injected tool failure"})
+    return False, []
+
+
+def _simulate(session, kind, *, usecase_id, evidence):
+    """Exercise real paths in a savepoint, retain the verified transcript only."""
+    from uuid import uuid4
+    from kognita.evidence import verify_chain
+    from kognita.vocabulary import FailureMode
+
+    try:
+        kind = DrillKind(kind)
+    except ValueError as exc:
+        raise BreakerError("R10: unknown drill kind") from exc
+    before = verify_chain(session)
+    register = load_register(session, as_of=evidence.clock())
+    entry = register.get(usecase_id)
+    if entry is None:
+        raise BreakerError("R10: unknown use case")
+    try:
+        mode = FailureMode(entry.record.get("failure_mode", "FAIL_CLOSED"))
+    except ValueError as exc:
+        raise BreakerError("R10: invalid configured failure mode") from exc
+    correlation = f"drill:{uuid4()}"
+    nested = session.begin_nested()
+    try:
+        released, calls = _failure_probe(session, kind, entry, register, evidence, correlation)
+        count = verify_chain(session)
+        rows = session.exec(select(EvidenceEvent).where(
+            EvidenceEvent.sequence > before).order_by(EvidenceEvent.sequence)).all()
+        from kognita.evidence import export_chain
+        transcript = export_chain(session)["events"][before:]
+        types = {row.event_type for row in rows}
+        expected = ({EventType.POLICY_DECISION, EventType.MODEL_CALL}
+                    if calls else {EventType.RETRIEVAL}
+                    if kind == DrillKind.RETRIEVAL_FAILURE else {EventType.REVIEW}
+                    if kind == DrillKind.CORRUPTED_CONTEXT else {EventType.POLICY_DECISION})
+        if kind == DrillKind.TOOL_FAILURE:
+            expected.add(EventType.TOOL_CALL)
+        if kind == DrillKind.COMPROMISED_MODEL:
+            expected.add(EventType.REVALIDATION_TRIGGERED)
+        if not expected <= types or count != before + len(rows):
+            raise BreakerError("R10: drill evidence is incomplete")
+        if released and not any(row.payload.get("rule_id") == "R5-FAILOVER" for row in rows):
+            raise BreakerError("R10: fallback evidence is missing")
+    finally:
+        nested.rollback()
+        # Rolled-back ORM event instances must not collide with reused IDs.
+        for row in list(session.identity_map.values()):
+            if isinstance(row, EvidenceEvent) and row.sequence > before:
+                session.expunge(row)
+    result = {"action": "simulate", "kind": kind.value, "usecase_id": usecase_id,
+        "failure_mode": mode.value, "rule_id": "R10", "correlation_id": correlation,
+        "outcome": "ALLOW" if released else "DENY", "released": released,
+        "calls": calls, "transcript": transcript, "transcript_complete": True}
+    evidence.emit(session, correlation_id=correlation, event_type=EventType.REVIEW,
+                  actor_id="drill", payload=result)
+    result["chain_events"] = verify_chain(session)
+    return result
