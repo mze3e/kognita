@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Evidence events carry `schema_version`: new events use version 2 and hash the version; existing rows default to version 1 and retain their original hashes. Exports and verification support both versions (T5 part 1). Transactional migrations remain pending.
+- `kognita db migrate|status` upgrades legacy SQLite evidence tables in one transaction, preserves hashes, indexes and guards, and rolls back interrupted migrations (T5).
+
+- Evidence events carry `schema_version`: new events use version 2 and hash the version; existing rows default to version 1 and retain their original hashes. Exports and verification support both versions (T5 part 1).
 
 ## [0.6.1] - 2026-10-31
 
