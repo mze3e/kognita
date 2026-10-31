@@ -146,6 +146,39 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_keys_lifecycle(args):
+    from sqlmodel import Session
+    from kognita.signing import EvidenceSigner, _public_pem, _key_id, _registry
+    try:
+        engine = make_engine(args.db)
+        create_all(engine)
+        with Session(engine) as session:
+            if args._operation == 'list':
+                verify_chain(session)
+                registry = _registry(export_chain(session)['events'])
+                _print_json({key: {'_escrow': value['_escrow'],
+                                   '_revoked': str(value['_revoked']) if value['_revoked'] else None}
+                             for key, value in registry.items()})
+                return 0
+            signer = EvidenceSigner(Path(args._private_path).read_bytes())
+            if args._operation == 'rotate':
+                replacement = EvidenceSigner(Path(args._replacement).read_bytes())
+                pem = _public_pem(replacement)
+                body = {'key_id': _key_id(replacement._load().public_key()),
+                        '_public_key': pem.decode('ascii'), '_escrow': args._escrow}
+                kind = EventType.KEY_ROTATED
+            else:
+                body = {'key_id': args._key_id, 'recorded_at': args._recorded_at}
+                kind = EventType.KEY_REVOKED
+            EvidenceWriter(engine, signing=signer).emit(
+                session, correlation_id='keys', event_type=kind, payload=body)
+            session.commit()
+    except (OSError, ValueError, ChainBreak) as exc:
+        print(f'R2: key operation refused: {exc}', file=sys.stderr)
+        return 1
+    return 0
+
+
 def _cmd_keys_generate(args):
     from kognita.signing import _generate
     import os
@@ -1637,6 +1670,19 @@ def build_parser() -> argparse.ArgumentParser:
     generate.add_argument('_private_path', metavar='PRIVATE_PATH')
     generate.add_argument('_public_path', metavar='PUBLIC_PATH')
     generate.set_defaults(func=_cmd_keys_generate)
+    for _operation in ('rotate', 'revoke', 'list'):
+        _command = keys_sub.add_parser(_operation, help='R2 key lifecycle')
+        _command.add_argument('--db', default='kognita.db')
+        if _operation != 'list':
+            _command.add_argument('_private_path', metavar='PRIVATE_PATH')
+        if _operation == 'rotate':
+            _command.add_argument('_replacement', metavar='REPLACEMENT_PRIVATE_PATH')
+            _command.add_argument('_escrow', metavar='ESCROW_RECORD')
+        if _operation == 'revoke':
+            _command.add_argument('_key_id', metavar='KEY_ID')
+            _command.add_argument('_recorded_at', metavar='REVOCATION_TIME')
+        _command.set_defaults(func=_cmd_keys_lifecycle, _operation=_operation)
+
 
     evidence = sub.add_parser("evidence", help="evidence plane operations")
     evidence_sub = evidence.add_subparsers(dest="evidence_command", required=True)
