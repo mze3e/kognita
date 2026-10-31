@@ -1269,21 +1269,28 @@ def _failure_probe(session, kind, entry, register, evidence, correlation):
     model_kinds = {DrillKind.MODEL_UNAVAILABLE, DrillKind.VENDOR_OUTAGE,
                    DrillKind.API_OUTAGE, DrillKind.COMPROMISED_MODEL}
     if kind in model_kinds:
-        client = ClientConfiguration(principal="drill", purpose=entry.usecase_id,
+        client = ClientConfiguration(principal=correlation, purpose=entry.usecase_id,
             system_trigger="drill", actor_location="SG")
         gateway = Gateway(engine=session.get_bind(), evidence=evidence,
             upstream="http://127.0.0.1", provider=primary.provider,
             client=client, purposes=(entry.usecase_id,), transport=transport,
             failure_mode={entry.usecase_id: mode})
         headers = {"model_version": primary.version}
-        response = gateway.handle("POST", "/v1/chat/completions", headers,
-            json.dumps({"model": primary.model, "messages": [
-                {"role": "user", "content": "public market hours"}]}).encode(), session=session)
+        from kognita.gateway import _gateway_binding, _held_gateways
+        binding = _gateway_binding(gateway)
+        try:
+            response = gateway.handle("POST", "/v1/chat/completions", headers,
+                json.dumps({"model": primary.model, "messages": [
+                    {"role": "user", "content": "public market hours"}]}).encode(), session=session)
+        finally:
+            _held_gateways.pop(binding, None)
         if not calls:
             raise BreakerError("R10: model fault was not reached")
         released = response.status == 200
         if released and (not entry.failover or len(calls) != 2):
             raise BreakerError("R5-UNAPPROVED-FALLBACK: output without approved fallback")
+        if not released and (response.evaluation is None or response.evaluation.outcome != Outcome.DENY):
+            raise BreakerError("R10: upstream failure did not produce DENY")
         if not released and response.status not in (403, 502):
             raise BreakerError("R10: unexpected gateway result")
         expected_release = kind in model_kinds and bool(entry.failover)
@@ -1292,7 +1299,7 @@ def _failure_probe(session, kind, entry, register, evidence, correlation):
         return released, calls
 
     if kind == DrillKind.RETRIEVAL_FAILURE:
-        from kognita.facts import Fact, FreshnessRule, admit_fact
+        from kognita.facts import Fact, admit_fact
         from kognita.retention import RetentionStore
         from kognita.retrieval import retrieve
         from kognita.models import KnowledgeItem
@@ -1340,7 +1347,9 @@ def _failure_probe(session, kind, entry, register, evidence, correlation):
         from kognita.gateway import _GatewayPack
         registry = ToolRegistry()
         reached = []
+        evaluations = []
         def failed(envelope, evaluation, session):
+            evaluations.append(evaluation)
             reached.append(True)
             raise ConnectionError("injected tool failure")
         checks = ()
@@ -1370,7 +1379,13 @@ def _failure_probe(session, kind, entry, register, evidence, correlation):
         else:
             if not reached:
                 raise BreakerError("R10: tool fault was not reached")
-            evidence.emit(session, correlation_id=correlation, event_type=EventType.TOOL_CALL,
+            from kognita.tools import _response_outcome
+            denied = _response_outcome(session, evaluations[0], [Check(
+                check="R10", citation="R10: tool unavailable", regime="INTERNAL",
+                result=CheckResult.FAIL)], evidence)
+            if denied.outcome != Outcome.DENY:
+                raise BreakerError("R10: tool failure did not produce DENY")
+            evidence.emit(session, correlation_id=denied.request_id, event_type=EventType.TOOL_CALL,
                 payload={"rule_id": "R10", "outcome": "DENY", "released": False,
                          "error": "injected tool failure"})
     return False, []
@@ -1395,6 +1410,8 @@ def _simulate(session, kind, *, usecase_id, evidence):
         mode = FailureMode(entry.record.get("failure_mode", "FAIL_CLOSED"))
     except ValueError as exc:
         raise BreakerError("R10: invalid configured failure mode") from exc
+    if mode == FailureMode.FAIL_CLOSED and entry.failover:
+        raise BreakerError("R10: FAIL_CLOSED conflicts with configured failover")
     correlation = f"drill:{uuid4()}"
     nested = session.begin_nested()
     try:
@@ -1415,8 +1432,33 @@ def _simulate(session, kind, *, usecase_id, evidence):
             expected.add(EventType.REVALIDATION_TRIGGERED)
         if not expected <= types or count != before + len(rows):
             raise BreakerError("R10: drill evidence is incomplete")
-        if released and not any(row.payload.get("rule_id") == "R5-FAILOVER" for row in rows):
+        if calls:
+            model_calls = [row for row in rows if row.event_type == EventType.MODEL_CALL]
+            if len(model_calls) != len(calls):
+                raise BreakerError("R10: model call evidence is incomplete")
+        if kind == DrillKind.IDENTITY_SERVICE_FAILURE:
+            if not any(row.event_type == EventType.POLICY_DECISION
+                       and row.payload.get("outcome") == "DENY"
+                       and any(check.get("check") == "AGENT_CREDENTIAL"
+                               and check.get("result") == CheckResult.FAIL.value
+                               for check in row.payload.get("checks", [])) for row in rows):
+                raise BreakerError("R10: identity denial evidence is missing")
+        if kind == DrillKind.RETRIEVAL_FAILURE:
+            if not any(row.event_type == EventType.RETRIEVAL
+                       and row.payload.get("action") == "FACT_ADMISSION"
+                       and row.payload.get("admitted") is False for row in rows):
+                raise BreakerError("R10: fact suppression evidence is missing")
+        if released and not any(row.payload.get("rule_id") == "R5-FAILOVER"
+                                and row.payload.get("fallback") == entry.failover
+                                and row.payload.get("outcome") == "ALLOW" for row in rows):
             raise BreakerError("R10: fallback evidence is missing")
+        if not released and any(row.event_type == EventType.EGRESS
+                                and row.payload.get("response_hash")
+                                and not any(other.correlation_id == row.correlation_id
+                                    and other.event_type == EventType.POLICY_DECISION
+                                    and other.payload.get("withheld") is True for other in rows)
+                                for row in rows):
+            raise BreakerError("R10: denied drill released output")
     finally:
         nested.rollback()
         # Rolled-back ORM event instances must not collide with reused IDs.
@@ -1427,7 +1469,15 @@ def _simulate(session, kind, *, usecase_id, evidence):
         "failure_mode": mode.value, "rule_id": "R10", "correlation_id": correlation,
         "outcome": "ALLOW" if released else "DENY", "released": released,
         "calls": calls, "transcript": transcript, "transcript_complete": True}
-    evidence.emit(session, correlation_id=correlation, event_type=EventType.REVIEW,
-                  actor_id="drill", payload=result)
-    result["chain_events"] = verify_chain(session)
+    with session.begin_nested():
+        evidence.emit(session, correlation_id=correlation, event_type=EventType.REVIEW,
+                      actor_id="drill", payload=result)
+        recorded = session.exec(select(EvidenceEvent).where(
+            EvidenceEvent.correlation_id == correlation)).all()
+        if (len(recorded) != 1 or recorded[0].event_type != EventType.REVIEW
+                or recorded[0].payload != result):
+            raise BreakerError("R10: drill result evidence is incomplete")
+        result["chain_events"] = verify_chain(session)
+        if result["chain_events"] != before + 1:
+            raise BreakerError("R10: drill result chain is incomplete")
     return result

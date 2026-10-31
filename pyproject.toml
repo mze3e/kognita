@@ -352,9 +352,17 @@ forbidden_modules = [
 name = "core and gateway trust drivers stay behind lazy boundaries"
 type = "forbidden"
 source_modules = ["kognita"]
-# Includes R9 concentration via dependencies and usecases, R14 reports,
+# Includes R10 drills through breaker, gateway, retrieval and tools,
+# R9 concentration via dependencies and usecases, R14 reports,
 # R4 playbooks and the R5/R7 decision path.
 # R2 replay uses the lazy signing boundary. Postgres uses SQLAlchemy driver
 # loading only; even kognita.postgres must not import psycopg directly.
 forbidden_modules = ["cryptography", "psycopg", "psycopg_binary", "psycopg_pool"]
+ignore_imports = ["kognita.signing -> cryptography"]
+
+[[tool.importlinter.contracts]]
+name = "Record class retention cannot reach optional dependencies"
+type = "forbidden"
+source_modules = ["kognita.retention", "kognita.models"]
+forbidden_modules = ["cryptography", "psycopg", "kognita.adapters", "kognita.ingest"]
 ignore_imports = ["kognita.signing -> cryptography"]

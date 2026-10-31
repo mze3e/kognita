@@ -690,6 +690,25 @@ class RetentionPolicy(SQLModel, table=True):
     retain_days: int | None = None
 
 
+class RecordClassRetention(SQLModel, table=True):
+    """Retention period for a supported record class; None keeps it live."""
+
+    __tablename__ = "RecordClassRetention"
+
+    kind: str = Field(primary_key=True)
+    retain_days: int | None = None
+
+
+class _RecordClassHold(SQLModel, table=True):
+    """Independent class holds, including repeated stores of shared content."""
+
+    __tablename__ = "_record_class_holds"
+
+    content_hash: str = Field(primary_key=True)
+    kind: str = Field(primary_key=True)
+    retained_at: datetime = Field(default_factory=utcnow, sa_column=_utc_column())
+
+
 class RetainedContent(SQLModel, table=True):
     """Content-addressed prompts, responses, and source snapshots.
 
@@ -1270,6 +1289,7 @@ __all__ = [
     "BreakerThreshold",
     "DrillDue",
     "RetentionPolicy",
+    "RecordClassRetention",
     "RetainedContent",
     "policy_content",
     "policy_content_hash",
