@@ -1,0 +1,44 @@
+{
+  "kognita_evidence_export": 1,
+  "exported_at": "2026-10-31T09:53:41.841512+00:00",
+  "event_count": 1,
+  "interest_count": 1,
+  "filters": {
+    "since": null,
+    "correlation_id": null
+  },
+  "head_hash": "996d4ffbc6941a9d9013a1475839611ef0f5f2be431f98e231b18c6d49e808ce",
+  "events": [
+    {
+      "signature": null,
+      "key_id": null,
+      "schema_version": 2,
+      "sequence": 1,
+      "correlation_id": "unicode",
+      "event_type": "TOOL_CALL",
+      "actor_type": "SYSTEM",
+      "actor_id": "system",
+      "classification": "C1",
+      "payload": {
+        "text": "Caf\u00e9 \ud83d\ude00\n",
+        "nested": {
+          "\ud800\udc00": 1,
+          "\ue000": 2
+        },
+        "numbers": [
+          1.0,
+          -0.0,
+          1e-07,
+          1e+16,
+          0.0001,
+          9007199254740993
+        ]
+      },
+      "payload_hash": "076328e9d5b7da02b26c49905e030725e844b84cc4f9c5664876ae5c07201faa",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "event_hash": "996d4ffbc6941a9d9013a1475839611ef0f5f2be431f98e231b18c6d49e808ce",
+      "recorded_at": "2026-01-01T00:00:00+00:00",
+      "of_interest": true
+    }
+  ]
+}

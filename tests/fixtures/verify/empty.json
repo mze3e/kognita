@@ -1,0 +1,12 @@
+{
+  "kognita_evidence_export": 1,
+  "exported_at": "2026-10-31T09:53:41.838238+00:00",
+  "event_count": 0,
+  "interest_count": 0,
+  "filters": {
+    "since": null,
+    "correlation_id": null
+  },
+  "head_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "events": []
+}

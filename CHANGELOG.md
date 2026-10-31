@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- T4 independent TypeScript verifier `@kognita/verify` and `kognita-verify` CLI with zero runtime dependencies, built-in Ed25519 and SHA-256, shared Python agreement fixtures, and Node 22 CI. No npm publication workflow.
+
 - T3 public external review API (`request_review_period`, `annotate`, `submit_review`) with immutable sequence periods, annotations, reviewer signatures checked against the authenticated R2 registry, and `EXTERNAL_REVIEW_SUBMITTED` evidence. Independent verification checks reviewer signatures.
 
 - R1 recovery bundles with chain, retained bodies and holds, retention policies, replayed key registry and anchors; `kognita backup create|verify|restore PATH`, sequence/time recovery, and a CI restore drill. Restore requires a new SQLite destination, verifies before publication, and refuses unavailable historical retention state. Existing `--public-key` and repeatable `--anchors` supply independent trust inputs.

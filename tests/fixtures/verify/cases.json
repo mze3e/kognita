@@ -1,0 +1,112 @@
+[
+  {
+    "file": "empty.json",
+    "valid": true,
+    "public_key": null
+  },
+  {
+    "file": "unsigned-v2.json",
+    "valid": true,
+    "public_key": null
+  },
+  {
+    "file": "legacy-v1.json",
+    "valid": true,
+    "public_key": null
+  },
+  {
+    "file": "signed.json",
+    "valid": true,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "rotated.json",
+    "valid": true,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "review.json",
+    "valid": true,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "revoked-retired.json",
+    "valid": true,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "payload-tamper.json",
+    "valid": false,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "signature-tamper.json",
+    "valid": false,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "unsupported-version.json",
+    "valid": false,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "sequence-gap.json",
+    "valid": false,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "truncated.json",
+    "valid": false,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "unsigned-with-root.json",
+    "valid": false,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "wrong-key.json",
+    "valid": false,
+    "public_key": "wrong.pem"
+  },
+  {
+    "file": "missing-count.json",
+    "valid": false,
+    "public_key": null
+  },
+  {
+    "file": "rehashed-forgery.json",
+    "valid": false,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "forged-review.json",
+    "valid": false,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "retroactive-revocation.json",
+    "valid": false,
+    "public_key": "root.pem"
+  },
+  {
+    "file": "signed.json",
+    "valid": true,
+    "public_key": null
+  },
+  {
+    "file": "rotated.json",
+    "valid": true,
+    "public_key": null
+  },
+  {
+    "file": "revoked-retired.json",
+    "valid": true,
+    "public_key": null
+  },
+  {
+    "file": "review.json",
+    "valid": true,
+    "public_key": null
+  }
+]

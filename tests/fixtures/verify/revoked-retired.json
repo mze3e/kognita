@@ -1,0 +1,119 @@
+{
+  "kognita_evidence_export": 1,
+  "exported_at": "2026-10-31T09:53:41.866116+00:00",
+  "event_count": 5,
+  "interest_count": 5,
+  "filters": {
+    "since": null,
+    "correlation_id": null
+  },
+  "head_hash": "b44c7187115346cf72fd363331d146fd7f6b7828b8ffdc53db92ae63a5cda48f",
+  "events": [
+    {
+      "signature": "76bab6600f02e42849d21340c63078f3f0c8f8b5098b714ba9577eca8c60d52cad0cb5a429350af9e3f711368ea7c4c12ee09695cac83c365ddd46dbba3dcd0d",
+      "key_id": "7225c276c5dda33db18fdda34e4fb41a70ee080c0786a1207fda925d0af4b26f",
+      "schema_version": 2,
+      "sequence": 1,
+      "correlation_id": "signed",
+      "event_type": "TOOL_CALL",
+      "actor_type": "SYSTEM",
+      "actor_id": "system",
+      "classification": "C1",
+      "payload": {},
+      "payload_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "event_hash": "924831053fa3d897821e545f55a6b43627ccca41f0e5807bbcf8574775a0c45e",
+      "recorded_at": "2026-10-31T09:53:41.855665+00:00",
+      "of_interest": true
+    },
+    {
+      "signature": "54df5240476a4cac2585c06c52dab7a4b79d188d66e72b9bb777b9bc344097f539dc37d1e8ea618bea0909c4efa8579fe7a8af7e3b1091970b7f01385ddbad05",
+      "key_id": "7225c276c5dda33db18fdda34e4fb41a70ee080c0786a1207fda925d0af4b26f",
+      "schema_version": 2,
+      "sequence": 2,
+      "correlation_id": "rotate",
+      "event_type": "KEY_ROTATED",
+      "actor_type": "SYSTEM",
+      "actor_id": "system",
+      "classification": "C1",
+      "payload": {
+        "key_id": "786a20e1e38117197a93b1992ab6cf77559efccb7bf99f618b63dd3a3cc018e9",
+        "_public_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAXLdi9OEk7DfyZyuuEd0RQjx2GZdJY7u+XkuHcpEzmZ8=\n-----END PUBLIC KEY-----\n",
+        "_escrow": "Test custody reference"
+      },
+      "payload_hash": "2d5c3b334c59e8b5efd2ca01cbc849c19293f2a45fbe08c31c41356146d6d86d",
+      "prev_hash": "924831053fa3d897821e545f55a6b43627ccca41f0e5807bbcf8574775a0c45e",
+      "event_hash": "9d28284e8928216f46cdec1b46bd42deb26934be53bcafbfaf5e08dba8c25d8c",
+      "recorded_at": "2026-10-31T09:53:41.858384+00:00",
+      "of_interest": true
+    },
+    {
+      "signature": "52f18bc51f4568708d9be75e194882b92d01a047f0e7f69f5c6f72f209eb7b3f5a19bd6cf110809623a4503e1fd672b00667a75649dfb882b3031886fb6b7e06",
+      "key_id": "786a20e1e38117197a93b1992ab6cf77559efccb7bf99f618b63dd3a3cc018e9",
+      "schema_version": 2,
+      "sequence": 3,
+      "correlation_id": "after",
+      "event_type": "TOOL_CALL",
+      "actor_type": "SYSTEM",
+      "actor_id": "system",
+      "classification": "C1",
+      "payload": {},
+      "payload_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "prev_hash": "9d28284e8928216f46cdec1b46bd42deb26934be53bcafbfaf5e08dba8c25d8c",
+      "event_hash": "069a191662f7f7e9f367c94b75bb18d9814d1563de60560a7c5d03a0b8e5987d",
+      "recorded_at": "2026-10-31T09:53:41.859363+00:00",
+      "of_interest": true
+    },
+    {
+      "signature": "572a7a5f9b5a922615dc4e6f6f2af218ea7fdc7cdc3d9df66fb12428cc0986db5fb0480ea804e23d33095ab35232419c7f9f59912c3fe5646e7a559bb81cb707",
+      "key_id": "786a20e1e38117197a93b1992ab6cf77559efccb7bf99f618b63dd3a3cc018e9",
+      "schema_version": 2,
+      "sequence": 4,
+      "correlation_id": "0c6958dee0960d1533e980085dc1aab14f35b1420f82f53fbe06551daa6fbb68",
+      "event_type": "EXTERNAL_REVIEW_SUBMITTED",
+      "actor_type": "HUMAN",
+      "actor_id": "7225c276c5dda33db18fdda34e4fb41a70ee080c0786a1207fda925d0af4b26f",
+      "classification": "C1",
+      "payload": {
+        "review": {
+          "annotations": [
+            {
+              "sequence": 1,
+              "text": "Reviewed"
+            }
+          ],
+          "end": 3,
+          "head": "069a191662f7f7e9f367c94b75bb18d9814d1563de60560a7c5d03a0b8e5987d",
+          "key_id": "7225c276c5dda33db18fdda34e4fb41a70ee080c0786a1207fda925d0af4b26f",
+          "start": 1
+        },
+        "signature": "7672b188256c58f58197ccc124678ab01467ecdabcff6dc721c9852e2928856d3067a70f0029ac26be0e318715e1e0464fd241cf883218591711f2a249689702"
+      },
+      "payload_hash": "f018408d96be677c89d7876467acb2bf1277b9a276d8c52e93e3378667f8e504",
+      "prev_hash": "069a191662f7f7e9f367c94b75bb18d9814d1563de60560a7c5d03a0b8e5987d",
+      "event_hash": "43d18ce881ed49890fe016dca6f7d0d47e5822316580540da0557704f4eeb36f",
+      "recorded_at": "2026-10-31T09:53:41.863546+00:00",
+      "of_interest": true
+    },
+    {
+      "signature": "5880065291984a894b46eb87895d04a0300c13b339bdb0cbb17ca27a9bbe2e9542e696a25a870b5b968893be382ca8cd06bf7ae8ce60eb540336879f4b14ad0e",
+      "key_id": "786a20e1e38117197a93b1992ab6cf77559efccb7bf99f618b63dd3a3cc018e9",
+      "schema_version": 2,
+      "sequence": 5,
+      "correlation_id": "revoke",
+      "event_type": "KEY_REVOKED",
+      "actor_type": "SYSTEM",
+      "actor_id": "system",
+      "classification": "C1",
+      "payload": {
+        "key_id": "7225c276c5dda33db18fdda34e4fb41a70ee080c0786a1207fda925d0af4b26f",
+        "recorded_at": "2027-01-01T00:00:00+00:00"
+      },
+      "payload_hash": "c9def6e2fe777efabb58763c0cda28a8b72879d7121ed525097feac11b1e1d1b",
+      "prev_hash": "43d18ce881ed49890fe016dca6f7d0d47e5822316580540da0557704f4eeb36f",
+      "event_hash": "b44c7187115346cf72fd363331d146fd7f6b7828b8ffdc53db92ae63a5cda48f",
+      "recorded_at": "2026-10-31T09:53:41.865078+00:00",
+      "of_interest": true
+    }
+  ]
+}
