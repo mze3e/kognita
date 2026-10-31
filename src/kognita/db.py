@@ -143,6 +143,7 @@ def create_all(engine: Engine) -> None:
         for table, additions in {
             "agents": {"deployment_date": "TIMESTAMP", "model": "TEXT"},
             "_blast_usage": {"is_transaction": "BOOLEAN"},
+            "evidence_events": {"schema_version": "INTEGER NOT NULL DEFAULT 1"},
         }.items():
             columns = {column["name"] for column in inspector.get_columns(table)}
             for name, kind in additions.items():

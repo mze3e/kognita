@@ -220,6 +220,8 @@ forbidden_modules = [
     "docling_parse",
     "docling_ibm_models",
     "kognita.otel",
+    "cryptography",
+    "psycopg",
     "opentelemetry",
 ]
 

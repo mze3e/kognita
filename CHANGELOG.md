@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Evidence events carry `schema_version`: new events use version 2 and hash the version; existing rows default to version 1 and retain their original hashes. Exports and verification support both versions (T5 part 1). Transactional migrations remain pending.
+
 ## [0.6.1] - 2026-10-31
 
 Patch release closing bypasses found in review of 0.6.0. No new public names beyond those already on main.
