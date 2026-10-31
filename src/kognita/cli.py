@@ -1647,6 +1647,22 @@ def _cmd_backup(args):
     return 0
 
 
+def _cmd_deps(args):
+    from kognita.dependencies import _map
+
+    engine = make_engine(args.db)
+    try:
+        with session_scope(engine) as session:
+            result = _map(session)
+        _print_json(result)
+        return int(args._operation == 'check' and bool(result['findings']))
+    except Exception as exc:
+        print(f'R8-UNDECLARED: dependency analysis refused: {exc}', file=sys.stderr)
+        return 1
+    finally:
+        engine.dispose()
+
+
 def _cmd_provider(args):
     from sqlmodel import select
     from kognita.providers import ProviderRecord, _register, _view
@@ -1750,6 +1766,13 @@ def build_parser() -> argparse.ArgumentParser:
     export_exclude.add_argument("--reason", required=True)
     export_exclude.add_argument("--actor", required=True)
     export_exclude.set_defaults(func=_cmd_export_exclude)
+
+    deps = sub.add_parser("deps", help="R8 declared and observed dependencies")
+    deps_sub = deps.add_subparsers(dest="_operation", required=True)
+    for operation in ("map", "check"):
+        command = deps_sub.add_parser(operation)
+        command.add_argument("--db", default="kognita.db")
+        command.set_defaults(func=_cmd_deps)
 
     incident = sub.add_parser("incident", help="R13 incident evidence")
     incident_sub = incident.add_subparsers(dest="_operation", required=True)
