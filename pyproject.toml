@@ -351,7 +351,7 @@ forbidden_modules = [
 name = "core and gateway trust drivers stay behind lazy boundaries"
 type = "forbidden"
 source_modules = ["kognita"]
-# Includes the R5/R7 gateway and use-case register decision path.
+# Includes R14 incident reports and R4 playbooks, plus the R5/R7 decision path.
 # R2 replay uses the lazy signing boundary. Postgres uses SQLAlchemy driver
 # loading only; even kognita.postgres must not import psycopg directly.
 forbidden_modules = ["cryptography", "psycopg", "psycopg_binary", "psycopg_pool"]
