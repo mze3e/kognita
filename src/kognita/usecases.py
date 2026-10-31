@@ -395,6 +395,10 @@ class UseCaseSpec:
     pilot_end: datetime | None = None
     success_criteria: str = ""
     review_date: datetime | None = None
+    cloud: str = ""
+    framework: str = ""
+    vector_platform: str = ""
+    orchestration: str = ""
     model_providers: tuple[str, ...] = ()
     ai_endpoints: tuple[str, ...] = ()
     unmediated: bool = False
@@ -528,6 +532,10 @@ class RegisteredUseCase:
     approved_sources: tuple[str, ...] = ()
     verifier: str = ""
     permit_same_model: bool = False
+    cloud: str = ""
+    framework: str = ""
+    vector_platform: str = ""
+    orchestration: str = ""
     model_providers: tuple[str, ...] = ()
     ai_endpoints: tuple[str, ...] = ()
     unmediated: bool = False
@@ -654,6 +662,9 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
         add(f"'{usecase_id}' has no purpose")
     if spec.category not in CATEGORIES:
         add(f"category '{spec.category}' is not a recognised use-case category")
+    for name in ("cloud", "framework", "vector_platform", "orchestration"):
+        if not isinstance(getattr(spec, name), str):
+            add(f"R9: {name} must be a string")
     if spec.business_criticality not in BUSINESS_CRITICALITY:
         add(f"business criticality '{spec.business_criticality}' is not recognised")
     if spec.client_impact not in CLIENT_IMPACT:
@@ -1051,6 +1062,10 @@ def build_record(
         "review_date": _iso(
             review_date if review_date is not None else spec.review_date
         ),
+        "cloud": spec.cloud.strip(),
+        "framework": spec.framework.strip(),
+        "vector_platform": spec.vector_platform.strip(),
+        "orchestration": spec.orchestration.strip(),
         "model_providers": _names(spec.model_providers),
         "ai_endpoints": _names(spec.ai_endpoints),
         "unmediated": bool(spec.unmediated),
@@ -1132,6 +1147,10 @@ def from_record(
         approved_sources=tuple(record.get("approved_sources") or ()),
         verifier=str(record.get("verifier") or "").strip(),
         permit_same_model=record.get("permit_same_model") is True,
+        cloud=record.get("cloud", ""),
+        framework=record.get("framework", ""),
+        vector_platform=record.get("vector_platform", ""),
+        orchestration=record.get("orchestration", ""),
         model_providers=tuple(record.get("model_providers") or ()),
         ai_endpoints=tuple(record.get("ai_endpoints") or ()),
         unmediated=bool(record.get("unmediated")),

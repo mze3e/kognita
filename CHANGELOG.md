@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- R9 concentration report via `kognita deps concentration`: distinct critical use-case shares per provider, cloud, framework, vector platform and orchestration layer. Use-case registration accepts `cloud`, `framework`, `vector_platform` and `orchestration`; absent declarations are reported as unknown. Analysis verifies local evidence and preserves legacy chains.
+
 - R8 local dependency map from current use-case, agent and model registers, compared with verified model, tool and retrieval evidence via `kognita deps map|check`. Divergence emits `R8-UNDECLARED` or `R8-UNUSED`; ambiguous attribution is a finding and corrupt evidence refuses analysis. Missing infrastructure metadata remains unknown.
 
 - R14 verified incident reports with timeline, affected clients, recorded control failures and missing evidence, and deployment comparisons; `kognita incident report <id> [--redacted]`. Redacted reports expose fixed labels and aggregate counts only. R4 static detect, contain and investigate guidance for nine incident types via `kognita incident playbook <type>` and `docs/incident-playbooks.md`.

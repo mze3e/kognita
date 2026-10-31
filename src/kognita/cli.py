@@ -1648,16 +1648,16 @@ def _cmd_backup(args):
 
 
 def _cmd_deps(args):
-    from kognita.dependencies import _map
+    from kognita.dependencies import _map, _concentration
 
     engine = make_engine(args.db)
     try:
         with session_scope(engine) as session:
-            result = _map(session)
+            result = _concentration(session) if args._operation == "concentration" else _map(session)
         _print_json(result)
         return int(args._operation == 'check' and bool(result['findings']))
     except Exception as exc:
-        print(f'R8-UNDECLARED: dependency analysis refused: {exc}', file=sys.stderr)
+        print(f'{"R9" if args._operation == "concentration" else "R8-UNDECLARED"}: dependency analysis refused: {exc}', file=sys.stderr)
         return 1
     finally:
         engine.dispose()
@@ -1769,7 +1769,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     deps = sub.add_parser("deps", help="R8 declared and observed dependencies")
     deps_sub = deps.add_subparsers(dest="_operation", required=True)
-    for operation in ("map", "check"):
+    for operation in ("map", "check", "concentration"):
         command = deps_sub.add_parser(operation)
         command.add_argument("--db", default="kognita.db")
         command.set_defaults(func=_cmd_deps)
