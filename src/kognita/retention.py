@@ -1,4 +1,4 @@
-"""Content retention — prompts, responses, and source snapshots by hash.
+"""Content retention: prompts, responses, and source snapshots by hash.
 
 The evidence chain holds the hash. This store holds the bytes that hash, under
 a retention period set per use case. Erasure deletes the bytes and appends an
@@ -16,6 +16,8 @@ from kognita.canonical import canonical_json, hash_text
 from kognita.evidence import EvidenceWriter
 from kognita.exceptions import RetentionError
 from kognita.models import (
+    RecordClassRetention,
+    _RecordClassHold,
     RetainedContent,
     RetainedReference,
     RetentionPolicy,
@@ -23,6 +25,45 @@ from kognita.models import (
     utcnow,
 )
 from kognita.vocabulary import ActorType, Classification, EventType
+
+
+_RECORD_CLASSES = (
+    "client communications", "advice", "recommendations", "approvals",
+    "transactions", "compliance records",
+)
+
+
+def _set_class(session: Session, kind: str, retain_days: int | None) -> RecordClassRetention:
+    if kind not in _RECORD_CLASSES or (retain_days is not None and (
+        type(retain_days) is not int or retain_days < 0
+    )):
+        raise RetentionError("R11-RECORD-LIVE: invalid record class or retention period")
+    row = session.get(RecordClassRetention, kind) or RecordClassRetention(kind=kind)
+    row.retain_days = retain_days
+    session.add(row)
+    session.flush()
+    return row
+
+
+def _class_live(session: Session, content_hash: str, at: datetime) -> bool:
+    holds = list(session.exec(select(_RecordClassHold).where(
+        _RecordClassHold.content_hash == content_hash)).all())
+    row = session.get(RetainedContent, content_hash)
+    if row is not None and row.kind in _RECORD_CLASSES:
+        holds.append(_RecordClassHold(content_hash=content_hash, kind=row.kind,
+                                      retained_at=row.retained_at))
+    if not holds:
+        return False
+    for hold in holds:
+        if not _elapsed(session.get(RecordClassRetention, hold.kind),
+                        as_utc(hold.retained_at), at):
+            return True
+    references = session.exec(select(RetainedReference).where(
+        RetainedReference.content_hash == content_hash)).all()
+    return any(not _elapsed(session.get(RetentionPolicy, use_case), retained_at, at)
+               for use_case, retained_at in (
+                   [(row.use_case, as_utc(row.retained_at))] +
+                   [(ref.use_case, as_utc(ref.retained_at)) for ref in references]))
 
 
 class RetentionStore:
@@ -41,8 +82,14 @@ class RetentionStore:
         use_case: str = "",
         correlation_id: str = "",
         now: datetime | None = None,
+        record_classes: tuple[str, ...] = (),
     ) -> str:
-        """Store ``text`` and return its hash. A second store of the same bytes is a no-op."""
+        """Store text by hash, refreshing each use-case and record-class hold.
+
+        ``record_classes`` explicitly associates supporting regulatory records.
+        A supported class in ``kind`` also adds a hold. Missing class policies
+        keep those records live until a finite period is configured.
+        """
         digest = hash_text(text)
         self._keep(
             session,
@@ -52,6 +99,7 @@ class RetentionStore:
             use_case=use_case,
             correlation_id=correlation_id,
             now=now,
+            record_classes=record_classes,
         )
         return digest
 
@@ -64,6 +112,7 @@ class RetentionStore:
         use_case: str = "",
         correlation_id: str = "",
         now: datetime | None = None,
+        record_classes: tuple[str, ...] = (),
     ) -> str:
         """Store the canonical JSON of ``value`` and return that document's hash."""
         return self.retain_text(
@@ -73,6 +122,7 @@ class RetentionStore:
             use_case=use_case,
             correlation_id=correlation_id,
             now=now,
+            record_classes=record_classes,
         )
 
     def read(self, session: Session, content_hash: str) -> str | None:
@@ -120,6 +170,11 @@ class RetentionStore:
         row = session.get(RetainedContent, content_hash)
         if row is None:
             raise RetentionError(f"retained content {content_hash} is not in the store")
+        if _class_live(session, content_hash, as_utc(now or utcnow())):
+            raise RetentionError("R11-RECORD-LIVE: supported record class is still live")
+        for hold in session.exec(select(_RecordClassHold).where(
+            _RecordClassHold.content_hash == content_hash)).all():
+            session.delete(hold)
         kind = row.kind
         use_case = row.use_case
         linked = correlation_id or row.correlation_id or f"erasure:{content_hash[:12]}"
@@ -168,7 +223,7 @@ class RetentionStore:
             # existed is still governed by its own use case.
             references = [(row.use_case, as_utc(row.retained_at))]
             references.extend(holds.get(row.content_hash, []))
-            if all(
+            if not _class_live(session, row.content_hash, as_utc(at)) and all(
                 _elapsed(policies.get(use_case), retained_at, at)
                 for use_case, retained_at in references
             ):
@@ -195,8 +250,18 @@ class RetentionStore:
         use_case: str,
         correlation_id: str,
         now: datetime | None,
+        record_classes: tuple[str, ...],
     ) -> None:
         at = now or utcnow()
+        if isinstance(record_classes, str) or any(c not in _RECORD_CLASSES for c in record_classes):
+            raise RetentionError("R11-RECORD-LIVE: unsupported record class")
+        for record_class in set(record_classes) | ({kind} if kind in _RECORD_CLASSES else set()):
+            hold = session.get(_RecordClassHold, (digest, record_class))
+            if hold is None:
+                hold = _RecordClassHold(content_hash=digest, kind=record_class, retained_at=at)
+            elif as_utc(hold.retained_at) < as_utc(at):
+                hold.retained_at = at
+            session.add(hold)
         self._hold(session, digest, use_case, correlation_id, at)
         if session.get(RetainedContent, digest) is not None:
             session.flush()
@@ -239,11 +304,11 @@ class RetentionStore:
             session.add(reference)
 
 
-def _elapsed(policy: RetentionPolicy | None, retained_at: datetime | None, at: datetime) -> bool:
+def _elapsed(policy: RetentionPolicy | RecordClassRetention | None, retained_at: datetime | None, at: datetime) -> bool:
     """Whether one hold has passed its use case's period. No period keeps it."""
-    if policy is None or policy.retain_days is None or retained_at is None:
+    if policy is None or policy.retain_days is None or policy.retain_days < 0 or retained_at is None:
         return False
-    return retained_at + timedelta(days=policy.retain_days) <= at
+    return retained_at + timedelta(days=policy.retain_days) <= as_utc(at)
 
 
 __all__ = ["RetentionStore"]

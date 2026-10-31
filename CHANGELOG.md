@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Partial R10: offline synthetic `kognita drill simulate <kind>` transcripts for the eight roadmap failure kinds, with atomic recording, fault and output assertions, and chain verification. These probes do not exercise deployed failure paths or validate a deployment's failure-mode configuration; R10 remains open.
+- R11 record-class retention via `RecordClassRetention` and `kognita retention class set|list`. Explicit `record_classes` on retained content support client communications, advice, recommendations, approvals, transactions and compliance records; a matching `kind` also adds a class hold. Each class and use-case period must elapse before erasure, with `R11-RECORD-LIVE` refusal for live or unconfigured holds. Shared content preserves independent class holds, including across backup and restore. CLI periods use days or `none` for an indefinite hold.
+
+- R10: `kognita drill simulate <kind> --usecase <id>` reads registered `failure_mode`, approved models and failover. Eight offline faults exercise gateway, retrieval/fact admission, governed tools, credential checks, integrity checks and model-change detection. Savepoints restore live state; result evidence retains the verified path transcript. Unknown inputs, corrupt chains, incomplete evidence and conflicting FAIL_CLOSED/failover configuration refuse. Gateway outages now record R13 DENY decisions.
 
 - R9 concentration report via `kognita deps concentration`: distinct critical use-case shares per provider, cloud, framework, vector platform and orchestration layer. Use-case registration accepts `cloud`, `framework`, `vector_platform` and `orchestration`; absent declarations are reported as unknown. Analysis verifies local evidence and preserves legacy chains.
 

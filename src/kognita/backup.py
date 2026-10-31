@@ -34,11 +34,13 @@ from kognita.evidence import (
 from kognita.models import (
     EvidenceEvent as _EvidenceEvent, RetainedContent as _RetainedContent,
     RetainedReference as _RetainedReference, RetentionPolicy as _RetentionPolicy,
+    RecordClassRetention as _RecordClassRetention, _RecordClassHold,
     as_utc as _as_utc,
 )
 from kognita.signing import _registry
 
-_MODELS = (_RetainedContent, _RetainedReference, _RetentionPolicy)
+_MODELS = (_RetainedContent, _RetainedReference, _RetentionPolicy,
+           _RecordClassRetention, _RecordClassHold)
 
 
 def _registry_json(_events):
@@ -66,12 +68,15 @@ def _verify(_bundle, *, _public_key=None, _anchors=()):
         if _bundle['_registry'] != _registry_json(_bundle['_chain']['events']):
             raise ValueError('key registry does not match lifecycle evidence')
         _check_anchors(_bundle['_chain'], [*_bundle['_anchors'], *_anchors])
-        if set(_bundle['_retention']) != {_m.__tablename__ for _m in _MODELS}:
+        if set(_bundle['_retention']) not in (
+            {_m.__tablename__ for _m in _MODELS},
+            {_m.__tablename__ for _m in _MODELS[:3]},
+        ):
             raise ValueError('missing retention table')
         _bodies = {}
         for _model in _MODELS:
             _seen = set()
-            for _row in _bundle['_retention'][_model.__tablename__]:
+            for _row in _bundle['_retention'].get(_model.__tablename__, []):
                 if set(_row) != set(_model.model_fields):
                     raise ValueError('invalid retention fields')
                 _obj = _model.model_validate(_row)
@@ -83,11 +88,12 @@ def _verify(_bundle, *, _public_key=None, _anchors=()):
                     if _hash_text(_obj.body) != _obj.content_hash:
                         raise ValueError('retention body hash mismatch')
                     _bodies[_obj.content_hash] = _obj
-                if _model is _RetentionPolicy and _obj.retain_days is not None and _obj.retain_days < 0:
+                if _model in (_RetentionPolicy, _RecordClassRetention) and _obj.retain_days is not None and _obj.retain_days < 0:
                     raise ValueError('invalid retention period')
-        for _row in _bundle['_retention']['retained_references']:
-            if _row['content_hash'] not in _bodies:
-                raise ValueError('retention reference has no body')
+        for _name in ('retained_references', '_record_class_holds'):
+            for _row in _bundle['_retention'].get(_name, []):
+                if _row['content_hash'] not in _bodies:
+                    raise ValueError('retention reference has no body')
         return _count
     except (ValueError, TypeError, KeyError, AttributeError, _ChainBreak) as _exc:
         raise ValueError(f'R1: backup verification refused: {_exc}') from _exc
@@ -132,10 +138,11 @@ def _prefix(_bundle, _to_sequence=None, _to_time=None):
         if any(_r['event_type'] == 'ERASURE' for _r in _rows[_n:]):
             raise ValueError('R1: erased historical retention cannot be recovered')
         _cutoff = _as_utc(_datetime.fromisoformat(_rows[_n - 1]['recorded_at'])) if _n else None
-        if _bundle['_retention']['retention_policies']:
+        if (_bundle['_retention']['retention_policies'] or
+                _bundle['_retention'].get('RecordClassRetention')):
             raise ValueError('R1: historical retention policies unavailable')
-        for _name in ('retained_content', 'retained_references'):
-            if any(_cutoff is None or _as_utc(_datetime.fromisoformat(_r['retained_at'])) > _cutoff for _r in _bundle['_retention'][_name]):
+        for _name in ('retained_content', 'retained_references', '_record_class_holds'):
+            if any(_cutoff is None or _as_utc(_datetime.fromisoformat(_r['retained_at'])) > _cutoff for _r in _bundle['_retention'].get(_name, [])):
                 raise ValueError('R1: historical retention state unavailable; use an earlier backup')
     _chain = _result['_chain']
     _chain['events'] = _rows[:_n]
@@ -169,7 +176,7 @@ def _restore(_bundle, _destination, *, _to_sequence=None, _to_time=None, _public
                 _session.add(_EvidenceEvent.model_validate(_fields))
                 _session.flush()
             for _model in _MODELS:
-                for _row in _bundle['_retention'][_model.__tablename__]:
+                for _row in _bundle['_retention'].get(_model.__tablename__, []):
                     _session.add(_model.model_validate(_row))
             _session.flush()
             _verify_chain(_session, public_key=_public_key)

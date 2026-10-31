@@ -1667,6 +1667,28 @@ def _cmd_backup(args):
     return 0
 
 
+def _cmd_retention_class(args):
+    from sqlmodel import select
+    from kognita.retention import _set_class
+    from kognita.models import RecordClassRetention
+
+    engine = make_engine(args.db)
+    try:
+        create_all(engine)
+        with session_scope(engine) as session:
+            if args._operation == "set":
+                days = None if args.retain_days == "none" else int(args.retain_days)
+                _set_class(session, args.kind, days)
+            rows = session.exec(select(RecordClassRetention).order_by(RecordClassRetention.kind)).all()
+            _print_json([row.model_dump() for row in rows])
+        return 0
+    except Exception as exc:
+        print(f"R11-RECORD-LIVE: retention class refused: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        engine.dispose()
+
+
 def _cmd_deps(args):
     from kognita.dependencies import _map, _concentration
 
@@ -1786,6 +1808,18 @@ def build_parser() -> argparse.ArgumentParser:
     export_exclude.add_argument("--reason", required=True)
     export_exclude.add_argument("--actor", required=True)
     export_exclude.set_defaults(func=_cmd_export_exclude)
+
+    retention = sub.add_parser("retention", help="R11 record-class retention")
+    retention_sub = retention.add_subparsers(required=True)
+    classes = retention_sub.add_parser("class")
+    class_sub = classes.add_subparsers(dest="_operation", required=True)
+    for operation in ("set", "list"):
+        command = class_sub.add_parser(operation)
+        command.add_argument("--db", default="kognita.db")
+        if operation == "set":
+            command.add_argument("kind")
+            command.add_argument("retain_days", help="days, or none for an indefinite hold")
+        command.set_defaults(func=_cmd_retention_class)
 
     deps = sub.add_parser("deps", help="R8 declared and observed dependencies")
     deps_sub = deps.add_subparsers(dest="_operation", required=True)
@@ -2294,9 +2328,8 @@ def build_parser() -> argparse.ArgumentParser:
     drill = sub.add_parser("drill", help="kill-switch drills for a high-materiality use case")
     drill_sub = drill.add_subparsers(dest="drill_command", required=True)
 
-    from kognita.breaker import DrillKind
     simulate = drill_sub.add_parser("simulate", help="exercise an offline failure path")
-    simulate.add_argument("kind", choices=[kind.value for kind in DrillKind])
+    simulate.add_argument("kind")
     simulate.add_argument("--db", default="kognita.db", help="store path or URL")
     simulate.add_argument("--usecase", required=True)
     simulate.set_defaults(func=_cmd_drill_simulate)

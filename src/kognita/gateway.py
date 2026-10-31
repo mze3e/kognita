@@ -1530,6 +1530,17 @@ class Gateway:
                 json.dumps(dict(payload, model=fallback.model)).encode(),
                 run=bound_run, _model_retry=True)
 
+        def _outage_response():
+            from kognita.tools import _response_outcome
+            check = Check(check="R13", citation="R13: upstream unavailable",
+                          regime="INTERNAL", result=CheckResult.FAIL)
+            refused = (self._store(lambda: _response_outcome(session, evaluation, [check], self.evidence))
+                       if deferred is None else _deferred_response_outcome(evaluation, [check]))
+            if deferred is not None:
+                deferred.evaluation = refused
+            return _json_response(502, {"error": "upstream unavailable", "rule_id": "R13",
+                                       "outcome": Outcome.DENY.value}, evaluation=refused)
+
         try:
             status, upstream_headers, upstream_body = self.transport(
                 "POST",
@@ -1562,7 +1573,7 @@ class Gateway:
             )
             retry_response = _failover_response()
             return finish(retry_response if retry_response is not None else
-                _json_response(502, {"error": "upstream unavailable", "rule_id": "R13"}, evaluation=evaluation))
+                _outage_response())
 
         if status >= 500:
             self._provider_incident(session, evaluation, deferred)
@@ -1589,7 +1600,7 @@ class Gateway:
             )
             retry_response = _failover_response()
             return finish(retry_response if retry_response is not None else
-                _json_response(502, {"error": "upstream unavailable", "rule_id": "R13"}, evaluation=evaluation))
+                _outage_response())
 
         if deferred is None:
             from kognita.incidents import _list, _timeline, _change
