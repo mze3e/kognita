@@ -905,7 +905,7 @@ Each line is ticked only when the code and tests in this tree show it, with an e
 - [ ] R10 Failure simulations as drills for the eight failure kinds, each verifying the failure mode and evidence completeness.
 - [ ] R11 Retention by record class; effective period is the longest of use case and record class; erase refused while a supported record is live (`R11-RECORD-LIVE`).
 - [ ] R12 Business continuity boundary documented as the bank's.
-- [ ] R13 Incident evidence with timelines for chain breaks, gateway outages, degraded periods and provider failures, exportable.
+- [x] R13 Incident evidence with timelines for chain breaks, gateway outages, degraded periods and provider failures, exportable. Outage detections wait in process memory until the evidence store recovers. Evidence: `kognita.incidents`, `kognita.evidence`, `kognita.gateway`, `kognita.cli` / `tests/test_incidents.py::test_timeline_export`, `tests/test_incidents.py::test_chain_break_auto_open`, `tests/test_incidents.py::test_signed_chain_break_auto_open`, `tests/test_incidents.py::test_truncation_incident_cannot_heal_chain`, `tests/test_incidents.py::test_provider_failure_auto_open`, `tests/test_incidents.py::test_real_degraded_period`, `tests/test_incidents.py::test_fail_closed_outage_is_recorded_on_recovery`, `tests/test_incidents.py::test_cli_list_show_export`.
 - [ ] R14 `kognita incident report <id>` with a `--redacted` variant.
 
 ---

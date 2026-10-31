@@ -185,6 +185,7 @@ source_modules = [
     "kognita.facts",
     "kognita.gateway",
     "kognita.governance",
+    "kognita.incidents",
     "kognita.interaction",
     "kognita.learning",
     "kognita.memory",
