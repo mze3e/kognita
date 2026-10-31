@@ -216,15 +216,22 @@ def _cmd_evidence_anchor(args):
 
 
 def _cmd_incident(args):
-    from kognita.incidents import _list, _show, _export
+    from kognita.incidents import _list, _show, _export, _report, _playbook
     try:
+        if args._operation == "playbook":
+            print(json.dumps(_playbook(args.type), sort_keys=True))
+            return 0
         with session_scope(make_engine(args.db)) as session:
-            result = (_list(session) if args._operation == "list" else
-                (_export if args._operation == "export" else _show)(session, args.incident_id))
+            if args._operation == "report":
+                result = _report(session, args.incident_id, redacted=args.redacted)
+            else:
+                result = (_list(session) if args._operation == "list" else
+                    (_export if args._operation == "export" else _show)(session, args.incident_id))
         print(json.dumps(result, sort_keys=True))
         return 0
     except ValueError as exc:
-        print(f"R13: {exc}", file=sys.stderr)
+        rule_id = {"report": "R14", "playbook": "R4"}.get(args._operation, "R13")
+        print(f"{rule_id}: {exc}", file=sys.stderr)
         return 1
 
 
@@ -1746,12 +1753,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     incident = sub.add_parser("incident", help="R13 incident evidence")
     incident_sub = incident.add_subparsers(dest="_operation", required=True)
-    for operation in ("list", "show", "export"):
+    for operation in ("list", "show", "export", "report"):
         command = incident_sub.add_parser(operation)
         command.add_argument("--db", default="kognita.db")
         if operation != "list":
             command.add_argument("incident_id")
+        if operation == "report":
+            command.add_argument("--redacted", action="store_true")
         command.set_defaults(func=_cmd_incident)
+    playbook = incident_sub.add_parser("playbook", help="R4 incident response steps")
+    playbook.add_argument("type")
+    playbook.set_defaults(func=_cmd_incident)
 
     doctor = sub.add_parser("doctor", help="report installed extras and store health")
     doctor.add_argument("--db", help="optional store to check the evidence chain of")
