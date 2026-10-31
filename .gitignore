@@ -208,3 +208,5 @@ __marimo__/
 
 # Local graph data storage (added by Kognita for caching processed graphs)
 .saved_graphs/
+# TypeScript verifier dependencies
+node_modules/

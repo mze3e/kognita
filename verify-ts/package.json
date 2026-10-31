@@ -1,0 +1,11 @@
+{
+  "name": "@kognita/verify",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {"kognita-verify": "dist/_cli.js"},
+  "files": ["dist"],
+  "engines": {"node": ">=22"},
+  "scripts": {"build": "tsc", "test": "npm run build && node --test tests/*.mjs"},
+  "devDependencies": {"@types/node": "^22.0.0", "typescript": "^5.7.0"}
+}

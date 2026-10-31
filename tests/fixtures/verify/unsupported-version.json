@@ -1,0 +1,30 @@
+{
+  "kognita_evidence_export": 1,
+  "exported_at": "2026-10-31T09:53:41.857731+00:00",
+  "event_count": 1,
+  "interest_count": 1,
+  "filters": {
+    "since": null,
+    "correlation_id": null
+  },
+  "head_hash": "924831053fa3d897821e545f55a6b43627ccca41f0e5807bbcf8574775a0c45e",
+  "events": [
+    {
+      "signature": "76bab6600f02e42849d21340c63078f3f0c8f8b5098b714ba9577eca8c60d52cad0cb5a429350af9e3f711368ea7c4c12ee09695cac83c365ddd46dbba3dcd0d",
+      "key_id": "7225c276c5dda33db18fdda34e4fb41a70ee080c0786a1207fda925d0af4b26f",
+      "schema_version": 3,
+      "sequence": 1,
+      "correlation_id": "signed",
+      "event_type": "TOOL_CALL",
+      "actor_type": "SYSTEM",
+      "actor_id": "system",
+      "classification": "C1",
+      "payload": {},
+      "payload_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "event_hash": "924831053fa3d897821e545f55a6b43627ccca41f0e5807bbcf8574775a0c45e",
+      "recorded_at": "2026-10-31T09:53:41.855665+00:00",
+      "of_interest": true
+    }
+  ]
+}
