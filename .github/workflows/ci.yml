@@ -32,6 +32,9 @@ jobs:
       - name: Run tests
         run: uv run pytest -v
 
+      - name: R1 backup restore drill
+        run: uv run pytest -q tests/test_backup.py
+
       - name: Check import layering
         run: uv run import-linter lint
 

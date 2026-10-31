@@ -1590,12 +1590,61 @@ def _cmd_db(args: argparse.Namespace) -> int:
         engine.dispose()
 
 
+def _cmd_backup(args):
+    from sqlmodel import Session
+    from kognita.backup import _create, _restore, _verify
+    try:
+        public_key = Path(args.public_key).read_bytes() if args.public_key else None
+        anchors = [json.loads(Path(path).read_text()) for path in args.anchors]
+        if args._backup_command == 'create':
+            engine = make_engine(args.db)
+            try:
+                with Session(engine) as session:
+                    if engine.dialect.name == 'sqlite':
+                        session.connection().exec_driver_sql('BEGIN')
+                    elif engine.dialect.name == 'postgresql':
+                        session.connection().exec_driver_sql('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ')
+                    bundle = _create(session, _anchors=anchors, _public_key=public_key)
+                fd = os.open(args._path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                with os.fdopen(fd, 'w') as output:
+                    json.dump(bundle, output, sort_keys=True)
+                    output.flush()
+                    os.fsync(output.fileno())
+            finally:
+                engine.dispose()
+        else:
+            bundle = json.loads(Path(args._path).read_text())
+            if args._backup_command == 'verify':
+                _verify(bundle, _public_key=public_key, _anchors=anchors)
+            else:
+                _restore(bundle, args.db, _to_sequence=args._to_sequence,
+                         _to_time=args._to_time, _public_key=public_key, _anchors=anchors)
+    except Exception as exc:
+        print(f'R1: backup {args._backup_command} refused: {exc}', file=sys.stderr)
+        return 1
+    print(f'R1: backup {args._backup_command} complete')
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
         description="Prove an AI answer was permitted — and evidence it.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
+    backup = sub.add_parser('backup', help='R1 evidence and retention recovery')
+    backup_sub = backup.add_subparsers(dest='_backup_command', required=True)
+    for name in ('create', 'restore', 'verify'):
+        command = backup_sub.add_parser(name)
+        command.add_argument('_path', metavar='PATH')
+        command.add_argument('--db', default='kognita.db')
+        command.add_argument('--public-key')
+        command.add_argument('--anchors', action='append', default=[])
+        if name == 'restore':
+            boundary = command.add_mutually_exclusive_group()
+            boundary.add_argument('--to-sequence', dest='_to_sequence', type=int)
+            boundary.add_argument('--to-time', dest='_to_time')
+        command.set_defaults(func=_cmd_backup)
     db = sub.add_parser("db", help="transactional schema migrations")
     db_sub = db.add_subparsers(dest="_db_command", required=True)
     for name in ("migrate", "status"):

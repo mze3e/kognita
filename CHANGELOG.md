@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- R1 recovery bundles with chain, retained bodies and holds, retention policies, replayed key registry and anchors; `kognita backup create|verify|restore PATH`, sequence/time recovery, and a CI restore drill. Restore requires a new SQLite destination, verifies before publication, and refuses unavailable historical retention state. Existing `--public-key` and repeatable `--anchors` supply independent trust inputs.
+
 - Optional `postgres` backend with transaction-scoped evidence writer locking, append-only guards, forced run RLS via `kognita db rls apply`, and Postgres 16 integration CI (T2). Trusted brokers bind `run.agent_id`; replication and role provisioning remain operator responsibilities.
 
 - External file checkpoints through `AnchorSink` and `FileAnchorSink`, `ANCHOR_PUBLISHED` evidence, `kognita evidence anchor PATH [PRIVATE_PATH]`, and `evidence verify --anchors PATH` (repeatable). T6 verification detects rewritten or truncated anchored prefixes. Keep checkpoint files in separately controlled storage; network sinks remain future extras.
