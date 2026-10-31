@@ -199,6 +199,22 @@ def _cmd_keys_generate(args):
     return 0
 
 
+def _cmd_evidence_anchor(args):
+    from kognita.anchoring import FileAnchorSink, _anchor
+    from kognita.signing import EvidenceSigner
+
+    try:
+        signer = EvidenceSigner(Path(args._private_path).read_bytes()) if args._private_path else None
+        engine = make_engine(args.db)
+        with session_scope(engine) as session:
+            _anchor(session, EvidenceWriter(engine, signing=signer), FileAnchorSink(args._path))
+    except (OSError, ValueError, ChainBreak) as exc:
+        print(f'T6: anchoring refused: {exc}', file=sys.stderr)
+        return 1
+    print('T6: checkpoint published')
+    return 0
+
+
 def cmd_evidence_verify(args: argparse.Namespace) -> int:
     """Verify a store's evidence chain, or a previously exported artifact."""
     try:
@@ -212,6 +228,9 @@ def cmd_evidence_verify(args: argparse.Namespace) -> int:
         payload = json.loads(Path(args.file).read_text())
         try:
             count = verify_export(payload, public_key=public_key)
+            if args.anchors:
+                from kognita.anchoring import _verify_anchors
+                _verify_anchors(payload, args.anchors)
         except ChainBreak as exc:
             print(f"BROKEN: {exc}", file=sys.stderr)
             return 1
@@ -224,6 +243,9 @@ def cmd_evidence_verify(args: argparse.Namespace) -> int:
     with session_scope(engine) as session:
         try:
             count = verify_chain(session, public_key=public_key)
+            if args.anchors:
+                from kognita.anchoring import _verify_anchors
+                _verify_anchors(export_chain(session), args.anchors)
         except ChainBreak as exc:
             print(f"BROKEN: {exc}", file=sys.stderr)
             return 1
@@ -1696,7 +1718,14 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--db", default="kognita.db", help="store path or URL")
     verify.add_argument("--file", help="verify an exported artifact instead of a store")
     verify.add_argument("--public-key", help="Ed25519 public PEM file; require every signature")
+    verify.add_argument('--anchors', action='append', help='checkpoint file; repeat for multiple checkpoints')
     verify.set_defaults(func=cmd_evidence_verify)
+
+    anchor = evidence_sub.add_parser('anchor', help='publish a T6 checkpoint to an independent file')
+    anchor.add_argument('_path', metavar='PATH')
+    anchor.add_argument('_private_path', nargs='?', metavar='PRIVATE_PATH')
+    anchor.add_argument('--db', default='kognita.db')
+    anchor.set_defaults(func=_cmd_evidence_anchor)
 
     export = evidence_sub.add_parser("export", help="write a portable audit artifact")
     export.add_argument("--db", default="kognita.db", help="store path or URL")

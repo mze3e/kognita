@@ -176,6 +176,7 @@ source_modules = [
     "kognita.embedding",
     "kognita.envelope",
     "kognita.evaluation",
+    "kognita.anchoring",
     "kognita.evidence",
     "kognita.signing",
     "kognita.facts",
