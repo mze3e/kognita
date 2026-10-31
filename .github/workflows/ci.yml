@@ -27,10 +27,36 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --extra dev --extra vec --extra signing
+        run: uv sync --extra dev --extra vec --extra signing --extra postgres
 
       - name: Run tests
         run: uv run pytest -v
 
       - name: Check import layering
         run: uv run import-linter lint
+
+  postgres:
+    name: Postgres isolation and concurrent writers
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: kognita
+          POSTGRES_PASSWORD: kognita_ci
+          POSTGRES_DB: kognita_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kognita -d kognita_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      KOGNITA_TEST_POSTGRES_URL: postgresql+psycopg://kognita:kognita_ci@localhost:5432/kognita_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv python install 3.12
+      - run: uv sync --extra dev --extra vec --extra signing --extra postgres
+      - run: uv run pytest -q tests/test_postgres.py
