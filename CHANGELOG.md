@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-31
+
+Patch release closing bypasses found in review of 0.6.0. No new public names beyond those already on main.
+
 ### Added
 
 - `release_scope` on a use case sets how tightly a claim release is tied to its target: `usecase` (default; the release must name the request's use case), `client` (and the claim must be about the request's client) or `interaction` (and the release must have been made in the request's interaction). The gateway reads an `interaction_id` header and takes the client from the stored interaction, never from a header, and only when that interaction is for the request's purpose. Public-lane sends take `usecase_id`. An unknown scope fails closed as `interaction`.
@@ -18,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A value that carries `value` and `as_of` but lacks the rest of the fact contract is admitted, and so suppressed, instead of passing through as plain data.
 - `verify_claim` pins the producer: the provider, model and version must match a recorded `MODEL_CALL`, or the verification is denied `C7-PIN`.
 
-### Added
+### Changed
 
 - Source lifecycle CLI aliases and house-view supersession regression coverage, preserving stale release and distribution safeguards.
 
@@ -324,7 +328,8 @@ Known open review findings (fixes are planned for 0.5.1):
 - Multi-provider LLM support (Anthropic, OpenAI, Groq, Gemini, Ollama)
 - Streamlit demo application
 
-[Unreleased]: https://github.com/mze3e/kognita/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/mze3e/kognita/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/mze3e/kognita/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/mze3e/kognita/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/mze3e/kognita/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/mze3e/kognita/compare/v0.5.0...v0.5.1
