@@ -20,7 +20,7 @@ def _status(connection) -> int:
         raise ValueError('T5: evidence_events is absent; initialise the store first')
     expected = set(_EvidenceEvent.__table__.columns.keys())
     actual = {column['name'] for column in inspector.get_columns('evidence_events')}
-    if actual == expected - {'schema_version'}:
+    if actual in (expected - {'schema_version'}, expected - {'schema_version', 'signature', 'key_id'}, expected - {'signature', 'key_id'}):
         return 1
     if actual != expected:
         raise ValueError('T5: unsupported evidence schema')
@@ -35,9 +35,11 @@ def _status(connection) -> int:
 
 def _copy(connection, columns) -> None:
     names = ', '.join(connection.dialect.identifier_preparer.quote(name) for name in columns)
+    suffix = '' if 'schema_version' in columns else ', schema_version'
+    value = '' if 'schema_version' in columns else ', 1'
     connection.exec_driver_sql(
-        f'INSERT INTO evidence_events ({names}, schema_version) '
-        f'SELECT {names}, 1 FROM _evidence_events_migration'
+        f'INSERT INTO evidence_events ({names}{suffix}) '
+        f'SELECT {names}{value} FROM _evidence_events_migration'
     )
 
 

@@ -169,7 +169,9 @@ class EvidenceWriter:
         redact_payload: PayloadFilter | None = None,
         clock: Callable[[], datetime] = utcnow,
         telemetry: TelemetryHook | None = None,
+        signing=None,
     ) -> None:
+        self._signing = signing
         self.engine = engine
         self.redact_payload = redact_payload
         self.clock = clock
@@ -221,7 +223,17 @@ class EvidenceWriter:
                 "prev_hash": prev_hash,
                 "recorded_at": recorded_at.isoformat(),
             }
+            signature = None
+            if self._signing is not None:
+                if previous is not None and previous.signature is None:
+                    raise ValueError('T1: signing requires a wholly signed chain')
+                signature = self._signing._sign(header)
+                header['signature'] = signature
+            elif previous is not None and previous.signature is not None:
+                raise ValueError('T1: unsigned write would break a signed chain')
             event = EvidenceEvent(
+                signature=signature,
+                key_id=header.get('key_id'),
                 schema_version=2,
                 sequence=sequence,
                 correlation_id=correlation_id,
@@ -268,6 +280,8 @@ class EvidenceWriter:
             recorded = as_utc(event.recorded_at)
             snapshot = {
                 "kind": "evidence",
+                "signature": event.signature,
+                "key_id": event.key_id,
                 "schema_version": event.schema_version,
                 "sequence": event.sequence,
                 "correlation_id": event.correlation_id,
@@ -295,6 +309,10 @@ def recompute_event_hash(event: EvidenceEvent) -> str:
     Timestamps are included in the hash so they are tamper-evident:
     altering recorded_at breaks the hash and is caught by verify_chain.
     """
+    return canonical_hash(_event_header(event))
+
+
+def _event_header(event):
     recorded_at = as_utc(event.recorded_at)
     header = {
         "sequence": event.sequence,
@@ -308,7 +326,31 @@ def recompute_event_hash(event: EvidenceEvent) -> str:
         "recorded_at": recorded_at.isoformat() if recorded_at else None,
     }
     _version_header(header, event.schema_version, event.sequence)
-    return canonical_hash(header)
+    _signature_header(header, event.signature, event.key_id, event.schema_version, event.sequence)
+    return header
+
+
+def _signature_header(header, signature, key_id, version, sequence):
+    if signature is None and key_id is None:
+        return
+    if version != 2 or not isinstance(signature, str) or not isinstance(key_id, str) or not signature or not key_id:
+        raise ChainBreak(sequence, 'T1: invalid signature metadata')
+    header['key_id'] = key_id
+    header['signature'] = signature
+
+
+def _check_signature(header, public_key, required, sequence):
+    signature = header.get('signature')
+    if signature is None:
+        if required:
+            raise ChainBreak(sequence, 'T1: unsigned event in a signed chain')
+        return False
+    if public_key is not None:
+        from kognita.signing import _verify
+        unsigned = dict(header)
+        del unsigned['signature']
+        _verify(unsigned, signature, header['key_id'], public_key, sequence)
+    return True
 
 
 class ChainBreak(Exception):
@@ -328,8 +370,11 @@ def _version_header(header: dict[str, Any], schema_version: Any, sequence: int) 
         header["schema_version"] = schema_version
 
 
-def verify_chain(session: Session) -> int:
+def verify_chain(session: Session, *, public_key: bytes | None = None) -> int:
     """Verify every event in order; return how many were checked.
+
+    With ``public_key`` (PEM bytes), require and verify every signature.
+    Without it, check hash integrity and signature continuity only.
 
     Raises :class:`ChainBreak` naming the first sequence that fails and why —
     a rewritten payload, a recomputed hash that no longer matches, a link that
@@ -340,6 +385,7 @@ def verify_chain(session: Session) -> int:
     closed rather than silently skip the tail check.
     """
     events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
+    required = public_key is not None or any(event.signature is not None for event in events)
     expected_prev = GENESIS_HASH
     for index, event in enumerate(events, start=1):
         if event.sequence != index:
@@ -350,6 +396,10 @@ def verify_chain(session: Session) -> int:
             raise ChainBreak(event.sequence, "prev_hash does not match the previous event")
         if recompute_event_hash(event) != event.event_hash:
             raise ChainBreak(event.sequence, "event hash does not match its contents")
+        required = _check_signature(
+            _event_header(event),
+            public_key, required, event.sequence,
+        ) or required
         expected_prev = event.event_hash
     head = evidence_head(session)
     if head is None:
@@ -413,6 +463,8 @@ def export_chain(
 
     rows = [
         {
+            "signature": e.signature,
+            "key_id": e.key_id,
             "schema_version": e.schema_version,
             "sequence": e.sequence,
             "correlation_id": e.correlation_id,
@@ -443,8 +495,11 @@ def export_chain(
     }
 
 
-def verify_export(export: dict[str, Any]) -> int:
+def verify_export(export: dict[str, Any], *, public_key: bytes | None = None) -> int:
     """Verify an exported artifact without a database. Returns events checked.
+
+    With ``public_key`` (PEM bytes), require and verify every signature.
+    Without it, check hash integrity and signature continuity only.
 
     Internal chain consistency alone is not enough: dropping trailing rows
     from ``events`` leaves the remaining prefix internally consistent, so the
@@ -454,6 +509,7 @@ def verify_export(export: dict[str, Any]) -> int:
     """
     expected_prev = GENESIS_HASH
     rows = export.get("events", [])
+    required = public_key is not None or any(row.get("signature") is not None for row in rows)
     for index, row in enumerate(rows, start=1):
         if row["sequence"] != index:
             raise ChainBreak(row["sequence"], f"expected sequence {index}")
@@ -473,6 +529,8 @@ def verify_export(export: dict[str, Any]) -> int:
             "recorded_at": row.get("recorded_at"),
         }
         _version_header(header, row.get("schema_version", 1), row["sequence"])
+        _signature_header(header, row.get('signature'), row.get('key_id'), row.get('schema_version', 1), row['sequence'])
+        required = _check_signature(header, public_key, required, row['sequence']) or required
         if canonical_hash(header) != row["event_hash"]:
             raise ChainBreak(row["sequence"], "event hash does not match its contents")
         expected_prev = row["event_hash"]

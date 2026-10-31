@@ -366,6 +366,8 @@ class EvidenceEvent(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     #: Version 1 preserves the original header; writers emit version 2.
+    signature: str | None = None
+    key_id: str | None = None
     schema_version: int = Field(
         default=1, sa_column=Column(Integer, nullable=False, server_default="1")
     )

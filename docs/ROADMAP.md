@@ -887,7 +887,7 @@ Each line was checked against the code and tests in this tree. All seventeen sta
 
 Each line is ticked only when the code and tests in this tree show it, with an evidence note.
 
-- [ ] T1 Ed25519 signing: every evidence event signed; `kognita evidence verify --public-key` verifies every signature. Signing configured without the `signing` extra refuses writes.
+- [x] T1 Ed25519 signing: every evidence event signed; `kognita evidence verify --public-key` verifies every signature. Signing configured without the `signing` extra refuses writes. Evidence: `kognita.signing`, `kognita.evidence`, `kognita.cli` / `tests/test_signing.py::test_tamper`, `tests/test_signing.py::test_wrong_key`, `tests/test_signing.py::test_unsigned_event_in_signed_chain_is_a_break`, `tests/test_signing.py::test_missing_extra_refuses_writes`, `tests/test_signing.py::test_cli_generate_and_verify`.
 - [ ] T2 Postgres backend: many writers with no sequence gaps, row-level security so agents cannot read each other's runs. Replication is the bank's.
 - [ ] T3 External review API: a reviewer requests a period, annotates decisions and submits a signed review into the chain.
 - [ ] T4 TypeScript verifier `@kognita/verify` agrees with the Python verifier on shared fixtures (npm publish only on explicit go).
