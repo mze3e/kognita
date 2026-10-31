@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- R5 governed failover on provider connection failures, HTTP 5xx responses and model changes. An approved fallback card on the configured, registered provider gets one retry through full admission, with `R5-FAILOVER` decision evidence before retry. Invalid, cross-provider and exhausted targets refuse with `R5-UNAPPROVED-FALLBACK`; unavailable evidence prevents fallback.
+
 - R7 gateway detection of served model changes against the card selected at admission, with `R7-MODEL-CHANGED` refusal and `REVALIDATION_TRIGGERED` evidence, including deferred recovery. Use-case `failover` defaults to stopping; setting an approved card ID permits one fallback attempt through full admission on the configured provider. Cross-provider targets stop until governed provider routing is implemented.
 
 - R3 and R6 local ICT third-party provider register with complete contract details, incident history and regulatory cooperation; `kognita provider register|list|show`. Gateway admission denies unregistered or incomplete providers with `R3-UNREGISTERED` before forwarding. Contract details are stored as JSON payload keys.

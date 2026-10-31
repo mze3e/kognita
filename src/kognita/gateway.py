@@ -1492,6 +1492,40 @@ class Gateway:
             forward["authorization"] = f"Bearer {self.provider_key}"
         forward_decision = egress_decision or EgressDecision.ALLOW
 
+        def _failover_response():
+            entry = register.get(purpose)
+            if entry is None or not entry.failover:
+                return None
+            from kognita.providers import _registered
+            fallback = next((card for card in register.model_cards
+                if card.card_id == entry.failover and card.card_id in entry.approved_models
+                and card.provider == provider_name
+                and card.card_id not in {item.card_id for item in _matching_cards(entry, envelope, register)}), None)
+            allowed = (fallback is not None and not _model_retry and deferred is None
+                and self._store(lambda: _registered(session, fallback.provider)))
+            rule = "R5-FAILOVER" if allowed else "R5-UNAPPROVED-FALLBACK"
+            check = Check(check=rule, citation=rule, regime="INTERNAL",
+                result=CheckResult.PASS if allowed else CheckResult.FAIL)
+            if not allowed:
+                from kognita.tools import _response_outcome
+                refused = (self._store(lambda: _response_outcome(session, evaluation, [check], self.evidence))
+                    if deferred is None else _deferred_response_outcome(evaluation, [check]))
+                if deferred is not None:
+                    deferred.evaluation = refused
+                return _json_response(403, {"error": rule, "outcome": Outcome.DENY.value}, evaluation=refused)
+            self._store(lambda: self.evidence.emit(session,
+                correlation_id=evaluation.request_id, event_type=EventType.POLICY_DECISION,
+                actor_type=ActorType.SYSTEM, actor_id="governance-pdp",
+                classification=classification,
+                payload={"rule_id": rule, "outcome": Outcome.ALLOW.value,
+                    "checks": [check.to_dict()], "decision_id": evaluation.decision_id,
+                    "use_case": purpose, "fallback": fallback.card_id,
+                    "provider": fallback.provider}))
+            return self._handle(session, method, path,
+                dict(headers, model_version=fallback.version),
+                json.dumps(dict(payload, model=fallback.model)).encode(),
+                run=bound_run, _model_retry=True)
+
         try:
             status, upstream_headers, upstream_body = self.transport(
                 "POST",
@@ -1521,9 +1555,35 @@ class Gateway:
                 decision_budget=decision_budget,
                 decided_at=now,
             )
-            return finish(
-                _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation)
+            retry_response = _failover_response()
+            return finish(retry_response if retry_response is not None else
+                _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation))
+
+        if status >= 500:
+            self._record_model_evidence(
+                session,
+                evaluation,
+                classification=classification,
+                deferred=deferred,
+                model=_model_evidence(
+                    decision=forward_decision,
+                    token_map=token_map,
+                    sent=True,
+                    sent_body=sent_body,
+                    actor_type=actor_type,
+                    actor_id=actor_id,
+                    response_record=None,
+                    tokens=None,
+                    cost_usd=None,
+                    prompt_template_version=template_version,
+                ),
+                run=bound_run,
+                decision_budget=decision_budget,
+                decided_at=now,
             )
+            retry_response = _failover_response()
+            return finish(retry_response if retry_response is not None else
+                _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation))
 
         received = True
         try:
@@ -1702,10 +1762,9 @@ class Gateway:
                 "error": "R7-MODEL-CHANGED: served model changed; no model card for the requested version",
                 "request_id": evaluation.request_id}, evaluation=evaluation))
             if retry:
-                retry_payload = dict(payload, model=fallback.model)
-                retry_headers = dict(headers, model_version=fallback.version)
-                return self._handle(session, method, path, retry_headers,
-                    json.dumps(retry_payload).encode(), run=bound_run, _model_retry=True)
+                return _failover_response()
+            if entry.failover and fallback is None:
+                return _failover_response()
             return denied
         stopped = self._served_model_stopped(
             evaluation,
