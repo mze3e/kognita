@@ -2,7 +2,7 @@
 
 **Vision:** Transform Kognita from a policy decision engine into a complete agent harness: a framework anyone can adopt to build governed AI agents with proof of permission and tamper-evident audit logs.
 
-**Current Status:** v0.6.0 is the latest release. The 0.3 to 0.6 items below are implemented on main; 0.6.1 closes bypasses found in review of 0.6.0. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
+**Current Status:** v0.6.1 is the latest release. The 0.3 to 0.6 items below are implemented; 0.6.1 closes bypasses found in review of 0.6.0. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
 
 **Last revised:** September 2026. See [Decision Log](#decision-log) for what changed and why.
 
