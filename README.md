@@ -730,7 +730,8 @@ one client. It stops being writable when the run is recovered, revoked or past
 its wall clock, and an expiry later than the run is refused. Relationship
 inferences cannot be written directly. `propose_memory` holds the diff.
 `verify_memory` turns it into a record only when a different human verifies
-the same client. A verified fact may be written directly. A second client id,
+the same client. A verified fact may be written directly when a matching verified, sourced
+claim exists. A second client id,
 or another client's content, is refused.
 
 Institutional learning uses `propose_standard` and `approve_standard`. The
@@ -744,7 +745,8 @@ in-force version. A future, superseded or expired standard is refused.
 Client ids and client content are refused in a standard, including text copied
 from a proposal that is not yet a record. Where a use case has an approved
 standard, memory outputs record `standard_version` for the version actually in
-force. Citing a superseded or not-yet-effective version is refused. Content
+force. Claim releases and model calls also enforce the approved deployment
+and record its current standard version. Citing a superseded or not-yet-effective version is refused. Content
 stays in the retention store. The evidence chain stores the hash.
 
 An inference cannot be written straight into relationship memory. With no

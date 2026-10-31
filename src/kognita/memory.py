@@ -387,7 +387,8 @@ def _reject_client_standard(session: Session, standard: Standard) -> None:
         if content:
             contents.add(content)
     fields = [standard.standard_id, standard.version, standard.content, standard.usecase_id, *standard.evidence_refs]
-    if any(_contains_client(field, ids, contents) for field in fields):
+    if any(_contains_client(field, ids, contents) or re.search(r"\bclient[_ -]?id\b", field, re.I)
+           for field in fields):
         raise ValueError("MEMORY_CLIENT_CONTENT")
 
 
@@ -505,6 +506,11 @@ def _run_open(session: Session, record: MemoryRecord, run_id: str, now: datetime
     run = session.get(RunRecord, run_id)
     if run is None or run.control_state not in _LIVE:
         raise ValueError("MEMORY_WORKING_RUN" if run is None else "MEMORY_EXPIRED")
+    if session.exec(select(EvidenceEvent).where(
+        EvidenceEvent.correlation_id == run_id,
+        EvidenceEvent.event_type == EventType.FINAL_DECISION,
+    )).first() is not None:
+        raise ValueError("MEMORY_EXPIRED")
     started = as_utc(run.started_at)
     if started is None:
         raise ValueError("MEMORY_WORKING_RUN")
@@ -661,6 +667,14 @@ def write_memory(
         _window(record, at)
         _reject_foreign(session, record)
         version = _output_version(session, usecase_id, standard_version, at)
+        if record.scope is MemoryScope.RELATIONSHIP:
+            from kognita.claims import ClaimType, ValidatorStatus, list_claims
+            if not any(claim.client_id == record.client_id and claim.claim == record.content
+                       and claim.claim_type == ClaimType.VERIFIED_FACT
+                       and claim.validator_status == ValidatorStatus.VERIFIED
+                       and claim.source_system.strip() and claim.source_record.strip()
+                       for claim in list_claims(session)):
+                raise ValueError("MEMORY_FACT")
         body = _memory_body(record)
         digest = _retain(session, body, "memory", correlation_id)
         _emit(session, evidence, correlation_id, ActorType.SYSTEM, "memory", {
@@ -906,3 +920,64 @@ __all__ = [
     "approve_standard",
     "current_standard",
 ]
+
+
+def _output_standard(session, *, agent_id="", usecase_id="", standard_version="", at=None):
+    """Bind output to retained standards and the approved deployment."""
+    rows = session.exec(select(EvidenceEvent).where(
+        EvidenceEvent.event_type == EventType.MEMORY_WRITE,
+        EvidenceEvent.payload["action"].as_string() == "approve",
+    )).all()
+    relevant = [row for row in rows if row.payload.get("allowed") is True
+                and ((usecase_id and row.payload.get("usecase_id") == usecase_id)
+                     or (not usecase_id and agent_id and row.payload.get("agent") == agent_id))]
+    if not relevant:
+        if standard_version:
+            raise ValueError("MEMORY_STANDARD")
+        return ""
+    verify_chain(session)
+    usecases = sorted({row.payload["usecase_id"] for row in relevant})
+    when = _now(at)
+    versions = {usecase: _output_version(session, usecase, "", when) for usecase in usecases}
+    version = next(iter(versions.values())) if len(versions) == 1 else canonical_json(versions)
+    if standard_version and standard_version != version:
+        raise ValueError("MEMORY_STANDARD")
+    if agent_id:
+        from kognita.registry import get, _deployment_hash
+        agent = get(session, agent_id)
+        deployment = (agent.tool_allowlist or {}).get("_deployment") if agent else None
+        if not isinstance(deployment, dict) or _deployment_hash(agent, deployment) != agent.deployment_hash:
+            raise ValueError("MEMORY_VERSION")
+        try:
+            pins = json.loads(deployment["memory_behaviour"])
+        except (KeyError, TypeError, ValueError):
+            raise ValueError("MEMORY_VERSION") from None
+        if not isinstance(pins, list):
+            raise ValueError("MEMORY_VERSION")
+        catalog = _catalog(session)
+        for (owner, ident), standard in catalog.heads.items():
+            if owner in usecases and not any(
+                isinstance(pin, dict) and pin.get("standard_id") == ident
+                and pin.get("version") == standard.version and pin.get("usecase_id") == owner
+                for pin in pins
+            ):
+                raise ValueError("MEMORY_VERSION")
+    return version
+
+
+def _read_memory(session, digest, *, client_id, run_id="", at=None):
+    """Read only an applied record, within its client and run lifetime."""
+    verify_chain(session)
+    events = _events(session)
+    if not any(event.payload.get("allowed") is True
+               and event.payload.get("action") in ("write", "verify")
+               and event.payload.get("content_hash") == digest for event in events):
+        raise ValueError("MEMORY_PROPOSAL")
+    record = _record_from(_read(session, digest, "MEMORY_INVALID"))
+    if record.client_id != client_id:
+        raise ValueError("MEMORY_SCOPE")
+    when = _now(at)
+    _window(record, when)
+    if record.scope is MemoryScope.WORKING:
+        _run_open(session, record, run_id, when)
+    return record

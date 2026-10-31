@@ -225,8 +225,11 @@ class EgressGuard:
         use_case: str = "",
     ) -> EgressResult:
         """Send ``text`` to ``call``, redacting or refusing as policy requires."""
+        standard_version = ""
         if session is not None and use_case:
             from kognita.usecases import model_call_block
+
+            from kognita.memory import _output_standard
 
             blocked = model_call_block(
                 session,
@@ -235,6 +238,10 @@ class EgressGuard:
                 model=model,
                 version=model_version,
             )
+            try:
+                standard_version = _output_standard(session, usecase_id=use_case)
+            except ValueError as exc:
+                blocked = str(exc)
             if blocked:
                 result = EgressResult(
                     decision=EgressDecision.DENY,
@@ -255,6 +262,7 @@ class EgressGuard:
                     prompt_template_version=prompt_template_version,
                     use_case=use_case,
                     citation=blocked,
+                    standard_version=standard_version,
                 )
                 raise EgressDenied(
                     blocked,
@@ -285,6 +293,7 @@ class EgressGuard:
                 model_version=model_version,
                 prompt_template_version=prompt_template_version,
                 use_case=use_case,
+                standard_version=standard_version,
             )
             raise EgressDenied(
                 f"{Classification(classification).value} content may not be sent to "
@@ -329,6 +338,7 @@ class EgressGuard:
             model_version=model_version,
             prompt_template_version=prompt_template_version,
             use_case=use_case,
+            standard_version=standard_version,
         )
         return result
 
@@ -348,6 +358,7 @@ class EgressGuard:
         prompt_template_version: str | None = None,
         use_case: str = "",
         citation: str = "",
+        standard_version: str = "",
     ) -> None:
         if self.evidence is None or session is None:
             return
@@ -380,6 +391,7 @@ class EgressGuard:
             use_case=use_case,
         )
         common = {
+            "standard_version": standard_version,
             "destination": result.destination,
             "destination_is_local": result.destination_is_local,
             "classification": Classification(result.classification).value,
@@ -407,7 +419,7 @@ class EgressGuard:
                 "prompt_hash": prompt_hash,
                 "model_card": card_id,
                 "model_card_hash": card_hash,
-                "standard_version": _standard_version(session, use_case),
+                "standard_version": standard_version or _standard_version(session, use_case),
                 **({"citation": citation} if citation else {}),
             },
         )

@@ -45,7 +45,8 @@ def _standard(version="1", content="Use the current house view", effective=None,
 def ready(session, evidence):
     session.add(UseCase(
         usecase_id="advice", version=1, effective_from=datetime(2020, 1, 1, tzinfo=timezone.utc),
-        record={"usecase_id": "advice", "knowledge_lead": "knowledge-lead", "version": 1},
+        record={"usecase_id": "advice", "knowledge_lead": "knowledge-lead", "version": 1, "approved_sources": ["crm"],
+                "approved_models": ["house/summary@1"]},
     ))
     session.add(Interaction(id="i1", client_id=CLIENT, use_case="advice"))
     session.add(Interaction(id="i2", client_id=OTHER, use_case="advice"))
@@ -158,6 +159,7 @@ def test_relationship_inference_requires_rm_verification(ready, evidence):
 
 def test_verified_fact_can_be_written_for_one_client(ready, evidence):
     session = ready
+    _fact(session, evidence, SENTENCE)
     record = write_memory(session, _record(type_="verified fact"), evidence=evidence, correlation_id="i1", now=NOW)
     assert record.type == "verified fact"
     with pytest.raises(ValueError, match="MEMORY_SCOPE"):
@@ -258,6 +260,7 @@ def test_superseded_and_expired_standards_cannot_be_used(ready, evidence, engine
     assert current_standard(session, "house-view", usecase_id="advice", now=NOW).version == "1"
     with pytest.raises(ValueError, match="MEMORY_STANDARD"):
         write_memory(session, _record(type_="verified fact"), evidence=evidence, correlation_id="i1", usecase_id="advice", standard_version="2", now=NOW)
+    _fact(session, evidence, "A verified holding")
     recorded = write_memory(session, _record(type_="verified fact", content="A verified holding"), evidence=evidence, correlation_id="i1", usecase_id="advice", now=NOW + timedelta(days=1))
     assert recorded.type == "verified fact"
     assert _writes(session)[-1].payload["standard_version"] == "1"
@@ -295,3 +298,126 @@ def test_damaged_standard_fails_closed(ready, evidence):
     session.flush()
     with pytest.raises(ValueError, match="MEMORY_STANDARD"):
         current_standard(session, "house-view", usecase_id="advice", now=NOW)
+
+
+def _fact(session, evidence, content):
+    from kognita.claims import Claim, ClaimType, ValidatorStatus, record_claim
+    record_claim(session, Claim("fact-" + str(len(content)), CLIENT, content,
+                 ClaimType.VERIFIED_FACT, source_system="crm", source_record="note",
+                 validator_status=ValidatorStatus.VERIFIED), evidence=evidence, interaction_id="i1")
+
+
+def test_relationship_fact_requires_sourced_verification(ready, evidence):
+    from kognita.claims import Claim, ClaimType, ValidatorStatus, record_claim
+    record = _record(type_="verified fact")
+    with pytest.raises(ValueError, match="MEMORY_FACT"):
+        write_memory(ready, record, evidence=evidence, correlation_id="i1", now=NOW)
+    for index, (source, status) in enumerate((("", ValidatorStatus.VERIFIED), ("crm", ValidatorStatus.INFERRED))):
+        record_claim(ready, Claim(f"unsupported-{index}", CLIENT, SENTENCE, ClaimType.VERIFIED_FACT,
+                     source_system=source, source_record="note", validator_status=status),
+                     evidence=evidence, interaction_id="i1")
+        with pytest.raises(ValueError, match="MEMORY_FACT"):
+            write_memory(ready, record, evidence=evidence, correlation_id="i1", now=NOW)
+    _fact(ready, evidence, SENTENCE)
+    assert write_memory(ready, record, evidence=evidence, correlation_id="i1", now=NOW) == record
+
+
+def test_output_standard_checks_deployment_and_lifecycle(ready, evidence):
+    from kognita.memory import _output_standard
+    from kognita.registry import get
+    assert _output_standard(ready, usecase_id="advice", at=NOW) == ""
+    with pytest.raises(ValueError, match="MEMORY_STANDARD"):
+        _output_standard(ready, usecase_id="advice", standard_version="forged", at=NOW)
+    proposal = propose_standard(ready, _standard(expiry=LATER), evidence=evidence,
+                                correlation_id="std", proposer_id="agent-1", usecase_id="advice",
+                                agent_name="advisor", now=NOW)
+    approve_standard(ready, proposal, evidence=evidence, correlation_id="std",
+                     approver_id="knowledge-lead", actor_type=ActorType.HUMAN, now=NOW)
+    assert _output_standard(ready, agent_id="advisor", usecase_id="advice", at=NOW) == "1"
+    with pytest.raises(ValueError, match="MEMORY_STANDARD"):
+        _output_standard(ready, agent_id="advisor", standard_version="0", at=NOW)
+    with pytest.raises(ValueError, match="MEMORY_STANDARD"):
+        _output_standard(ready, agent_id="advisor", at=LATER)
+    agent = get(ready, "advisor")
+    agent.model = "unapproved-model"
+    ready.flush()
+    with pytest.raises(ValueError, match="MEMORY_VERSION"):
+        _output_standard(ready, agent_id="advisor", at=NOW)
+
+
+def test_claim_outputs_pin_standard_and_reject_stale_citations(ready, evidence, monkeypatch):
+    from dataclasses import replace
+    from kognita.claims import Claim, ClaimType, ValidatorStatus, list_claims, record_claim, release_claim
+    from kognita.sources import Source, register_source
+    register_source(ready, Source("crm", "policy", "note", "owner", NOW),
+                    evidence=evidence, interaction_id="setup")
+    proposal = propose_standard(ready, _standard(expiry=LATER), evidence=evidence,
+                                correlation_id="std", proposer_id="agent-1", usecase_id="advice",
+                                agent_name="advisor", now=NOW)
+    approve_standard(ready, proposal, evidence=evidence, correlation_id="std",
+                     approver_id="knowledge-lead", actor_type=ActorType.HUMAN, now=NOW)
+    monkeypatch.setattr("kognita.memory._now", lambda at=None: NOW)
+    claim = Claim("output", CLIENT, "A verified current note", ClaimType.VERIFIED_FACT,
+                  source_system="crm", source_record="note", agent_id="advisor",
+                  validator_status=ValidatorStatus.VERIFIED)
+    record_claim(ready, claim, evidence=evidence, interaction_id="i1")
+    assert release_claim(ready, claim.claim_id, evidence=evidence, interaction_id="i1",
+                         usecase_id="advice").result == CheckResult.PASS
+    assert list_claims(ready)[0].standard_version == "1"
+    record_claim(ready, replace(claim, claim_id="stale", standard_version="0"),
+                 evidence=evidence, interaction_id="i1")
+    assert release_claim(ready, "stale", evidence=evidence, interaction_id="i1",
+                         usecase_id="advice").check == "MEMORY_STANDARD"
+
+
+def test_model_egress_pins_standard_and_stops_after_expiry(ready, evidence, monkeypatch):
+    from kognita.egress import EgressGuard, EgressDenied
+    from kognita.vocabulary import Classification
+    proposal = propose_standard(ready, _standard(expiry=LATER), evidence=evidence,
+                                correlation_id="std", proposer_id="agent-1", usecase_id="advice",
+                                agent_name="advisor", now=NOW)
+    approve_standard(ready, proposal, evidence=evidence, correlation_id="std",
+                     approver_id="knowledge-lead", actor_type=ActorType.HUMAN, now=NOW)
+    monkeypatch.setattr("kognita.memory._now", lambda at=None: NOW)
+    from kognita.models import ModelCard
+    ready.add(ModelCard(card_id="house/summary@1", effective_from=NOW,
+                        record={"card_id": "house/summary@1", "provider": "house",
+                                "model": "summary", "version": "1"}))
+    ready.flush()
+    calls = []
+    guard = EgressGuard(evidence=evidence)
+    args = dict(classification=Classification.C1, destination="https://api.openai.com",
+                destination_is_local=False, session=ready, correlation_id="output", use_case="advice",
+                provider="house", model="summary", model_version="1")
+    guard.send("instructions", lambda text: calls.append(text) or "response", **args)
+    event = ready.exec(select(EvidenceEvent).where(EvidenceEvent.event_type == EventType.MODEL_CALL)
+                       .order_by(EvidenceEvent.sequence.desc())).first()
+    assert event.payload["standard_version"] == "1"
+    monkeypatch.setattr("kognita.memory._now", lambda at=None: LATER)
+    with pytest.raises(EgressDenied, match="MEMORY_STANDARD"):
+        guard.send("instructions", lambda text: calls.append(text), **args)
+    assert calls == ["instructions"]
+
+
+def test_working_read_enforces_client_run_and_completion(ready, evidence):
+    from kognita.memory import _read_memory
+    record = _record(MemoryScope.WORKING)
+    write_memory(ready, record, evidence=evidence, correlation_id="run-1", run_id="run-1", now=NOW)
+    digest = _writes(ready)[-1].payload["content_hash"]
+    assert _read_memory(ready, digest, client_id=CLIENT, run_id="run-1", at=NOW) == record
+    with pytest.raises(ValueError, match="MEMORY_SCOPE"):
+        _read_memory(ready, digest, client_id=OTHER, run_id="run-1", at=NOW)
+    with pytest.raises(ValueError, match="MEMORY_SCOPE"):
+        _read_memory(ready, digest, client_id=CLIENT, run_id="other-run", at=NOW)
+    evidence.emit(ready, correlation_id="run-1", event_type=EventType.FINAL_DECISION, payload={})
+    with pytest.raises(ValueError, match="MEMORY_EXPIRED"):
+        _read_memory(ready, digest, client_id=CLIENT, run_id="run-1", at=NOW)
+    with pytest.raises(ValueError, match="MEMORY_EXPIRED"):
+        write_memory(ready, record, evidence=evidence, correlation_id="run-1", run_id="run-1", now=NOW)
+
+
+def test_unknown_client_identifier_label_is_refused_in_standard(ready, evidence):
+    with pytest.raises(ValueError, match="MEMORY_CLIENT_CONTENT"):
+        propose_standard(ready, _standard(content="client_id: unrecorded-person"),
+                         evidence=evidence, correlation_id="std", proposer_id="agent-1",
+                         usecase_id="advice", agent_name="advisor", now=NOW)

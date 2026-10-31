@@ -1269,6 +1269,12 @@ class Gateway:
         if envelope.delegation_id and bound_run is None and _client_data(classification):
             identity_checks.append(Check(check="S5-RUN-REQUIRED", citation="S5-RUN-REQUIRED",
                                          regime="INTERNAL", result=CheckResult.FAIL))
+        from kognita.memory import _output_standard
+        try:
+            _output_standard(session, usecase_id=purpose, agent_id=agent_name, at=now)
+        except ValueError:
+            identity_checks.append(Check(check="MEMORY_STANDARD", regime="INTERNAL", result=CheckResult.FAIL,
+                                         citation="Memory: outputs require a current standard"))
         identity_checks += self._store(
             lambda: _tool_checks(session, envelope, model_spec, bound_run, self.evidence, at=now)
         )
@@ -2255,6 +2261,13 @@ def _reasoning_trace(payload: Mapping[str, Any] | None) -> str:
 
 
 def _standard_version(session: Session, usecase_id: str, at: datetime | None) -> str:
+    from kognita.memory import _output_standard
+    try:
+        version = _output_standard(session, usecase_id=usecase_id, at=at)
+    except ValueError:
+        return ""
+    if version:
+        return version
     from kognita.usecases import _standard_version as _in_force
     return _in_force(session, usecase_id, at)
 
