@@ -44,6 +44,7 @@ dependencies = [
 
 [project.optional-dependencies]
 signing = ["cryptography>=42"]
+postgres = ["psycopg[binary]>=3.2"]
 openai = ["openai>=1.91.0"]
 vec = ["sqlite-vec>=0.1.6"]
 local-embeddings = [
@@ -192,6 +193,7 @@ source_modules = [
     "kognita.migrations",
     "kognita.models",
     "kognita.protocols",
+    "kognita.postgres",
     "kognita.registry",
     "kognita.replay",
     "kognita.reconstruct",
@@ -345,6 +347,7 @@ forbidden_modules = [
 name = "optional trust drivers stay behind lazy boundaries"
 type = "forbidden"
 source_modules = ["kognita"]
-# R2 registry replay uses the same lazy signing boundary; no driver imports elsewhere.
-forbidden_modules = ["cryptography", "psycopg"]
+# R2 replay uses the lazy signing boundary. Postgres uses SQLAlchemy driver
+# loading only; even kognita.postgres must not import psycopg directly.
+forbidden_modules = ["cryptography", "psycopg", "psycopg_binary", "psycopg_pool"]
 ignore_imports = ["kognita.signing -> cryptography"]

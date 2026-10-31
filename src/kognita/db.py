@@ -34,6 +34,9 @@ def make_engine(
             Path(url).parent.mkdir(parents=True, exist_ok=True)
             url = f"sqlite:///{url}"
 
+    if url.startswith(("postgresql://", "postgres://")):
+        url = "postgresql+psycopg://" + url.split("://", 1)[1]
+
     connect_args: dict = {}
     kwargs: dict = {}
     if url.startswith("sqlite"):
@@ -44,7 +47,12 @@ def make_engine(
 
             kwargs["poolclass"] = StaticPool
 
-    engine = create_engine(url, echo=echo, connect_args=connect_args, **kwargs)
+    try:
+        engine = create_engine(url, echo=echo, connect_args=connect_args, **kwargs)
+    except ModuleNotFoundError as exc:
+        if url.startswith("postgresql+psycopg://"):
+            raise ValueError("T2: Postgres requires the postgres extra") from exc
+        raise
 
     if url.startswith("sqlite"):
 
@@ -150,6 +158,11 @@ def create_all(engine: Engine) -> None:
             for name, kind in additions.items():
                 if name not in columns:
                     connection.exec_driver_sql(f'ALTER TABLE "{table}" ADD COLUMN "{name}" {kind}')
+    if engine.dialect.name == "postgresql":
+        from kognita.postgres import _install
+        with engine.begin() as connection:
+            _install(connection)
+        return
     if engine.dialect.name != "sqlite":
         return
     with engine.begin() as connection:

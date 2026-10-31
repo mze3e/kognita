@@ -1555,6 +1555,22 @@ def _cmd_export_exclude(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_db_rls(args: argparse.Namespace) -> int:
+    from kognita.postgres import _apply_rls
+    engine = None
+    try:
+        engine = make_engine(args.db)
+        with engine.begin() as connection:
+            _apply_rls(connection)
+        return 0
+    except Exception as exc:
+        print(f"T2: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        if engine is not None:
+            engine.dispose()
+
+
 def _cmd_db(args: argparse.Namespace) -> int:
     from kognita.migrations import _migrate, _status
 
@@ -1586,6 +1602,11 @@ def build_parser() -> argparse.ArgumentParser:
         command = db_sub.add_parser(name)
         command.add_argument("--db", default="kognita.db", help="store path or URL")
         command.set_defaults(func=_cmd_db)
+    rls = db_sub.add_parser("rls")
+    rls_sub = rls.add_subparsers(dest="_rls_command", required=True)
+    apply = rls_sub.add_parser("apply")
+    apply.add_argument("--db", default="kognita.db")
+    apply.set_defaults(func=_cmd_db_rls)
     agent = sub.add_parser("agent")
     agent_sub = agent.add_subparsers(dest="agent_command", required=True)
     deploy = agent_sub.add_parser("deploy")

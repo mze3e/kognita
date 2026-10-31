@@ -13,21 +13,15 @@ deployment strip fields on the way in.
 Evidence is written by the infrastructure, never by an agent: nothing in this
 module takes a caller-supplied hash or sequence number.
 
-The append-only guard and the ``evidence_head`` checkpoint (see
-:mod:`kognita.db`) are installed on SQLite only; this project ships no other
-dialect driver. Deploying this store on a dialect where ``create_all`` does
-not install them leaves raw DELETE/UPDATE unguarded at the database layer.
-:func:`verify_chain` still fails closed in that case — a missing or unreadable
-head checkpoint is treated as a chain break whenever events exist, rather than
-as "nothing to compare against" — so truncation is reported instead of passing
-silently, but there is nothing stopping the truncation itself without the
-SQLite triggers.
+SQLite and Postgres install append-only guards and a head checkpoint.
+Postgres writers also hold a database lock through transaction completion.
 """
 from __future__ import annotations
 
 import json
 import sys
 import threading
+from contextlib import nullcontext as _nullcontext
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
@@ -156,10 +150,8 @@ class EvidenceWriter:
     The sequence number and both hashes are assigned under a lock shared by every
     writer over the same engine, so concurrent writers cannot fork the chain.
 
-    That lock guards writers *in one process*. Across processes the store
-    assumes a single writer; if that assumption is broken, the UNIQUE constraint
-    on ``sequence`` rejects the second insert rather than letting the chain fork
-    silently, and ``verify_chain`` catches anything that slips past.
+    Postgres also serializes writers across processes until commit or rollback.
+    SQLite deployments across processes still require a single writer.
     """
 
     def __init__(
@@ -202,7 +194,17 @@ class EvidenceWriter:
         if self.redact_payload is not None:
             body = self.redact_payload(event_type, body)
 
-        with self._lock:
+        _postgres = session.get_bind().dialect.name == "postgresql"
+        # A process lock must not block a transaction that already owns the
+        # database lock from appending another event before committing.
+        with _nullcontext() if _postgres else self._lock:
+            if _postgres:
+                from sqlalchemy import text as _text
+                # Acquire before reading the tail, including for an empty chain.
+                # READ COMMITTED gives the tail query a fresh snapshot after waiting.
+                if session.connection().get_isolation_level() != "READ COMMITTED":
+                    raise ValueError("T2: evidence writes require READ COMMITTED")
+                session.execute(_text("SELECT pg_advisory_xact_lock(7070002)"))
             previous = session.exec(
                 select(EvidenceEvent).order_by(desc(EvidenceEvent.sequence)).limit(1)
             ).first()
