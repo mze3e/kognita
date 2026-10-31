@@ -92,8 +92,8 @@ Monitoring is required at every tier. On the review date the use case is denied.
 **Agents are registered, and can be stopped.** An agent that is not in the registry is denied. Registration includes `deployment_date` and `model`, alongside its version, accountable owner and materiality tier. Missing identity denies with `S1-IDENTITY`; a changed deployment needs owner approval (`S1-DEPLOYMENT`). Each agent has a kill switch that denies its next request:
 
 ```console
-DENY  Kill switch engaged — accountable owner: Head of Wealth Advisory
-DENY  Agent inventory — 'AGENT-UNKNOWN' is not registered
+DENY  Kill switch engaged: accountable owner: Head of Wealth Advisory
+DENY  Agent inventory: 'AGENT-UNKNOWN' is not registered
 ```
 
 Through `kognita serve`, a call needs an admitted agent identity or an approved system trigger. An agent name is accepted only when the bound client configuration lists it.
@@ -889,7 +889,7 @@ class TestMyPack(ConformanceCase):
 
 The invariants are importable, so external packs run them in their own repositories.
 
-## Trust and resilience (0.7, unreleased)
+## Trust and resilience (0.7)
 
 These controls are on main and not yet in a PyPI release.
 
@@ -910,12 +910,12 @@ These controls are on main and not yet in a PyPI release.
 
 ## Known limitations
 
-Kognita is alpha. These are known limitations in v0.6.1. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
+Kognita is alpha. These are known limitations in v0.7.0. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
 
 - **The gateway refuses attachments.** File, image and audio content parts cannot be inspected locally, so they are refused (S5-UNSUPPORTED-CONTENT).
 - **Degraded-mode evidence is held in the gateway process.** Restarting before the evidence store recovers drops buffered evidence. `FAIL_CLOSED` is the default; MCP has no degraded mode.
-- **Schema migration is limited.** `create_all` applies supported additive columns and SQLite compatibility updates, not arbitrary schema migrations. Import a domain pack's models before creating its tables.
-- **Append-only evidence triggers are SQLite-only.** Other databases do not receive those trigger protections.
+- **Schema migration covers Kognita's own tables.** `kognita db migrate` and `kognita db status` track `schema_version` for the core schema. Import a domain pack's models before creating its tables.
+- **Append-only evidence triggers are SQLite-only.** The `postgres` extra uses a writer lock and row-level security instead; other databases receive neither.
 - **Policy citations default to empty at model level.** `decide()` escalates empty citations with CITATION-REQUIRED and preserves denials.
 - **Anomaly buckets use UTC calendar days**, except the rolling 24-hour volume window.
 - **Circuit-breaker window boundaries lack a regression test.**
@@ -929,6 +929,14 @@ The 0.6 controls are in this tree. These limits are part of how they work:
 - **Two standard versions.** Memory writes record the institutional standard in force. Gateway `MODEL_CALL` events and governed tool outputs record the `standard_version` on the in-force use-case record, or the use-case version when that field is absent. Approving a standard does not by itself rewrite the use-case record. A caller-supplied version is not copied onto the event.
 - **A tier 1 use case can permit a shared model.** `permit_same_model` set to true allows a verifier on the producer's model, version, or provider at tier 1 only. The verifier still cannot check its own claims. Tier 2 and above ignore the permit.
 - **Fairness is a report, not a monitored metric.** Disparities are flagged to the risk owner. `--register-metric` does not create a metric. The 0.5 monitored metrics remain decision quality and reliability.
+
+The 0.7 controls are in this tree. These are their honest gaps:
+
+- **Replication is the operator's job.** Kognita provides backup, restore and a restore drill. Replicating the evidence store across sites is left to the bank's own infrastructure (T2).
+- **Anchoring has one sink.** Only the file anchor sink ships. Anchoring to an external timestamping service or ledger is not included (T6).
+- **The TypeScript verifier is not on npm.** `@kognita/verify` lives in `verify-ts/` and is built from source for now (T4).
+- **Signing needs the `signing` extra.** If signing is configured and `cryptography` is not installed, evidence writes are refused rather than written unsigned.
+- **The gateway overhead test is flaky.** Its 25 ms mean limit sometimes fails on shared CI runners. It measures test timing, not a control.
 
 ## Where it's heading
 
@@ -946,7 +954,7 @@ The test every release is measured against:
 
 The 0.6 claims controls ship in v0.6.0: typed claims, freshness, approved sources, calculation provenance, verification, memory, learning exports, sensitive attributes, evaluation, and reasoning traces. See [Claims](#claims) and the [0.6 checklist](docs/ROADMAP.md).
 
-The 0.7 trust and resilience controls are on main and unreleased. See [Trust and resilience](#trust-and-resilience-07-unreleased) and the [0.7 checklist](docs/ROADMAP.md).
+The 0.7 trust and resilience controls ship in v0.7.0. See [Trust and resilience](#trust-and-resilience-07) and the [0.7 checklist](docs/ROADMAP.md).
 
 The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop and institutional memory.
 
