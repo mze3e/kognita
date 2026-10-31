@@ -889,6 +889,25 @@ class TestMyPack(ConformanceCase):
 
 The invariants are importable, so external packs run them in their own repositories.
 
+## Trust and resilience (0.7, unreleased)
+
+These controls are on main and not yet in a PyPI release.
+
+- **Signed evidence.** Install the `signing` extra for Ed25519 signatures on every event (`kognita keys generate`, `kognita evidence verify --public-key`). Signing configured without the extra refuses writes. Keys rotate, revoke and escrow with `kognita keys rotate|revoke|list`, and verification works across rotations.
+- **Schema versions and migrations.** New events carry `schema_version` 2; older rows stay version 1 and still verify. `kognita db migrate|status` runs in one transaction.
+- **External anchoring.** `AnchorSink` and `FileAnchorSink` publish the chain head; `kognita evidence anchor` records it and a rewrite after an anchor is detected.
+- **Postgres backend.** The optional `postgres` extra adds many writers without sequence gaps and row-level security per agent (`kognita db rls apply`). Replication is the bank's.
+- **Backup and restore.** `kognita backup create|verify|restore` restores to a point in time and checks the chain and retention store. A restore drill runs in CI.
+- **External review.** `request_review_period`, `annotate` and `submit_review` let a reviewer submit a signed review into the chain.
+- **TypeScript verifier.** `verify-ts/` holds `@kognita/verify` and the `kognita-verify` CLI, which agree with the Python verifier on shared fixtures. It is not published to npm yet.
+- **Provider register.** Every model provider is recorded as an ICT third party with contract details, incident history and regulatory cooperation. Routing to an unregistered provider is denied (`R3-UNREGISTERED`).
+- **Failover and model changes.** Failover goes only to models approved for the use case (`R5-FAILOVER`, `R5-UNAPPROVED-FALLBACK`). A served model that differs from the approved card is a revalidation trigger (`R7-MODEL-CHANGED`).
+- **Incidents.** Chain breaks, gateway outages, degraded periods and provider failures become incidents with timelines. `kognita incident report <id> [--redacted]` builds a report from evidence, and [docs/incident-playbooks.md](docs/incident-playbooks.md) has detect, contain and investigate steps for nine incident types.
+- **Dependencies and concentration.** `kognita deps map|check` compares declared and observed dependencies (`R8-UNDECLARED`, `R8-UNUSED`). `kognita deps concentration` reports critical use-case shares per provider, cloud, framework, vector platform and orchestration layer.
+- **Failure drills.** `kognita drill simulate <kind> --usecase <id>` runs eight offline failure kinds and checks the registered failure mode, fallback and evidence completeness.
+- **Retention by record class.** `kognita retention class set|list` sets periods per record class. The effective period is the longest of use case and record class, and erase is refused while a supported record is live (`R11-RECORD-LIVE`).
+- **Business continuity is the bank's.** See [docs/business-continuity.md](docs/business-continuity.md).
+
 ## Known limitations
 
 Kognita is alpha. These are known limitations in v0.6.1. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
@@ -927,9 +946,7 @@ The test every release is measured against:
 
 The 0.6 claims controls ship in v0.6.0: typed claims, freshness, approved sources, calculation provenance, verification, memory, learning exports, sensitive attributes, evaluation, and reasoning traces. See [Claims](#claims) and the [0.6 checklist](docs/ROADMAP.md).
 
-Planned, not yet built:
-
-- **0.7: Trust and resilience.** Signed evidence, external verification, provider and dependency registers.
+The 0.7 trust and resilience controls are on main and unreleased. See [Trust and resilience](#trust-and-resilience-07-unreleased) and the [0.7 checklist](docs/ROADMAP.md).
 
 The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop and institutional memory.
 
