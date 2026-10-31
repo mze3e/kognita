@@ -43,6 +43,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+signing = ["cryptography>=42"]
 openai = ["openai>=1.91.0"]
 vec = ["sqlite-vec>=0.1.6"]
 local-embeddings = [
@@ -176,6 +177,7 @@ source_modules = [
     "kognita.envelope",
     "kognita.evaluation",
     "kognita.evidence",
+    "kognita.signing",
     "kognita.facts",
     "kognita.gateway",
     "kognita.governance",
@@ -225,6 +227,8 @@ forbidden_modules = [
     "psycopg",
     "opentelemetry",
 ]
+
+ignore_imports = ["kognita.signing -> cryptography"]
 
 # The otel extra is the only place that imports OpenTelemetry. The decision
 # engine, including the flight recorder, is the source list above.
@@ -335,3 +339,10 @@ forbidden_modules = [
     "numpy",
     "requests",
 ]
+
+[[tool.importlinter.contracts]]
+name = "optional trust drivers stay behind lazy boundaries"
+type = "forbidden"
+source_modules = ["kognita"]
+forbidden_modules = ["cryptography", "psycopg"]
+ignore_imports = ["kognita.signing -> cryptography"]

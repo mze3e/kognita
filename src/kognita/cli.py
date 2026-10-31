@@ -146,14 +146,39 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_keys_generate(args):
+    from kognita.signing import _generate
+    import os
+
+    created = []
+    try:
+        private, public = _generate()
+        for path, data in ((args._private_path, private), (args._public_path, public)):
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            created.append(path)
+            with os.fdopen(fd, 'wb') as output:
+                output.write(data)
+    except (OSError, ValueError) as exc:
+        for path in created:
+            Path(path).unlink(missing_ok=True)
+        print(f'T1: key generation refused: {exc}', file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_evidence_verify(args: argparse.Namespace) -> int:
     """Verify a store's evidence chain, or a previously exported artifact."""
+    try:
+        public_key = Path(args.public_key).read_bytes() if args.public_key else None
+    except OSError as exc:
+        print(f'T1: cannot read public key: {exc}', file=sys.stderr)
+        return 1
     if args.file:
         from kognita.evidence import verify_export
 
         payload = json.loads(Path(args.file).read_text())
         try:
-            count = verify_export(payload)
+            count = verify_export(payload, public_key=public_key)
         except ChainBreak as exc:
             print(f"BROKEN: {exc}", file=sys.stderr)
             return 1
@@ -165,7 +190,7 @@ def cmd_evidence_verify(args: argparse.Namespace) -> int:
     engine = make_engine(args.db)
     with session_scope(engine) as session:
         try:
-            count = verify_chain(session)
+            count = verify_chain(session, public_key=public_key)
         except ChainBreak as exc:
             print(f"BROKEN: {exc}", file=sys.stderr)
             return 1
@@ -1606,6 +1631,13 @@ def build_parser() -> argparse.ArgumentParser:
     list_definition.add_argument("--db", default="kognita.db")
     list_definition.set_defaults(func=_cmd_definition_list)
 
+    keys = sub.add_parser('keys', help='local signing keys')
+    keys_sub = keys.add_subparsers(required=True)
+    generate = keys_sub.add_parser('generate', help='create private and public PEM files')
+    generate.add_argument('_private_path', metavar='PRIVATE_PATH')
+    generate.add_argument('_public_path', metavar='PUBLIC_PATH')
+    generate.set_defaults(func=_cmd_keys_generate)
+
     evidence = sub.add_parser("evidence", help="evidence plane operations")
     evidence_sub = evidence.add_subparsers(dest="evidence_command", required=True)
 
@@ -1617,6 +1649,7 @@ def build_parser() -> argparse.ArgumentParser:
     verify = evidence_sub.add_parser("verify", help="verify a chain is unbroken")
     verify.add_argument("--db", default="kognita.db", help="store path or URL")
     verify.add_argument("--file", help="verify an exported artifact instead of a store")
+    verify.add_argument("--public-key", help="Ed25519 public PEM file; require every signature")
     verify.set_defaults(func=cmd_evidence_verify)
 
     export = evidence_sub.add_parser("export", help="write a portable audit artifact")
