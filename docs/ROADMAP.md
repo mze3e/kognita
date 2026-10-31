@@ -883,6 +883,31 @@ Each line was checked against the code and tests in this tree. All seventeen sta
 - **Incident evidence:** chain breaks, gateway outages, degraded-mode periods and provider failures are recorded as incidents with timelines, exportable for incident reporting
 - **Structured incident report:** `kognita incident report <incident_id>` builds a report from evidence: what happened, the affected clients (0.4 item 14), which controls ran, which failed or were missing, and the runtime change behind it, such as a deployment-version diff of the prompt, tools, permissions or model (0.5 item 1). A redacted variant drops client content and identifiers so the report can be shared with regulators or industry peers. Disclosure itself, to clients and across the industry, is the bank's
 
+### Definition of Done
+
+Each line is ticked only when the code and tests in this tree show it, with an evidence note.
+
+- [ ] T1 Ed25519 signing: every evidence event signed; `kognita evidence verify --public-key` verifies every signature. Signing configured without the `signing` extra refuses writes.
+- [ ] T2 Postgres backend: many writers with no sequence gaps, row-level security so agents cannot read each other's runs. Replication is the bank's.
+- [ ] T3 External review API: a reviewer requests a period, annotates decisions and submits a signed review into the chain.
+- [ ] T4 TypeScript verifier `@kognita/verify` agrees with the Python verifier on shared fixtures (npm publish only on explicit go).
+- [ ] T5 Schema versioning: events carry `schema_version`; migrations run in one transaction; old events stay readable and verify.
+- [ ] T6 External anchoring: the chain head is published through an `AnchorSink`; a rewrite after an anchor is detected.
+- [ ] R1 Backup and restore to a point in time, verifying chain and retention store; restore drill runs in CI.
+- [ ] R2 Key rotation, revocation and escrow record; verification works across rotations.
+- [ ] R3 Model-provider register; routing to an unregistered provider is DENY (`R3-UNREGISTERED`).
+- [ ] R4 Incident playbooks: detect, contain and investigate steps for each of the nine agent incident types.
+- [ ] R5 Provider failover only to models approved for the use case, evidenced (`R5-FAILOVER`, `R5-UNAPPROVED-FALLBACK`).
+- [ ] R6 Provider register additions: incident history and regulatory cooperation.
+- [ ] R7 Silent model-change detection is a revalidation trigger; calls fall back or stop per use case (`R7-MODEL-CHANGED`).
+- [ ] R8 AI dependency map, declared vs observed; divergence is a finding (`R8-UNDECLARED`, `R8-UNUSED`).
+- [ ] R9 Concentration risk report per model provider, cloud, framework, vector platform and orchestration layer.
+- [ ] R10 Failure simulations as drills for the eight failure kinds, each verifying the failure mode and evidence completeness.
+- [ ] R11 Retention by record class; effective period is the longest of use case and record class; erase refused while a supported record is live (`R11-RECORD-LIVE`).
+- [ ] R12 Business continuity boundary documented as the bank's.
+- [ ] R13 Incident evidence with timelines for chain breaks, gateway outages, degraded periods and provider failures, exportable.
+- [ ] R14 `kognita incident report <id>` with a `--redacted` variant.
+
 ---
 
 ## 1.0 "Production Ready"
