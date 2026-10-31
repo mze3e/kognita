@@ -377,7 +377,7 @@ class UseCaseSpec:
     permitted_sensitive: set[str] = field(default_factory=set)
     permitted_data_classes: tuple[str, ...] = ()
     approved_models: tuple[str, ...] = ()
-    # R7: an approved fallback card ID on the configured provider; empty stops.
+    # R5/R7: an approved fallback card ID on the configured provider; empty stops.
     failover: str = ""
     approved_sources: tuple[str, ...] = ()
     verifier: str = ""
