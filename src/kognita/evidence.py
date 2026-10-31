@@ -52,6 +52,7 @@ GENESIS_HASH = "0" * 64
 #: and a per-instance lock would let them interleave and fork the chain.
 _ENGINE_LOCKS: "WeakKeyDictionary[Engine, threading.Lock]" = WeakKeyDictionary()
 _LOCKS_GUARD = threading.Lock()
+_ENGINE_SIGNERS = WeakKeyDictionary()
 
 
 def _int_ref(value: Any) -> int | None:
@@ -163,7 +164,10 @@ class EvidenceWriter:
         telemetry: TelemetryHook | None = None,
         signing=None,
     ) -> None:
+        self._incident_recording = False
         self._signing = signing
+        if signing is not None:
+            _ENGINE_SIGNERS[engine] = signing
         self.engine = engine
         self.redact_payload = redact_payload
         self.clock = clock
@@ -209,7 +213,14 @@ class EvidenceWriter:
                 select(EvidenceEvent).order_by(desc(EvidenceEvent.sequence)).limit(1)
             ).first()
             sequence = (previous.sequence + 1) if previous else 1
+            checkpoint = evidence_head(session) if self._incident_recording else None
+            if checkpoint is not None:
+                # Keep the gap visible after a detected tail deletion.
+                sequence = max(sequence, checkpoint[0] + 1)
             prev_hash = previous.event_hash if previous else GENESIS_HASH
+            if checkpoint is not None and checkpoint[1] != prev_hash:
+                # Preserve a checkpoint/hash disagreement in the appended link.
+                prev_hash = checkpoint[1]
 
             recorded_at = self.clock()
             payload_hash = canonical_hash(body)
@@ -394,6 +405,22 @@ def verify_chain(session: Session, *, public_key: bytes | None = None) -> int:
     once events exist, the absence of a checkpoint is itself a reason to fail
     closed rather than silently skip the tail check.
     """
+    try:
+        return _verify_chain(session, public_key=public_key)
+    except ChainBreak as exc:
+        from kognita.incidents import IncidentKind, _open
+        try:
+            writer = EvidenceWriter(session.get_bind(),
+                signing=_ENGINE_SIGNERS.get(session.get_bind()))
+            writer._incident_recording = True
+            _open(session, writer, IncidentKind._CHAIN_BREAK,
+                  summary=f"R13: {exc}", source="chain")
+        except Exception as recording_error:
+            exc.add_note(f"R13: incident recording unavailable: {recording_error}")
+        raise
+
+
+def _verify_chain(session, *, public_key=None):
     events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
     required = public_key is not None or any(event.signature is not None for event in events)
     from kognita.signing import _registry

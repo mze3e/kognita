@@ -215,6 +215,19 @@ def _cmd_evidence_anchor(args):
     return 0
 
 
+def _cmd_incident(args):
+    from kognita.incidents import _list, _show, _export
+    try:
+        with session_scope(make_engine(args.db)) as session:
+            result = (_list(session) if args._operation == "list" else
+                (_export if args._operation == "export" else _show)(session, args.incident_id))
+        print(json.dumps(result, sort_keys=True))
+        return 0
+    except ValueError as exc:
+        print(f"R13: {exc}", file=sys.stderr)
+        return 1
+
+
 def cmd_evidence_verify(args: argparse.Namespace) -> int:
     """Verify a store's evidence chain, or a previously exported artifact."""
     try:
@@ -247,7 +260,8 @@ def cmd_evidence_verify(args: argparse.Namespace) -> int:
                 from kognita.anchoring import _verify_anchors
                 _verify_anchors(export_chain(session), args.anchors)
         except ChainBreak as exc:
-            print(f"BROKEN: {exc}", file=sys.stderr)
+            session.commit()
+            print(f"R13 BROKEN: {exc}", file=sys.stderr)
             return 1
     print(f"evidence chain verified: {count} events")
     return 0
@@ -1729,6 +1743,15 @@ def build_parser() -> argparse.ArgumentParser:
     export_exclude.add_argument("--reason", required=True)
     export_exclude.add_argument("--actor", required=True)
     export_exclude.set_defaults(func=_cmd_export_exclude)
+
+    incident = sub.add_parser("incident", help="R13 incident evidence")
+    incident_sub = incident.add_subparsers(dest="_operation", required=True)
+    for operation in ("list", "show", "export"):
+        command = incident_sub.add_parser(operation)
+        command.add_argument("--db", default="kognita.db")
+        if operation != "list":
+            command.add_argument("incident_id")
+        command.set_defaults(func=_cmd_incident)
 
     doctor = sub.add_parser("doctor", help="report installed extras and store health")
     doctor.add_argument("--db", help="optional store to check the evidence chain of")

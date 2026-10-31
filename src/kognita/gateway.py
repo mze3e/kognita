@@ -950,6 +950,7 @@ class Gateway:
         self.failure_mode = {
             str(use_case): FailureMode(mode) for use_case, mode in (failure_mode or {}).items()
         }
+        self._incident_pending = []
         self._deferred: list[_DeferredEvidence] = []
         self._deferred_lock = threading.Lock()
         _held_gateways[_gateway_binding(self)] = self
@@ -1013,6 +1014,7 @@ class Gateway:
     ) -> GatewayResponse:
         """Govern one request. A supplied ``session`` is left for the caller to commit."""
         self._flush_deferred()
+        self._flush_incidents()
         failures = len(self.evidence.telemetry_failures)
         started = time.perf_counter() if self.evidence.telemetry is not None else None
         if session is None:
@@ -1020,13 +1022,15 @@ class Gateway:
                 with session_scope(self.engine) as owned:
                     response = self._handle(owned, method, path, headers, body, run=run)
             except _EvidenceStoreUnavailable:
-                response = _json_response(503, {"error": "evidence store unavailable"})
+                response = _json_response(503, {"error": "evidence store unavailable", "rule_id": "R13"})
         else:
             try:
                 response = self._handle(session, method, path, headers, body, run=run)
             except _EvidenceStoreUnavailable:
                 session.rollback()
-                response = _json_response(503, {"error": "evidence store unavailable"})
+                response = _json_response(503, {"error": "evidence store unavailable", "rule_id": "R13"})
+        if response.status == 503:
+            self._queue_incident("gateway_outage", "R13: gateway evidence unavailable")
         return self._note_telemetry(response, started, failures)
 
     def _note_telemetry(
@@ -1534,6 +1538,7 @@ class Gateway:
                 sent_body,
             )
         except _UpstreamUnavailable:
+            self._provider_incident(session, evaluation, deferred)
             self._record_model_evidence(
                 session,
                 evaluation,
@@ -1557,9 +1562,10 @@ class Gateway:
             )
             retry_response = _failover_response()
             return finish(retry_response if retry_response is not None else
-                _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation))
+                _json_response(502, {"error": "upstream unavailable", "rule_id": "R13"}, evaluation=evaluation))
 
         if status >= 500:
+            self._provider_incident(session, evaluation, deferred)
             self._record_model_evidence(
                 session,
                 evaluation,
@@ -1583,8 +1589,16 @@ class Gateway:
             )
             retry_response = _failover_response()
             return finish(retry_response if retry_response is not None else
-                _json_response(502, {"error": "upstream unavailable"}, evaluation=evaluation))
+                _json_response(502, {"error": "upstream unavailable", "rule_id": "R13"}, evaluation=evaluation))
 
+        if deferred is None:
+            from kognita.incidents import _list, _timeline, _change
+            for incident in self._store(lambda: _list(session)):
+                if incident["kind"] == "provider_failure" and incident["source"] == self.upstream:
+                    timeline = self._store(lambda: _timeline(session, incident["incident_id"]))
+                    if timeline[-1].event_type != EventType.INCIDENT_CLOSED:
+                        self._store(lambda: _change(session, self.evidence, incident["incident_id"],
+                            summary="R13: provider responded", close=True))
         received = True
         try:
             upstream_text = upstream_body.decode("utf-8")
@@ -1902,9 +1916,46 @@ class Gateway:
         session.rollback()
 
     def _enqueue(self, item: _DeferredEvidence) -> _DeferredEvidence:
+        self._queue_incident("gateway_outage", "R13: gateway evidence unavailable")
+        self._queue_incident("degraded_mode", "R13: degraded mode entered")
         with self._deferred_lock:
             self._deferred.append(item)
         return item
+
+    def _provider_incident(self, session, evaluation, deferred):
+        from kognita.incidents import _open
+        if deferred is not None:
+            self._queue_incident("provider_failure", "R13: provider unavailable")
+        else:
+            try:
+                self._store(lambda: _open(session, self.evidence, "provider_failure",
+                    summary="R13: provider unavailable", source=self.upstream))
+            except _EvidenceStoreUnavailable:
+                self._queue_incident("provider_failure", "R13: provider unavailable")
+                raise
+
+    def _queue_incident(self, kind, summary):
+        with self._deferred_lock:
+            if not any(item[0] == kind for item in self._incident_pending):
+                from kognita.models import utcnow
+                self._incident_pending.append((kind, summary, utcnow()))
+
+    def _flush_incidents(self):
+        from kognita.incidents import _open, _change
+        with self._deferred_lock:
+            if not self._incident_pending or self._deferred:
+                return
+            try:
+                with session_scope(self.engine) as session:
+                    for kind, summary, at in self._incident_pending:
+                        incident_id = _open(session, self.evidence, kind,
+                            summary=summary, source=self.upstream if kind == "provider_failure" else "gateway", at=at)
+                        if kind != "provider_failure":
+                            _change(session, self.evidence, incident_id,
+                                summary="R13: evidence store recovered", close=True)
+            except Exception:
+                return
+            self._incident_pending.clear()
 
     def _flush_deferred(self) -> None:
         """Write calls that proceeded while the store was down, if it accepts them now."""
