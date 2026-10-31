@@ -203,6 +203,19 @@ def envelope(subject_id: str) -> Envelope:
 
 def _register_purposes(session: Session, evidence: EvidenceWriter, *, at) -> None:
     """The demo's purposes are live use cases. An empty register would deny them."""
+    from kognita.providers import ProviderRecord, _register
+    if session.get(ProviderRecord, "127.0.0.1") is None:
+        _register(session, "127.0.0.1", {
+            "use_cases": [PURPOSE], "data_residency": "Local demo process",
+            "data_retention": "No persistence", "training_use": False,
+            "sub_processors": [], "encryption": "Loopback demo only",
+            "incident_notification_terms": "Demo operator handles incidents",
+            "availability_commitments": "No production commitment",
+            "model_change_notice": "Fixed demo completion",
+            "audit_rights": "Local source and logs available",
+            "exit_plan": "Stop local demo process", "incident_history": [],
+            "regulatory_cooperation": "Demo operator retains local evidence",
+        })
     card = model_card_id("127.0.0.1", MODEL, MODEL)
     register_model_card(
         session,
