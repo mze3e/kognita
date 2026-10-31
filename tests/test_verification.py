@@ -34,6 +34,17 @@ PRODUCER = {
 }
 
 
+def _pin(session, writer, fields):
+    """Record the MODEL_CALL the gateway would have pinned for this producer."""
+    from kognita.vocabulary import EventType
+    writer.emit(
+        session,
+        correlation_id="producer-call",
+        event_type=EventType.MODEL_CALL,
+        payload={k: fields[k] for k in ("provider", "model", "model_version")},
+    )
+
+
 def _verifier(**changes):
     base = dict(
         verifier_id="v-check",
@@ -90,6 +101,7 @@ def _verify(store, verifier=None, status=ValidatorStatus.VERIFIED, **producer):
     session, writer = store
     fields = dict(PRODUCER)
     fields.update(producer)
+    _pin(session, writer, fields)
     return verify_claim(
         session,
         "c1",
@@ -478,3 +490,14 @@ def test_reconstruction_checks_retained_verifier_identity(store, tampered):
     report = reconstruct(session, "identity")
     findings = [item for item in report["findings"] if item["kind"] == "retained_content"]
     assert bool(findings) == tampered
+
+
+def test_a_producer_with_no_recorded_model_call_is_not_pinned(store):
+    session, writer = _prepare(store)
+    register_verifier(session, _verifier(), evidence=writer, interaction_id="i1")
+    unpinned = verify_claim(
+        session, "c1", ValidatorStatus.VERIFIED, verifier_id="v-check",
+        evidence=writer, interaction_id="i1", usecase_id="u1", **PRODUCER,
+    )
+    assert unpinned.check == "C7-PIN"
+    assert _verify(store).check == "C7-RECORDED"

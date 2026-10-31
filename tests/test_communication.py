@@ -244,7 +244,8 @@ _MATERIAL_LEVELS = frozenset({
 })
 
 
-def _cover(session, evidence, content, *, audience="client"):
+def _cover(session, evidence, content, *, audience="client", usecase_id="claim-cover",
+           interaction_id="claim-cover", client_id="client-1"):
     """Record and release ``content`` so a material send has a claim."""
     from datetime import datetime, timezone
     from uuid import uuid4
@@ -255,16 +256,46 @@ def _cover(session, evidence, content, *, audience="client"):
     from kognita.models import UseCase
     from kognita.sources import Source, register_source
 
-    existing = session.exec(select(UseCase).where(UseCase.usecase_id == "claim-cover")).first()
+    from kognita.models import Interaction
+
+    journey = session.get(Interaction, interaction_id)
+    if journey is not None:
+        usecase_id, client_id = journey.use_case, journey.client_id
+    existing = session.exec(
+        select(UseCase).where(UseCase.usecase_id == usecase_id, UseCase.effective_to.is_(None))
+    ).first()
+    if existing is not None and "desk" not in (existing.record or {}).get("approved_sources", []):
+        now = datetime.now(timezone.utc)
+        record = {
+            **existing.record,
+            "version": existing.version + 1,
+            "approved_sources": [*existing.record.get("approved_sources", []), "desk"],
+            "verifier": "v-cover",
+        }
+        existing.effective_to = now
+        session.add(existing)
+        session.add(UseCase(
+            usecase_id=usecase_id,
+            version=existing.version + 1,
+            record=record,
+            effective_from=now,
+        ))
+        session.flush()
+        register_source(
+            session,
+            Source("desk", "policy", "v1", "owner", datetime(2020, 1, 1, tzinfo=timezone.utc)),
+            evidence=evidence,
+            interaction_id=interaction_id,
+        )
     if existing is None:
         session.add(UseCase(
-            usecase_id="claim-cover",
+            usecase_id=usecase_id,
             version=1,
             record={
-                "usecase_id": "claim-cover",
+                "usecase_id": usecase_id,
                 "approved_sources": ["desk"],
-                "proposed_tier": 1,
                 "version": 1,
+                "status": "live",
             },
             effective_from=datetime(2020, 1, 1, tzinfo=timezone.utc),
         ))
@@ -280,23 +311,46 @@ def _cover(session, evidence, content, *, audience="client"):
         session,
         Claim(
             claim_id,
-            "client-1",
+            client_id,
             content,
             ClaimType.INFERENCE,
             source_system="desk",
             source_record="v1",
+            agent_id="producer-agent",
+            model_version="prod-1",
             validator_status=ValidatorStatus.VERIFIED,
         ),
         evidence=evidence,
-        interaction_id="claim-cover",
+        interaction_id=interaction_id,
     )
+    from kognita.vocabulary import EventType
+    from kognita.verification import Verifier, register_verifier, verify_claim
+
+    live = session.exec(
+        select(UseCase).where(UseCase.usecase_id == usecase_id, UseCase.effective_to.is_(None))
+    ).one()
+    if (live.record or {}).get("verifier") == "v-cover":
+        evidence.emit(session, correlation_id="producer-call", event_type=EventType.MODEL_CALL,
+                      payload={"provider": "prod-provider", "model": "prod-model", "model_version": "prod-1"})
+        register_verifier(
+            session,
+            Verifier("v-cover", "verifier-agent", "check-model", "check-1", "check-provider"),
+            evidence=evidence, interaction_id=interaction_id,
+        )
+        verified = verify_claim(
+            session, claim_id, ValidatorStatus.VERIFIED, verifier_id="v-cover",
+            agent_id="producer-agent", model="prod-model", model_version="prod-1",
+            provider="prod-provider", evidence=evidence, interaction_id=interaction_id,
+            usecase_id=usecase_id,
+        )
+        assert verified.result is CheckResult.PASS, verified.check
     released = release_claim(
         session,
         claim_id,
         evidence=evidence,
-        interaction_id="claim-cover",
+        interaction_id=interaction_id,
         audience=audience,
-        usecase_id="claim-cover",
+        usecase_id=usecase_id,
     )
     assert released.result is CheckResult.PASS, released.check
 
@@ -311,9 +365,10 @@ def _send(session, evidence, interaction_id, **kwargs):
         "actor_id": "RM",
         "now": FROZEN_NOW,
     }
+    covered = kwargs.pop("cover", True)
     values.update(kwargs)
-    if values["level"] in _MATERIAL_LEVELS:
-        _cover(session, evidence, values["content"])
+    if covered and values["level"] in _MATERIAL_LEVELS:
+        _cover(session, evidence, values["content"], interaction_id=interaction_id)
     return send_client_communication(
         session, interaction_id, evidence=evidence, **values
     )
@@ -507,7 +562,7 @@ def test_missing_final_decision_house_view_and_do_not_contact_deny(harness):
     assert "final decision" in no_decision["citation"]
     assert no_attribution["outcome"] == "DENY"
     assert "research attribution" in no_attribution["citation"]
-    assert attributed["outcome"] == "ALLOW"
+    assert attributed["outcome"] == "ALLOW", attributed["citation"]
     assert blocked["outcome"] == "DENY"
     assert blocked["sent"] is False
     assert "do not contact" in blocked["citation"]
@@ -537,6 +592,7 @@ def test_investment_discussion_needs_a_tier_and_a_cross_border_rule(harness):
             session,
             harness.evidence,
             unknown.id,
+            cover=False,
             level="investment discussion",
             research_attribution="house view 2026-10-01",
             recipient_jurisdiction="SG",
@@ -894,6 +950,7 @@ def test_public_lane_refuses_a_named_client(harness):
             actor_id="RM",
             approved_research="house view 2026-10-01",
             research_attribution="house view 2026-10-01",
+            usecase_id="claim-cover",
             now=FROZEN_NOW,
         )
         session.commit()
@@ -921,6 +978,7 @@ def _publish(session, evidence, **kwargs):
     values.update(kwargs)
     if values["level"] == "house view":
         _cover(session, evidence, values["content"])
+        values.setdefault("usecase_id", "claim-cover")
     return send_public_content(session, evidence=evidence, **values)
 
 

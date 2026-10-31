@@ -333,6 +333,7 @@ def send_public_content(
     recipient_jurisdiction: str = "",
     chatbot: bool = False,
     run_id: str = "",
+    usecase_id: str = "",
     retention: RetentionStore | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
@@ -396,6 +397,7 @@ def send_public_content(
         run_id=run_id.strip(),
         content=content,
         at=at,
+        usecase_id=usecase_id.strip(),
     )
     checks.extend(_policy_checks(session, attributes, at, tool="send_public_content"))
     checks.extend(
@@ -644,7 +646,14 @@ def _client_checks(
         )
     if rank >= _HOUSE_VIEW:
         from kognita.claims import _release_covers
-        checks.append(_release_covers(session, content, audience="client"))
+        from kognita.models import Interaction as _Interaction
+        journey = session.get(_Interaction, interaction_id)
+        checks.append(_release_covers(
+            session, content, audience="client",
+            usecase_id=journey.use_case if journey is not None else "",
+            client_id=journey.client_id if journey is not None else "",
+            interaction_id=interaction_id,
+        ))
     if rank >= _RECOMMENDATION:
         checks.append(_suitability_check(session, interaction_id))
         present = attributes.get("risk_language") is True
@@ -889,12 +898,13 @@ def _public_checks(
     run_id: str,
     content: str,
     at: datetime,
+    usecase_id: str = "",
 ) -> list[Check]:
     del at
     checks = []
     if level == "house view":
         from kognita.claims import _release_covers
-        checks.append(_release_covers(session, content, audience="client"))
+        checks.append(_release_covers(session, content, audience="client", usecase_id=usecase_id))
     checks.extend([
         _structural(
             "COMMUNICATION_LEVEL",

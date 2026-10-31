@@ -284,7 +284,34 @@ def _material_texts(payload: object) -> list[str]:
     return found
 
 
-def _release_covers(session: _Session, content: str, *, audience: str) -> _Check:
+RELEASE_SCOPES = ("usecase", "client", "interaction")
+
+
+def _release_scope(session: _Session, usecase_id: str) -> str:
+    """How tightly a release is tied to its target, from the use case record.
+
+    ``usecase`` (default): the release must name the request's use case.
+    ``client``: and the claim must be about the request's client.
+    ``interaction``: and the release must have been made in the request's
+    interaction. An unrecognised value fails closed as ``interaction``.
+    """
+    from kognita.models import UseCase as _UseCase
+    row = session.exec(
+        _select(_UseCase).where(_UseCase.usecase_id == usecase_id, _UseCase.effective_to.is_(None))
+    ).first()
+    value = ((row.record if row is not None else None) or {}).get("release_scope", "usecase")
+    return value if value in RELEASE_SCOPES else "interaction"
+
+
+def _release_covers(
+    session: _Session,
+    content: str,
+    *,
+    audience: str,
+    usecase_id: str = "",
+    client_id: str = "",
+    interaction_id: str = "",
+) -> _Check:
     """Fail closed unless this text has a recorded claim released to ``audience``.
 
     A blank body is not a claim. A recorded claim that was not released, a
@@ -304,36 +331,59 @@ def _release_covers(session: _Session, content: str, *, audience: str) -> _Check
     if not isinstance(content, str) or not content.strip():
         return finish("C1-LABELLED", True)
     wanted = content.strip()
+    scope = _release_scope(session, usecase_id) if usecase_id else "interaction"
+    # Only claim events are read, and the chain is not re-verified here: this
+    # runs on every material response, and chain verification belongs to
+    # reconstruct, replay and `evidence verify`. A forged event still fails
+    # because the retained claim must exist and hash to the recorded digest.
     try:
-        events = _events(session)
+        events = session.exec(
+            _select(_EvidenceEvent)
+            .where(_EvidenceEvent.event_type.in_((_EventType.CLAIM, _EventType.CLAIM_VERIFIED)))
+            .order_by(_EvidenceEvent.sequence)
+        ).all()
     except Exception:
         return finish("C1-UNKNOWN", False)
     recorded: set[str] = set()
-    latest: dict[str, _EvidenceEvent] = {}
+    latest_release: dict[str, _EvidenceEvent] = {}
+    latest_snapshot: dict[str, _EvidenceEvent] = {}
     for event in events:
         payload = event.payload or {}
-        if event.event_type not in (_EventType.CLAIM, _EventType.CLAIM_VERIFIED):
-            continue
         claim_id = payload.get("claim_id")
         if not isinstance(claim_id, str) or not claim_id:
             continue
-        if payload.get("action") == "record":
+        action = payload.get("action")
+        if action == "record":
             recorded.add(claim_id)
-        if payload.get("action") == "release" and payload.get("audience") == audience:
-            latest[claim_id] = event
-    for claim_id, event in latest.items():
+        if action == "release" and payload.get("audience") == audience:
+            latest_release[claim_id] = event
+        if payload.get("claim_hash") and (
+            action in _SNAPSHOT_ACTIONS or (action == "verify" and payload.get("allowed") is True)
+        ):
+            latest_snapshot[claim_id] = event
+    for claim_id, event in latest_release.items():
         payload = event.payload or {}
         if claim_id not in recorded:
             continue
         if payload.get("allowed") is not True or payload.get("reason") != "C1-LABELLED":
             continue
+        if not usecase_id or payload.get("usecase_id") != usecase_id:
+            continue
+        if scope == "interaction" and (not interaction_id or event.correlation_id != interaction_id):
+            continue
         try:
-            claim = _read(session, event)
+            released = _read(session, event)
+            current = _read(session, latest_snapshot.get(claim_id, event))
         except (ValueError, TypeError, KeyError):
             continue
-        if claim.claim_type is not None and claim.claim.strip() == wanted:
+        # A claim invalidated or blocked after its release no longer covers text.
+        if current.validator_status in (ValidatorStatus.STALE, ValidatorStatus.BLOCKED):
+            continue
+        if scope == "client" and (not client_id or released.client_id != client_id):
+            continue
+        if released.claim_type is not None and released.claim.strip() == wanted:
             return finish("C1-LABELLED", True)
     return finish("C1-UNKNOWN", False)
 
 
-__all__ = ["Claim", "ClaimType", "ValidatorStatus", "record_claim", "release_claim", "relabel_claim", "list_claims"]
+__all__ = ["RELEASE_SCOPES", "Claim", "ClaimType", "ValidatorStatus", "record_claim", "release_claim", "relabel_claim", "list_claims"]

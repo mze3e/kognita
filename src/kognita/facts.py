@@ -156,7 +156,9 @@ def _is_fact(node: Any) -> bool:
     keys = set(node)
     if "data_type" in keys and keys & _FACT_MARKERS:
         return True
-    return _FACT_REQUIRED <= keys
+    # A value that names its own as-of date is a fact that skipped part of the
+    # contract. It is admitted, and so suppressed, never passed through as data.
+    return _FACT_REQUIRED <= keys or {"value", "as_of"} <= keys
 
 
 def _duration(value: Any) -> timedelta | None:
