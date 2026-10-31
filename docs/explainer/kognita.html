@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kognita: prove it was permitted</title>
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --ink: #1d1f24;
+    --muted: #5d6270;
+    --line: #e2e0d8;
+    --accent: #2f5d50;
+    --accent-soft: #dcebe5;
+    --deny: #9b3b30;
+    --deny-soft: #f5e1de;
+    --human: #8a6417;
+    --human-soft: #f6ecd6;
+    --allow: #2f6b3a;
+    --allow-soft: #e0efe2;
+    --code-bg: #20232a;
+    --code-ink: #e7e9ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171c;
+      --surface: #1d2028;
+      --ink: #e9ebf0;
+      --muted: #9aa1b0;
+      --line: #2e323d;
+      --accent: #8fd0bd;
+      --accent-soft: #223a33;
+      --deny: #e7948a;
+      --deny-soft: #3a2421;
+      --human: #e3be6c;
+      --human-soft: #3a2f18;
+      --allow: #8fd19b;
+      --allow-soft: #1f3424;
+      --code-bg: #0f1116;
+      --code-ink: #dfe3ea;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171c;
+    --surface: #1d2028;
+    --ink: #e9ebf0;
+    --muted: #9aa1b0;
+    --line: #2e323d;
+    --accent: #8fd0bd;
+    --accent-soft: #223a33;
+    --deny: #e7948a;
+    --deny-soft: #3a2421;
+    --human: #e3be6c;
+    --human-soft: #3a2f18;
+    --allow: #8fd19b;
+    --allow-soft: #1f3424;
+    --code-bg: #0f1116;
+    --code-ink: #dfe3ea;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 0 16px 64px; }
+  section { padding: 48px 0; border-top: 1px solid var(--line); }
+  section:first-of-type { border-top: none; }
+  h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.1; margin: 48px 0 12px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.5rem; margin: 0 0 12px; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; margin: 0 0 6px; }
+  p { margin: 0 0 14px; }
+  .lede { font-size: 1.2rem; color: var(--muted); max-width: 640px; }
+  .eyebrow { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); margin: 0 0 8px; font-weight: 600; }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { font-size: 0.9em; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    padding: 16px 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    margin: 0 0 16px;
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
+  .grid > *, .card, .example, .outcome { min-width: 0; }
+  .status-row > * { min-width: 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .card p:last-child { margin-bottom: 0; }
+  .hero-note { display: inline-block; margin-top: 8px; padding: 6px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 0.9rem; }
+
+  .flow { width: 100%; height: auto; display: block; margin: 8px 0 0; }
+  .flow text { font: 13px system-ui, sans-serif; fill: var(--ink); }
+  .flow .small { font-size: 11px; fill: var(--muted); }
+  .flow .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .flow .hi { fill: var(--accent-soft); stroke: var(--accent); }
+  .flow .arrow { stroke: var(--muted); stroke-width: 1.5; fill: none; marker-end: url(#arr); }
+
+  .outcomes { display: grid; gap: 10px; margin-top: 12px; }
+  .outcome { display: flex; gap: 12px; align-items: baseline; padding: 12px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+  .pill { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 6px; white-space: nowrap; }
+  .pill.deny { background: var(--deny-soft); color: var(--deny); }
+  .pill.esc { background: var(--human-soft); color: var(--human); }
+  .pill.human { background: var(--human-soft); color: var(--human); }
+  .pill.allow { background: var(--allow-soft); color: var(--allow); }
+
+  .example { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .example .verdict { font-weight: 700; color: var(--deny); }
+  .tbl { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  td code { word-break: break-word; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .status-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .status { padding: 6px 12px; border-radius: 8px; font-size: 0.9rem; background: var(--surface); border: 1px solid var(--line); }
+  .status b { color: var(--accent); }
+  .status.wip b { color: var(--human); }
+  footer { color: var(--muted); font-size: 0.9rem; padding-top: 32px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<main>
+
+<section style="border-top:none">
+  <p class="eyebrow">Kognita · alpha</p>
+  <h1>Prove an AI answer was permitted, and evidence it.</h1>
+  <p class="lede">Content guardrails filter what a model says. Kognita decides whether the request was allowed at all, before any data is retrieved, and writes the record that proves it.</p>
+  <span class="hero-note">Two independent regimes refused. Neither masked the other. Nothing was retrieved.</span>
+</section>
+
+<section>
+  <p class="eyebrow">Example</p>
+  <h2>A denial returns no data, and names its rule</h2>
+  <div class="example">
+<pre><code>from kognita import Envelope, decide, load_snapshot
+
+evaluation = decide(
+    Envelope(principal="rm@bank.example", purpose="ELIGIBILITY_CHECK",
+             tool="check_eligibility", actor_location="AE",
+             subject_type="client", subject_id="1",
+             subjects={"instrument": "1"}),
+    load_snapshot(session),
+    attributes=pack.resolve_attributes(...),
+    rules=pack.rules(),
+)
+
+evaluation.outcome        # DENY
+for check in evaluation.basis():
+    print(check.regime, check.citation)
+# HK_SFC        SFC Code of Conduct para 5.5
+# DIFC_DFSA     DFSA COB 3; GEN 2</code></pre>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">How a request moves</p>
+  <h2>Authorise before discovery</h2>
+  <p>An envelope describes an intent. It is evaluated before anything is fetched, so a refused request never touches the data it asked for.</p>
+  <div class="card">
+    <svg class="flow" viewBox="0 0 880 170" role="img" aria-label="Request flows from envelope through policy evaluation and fail-closed resolution to either an evidenced release or a withheld result">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+      <rect class="box" x="8" y="60" width="130" height="50" rx="8"/>
+      <text x="73" y="82" text-anchor="middle">Envelope</text>
+      <text class="small" x="73" y="98" text-anchor="middle">who · why · what</text>
+
+      <path class="arrow" d="M140,85 L172,85"/>
+
+      <rect class="box" x="176" y="60" width="150" height="50" rx="8"/>
+      <text x="251" y="82" text-anchor="middle">Agent + purpose</text>
+      <text class="small" x="251" y="98" text-anchor="middle">registry · kill switch</text>
+
+      <path class="arrow" d="M330,85 L362,85"/>
+
+      <rect class="box" x="366" y="60" width="150" height="50" rx="8"/>
+      <text x="441" y="82" text-anchor="middle">Policies evaluated</text>
+      <text class="small" x="441" y="98" text-anchor="middle">engaged, cited, as_of</text>
+
+      <path class="arrow" d="M520,85 L552,85"/>
+
+      <rect class="box hi" x="556" y="60" width="150" height="50" rx="8"/>
+      <text x="631" y="82" text-anchor="middle">Fail closed</text>
+      <text class="small" x="631" y="98" text-anchor="middle">most severe result wins</text>
+
+      <path class="arrow" d="M710,85 L742,85"/>
+
+      <rect class="box" x="746" y="60" width="126" height="50" rx="8"/>
+      <text x="809" y="82" text-anchor="middle">Record + release</text>
+      <text class="small" x="809" y="98" text-anchor="middle">evidence chain</text>
+
+      <text class="small" x="8" y="150">Every step writes to the hash-chained evidence log. Data is released only on ALLOW or a granted approval.</text>
+    </svg>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Outcomes</p>
+  <h2>Fail closed, by precedence</h2>
+  <p>A single failing check among any number of passes still denies. Adding permissive rules cannot widen a policy set.</p>
+  <div class="outcomes">
+    <div class="outcome"><span class="pill deny">DENY</span><span>A check failed. No tool body runs and no data is returned.</span></div>
+    <div class="outcome"><span class="pill esc">ESCALATE</span><span>A policy could not be evaluated, or needs a higher reviewer. Escalated, never silently passed.</span></div>
+    <div class="outcome"><span class="pill human">HUMAN_APPROVAL</span><span>Work may be prepared, but data is held until a person grants a bound approval.</span></div>
+    <div class="outcome"><span class="pill allow">ALLOW</span><span>Nothing objected. Data is released and the release is evidenced.</span></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Guarantees</p>
+  <h2>What the library promises</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Every decision cites its rule</h3>
+      <p>A check without a citation is an assertion, not a decision. The conformance kit enforces it.</p>
+    </div>
+    <div class="card">
+      <h3>Decisions are pure and replayable</h3>
+      <p><code>decide()</code> writes nothing and takes the instant as a parameter. "What would this have decided in March?" has an answer.</p>
+<pre><code>decide(envelope, snapshot,
+       as_of=datetime(2026, 3, 1, tzinfo=timezone.utc))</code></pre>
+    </div>
+    <div class="card">
+      <h3>Evidence is tamper-evident</h3>
+      <p>Each event carries the previous event's hash. Altering any payload breaks every hash after it.</p>
+<pre><code>$ kognita evidence verify --db store.db
+BROKEN: evidence chain broken at sequence 2
+
+$ kognita evidence export --db store.db -o audit.json</code></pre>
+    </div>
+    <div class="card">
+      <h3>Approvals bind to what was reviewed</h3>
+      <p>An approval is issued against an envelope hash covering the arguments, roles and checks. Changing any of them yields no matching approval.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Privacy</p>
+  <h2>Evidence holds references, not content</h2>
+  <p>An append-only log full of personal data collides with erasure rights, so payloads default to hashes and references. <code>hashes_only</code> strips content entirely while keeping the log provable.</p>
+  <h3 style="margin-top:20px">Egress is guarded, not merely refused</h3>
+  <p>A local-or-refuse rule confines a governed system to models running on the box. The guard adds redaction for everything else.</p>
+<pre><code>result = guard.send(text, call_the_model,
+                    classification=Classification.C2,
+                    destination="api.openai.com", destination_is_local=False)
+
+result.decision          # REDACT
+# the provider saw:  [TERM_1] ([EMAIL_1]) holds account [ACCOUNT_1]
+# the caller got the real values back; the log records a hash, never content</code></pre>
+  <p style="font-size:0.95rem;color:var(--muted)"><code>PatternRedactor</code> is a floor, not a guarantee. Regexes miss names in prose. Deployments handling real personal data should supply an NER-based redactor. The tests prove nothing unredacted escapes the guard, not detection recall.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Integration</p>
+  <h2>Domain packs supply the domain</h2>
+  <p>The core is domain-blind. A pack says what a request's attributes are and how to load the subjects it refers to. Policies are effective-dated rows; the evaluator for each <code>rule_type</code> is registered by the pack. A policy with no evaluator escalates rather than being skipped.</p>
+<pre><code>class MyPack:
+    name = "my-domain"
+    def load_subjects(self, envelope, session): ...
+    def resolve_attributes(self, envelope, subjects): ...
+    def rules(self): return build_registry(MY_EVALUATORS)</code></pre>
+  <div class="tbl"><table>
+    <thead><tr><th>Primitive</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>ATTRIBUTE_ALLOWLIST</code></td><td>Every named attribute must be in its allowlist</td></tr>
+      <tr><td><code>ATTRIBUTE_DENYLIST</code></td><td>No named attribute may match its denylist</td></tr>
+      <tr><td><code>REQUIRES_FLAG</code></td><td>Named attributes must all be truthy</td></tr>
+      <tr><td><code>REQUIRES_HUMAN_APPROVAL</code></td><td>Mandate human review for matching tools or purposes</td></tr>
+      <tr><td><code>PROHIBITED</code></td><td>An unconditional bar once the policy is engaged</td></tr>
+    </tbody>
+  </table></div>
+  <h3 style="margin-top:24px">Conformance kit</h3>
+  <p>Subclass <code>ConformanceCase</code> in your pack's test suite. The invariants (fail-closed, cited, evidenced) run against your rules, not just the bundled fixture.</p>
+<pre><code>from kognita.testing import ConformanceCase, Harness
+
+class TestMyPack(ConformanceCase):
+    @pytest.fixture(autouse=True)
+    def _bind(self):
+        self.harness = Harness(pack=MyPack(), purposes=PURPOSES, seed=seed)</code></pre>
+</section>
+
+<section>
+  <p class="eyebrow">Layout</p>
+  <h2>Small core, optional reach</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Package</th><th>What it is</th><th>Install</th></tr></thead>
+    <tbody>
+      <tr><td><code>kognita</code></td><td>The decision engine: decisions, evidence, retrieval, egress, tools. No network.</td><td><code>pip install kognita</code></td></tr>
+      <tr><td><code>kognita.graph</code></td><td>Graphiti + Kuzu knowledge graph, with a deterministic system-of-record mirror</td><td><code>kognita[graph]</code></td></tr>
+      <tr><td><code>kognita.adapters</code></td><td>Provider-backed embedders and clients</td><td><code>kognita[openai]</code> and others</td></tr>
+      <tr><td><code>kognita.testing</code></td><td>The conformance kit</td><td>included</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:16px">The core runs on <code>pydantic</code>, <code>sqlmodel</code>, <code>numpy</code> and <code>python-dotenv</code>. Import-linter contracts and a test that installs with no extras keep it that way.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Status</p>
+  <h2>Where it stands</h2>
+  <p>Kognita is alpha. Core packaging, governance, the evidence chain, retrieval, the egress guard, the tool runner, the broker, the conformance kit and adapters are in place.</p>
+  <div class="status-row">
+    <div class="status"><b>Done</b> decisions, evidence, egress, tools</div>
+    <div class="status"><b>Done</b> single-signature approvals</div>
+    <div class="status wip"><b>In progress</b> two-signature approvals (ADR 0006)</div>
+    <div class="status wip"><b>In progress</b> propose-then-apply (ADR 0007)</div>
+    <div class="status wip"><b>Pending</b> v0.2.0 release and benchmarks</div>
+  </div>
+  <p style="margin-top:20px">Design records live in <code>docs/decisions/</code>. The gap analysis that drives the roadmap is in <code>docs/gap-analysis-bmos.md</code>.</p>
+</section>
+
+<footer>
+  MIT licensed. Source: <code>github.com/mze3e/kognita</code>
+</footer>
+
+</main>
+</body>
+</html>
