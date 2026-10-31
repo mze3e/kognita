@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- README 0.7 trust and resilience section, `docs/business-continuity.md` for R12, and evidence notes for every 0.7 definition-of-done item.
+
 ### Added
 
 - R11 record-class retention via `RecordClassRetention` and `kognita retention class set|list`. Explicit `record_classes` on retained content support client communications, advice, recommendations, approvals, transactions and compliance records; a matching `kind` also adds a class hold. Each class and use-case period must elapse before erasure, with `R11-RECORD-LIVE` refusal for live or unconfigured holds. Shared content preserves independent class holds, including across backup and restore. CLI periods use days or `none` for an indefinite hold.
