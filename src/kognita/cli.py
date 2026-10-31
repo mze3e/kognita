@@ -1442,6 +1442,26 @@ def cmd_breaker_reset(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_drill_simulate(args: argparse.Namespace) -> int:
+    from kognita.breaker import _simulate
+
+    engine = None
+    try:
+        engine = make_engine(args.db)
+        create_all(engine)
+        with session_scope(engine) as session:
+            payload = _simulate(session, args.kind, evidence=EvidenceWriter(engine),
+                                usecase_id=args.usecase)
+    except Exception as exc:
+        print(f"R10: drill refused: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        if engine is not None:
+            engine.dispose()
+    _print_json(payload)
+    return 0
+
+
 def cmd_drill_due(args: argparse.Namespace) -> int:
     engine = make_engine(args.db)
     create_all(engine)
@@ -2273,6 +2293,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     drill = sub.add_parser("drill", help="kill-switch drills for a high-materiality use case")
     drill_sub = drill.add_subparsers(dest="drill_command", required=True)
+
+    from kognita.breaker import DrillKind
+    simulate = drill_sub.add_parser("simulate", help="exercise an offline failure path")
+    simulate.add_argument("kind", choices=[kind.value for kind in DrillKind])
+    simulate.add_argument("--db", default="kognita.db", help="store path or URL")
+    simulate.add_argument("--usecase", required=True)
+    simulate.set_defaults(func=_cmd_drill_simulate)
 
     due = drill_sub.add_parser("due", help="set the next drill date")
     due.add_argument("--db", default="kognita.db", help="store path or URL")
