@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- External file checkpoints through `AnchorSink` and `FileAnchorSink`, `ANCHOR_PUBLISHED` evidence, `kognita evidence anchor PATH [PRIVATE_PATH]`, and `evidence verify --anchors PATH` (repeatable). T6 verification detects rewritten or truncated anchored prefixes. Keep checkpoint files in separately controlled storage; network sinks remain future extras.
+
 - Key rotation, revocation and escrow evidence with a chain-derived private registry, verification across rotations, and `kognita keys rotate|revoke|list` (R2). Inactive keys and signatures at or after a revocation cutoff fail closed.
 
 - Optional Ed25519 evidence signing with `signing`, `EvidenceSigner`, signature and key ID fields, `kognita keys generate`, and `kognita evidence verify --public-key`. Configured signing refuses writes without its extra (T1). Legacy evidence hashes remain unchanged.

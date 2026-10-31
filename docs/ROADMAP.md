@@ -892,7 +892,7 @@ Each line is ticked only when the code and tests in this tree show it, with an e
 - [ ] T3 External review API: a reviewer requests a period, annotates decisions and submits a signed review into the chain.
 - [ ] T4 TypeScript verifier `@kognita/verify` agrees with the Python verifier on shared fixtures (npm publish only on explicit go).
 - [x] T5 Schema versioning: events carry `schema_version`; migrations run in one transaction; old events stay readable and verify. Evidence: `kognita.migrations` / `tests/test_migrations.py::test_interrupted_migration_leaves_db_unchanged`, `tests/test_migrations.py::test_v1_events_readable_after`; `kognita.evidence` / `tests/test_schema_version.py::test_new_events_carry_version`.
-- [ ] T6 External anchoring: the chain head is published through an `AnchorSink`; a rewrite after an anchor is detected.
+- [x] T6 External anchoring: the chain head is published through an `AnchorSink`; a rewrite after an anchor is detected. Evidence: `kognita.anchoring`, `kognita.cli` / `tests/test_anchoring.py::test_rewrite_after_anchor_detected`, `tests/test_anchoring.py::test_cli_anchor_and_verify`, `tests/test_anchoring.py::test_legacy_chain_with_anchor`.
 - [ ] R1 Backup and restore to a point in time, verifying chain and retention store; restore drill runs in CI.
 - [x] R2 Key rotation, revocation and escrow record; verification works across rotations. Evidence: `kognita.signing`, `kognita.evidence`, `kognita.cli` / `tests/test_key_rotation.py::test_verify_across_rotations_and_escrow`, `tests/test_key_rotation.py::test_revocation_time_and_revoked_writes`, `tests/test_key_rotation.py::test_cli_rotate_revoke_list`.
 - [ ] R3 Model-provider register; routing to an unregistered provider is DENY (`R3-UNREGISTERED`).
