@@ -186,6 +186,7 @@ source_modules = [
     "kognita.mcp",
     "kognita.origination",
     "kognita.outcomes",
+    "kognita.migrations",
     "kognita.models",
     "kognita.protocols",
     "kognita.registry",

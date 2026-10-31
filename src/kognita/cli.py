@@ -1475,12 +1475,37 @@ def _cmd_export_exclude(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_db(args: argparse.Namespace) -> int:
+    from kognita.migrations import _migrate, _status
+
+    engine = make_engine(args.db)
+    try:
+        if args._db_command == "migrate":
+            version = _migrate(engine)
+        else:
+            with engine.connect() as connection:
+                version = _status(connection)
+        print(f"schema_version={version}")
+        return 0
+    except Exception as exc:
+        print(f"T5: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        engine.dispose()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kognita",
         description="Prove an AI answer was permitted — and evidence it.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
+    db = sub.add_parser("db", help="transactional schema migrations")
+    db_sub = db.add_subparsers(dest="_db_command", required=True)
+    for name in ("migrate", "status"):
+        command = db_sub.add_parser(name)
+        command.add_argument("--db", default="kognita.db", help="store path or URL")
+        command.set_defaults(func=_cmd_db)
     agent = sub.add_parser("agent")
     agent_sub = agent.add_subparsers(dest="agent_command", required=True)
     deploy = agent_sub.add_parser("deploy")
