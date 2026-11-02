@@ -432,334 +432,334 @@ pwmsh:CodeList_actionVerb a sh:NodeShape ;
     sh:targetSubjectsOf pwm:actionVerb ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:actionVerb ; sh:in ( pwm:VerbAnalyse pwm:VerbDraft pwm:VerbExecute pwm:VerbQueue pwm:VerbRead pwm:VerbRecommend pwm:VerbSend ) ;
-        sh:message "Use a code from action verbs (pwm:ActionVerbScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from action verbs (pwm:ActionVerbScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_amlRiskLevel a sh:NodeShape ;
     rdfs:label "Code list: AML risk level"@en ;
     sh:targetSubjectsOf pwm:amlRiskLevel ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:amlRiskLevel ; sh:in ( pwm:AMLHigh pwm:AMLLow pwm:AMLMedium pwm:AMLOutsideAppetite ) ;
-        sh:message "Use a code from AML risk levels (pwm:AMLRiskLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from AML risk levels (pwm:AMLRiskLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_appliesToActivity a sh:NodeShape ;
     rdfs:label "Code list: applies to activity"@en ;
     sh:targetSubjectsOf pwm:appliesToActivity ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:appliesToActivity ; sh:in ( pwm:ActivityAdvice pwm:ActivityExecution pwm:ActivityMarketing pwm:ActivityResearchDistribution pwm:ActivityReverseEnquiry pwm:ActivitySolicitation ) ;
-        sh:message "Use a code from cross-border activities (pwm:CrossBorderActivityScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from cross-border activities (pwm:CrossBorderActivityScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_appliesToInvestorCategory a sh:NodeShape ;
     rdfs:label "Code list: applies to investor category"@en ;
     sh:targetSubjectsOf pwm:appliesToInvestorCategory ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:appliesToInvestorCategory ; sh:in ( pwm:AccreditedInvestorSG pwm:AccreditedInvestorUS pwm:EligibleCounterpartyEU pwm:ExpertInvestorSG pwm:InstitutionalClientCH pwm:InstitutionalInvestorSG pwm:NonRetailCategory pwm:PrivateClientCH pwm:ProfessionalClientCH pwm:ProfessionalClientEU pwm:ProfessionalClientUK pwm:ProfessionalInvestorHK pwm:RetailCategory pwm:RetailClientEU pwm:RetailClientUK pwm:RetailInvestorSG ) ;
-        sh:message "Use a code from investor categories (pwm:InvestorCategoryScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from investor categories (pwm:InvestorCategoryScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_approvalStatus a sh:NodeShape ;
     rdfs:label "Code list: approval status"@en ;
     sh:targetSubjectsOf pwm:approvalStatus ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:approvalStatus ; sh:in ( pwm:AssetCurrent pwm:AssetDraft pwm:AssetSuperseded pwm:AssetWithdrawn ) ;
-        sh:message "Use a code from information asset statuses (pwm:AssetStatusScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from information asset statuses (pwm:AssetStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_autonomyAxis a sh:NodeShape ;
     rdfs:label "Code list: autonomy axis"@en ;
     sh:targetSubjectsOf pwm:autonomyAxis ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:autonomyAxis ; sh:in ( pwm:AutonomyAssisted pwm:AutonomyConditional pwm:AutonomyHigh pwm:AutonomyNone ) ;
-        sh:message "Use a code from use-case autonomy axis (pwm:AutonomyAxisScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from use-case autonomy axis (pwm:AutonomyAxisScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_boundaryTier a sh:NodeShape ;
     rdfs:label "Code list: boundary tier"@en ;
     sh:targetSubjectsOf pwm:boundaryTier ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:boundaryTier ; sh:in ( pwm:AlwaysDo pwm:AskFirst pwm:NeverDo ) ;
-        sh:message "Use a code from boundary tiers (pwm:BoundaryTierScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from boundary tiers (pwm:BoundaryTierScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_businessCriticality a sh:NodeShape ;
     rdfs:label "Code list: business criticality"@en ;
     sh:targetSubjectsOf pwm:businessCriticality ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:businessCriticality ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
-        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_capacityForLoss a sh:NodeShape ;
     rdfs:label "Code list: capacity for loss"@en ;
     sh:targetSubjectsOf pwm:capacityForLoss ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:capacityForLoss ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
-        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_claimType a sh:NodeShape ;
     rdfs:label "Code list: claim type"@en ;
     sh:targetSubjectsOf pwm:claimType ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:claimType ; sh:in ( pwm:ConversationHypothesis pwm:Inference pwm:PossibleProviderCapability pwm:VerifiedFact ) ;
-        sh:message "Use a code from claim types (pwm:ClaimTypeScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from claim types (pwm:ClaimTypeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_classification a sh:NodeShape ;
     rdfs:label "Code list: classification"@en ;
     sh:targetSubjectsOf pwm:classification ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:classification ; sh:in ( pwm:C0 pwm:C1 pwm:C2 pwm:C3 ) ;
-        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_clientImpactClass a sh:NodeShape ;
     rdfs:label "Code list: client-impact class"@en ;
     sh:targetSubjectsOf pwm:clientImpactClass ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:clientImpactClass ; sh:in ( pwm:ImpactAdvice pwm:ImpactClientCommunication pwm:ImpactClientInfluence pwm:ImpactExecution pwm:ImpactInternalProductivity pwm:ImpactRMAssistance ) ;
-        sh:message "Use a code from client-impact classes (pwm:ClientImpactClassScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from client-impact classes (pwm:ClientImpactClassScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_communicationLevel a sh:NodeShape ;
     rdfs:label "Code list: communication level"@en ;
     sh:targetSubjectsOf pwm:communicationLevel ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:communicationLevel ; sh:in ( pwm:CommContextualisedInsight pwm:CommGeneralInformation pwm:CommHouseView pwm:CommInvestmentDiscussion pwm:CommProductRecommendation pwm:CommTransaction ) ;
-        sh:message "Use a code from communication levels (pwm:CommunicationLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from communication levels (pwm:CommunicationLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_complexity a sh:NodeShape ;
     rdfs:label "Code list: complexity"@en ;
     sh:targetSubjectsOf pwm:complexity ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:complexity ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
-        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_contentProvenance a sh:NodeShape ;
     rdfs:label "Code list: content provenance"@en ;
     sh:targetSubjectsOf pwm:contentProvenance ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:contentProvenance ; sh:in ( pwm:ProvenanceAI pwm:ProvenanceAIHumanEdited pwm:ProvenanceHuman pwm:ProvenanceHumanAIAssisted ) ;
-        sh:message "Use a code from content provenance labels (pwm:ContentProvenanceScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from content provenance labels (pwm:ContentProvenanceScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_coverageRole a sh:NodeShape ;
     rdfs:label "Code list: coverage role"@en ;
     sh:targetSubjectsOf pwm:coverageRole ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:coverageRole ; sh:in ( pwm:CoveragePrimary pwm:CoverageSecondary pwm:CoverageSpecialist ) ;
-        sh:message "Use a code from coverage roles (pwm:CoverageRoleScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from coverage roles (pwm:CoverageRoleScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_decisionConsequence a sh:NodeShape ;
     rdfs:label "Code list: decision consequence"@en ;
     sh:targetSubjectsOf pwm:decisionConsequence ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:decisionConsequence ; sh:in ( pwm:ConsequenceClientCommunication pwm:ConsequenceFinancialAction pwm:ConsequenceInformational pwm:ConsequenceOperational pwm:ConsequenceSuitability ) ;
-        sh:message "Use a code from decision consequences (pwm:DecisionConsequenceScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from decision consequences (pwm:DecisionConsequenceScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_decisionOutcome a sh:NodeShape ;
     rdfs:label "Code list: decision outcome"@en ;
     sh:targetSubjectsOf pwm:decisionOutcome ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:decisionOutcome ; sh:in ( pwm:OutcomeAllow pwm:OutcomeDeny pwm:OutcomeEscalate pwm:OutcomeHumanApproval pwm:OutcomeObserve ) ;
-        sh:message "Use a code from policy decision outcomes (pwm:DecisionOutcomeScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from policy decision outcomes (pwm:DecisionOutcomeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_decisionResult a sh:NodeShape ;
     rdfs:label "Code list: decision result"@en ;
     sh:targetSubjectsOf pwm:decisionResult ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:decisionResult ; sh:in ( pwm:DecisionApprove pwm:DecisionEscalate pwm:DecisionModify pwm:DecisionReject ) ;
-        sh:message "Use a code from final decision results (pwm:DecisionResultScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from final decision results (pwm:DecisionResultScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_disclosureTrigger a sh:NodeShape ;
     rdfs:label "Code list: disclosure trigger"@en ;
     sh:targetSubjectsOf pwm:disclosureTrigger ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:disclosureTrigger ; sh:in ( pwm:TriggerAIGeneratedContent pwm:TriggerAssistedAnalysis pwm:TriggerMaterialContribution pwm:TriggerPowersChatbot ) ;
-        sh:message "Use a code from AI disclosure triggers (pwm:DisclosureTriggerScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from AI disclosure triggers (pwm:DisclosureTriggerScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_doNotContactReason a sh:NodeShape ;
     rdfs:label "Code list: do-not-contact reason"@en ;
     sh:targetSubjectsOf pwm:doNotContactReason ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:doNotContactReason ; sh:in ( pwm:DNCExcessiveFrequency pwm:DNCLowRelevance pwm:DNCPoorTiming pwm:DNCRecentRejection pwm:DNCRelationshipCircumstance pwm:DNCVulnerability ) ;
-        sh:message "Use a code from do-not-contact reasons (pwm:DoNotContactReasonScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from do-not-contact reasons (pwm:DoNotContactReasonScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_eventType a sh:NodeShape ;
     rdfs:label "Code list: event type"@en ;
     sh:targetSubjectsOf pwm:eventType ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:eventType ; sh:in ( pwm:EventApproval pwm:EventClaim pwm:EventClientCommunication pwm:EventEgress pwm:EventErasure pwm:EventFinalDecision pwm:EventIncidentOpened pwm:EventIntervention pwm:EventModelCall pwm:EventModelRefusal pwm:EventNearMiss pwm:EventOrigination pwm:EventOutcome pwm:EventPolicyChange pwm:EventPolicyDecision pwm:EventRetrieval pwm:EventToolCall ) ;
-        sh:message "Use a code from evidence event types (pwm:EvidenceEventTypeScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from evidence event types (pwm:EvidenceEventTypeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_feeType a sh:NodeShape ;
     rdfs:label "Code list: fee type"@en ;
     sh:targetSubjectsOf pwm:feeType ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:feeType ; sh:in ( pwm:FeeAdvisory pwm:FeeCustody pwm:FeeManagement pwm:FeePerformance pwm:FeeTransaction ) ;
-        sh:message "Use a code from fee types (pwm:FeeTypeScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from fee types (pwm:FeeTypeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_impact a sh:NodeShape ;
     rdfs:label "Code list: impact"@en ;
     sh:targetSubjectsOf pwm:impact ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:impact ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
-        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_inherentMateriality a sh:NodeShape ;
     rdfs:label "Code list: inherent materiality"@en ;
     sh:targetSubjectsOf pwm:inherentMateriality ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:inherentMateriality ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
-        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_investorCategory a sh:NodeShape ;
     rdfs:label "Code list: investor category"@en ;
     sh:targetSubjectsOf pwm:investorCategory ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:investorCategory ; sh:in ( pwm:AccreditedInvestorSG pwm:AccreditedInvestorUS pwm:EligibleCounterpartyEU pwm:ExpertInvestorSG pwm:InstitutionalClientCH pwm:InstitutionalInvestorSG pwm:NonRetailCategory pwm:PrivateClientCH pwm:ProfessionalClientCH pwm:ProfessionalClientEU pwm:ProfessionalClientUK pwm:ProfessionalInvestorHK pwm:RetailCategory pwm:RetailClientEU pwm:RetailClientUK pwm:RetailInvestorSG ) ;
-        sh:message "Use a code from investor categories (pwm:InvestorCategoryScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from investor categories (pwm:InvestorCategoryScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_lifecycleStatus a sh:NodeShape ;
     rdfs:label "Code list: lifecycle status"@en ;
     sh:targetSubjectsOf pwm:lifecycleStatus ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:lifecycleStatus ; sh:in ( pwm:StatusLive pwm:StatusPilot pwm:StatusRetired pwm:StatusSuspended ) ;
-        sh:message "Use a code from use-case lifecycle statuses (pwm:UseCaseStatusScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from use-case lifecycle statuses (pwm:UseCaseStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_maxAutonomyLevel a sh:NodeShape ;
     rdfs:label "Code list: maximum autonomy level"@en ;
     sh:targetSubjectsOf pwm:maxAutonomyLevel ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:maxAutonomyLevel ; sh:in ( pwm:L0Retrieve pwm:L1Explain pwm:L2Recommend pwm:L3Draft pwm:L4ActAfterApproval pwm:L5BoundedAutonomy pwm:L6BroadAutonomy ) ;
-        sh:message "Use a code from agent autonomy levels (pwm:AutonomyLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from agent autonomy levels (pwm:AutonomyLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_memoryScope a sh:NodeShape ;
     rdfs:label "Code list: memory scope"@en ;
     sh:targetSubjectsOf pwm:memoryScope ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:memoryScope ; sh:in ( pwm:MemoryInstitutional pwm:MemoryRelationship pwm:MemoryWorking ) ;
-        sh:message "Use a code from memory scopes (pwm:MemoryScopeScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from memory scopes (pwm:MemoryScopeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_optStatus a sh:NodeShape ;
     rdfs:label "Code list: opt status"@en ;
     sh:targetSubjectsOf pwm:optStatus ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:optStatus ; sh:in ( pwm:OptDefault pwm:OptedIn pwm:OptedOut ) ;
-        sh:message "Use a code from opt statuses (pwm:OptStatusScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from opt statuses (pwm:OptStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_originationTrigger a sh:NodeShape ;
     rdfs:label "Code list: origination trigger"@en ;
     sh:targetSubjectsOf pwm:originationTrigger ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:originationTrigger ; sh:in ( pwm:OriginationEvent pwm:OriginationRMRequest pwm:OriginationSchedule ) ;
-        sh:message "Use a code from origination triggers (pwm:OriginationTriggerScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from origination triggers (pwm:OriginationTriggerScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_pepCategory a sh:NodeShape ;
     rdfs:label "Code list: PEP category"@en ;
     sh:targetSubjectsOf pwm:pepCategory ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:pepCategory ; sh:in ( pwm:DomesticPEP pwm:ForeignPEP pwm:InternationalOrganisationPEP pwm:PEPCloseAssociate pwm:PEPFamilyMember ) ;
-        sh:message "Use a code from politically exposed person categories (pwm:PEPCategoryScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from politically exposed person categories (pwm:PEPCategoryScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_permitsDataClass a sh:NodeShape ;
     rdfs:label "Code list: permits data class"@en ;
     sh:targetSubjectsOf pwm:permitsDataClass ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:permitsDataClass ; sh:in ( pwm:C0 pwm:C1 pwm:C2 pwm:C3 ) ;
-        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_primaryMetric a sh:NodeShape ;
     rdfs:label "Code list: primary metric"@en ;
     sh:targetSubjectsOf pwm:primaryMetric ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:primaryMetric ; sh:in ( pwm:MetricCycleTime pwm:MetricDecisionQuality pwm:MetricKnowledgeRetention pwm:MetricReliability ) ;
-        sh:message "Use a code from primary outcome metrics (pwm:PrimaryMetricScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from primary outcome metrics (pwm:PrimaryMetricScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_productComplexity a sh:NodeShape ;
     rdfs:label "Code list: product complexity"@en ;
     sh:targetSubjectsOf pwm:productComplexity ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:productComplexity ; sh:in ( pwm:ComplexProduct pwm:ExcludedInvestmentProductSG pwm:NonComplexProduct pwm:SpecifiedInvestmentProductSG ) ;
-        sh:message "Use a code from product complexity classes (pwm:ProductComplexityScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from product complexity classes (pwm:ProductComplexityScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_productRiskLevel a sh:NodeShape ;
     rdfs:label "Code list: product risk level"@en ;
     sh:targetSubjectsOf pwm:productRiskLevel ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:productRiskLevel ; sh:in ( pwm:RP1 pwm:RP2 pwm:RP3 pwm:RP4 pwm:RP5 ) ;
-        sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See README.md for replacement requirements." ] .
+        sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_reliance a sh:NodeShape ;
     rdfs:label "Code list: reliance"@en ;
     sh:targetSubjectsOf pwm:reliance ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:reliance ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
-        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_requiredAutonomyLevel a sh:NodeShape ;
     rdfs:label "Code list: required autonomy level"@en ;
     sh:targetSubjectsOf pwm:requiredAutonomyLevel ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:requiredAutonomyLevel ; sh:in ( pwm:L0Retrieve pwm:L1Explain pwm:L2Recommend pwm:L3Draft pwm:L4ActAfterApproval pwm:L5BoundedAutonomy pwm:L6BroadAutonomy ) ;
-        sh:message "Use a code from agent autonomy levels (pwm:AutonomyLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from agent autonomy levels (pwm:AutonomyLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_residualMateriality a sh:NodeShape ;
     rdfs:label "Code list: residual materiality"@en ;
     sh:targetSubjectsOf pwm:residualMateriality ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:residualMateriality ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
-        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_riskProfileLevel a sh:NodeShape ;
     rdfs:label "Code list: risk profile level"@en ;
     sh:targetSubjectsOf pwm:riskProfileLevel ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:riskProfileLevel ; sh:in ( pwm:RP1 pwm:RP2 pwm:RP3 pwm:RP4 pwm:RP5 ) ;
-        sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See README.md for replacement requirements." ] .
+        sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_riskTier a sh:NodeShape ;
     rdfs:label "Code list: risk tier"@en ;
     sh:targetSubjectsOf pwm:riskTier ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:riskTier ; sh:in ( pwm:Tier1 pwm:Tier2 pwm:Tier3 pwm:Tier4 ) ;
-        sh:message "Use a code from use-case risk tiers (pwm:RiskTierScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from use-case risk tiers (pwm:RiskTierScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_screeningDisposition a sh:NodeShape ;
     rdfs:label "Code list: screening disposition"@en ;
     sh:targetSubjectsOf pwm:screeningDisposition ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:screeningDisposition ; sh:in ( pwm:ScreeningEscalated pwm:ScreeningFalsePositive pwm:ScreeningPending pwm:ScreeningTrueMatch ) ;
-        sh:message "Use a code from screening dispositions (pwm:ScreeningDispositionScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from screening dispositions (pwm:ScreeningDispositionScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_signingRule a sh:NodeShape ;
     rdfs:label "Code list: signing rule"@en ;
     sh:targetSubjectsOf pwm:signingRule ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:signingRule ; sh:in ( pwm:SignAllJointly pwm:SignAnyOne pwm:SignTwoJointly ) ;
-        sh:message "Use a code from signing rules (pwm:SigningRuleScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from signing rules (pwm:SigningRuleScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_staleAction a sh:NodeShape ;
     rdfs:label "Code list: stale action"@en ;
     sh:targetSubjectsOf pwm:staleAction ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:staleAction ; sh:in ( pwm:StaleRefresh pwm:StaleSuppress pwm:StaleWarn ) ;
-        sh:message "Use a code from stale-data actions (pwm:StaleActionScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from stale-data actions (pwm:StaleActionScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_suitabilityOutcome a sh:NodeShape ;
     rdfs:label "Code list: suitability outcome"@en ;
     sh:targetSubjectsOf pwm:suitabilityOutcome ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:suitabilityOutcome ; sh:in ( pwm:InsufficientInformation pwm:NotSuitable pwm:Suitable pwm:SuitableWithConditions ) ;
-        sh:message "Use a code from suitability outcomes (pwm:SuitabilityOutcomeScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from suitability outcomes (pwm:SuitabilityOutcomeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_targetRiskProfile a sh:NodeShape ;
     rdfs:label "Code list: target risk profile"@en ;
     sh:targetSubjectsOf pwm:targetRiskProfile ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:targetRiskProfile ; sh:in ( pwm:RP1 pwm:RP2 pwm:RP3 pwm:RP4 pwm:RP5 ) ;
-        sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See README.md for replacement requirements." ] .
+        sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_usesDataClass a sh:NodeShape ;
     rdfs:label "Code list: uses data class"@en ;
     sh:targetSubjectsOf pwm:usesDataClass ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:usesDataClass ; sh:in ( pwm:C0 pwm:C1 pwm:C2 pwm:C3 ) ;
-        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_validatorStatus a sh:NodeShape ;
     rdfs:label "Code list: validator status"@en ;
     sh:targetSubjectsOf pwm:validatorStatus ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:validatorStatus ; sh:in ( pwm:ValidatorBlocked pwm:ValidatorConflicting pwm:ValidatorInferred pwm:ValidatorStale pwm:ValidatorUnverified pwm:ValidatorVerified ) ;
-        sh:message "Use a code from validator statuses (pwm:ValidatorStatusScheme). See README.md for replacement requirements." ] .
+        sh:message "Use a code from validator statuses (pwm:ValidatorStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 # END GENERATED CODE-LIST SHAPES

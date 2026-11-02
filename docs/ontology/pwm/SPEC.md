@@ -2493,7 +2493,7 @@ Applies to subjects of [CFI code](#cfiCode). Sources: [ISO 10962](#ref-ISO-10962
 
 Applies to every coded property. Sources: [SKOS](#ref-W3C-SKOS).
 
-- Each of the 48 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see README.md.
+- Each of the 48 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
 
 ## Extending PWM for an institution
 
@@ -2558,7 +2558,7 @@ conforms, report, text = validate(Graph().parse('your-data.ttl'),
 print(text)
 ```
 
-Other code lists may require changes to handwritten constraints and code-dependent rules too; see README.md.
+Other code lists may require changes to handwritten constraints and code-dependent rules too; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
 
 <a id="references"></a>
 

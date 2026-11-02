@@ -363,7 +363,7 @@ def build(base: Path, site_path):
             "id": "CodeListShapes", "label": "Code lists", "targets": [], "sources": ["W3C-SKOS"],
             "checks": [f"Each of the {len(generated)} coded properties takes its values only from the code list it is bound to with "
                        "pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. "
-                       "List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see README.md."],
+                       "List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md."],
             "comment": None,
         })
     shape_order = {m.group(1): m.start() for m in re.finditer(r"^pwmsh:(\w+) a sh:NodeShape", (base / "pwm-shapes.ttl").read_text(encoding="utf-8"), re.M)}
@@ -425,7 +425,7 @@ def write_code_list_shapes(g, shapes_path):
             f"    sh:targetSubjectsOf pwm:{name} ;",
             f"    dcterms:source pwmref:W3C-SKOS ;",
             f"    sh:property [ sh:path pwm:{name} ; sh:in ( {members} ) ;",
-            f"        sh:message {Literal(f'Use a code from {lit(g, sch, SKOS.prefLabel)} (pwm:{sname}). See README.md for replacement requirements.').n3()} ] .",
+            f"        sh:message {Literal(f'Use a code from {lit(g, sch, SKOS.prefLabel)} (pwm:{sname}). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements.').n3()} ] .",
             "",
         ]
     text = shapes_path.read_text(encoding="utf-8")
@@ -554,7 +554,7 @@ def spec_md(d, refs):
             "conforms, report, text = validate(Graph().parse('your-data.ttl'),",
             "    shacl_graph=shapes, ont_graph=ontology, inference='rdfs')",
             "print(text)", "```", "",
-            "Other code lists may require changes to handwritten constraints and code-dependent rules too; see README.md.", "",
+            "Other code lists may require changes to handwritten constraints and code-dependent rules too; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.", "",
             '<a id="references"></a>', "", "## Reference register", "",
             "| Ref | Mark | Title | Publisher | Date | Jurisdiction | Status | Note |", "|---|---|---|---|---|---|---|---|"]
     for r in d["references"]:
