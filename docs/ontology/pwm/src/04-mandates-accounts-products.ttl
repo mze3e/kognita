@@ -171,7 +171,8 @@ pwm:InvestmentAccount a owl:Class ;
     rdfs:subClassOf fibo-fbc-pas-caa:InvestmentAccount , pwm:Account ;
     pwm:inModule pwm:ModuleAccounts ;
     pwm:defaultClassification pwm:C2 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Specialises FIBO InvestmentAccount within the PWM account hierarchy" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Specialises FIBO InvestmentAccount within the PWM account hierarchy" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FBC/ProductsAndServices/ClientsAndAccounts/InvestmentAccount, Release; master source verified 2026-11-03" ] .
 
 pwm:CustodyAccount a owl:Class ;
     rdfs:label "custody account"@en ;
@@ -185,11 +186,12 @@ pwm:CustodyAccount a owl:Class ;
 pwm:CashAccount a owl:Class ;
     rdfs:label "cash account"@en ;
     skos:definition "Current or deposit account in a single currency, linked to a client's investment activity."@en ;
-    rdfs:subClassOf fibo-fbc-pas-caa:CustomerAccount , pwm:Account ;
+    rdfs:subClassOf <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount> , pwm:Account ;
     pwm:inModule pwm:ModuleAccounts ;
     pwm:contextSpeed pwm:FastContext ;
     pwm:defaultClassification pwm:C2 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Cash account" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Cash account" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount, Release; master source verified 2026-11-03" ] .
 
 pwm:JointAccount a owl:Class ;
     rdfs:label "joint account"@en ;
@@ -254,7 +256,8 @@ pwm:LombardFacility a owl:Class ;
     pwm:inModule pwm:ModuleAccounts ;
     pwm:contextSpeed pwm:FastContext ;
     pwm:defaultClassification pwm:C2 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Portfolio-backed lending" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Portfolio-backed lending" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "LOAN/LoansGeneral/Loans/CollateralizedLoan, Release; master source verified 2026-11-03" ] .
 
 pwm:accountHeldBy a owl:ObjectProperty ;
     rdfs:label "account held by"@en ;
@@ -271,6 +274,8 @@ pwm:hasPortfolio a owl:ObjectProperty ;
     pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Account and portfolio" ] .
 
 pwm:hasHolding a owl:ObjectProperty ;
+    skos:closeMatch <https://www.omg.org/spec/Commons/Collections/hasMember> ;
+    pwm:citation [ pwm:cites pwmref:OMG-COMMONS ; pwm:locator "Collections/hasMember, verified in https://www.omg.org/spec/Commons/20250801/Collections.rdf; portfolio membership is narrower" ] ;
     rdfs:label "has holding"@en ;
     skos:definition "Holding that forms part of a portfolio."@en ;
     rdfs:domain pwm:Portfolio ; rdfs:range pwm:Holding ;
@@ -297,7 +302,8 @@ pwm:amount a owl:DatatypeProperty ;
     rdfs:range xsd:decimal ;
     skos:closeMatch fibo-fnd-acc-cur:hasAmount ;
     pwm:inModule pwm:ModuleAccounts ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Amount and currency pattern" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Amount and currency pattern" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FND/Accounting/CurrencyAmount/hasAmount, Release; master source verified 2026-11-03" ] .
 
 pwm:currency a owl:DatatypeProperty ;
     rdfs:label "currency"@en ;
@@ -318,8 +324,10 @@ pwm:securedBy a owl:ObjectProperty ;
     rdfs:label "secured by"@en ;
     skos:definition "Portfolio pledged as collateral for a credit facility."@en ;
     rdfs:domain pwm:LombardFacility ; rdfs:range pwm:Portfolio ;
+    skos:closeMatch <https://spec.edmcouncil.org/fibo/ontology/FBC/DebtAndEquities/Debt/isCollateralizedBy> ;
     pwm:inModule pwm:ModuleAccounts ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Pledge" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Pledge" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FBC/DebtAndEquities/Debt/isCollateralizedBy, Release; master source verified 2026-11-03" ] .
 
 pwm:SigningRuleScheme a skos:ConceptScheme ;
     skos:prefLabel "signing rules"@en ;
@@ -343,7 +351,8 @@ pwm:Product a owl:Class ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:contextSpeed pwm:SlowContext ;
     pwm:defaultClassification pwm:C1 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product shelf" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product shelf" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FBC/ProductsAndServices/FinancialProductsAndServices/FinancialProduct, Release; master source verified 2026-11-03" ] .
 
 pwm:ProductRiskRating a owl:Class ;
     rdfs:label "product risk rating"@en ;
@@ -402,7 +411,8 @@ pwm:ProductTermSheet a owl:Class ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:contextSpeed pwm:SlowContext ;
     pwm:defaultClassification pwm:C0 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product documentation" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product documentation" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "SEC/Securities/SecuritiesIssuance/OfferingDocument, Release; master source verified 2026-11-03" ] .
 
 pwm:KeyInformationDocument a owl:Class ;
     rdfs:label "key information document"@en ;

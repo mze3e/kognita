@@ -71,7 +71,7 @@ for node in set(g.subjects()) | set(o for o in g.objects() if isinstance(o, URIR
 
 # External IRIs must resolve in their sources.
 commons_ok = {
-    "PartiesAndSituations/Party", "PartiesAndSituations/PartyRole", "PartiesAndSituations/Situation",
+    "Collections/hasMember", "PartiesAndSituations/Party", "PartiesAndSituations/PartyRole", "PartiesAndSituations/Situation",
     "PartiesAndSituations/SoftwareAgent", "Organizations/LegalEntity", "Organizations/ServiceProvider",
     "Organizations/isDomiciledIn", "Organizations/isProvidedBy", "RegulatoryAgencies/Jurisdiction",
     "RegulatoryAgencies/RegulatoryAgency", "RegulatoryAgencies/hasJurisdiction",
@@ -87,7 +87,11 @@ if dpv_dir:
 for node in set(o for o in g.objects() if isinstance(o, URIRef)) | set(g.subjects()) | set(g.predicates()):
     iri = str(node)
     if iri.startswith("https://spec.edmcouncil.org/fibo/ontology/") and not iri.endswith("/"):
-        if iri not in fibo:
+        if iri in fibo:
+            declared = g.value(node, P("fiboMaturity"))
+            if str(declared) != fibo[iri].get("maturity"):
+                problems.append(f"FIBO maturity mismatch: {iri}: {declared} vs {fibo[iri].get('maturity')}")
+        else:
             problems.append(f"FIBO IRI not found in FIBO source: {iri}")
     elif iri.startswith("https://www.omg.org/spec/Commons/") and not iri.endswith("/"):
         if iri.split("Commons/", 1)[1] not in commons_ok:

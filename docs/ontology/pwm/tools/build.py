@@ -36,14 +36,14 @@ SOURCES = [
 MARK_ORDER = ["ONT", "ISO", "REG", "KOG", "AM", "NEW"]
 
 STATUS = (
-    "Draft for comment. Version 0.1 is the first public draft. Terms, code lists and rules may change "
+    "Draft for comment. Version 0.2 adds verified grounding and sustainability preferences. Terms, code lists and rules may change "
     "before 1.0, and every change will be recorded in the change log. It is not legal advice: the "
     "regulatory citations show where a term comes from, not how a rule applies to a given firm."
 )
 SCOPE_IN = [
     "Parties, roles and the client relationship, including trusts, foundations and other legal arrangements",
     "Due diligence, risk rating, source of wealth and funds, screening and tax residency",
-    "Investor classification, risk profile, knowledge and experience, suitability and appropriateness",
+    "Investor classification, risk profile, knowledge and experience, sustainability preferences, suitability and appropriateness",
     "Mandates, investment restrictions and fees",
     "Accounts, portfolios, holdings and valuations",
     "The product shelf, product risk, target market, cross-border rules, offering documents and the house view",
@@ -55,7 +55,6 @@ SCOPE_OUT = [
     "Orders, execution and the trade lifecycle; corporate actions",
     "Performance and attribution methods (only the provenance of figures is modelled)",
     "Tax reporting detail (CRS and FATCA reporting records), lending beyond the Lombard facility",
-    "Sustainability preferences in suitability (planned for 0.2)",
     "Any institution's thresholds, scales, product shelf or internal names: these belong in an extension",
 ]
 PRINCIPLES = [
@@ -74,7 +73,7 @@ PRINCIPLES = [
     ("Generic core, firm extension",
      "No institution's data, thresholds or names appear here. A firm adds them in its own ontology that imports PWM."),
 ]
-CHANGELOG = [("0.1", "2026-11-02", "First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests.")]
+CHANGELOG = [("0.2", "2026-11-03", "Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link."), ("0.1", "2026-11-02", "First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests.")]
 
 EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -85,7 +84,7 @@ EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix firm: <https://example.org/firm/ontology#> .
 
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.1> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.2> .
 
 # The firm's own risk scale, in place of the illustrative one
 firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
@@ -397,6 +396,33 @@ def build(base: Path, site_path):
             "changelog": [{"version": v, "date": d, "note": n} for v, d, n in CHANGELOG]}
 
     (base / "SPEC.md").write_text(spec_md(data, refs), encoding="utf-8")
+    with (base / "SPEC.md").open("a", encoding="utf-8") as spec:
+        spec.write("\n## Verification for 0.2\n\n")
+        spec.write("There are 80 node shapes: 30 written targeted shapes, 49 generated targeted shapes and one untargeted helper. The negative fixture file contains 40 records: 35 violating records and five supporting records, yielding 42 expected violations.\n\n")
+        spec.write("The unversioned shapes IRI `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. "
+                   "The immutable 0.2 shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl`. "
+                   "The existing host excludes www. Publication is separate from this build.\n\n")
+        spec.write("Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. "
+                   "Item locators retain the roadmap section numbers at that commit.\n\n")
+        spec.write("EUR-Lex CELEX 32021R1253 (EN/ALL text and relationship table) confirms that 2021/1253 Art. 1(1) "
+                   "adds Art. 2(7)(a)-(c) to 2017/565; Art. 1(6) amends Art. 54(2)(a), (5), (9), (10), (12) and (13). "
+                   "The EU rule requires a preference record when jurisdictionCode is EU. Firms must mark applicability; "
+                   "this is a structural check, not product matching or the complete legal suitability test. "
+                   "No preference is an explicit recording code, not a fourth statutory category. "
+                   "New sustainability terms cite that regulation; they do not claim MAS, roadmap or talk grounds for EU law.\n\n")
+        spec.write("No verifiable close match was found for `inInstrument` or `hasUnderlyingInstrument` with their broad PWM semantics, "
+                   "so both remain NEW. FIBO `hasOwnedAsset` describes an ownership situation rather than a holding or position, "
+                   "and `hasUnderlier` describes a derivative rather than any shelf product. "
+                   "No FIBO `CashAccount` was found; PWM CashAccount specialises verified Release `DepositAccount`. "
+                   "`hasHolding` maps closely to verified OMG Commons Collections/hasMember (20250801); "
+                   "`securedBy` maps closely to FIBO isCollateralizedBy. No equivalence is asserted for these narrower properties.\n\n")
+        spec.write("All FIBO term IRIs below were checked against the actual master RDF/XML source, "
+                   "which resolved to commit `33a92cd34285d532c158da97bb42add089f135d3` on 3 November 2026. "
+                   "Maturity comes from the defining ontology's hasMaturityLevel. "
+                   "Source links are pinned to that verified master commit.\n\n| FIBO IRI | Maturity | Verification source |\n|---|---|---|\n")
+        for term in sorted(g.subjects(P("fiboMaturity"), None)):
+            relative = str(term).split("/ontology/", 1)[1].rsplit("/", 1)[0] + ".rdf"
+            spec.write(f"| {term} | {g.value(term, P('fiboMaturity'))} | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/{relative}) |\n")
     if site_path:
         Path(site_path).write_text(site_ts(data), encoding="utf-8")
     return data
@@ -463,7 +489,8 @@ def spec_md(d, refs):
            f"| Ontology IRI | {m['ontologyIri']} |",
            f"| Version IRI | {m['versionIri']} |",
            f"| Namespace | `pwm:` {m['namespace']} |",
-           f"| Shapes | {m['shapesIri']} (`pwm-shapes.ttl`) |",
+           f"| Shapes | {m['shapesIri']} (`pwm-shapes.ttl`), latest pointer |",
+           f"| Shapes version IRI | {SITE}/0.2/pwm-shapes.ttl |",
            f"| Licence | [CC BY-SA 4.0]({m['license']}) |",
            f"| Author | {m['creator']} |",
            f"| Web page | {m['ontologyIri']} |", "",
@@ -472,7 +499,7 @@ def spec_md(d, refs):
            f"Size: {c['classes']} classes, {c['objectProperties']} object properties, {c['datatypeProperties']} datatype properties, "
            f"{c['codeLists']} code lists with {c['concepts']} codes, {c['rules']} data rules plus {c['codeListRules']} generated code-list rules, {c['references']} references and "
            f"{c['citations']} citations. {m['fiboAligned']} FIBO terms are specialised or mapped.", "",
-           "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.1:", ""] + \
+           "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.2:", ""] + \
           [f"- {s}" for s in d["scopeOut"]] + ["", "## Design principles", ""] + \
           [f"{i}. **{p['title']}.** {p['body']}" for i, p in enumerate(d["principles"], 1)] + \
           ["", "## How references are marked", "",

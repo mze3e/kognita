@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.1 example data
+#  PWM 0.2 example data
 #
 #  Synthetic data for a fictional firm, Example Private Bank. No real client,
 #  person, firm or security appears here. Identifiers are well formed but
@@ -28,9 +28,9 @@
 @prefix ex:       <https://example.org/pwm-example#> .
 
 <https://example.org/pwm-example> a owl:Ontology ;
-    dcterms:title "PWM 0.1 example data"@en ;
+    dcterms:title "PWM 0.2 example data"@en ;
     dcterms:description "Synthetic data for a fictional firm, Example Private Bank. No real client, person, firm or security."@en ;
-    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/shapes/0.1> ;
+    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/shapes/0.2> ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
 
 # --- People (fictional) --------------------------------------------------------------------
@@ -134,7 +134,7 @@ ex:Mandate a pwm:AdvisoryMandate ;
 
 ex:IssuerLimit a pwm:ConcentrationLimit ;
     rdfs:label "Single-issuer limit"@en ;
-    pwm:limitValue 0.10 ;
+    pwm:limitValue 0.20 ;
     pwm:limitBasis "Share of portfolio market value held in one issuer" .
 
 # --- Product, instrument and product risk ---------------------------------------------------------
@@ -454,3 +454,24 @@ ex:Evidence3 a pwm:EvidenceRecord ;
     pwm:previousRecordHash "sha256:d31e7840f241e116b99a0fe72adf3f4ec3dd344067200992158ed5048114d54b" ;
     pwm:recordHash "sha256:be1a8668fcf9c8c98fcf2f9266e5505b58be5d034f9c8e8ffe335bd077a435d7" ;
     prov:generatedAtTime "2026-11-02T10:20:00+08:00"^^xsd:dateTime .
+
+# An EU assessment is illustrative, separate from the SG client journey above.
+ex:SustainabilityChoice a pwm:SustainabilityPreference ;
+    pwm:sustainabilityPreferenceKind pwm:TaxonomyAlignedMinimum, pwm:SFDRSustainableMinimum, pwm:PAIConsideration ;
+    pwm:minimumTaxonomyAlignedProportion 0.20 ;
+    pwm:minimumSFDRSustainableProportion 0.40 ;
+    pwm:paiConsiderationElements "Client requests consideration of greenhouse gas emissions intensity." ;
+    pwm:validFrom "2026-11-02T00:00:00Z"^^xsd:dateTime ;
+    prov:wasAttributedTo ex:Client .
+
+ex:NoSustainabilityChoice a pwm:SustainabilityPreference ;
+    pwm:sustainabilityPreferenceKind pwm:NoSustainabilityPreference .
+
+ex:EUSuitability a pwm:SuitabilityAssessment ;
+    pwm:jurisdictionCode "EU" ;
+    pwm:assessesRecommendation ex:Recommendation ;
+    pwm:usesRiskProfile ex:RiskProfileV2 ; pwm:usesMandate ex:Mandate ;
+    pwm:usesSustainabilityPreference ex:SustainabilityChoice ;
+    pwm:suitabilityOutcome pwm:InsufficientInformation ;
+    pwm:rationale "Preferences recorded; product sustainability evidence is still required before a suitable outcome can be reached." ;
+    prov:wasAttributedTo ex:RM .

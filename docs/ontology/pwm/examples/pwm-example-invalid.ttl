@@ -1,7 +1,7 @@
 # =============================================================================
-#  PWM 0.1 negative test fixture
+#  PWM 0.2 negative test fixture
 #
-#  Each resource below breaks one rule. Validate it together with
+#  Invalid records and their supporting records. Validate together with
 #  pwm-example.ttl, which supplies the people, use case, agent and decision
 #  the broken records point to. tools/validate.py lists the exact violations
 #  expected; any other result, or a missing one, fails the test.
@@ -228,3 +228,21 @@ ex:BadRiskProfileWrongCode a pwm:InvestorRiskProfile ;
     pwm:riskProfileLevel pwm:RatingHigh ;
     pwm:validFrom "2026-11-01T00:00:00+08:00"^^xsd:dateTime ;
     prov:wasAttributedTo ex:RM .
+
+ex:BadEUSuitability a pwm:SuitabilityAssessment ;
+    pwm:jurisdictionCode "EU" ; pwm:assessesRecommendation ex:Recommendation ;
+    pwm:usesRiskProfile ex:RiskProfileV2 ; pwm:usesMandate ex:Mandate ;
+    pwm:suitabilityOutcome pwm:InsufficientInformation ;
+    pwm:rationale "No sustainability preference record collected." ; prov:wasAttributedTo ex:RM .
+ex:BadTaxonomyPreference a pwm:SustainabilityPreference ;
+    pwm:sustainabilityPreferenceKind pwm:TaxonomyAlignedMinimum .
+ex:BadSFDRProportion a pwm:SustainabilityPreference ;
+    pwm:sustainabilityPreferenceKind pwm:SFDRSustainableMinimum ;
+    pwm:minimumSFDRSustainableProportion 1.20 .
+ex:BadPAIPreference a pwm:SustainabilityPreference ;
+    pwm:sustainabilityPreferenceKind pwm:PAIConsideration .
+ex:BadNoPreference a pwm:SustainabilityPreference ;
+    pwm:sustainabilityPreferenceKind pwm:NoSustainabilityPreference, pwm:TaxonomyAlignedMinimum ;
+    pwm:minimumTaxonomyAlignedProportion 0.20 .
+ex:BadPreferenceCode a pwm:SustainabilityPreference ;
+    pwm:sustainabilityPreferenceKind pwm:RP1 .

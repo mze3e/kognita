@@ -1,14 +1,15 @@
-# Private Wealth Management Ontology (PWM) 0.1
+# Private Wealth Management Ontology (PWM) 0.2
 
 > Generated from the Turtle sources by `tools/build.py`. Do not edit by hand.
 
 | | |
 |---|---|
-| Version | 0.1 (draft), 2026-11-02 |
+| Version | 0.2 (draft), 2026-11-03 |
 | Ontology IRI | https://ahmedmuzammil.com/ontology/pwm |
-| Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.1 |
+| Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.2 |
 | Namespace | `pwm:` https://ahmedmuzammil.com/ontology/pwm# |
-| Shapes | https://ahmedmuzammil.com/ontology/pwm/shapes (`pwm-shapes.ttl`) |
+| Shapes | https://ahmedmuzammil.com/ontology/pwm/shapes (`pwm-shapes.ttl`), latest pointer |
+| Shapes version IRI | https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl |
 | Licence | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | Author | Ahmed Muzammil |
 | Web page | https://ahmedmuzammil.com/ontology/pwm |
@@ -19,9 +20,9 @@ A generic ontology for private banking and wealth management. It models parties 
 
 ## Status
 
-Draft for comment. Version 0.1 is the first public draft. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
+Draft for comment. Version 0.2 adds verified grounding and sustainability preferences. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
 
-Size: 126 classes, 103 object properties, 45 datatype properties, 37 code lists with 188 codes, 28 data rules plus 48 generated code-list rules, 46 references and 456 citations. 37 FIBO terms are specialised or mapped.
+Size: 127 classes, 105 object properties, 48 datatype properties, 38 code lists with 192 codes, 30 data rules plus 49 generated code-list rules, 47 references and 479 citations. 38 FIBO terms are specialised or mapped.
 
 ## Scope
 
@@ -29,7 +30,7 @@ In scope:
 
 - Parties, roles and the client relationship, including trusts, foundations and other legal arrangements
 - Due diligence, risk rating, source of wealth and funds, screening and tax residency
-- Investor classification, risk profile, knowledge and experience, suitability and appropriateness
+- Investor classification, risk profile, knowledge and experience, sustainability preferences, suitability and appropriateness
 - Mandates, investment restrictions and fees
 - Accounts, portfolios, holdings and valuations
 - The product shelf, product risk, target market, cross-border rules, offering documents and the house view
@@ -37,12 +38,11 @@ In scope:
 - AI governance: the use-case inventory, risk materiality, accountability, agents, tools, delegated authority and autonomy
 - Information governance, facts and claims, policy decisions and hash-chained evidence
 
-Not in 0.1:
+Not in 0.2:
 
 - Orders, execution and the trade lifecycle; corporate actions
 - Performance and attribution methods (only the provenance of figures is modelled)
 - Tax reporting detail (CRS and FATCA reporting records), lending beyond the Lombard facility
-- Sustainability preferences in suitability (planned for 0.2)
 - Any institution's thresholds, scales, product shelf or internal names: these belong in an extension
 
 ## Design principles
@@ -85,7 +85,7 @@ Classes carry a context speed:
 | 0 | [Core patterns](#ModuleCore) | Assessments, validity periods and supersession: the patterns every other module reuses. | 1 | 7 | 0 |
 | 1 | [Parties, roles and relationships](#ModuleParties) | Clients, related parties, legal arrangements, providers and the relationship that binds them. | 30 | 16 | 2 |
 | 2 | [Due diligence, financial crime and tax](#ModuleCompliance) | Customer due diligence, risk rating, source of wealth, screening and tax residency. | 8 | 4 | 2 |
-| 3 | [Investor profile and suitability](#ModuleSuitability) | Regulatory investor classification, risk profile, knowledge and experience, and suitability and appropriateness. | 9 | 10 | 4 |
+| 3 | [Investor profile and suitability](#ModuleSuitability) | Regulatory investor classification, risk profile, knowledge and experience, sustainability preferences, and suitability and appropriateness. | 10 | 15 | 5 |
 | 4 | [Mandates, restrictions and fees](#ModuleMandates) | The service model agreed with the client, its investment restrictions and its charges. | 11 | 7 | 1 |
 | 5 | [Accounts, portfolios and holdings](#ModuleAccounts) | Where assets are held, what is held, and how it is valued. | 11 | 9 | 1 |
 | 6 | [Products, distribution and research](#ModuleProducts) | The product shelf, product risk and target market, cross-border distribution rules, offering documents and the house view. | 9 | 11 | 2 |
@@ -232,7 +232,7 @@ Independent firm that manages a client's assets booked with the wealth manager, 
 Person authorised to give instructions on an account or for an entity client, within stated signing rules.
 
 - **Specialises:** [authorized individual](https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/Executives/AuthorizedIndividual) (FIBO, Release)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Account mandate and signing authority
+- **References:** **ONT** [FIBO](#ref-FIBO) BE/OwnershipAndControl/Executives/AuthorizedIndividual, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Account mandate and signing authority
 
 <a id="PowerOfAttorneyHolder"></a>
 #### power of attorney holder (`pwm:PowerOfAttorneyHolder`)
@@ -240,7 +240,7 @@ Person authorised to give instructions on an account or for an entity client, wi
 Party authorised by a client, under a power of attorney, to act for the client within the scope that instrument grants.
 
 - **Specialises:** [authorized individual](https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/Executives/AuthorizedIndividual) (FIBO, Release)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) General and limited powers of attorney
+- **References:** **ONT** [FIBO](#ref-FIBO) BE/OwnershipAndControl/Executives/AuthorizedIndividual, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) General and limited powers of attorney
 
 <a id="BeneficialOwner"></a>
 #### beneficial owner (`pwm:BeneficialOwner`)
@@ -357,7 +357,7 @@ Organisation that administers and manages the affairs and wealth of one or more 
 
 - **Specialises:** [family office](https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/FunctionalEntities/FamilyOffice) (FIBO, Release)
 - **Exact match:** [family office](https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/FunctionalEntities/FamilyOffice) (FIBO, Release)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Client or intermediary
+- **References:** **ONT** [FIBO](#ref-FIBO) BE/FunctionalEntities/FunctionalEntities/FamilyOffice, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Client or intermediary
 
 <a id="WealthManager"></a>
 #### wealth manager (`pwm:WealthManager`)
@@ -400,7 +400,7 @@ Financial institution that holds clients' securities for safekeeping.
 
 - **Specialises:** [custodian](https://spec.edmcouncil.org/fibo/ontology/SEC/Equities/EquityInstruments/Custodian) (FIBO, Release)
 - **Exact match:** [custodian](https://spec.edmcouncil.org/fibo/ontology/SEC/Equities/EquityInstruments/Custodian) (FIBO, Release)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Custody chain
+- **References:** **ONT** [FIBO](#ref-FIBO) SEC/Equities/EquityInstruments/Custodian, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Custody chain
 
 ### Properties
 
@@ -589,7 +589,7 @@ References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Alert dispo
 
 ## Module 3: Investor profile and suitability
 
-Regulatory investor classification, risk profile, knowledge and experience, and suitability and appropriateness.
+Regulatory investor classification, risk profile, knowledge and experience, sustainability preferences, and suitability and appropriateness.
 
 ### Classes
 
@@ -647,13 +647,13 @@ Financial objective a client states for their investments, used to judge whether
 <a id="SuitabilityAssessment"></a>
 #### suitability assessment (`pwm:SuitabilityAssessment`)
 
-Determination, before a recommendation or a discretionary decision, that a product or transaction fits the client's objectives, financial situation, and knowledge and experience, within the mandate.
+Determination, before a recommendation or a discretionary decision, that a product or transaction fits the client's objectives, including any sustainability preferences, financial situation, and knowledge and experience, within the mandate.
 
 *Note:* Origination records why a client or product was proposed. Suitability records why it was permitted. Keep them separate.
 
 - **Specialises:** [assessment](#Assessment)
 - **Handling:** medium context, default classification C2
-- **Properties:** [`assessesRecommendation`](#assessesRecommendation), [`usesRiskProfile`](#usesRiskProfile), [`usesMandate`](#usesMandate), [`usesProductRiskRating`](#usesProductRiskRating)
+- **Properties:** [`assessesRecommendation`](#assessesRecommendation), [`usesRiskProfile`](#usesRiskProfile), [`usesMandate`](#usesMandate), [`usesProductRiskRating`](#usesProductRiskRating), [`usesSustainabilityPreference`](#usesSustainabilityPreference)
 - **References:** **REG** [FinSA](#ref-CH-FINSA) Art. 10 to 14; **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(2); **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 54; **REG** [SFC Code of Conduct](#ref-HK-SFC-COC) para 5.2; **REG** [MAS FAA-N16](#ref-MAS-FAA-N16) Know-your-customer and suitability of recommendations; **REG** [SEC Regulation Best Interest](#ref-US-REG-BI) Care obligation; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) suitability: the pack requires the flag and does not compute suitability; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 10: origination says why proposed; suitability says why permitted
 
 <a id="AppropriatenessAssessment"></a>
@@ -683,6 +683,18 @@ Record that a client received, read or accepted a disclosure, risk warning or do
 - **Handling:** default classification C2
 - **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Evidence of disclosure
 
+<a id="SustainabilityPreference"></a>
+#### sustainability preference (`pwm:SustainabilityPreference`)
+
+Versioned record of a client's choice of one or more sustainability categories, minimum proportions and PAI elements, or an explicit absence of preference.
+
+*Note:* Proportions are decimals from 0 to 1. Categories may be combined; no preference is exclusive. This records preferences and does not certify product sustainability or implement the full Article 54 assessment.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`sustainabilityPreferenceKind`](#sustainabilityPreferenceKind), [`minimumTaxonomyAlignedProportion`](#minimumTaxonomyAlignedProportion), [`minimumSFDRSustainableProportion`](#minimumSFDRSustainableProportion), [`paiConsiderationElements`](#paiConsiderationElements)
+- **References:** **REG** [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY) 2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)
+
 ### Properties
 
 | Property | Domain → range | Definition | References |
@@ -696,7 +708,12 @@ Record that a client received, read or accepted a disclosure, risk warning or do
 | <a id="usesRiskProfile"></a>`pwm:usesRiskProfile` uses risk profile | [suitability assessment](#SuitabilityAssessment) → [investor risk profile](#InvestorRiskProfile) | Version of the client's risk profile in force when the assessment was made. | **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 54 |
 | <a id="usesMandate"></a>`pwm:usesMandate` uses mandate | [suitability assessment](#SuitabilityAssessment) → [mandate](#Mandate) | Mandate whose terms and restrictions the assessment was checked against. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) mandate |
 | <a id="usesProductRiskRating"></a>`pwm:usesProductRiskRating` uses product risk rating | [suitability assessment](#SuitabilityAssessment) → [product risk rating](#ProductRiskRating) | Product risk rating in force when the assessment was made. | **REG** [MiFID II](#ref-EU-MIFID2) Art. 24(2) |
+| <a id="usesSustainabilityPreference"></a>`pwm:usesSustainabilityPreference` uses sustainability preference | [suitability assessment](#SuitabilityAssessment) → [sustainability preference](#SustainabilityPreference) | Version of the client sustainability preference considered by a suitability assessment. | **REG** [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY) 2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10) |
+| <a id="sustainabilityPreferenceKind"></a>`pwm:sustainabilityPreferenceKind` sustainability preference kind | [sustainability preference](#SustainabilityPreference) → [sustainability preference categories](#SustainabilityPreferenceScheme) | One or more client-selected sustainability categories, or explicit no preference. | **REG** [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY) 2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10) |
 | <a id="investmentHorizonYears"></a>`pwm:investmentHorizonYears` investment horizon (years) | any → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Length of time, in years, the client intends to hold the investments. | **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 54 |
+| <a id="minimumTaxonomyAlignedProportion"></a>`pwm:minimumTaxonomyAlignedProportion` minimum taxonomy aligned proportion | [sustainability preference](#SustainabilityPreference) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Client minimum proportion invested in environmentally sustainable investments under Regulation (EU) 2020/852 Article 2(1), as a fraction from 0 to 1. | **REG** [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY) 2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10) |
+| <a id="minimumSFDRSustainableProportion"></a>`pwm:minimumSFDRSustainableProportion` minimum SFDR sustainable proportion | [sustainability preference](#SustainabilityPreference) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Client minimum proportion invested in sustainable investments under Regulation (EU) 2019/2088 Article 2(17), as a fraction from 0 to 1. | **REG** [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY) 2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10) |
+| <a id="paiConsiderationElements"></a>`pwm:paiConsiderationElements` PAI consideration elements | [sustainability preference](#SustainabilityPreference) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Client-determined qualitative or quantitative elements demonstrating consideration of principal adverse impacts on sustainability factors. | **REG** [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY) 2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10) |
 
 ### Code lists
 
@@ -775,6 +792,22 @@ References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Illustrativ
 | RP3 | <a id="RP3"></a>balanced (`pwm:RP3`) | Growth and income in balance. |
 | RP4 | <a id="RP4"></a>growth (`pwm:RP4`) | Growth with higher volatility. |
 | RP5 | <a id="RP5"></a>aggressive (`pwm:RP5`) | Maximum growth; accepts large drawdowns. |
+
+<a id="SustainabilityPreferenceScheme"></a>
+#### sustainability preference categories (`pwm:SustainabilityPreferenceScheme`)
+
+Three categories under Article 2(7) of 2017/565, plus explicit no preference for recording.
+
+Used by: [`sustainabilityPreferenceKind`](#sustainabilityPreferenceKind)
+
+References: **REG** [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY) 2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="TaxonomyAlignedMinimum"></a>taxonomy aligned minimum (`pwm:TaxonomyAlignedMinimum`) | Article 2(7)(a): minimum proportion of environmentally sustainable investments. |
+|  | <a id="SFDRSustainableMinimum"></a>SFDR sustainable minimum (`pwm:SFDRSustainableMinimum`) | Article 2(7)(b): minimum proportion of sustainable investments. |
+|  | <a id="PAIConsideration"></a>PAI consideration (`pwm:PAIConsideration`) | Article 2(7)(c): principal adverse impacts considered using client-determined elements. |
+|  | <a id="NoSustainabilityPreference"></a>no sustainability preference (`pwm:NoSustainabilityPreference`) | Explicit record that the client has no sustainability preference; not a fourth Article 2(7) category. |
 
 <a id="ModuleMandates"></a>
 
@@ -936,7 +969,7 @@ Account that records securities and cash held for investment.
 
 - **Specialises:** [account](#Account), [investment account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/InvestmentAccount) (FIBO, Release)
 - **Handling:** default classification C2
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Specialises FIBO InvestmentAccount within the PWM account hierarchy
+- **References:** **ONT** [FIBO](#ref-FIBO) FBC/ProductsAndServices/ClientsAndAccounts/InvestmentAccount, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Specialises FIBO InvestmentAccount within the PWM account hierarchy
 
 <a id="CustodyAccount"></a>
 #### custody account (`pwm:CustodyAccount`)
@@ -953,9 +986,9 @@ Investment account in which the wealth manager holds a client's securities in sa
 
 Current or deposit account in a single currency, linked to a client's investment activity.
 
-- **Specialises:** [account](#Account), [customer account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/CustomerAccount) (FIBO, Release)
+- **Specialises:** [account](#Account), [deposit account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount) (FIBO, Release)
 - **Handling:** fast context, default classification C2
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Cash account
+- **References:** **ONT** [FIBO](#ref-FIBO) FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Cash account
 
 <a id="JointAccount"></a>
 #### joint account (`pwm:JointAccount`)
@@ -1025,7 +1058,7 @@ Credit extended to a client against a pledged portfolio of financial assets, wit
 - **Also called:** securities-backed loan
 - **Handling:** fast context, default classification C2
 - **Properties:** [`securedBy`](#securedBy)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Portfolio-backed lending
+- **References:** **ONT** [FIBO](#ref-FIBO) LOAN/LoansGeneral/Loans/CollateralizedLoan, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Portfolio-backed lending
 
 ### Properties
 
@@ -1033,12 +1066,12 @@ Credit extended to a client against a pledged portfolio of financial assets, wit
 |---|---|---|---|
 | <a id="accountHeldBy"></a>`pwm:accountHeldBy` account held by | [account](#Account) → [account holder](#AccountHolder) | Account holder of an account. | **REG** [OECD CRS](#ref-OECD-CRS) Section VIII |
 | <a id="hasPortfolio"></a>`pwm:hasPortfolio` has portfolio | [account](#Account) → [portfolio](#Portfolio) | Portfolio recorded in an account. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Account and portfolio |
-| <a id="hasHolding"></a>`pwm:hasHolding` has holding | [portfolio](#Portfolio) → [holding](#Holding) | Holding that forms part of a portfolio. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Portfolio composition |
+| <a id="hasHolding"></a>`pwm:hasHolding` has holding | [portfolio](#Portfolio) → [holding](#Holding) | Holding that forms part of a portfolio. Close match: [has member](https://www.omg.org/spec/Commons/Collections/hasMember) (OMG Commons). | **ONT** [OMG Commons](#ref-OMG-COMMONS) Collections/hasMember, verified in https://www.omg.org/spec/Commons/20250801/Collections.rdf; portfolio membership is narrower; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Portfolio composition |
 | <a id="inInstrument"></a>`pwm:inInstrument` in instrument | any → [financial instrument](https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/FinancialInstrument) (FIBO, Release) | Financial instrument a holding or position is in. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Holding to instrument |
 | <a id="valuationOf"></a>`pwm:valuationOf` valuation of | [valuation](#Valuation) → any | Portfolio, account or holding a valuation measures. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 6 |
 | <a id="signingRule"></a>`pwm:signingRule` signing rule | any → [signing rules](#SigningRuleScheme) | Rule for who must sign instructions on a joint account or for an entity. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Signing authority |
-| <a id="securedBy"></a>`pwm:securedBy` secured by | [Lombard facility](#LombardFacility) → [portfolio](#Portfolio) | Portfolio pledged as collateral for a credit facility. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Pledge |
-| <a id="amount"></a>`pwm:amount` amount | any → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Numeric amount, read together with its currency. Close match: [has amount](https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasAmount) (FIBO, Release). | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Amount and currency pattern |
+| <a id="securedBy"></a>`pwm:securedBy` secured by | [Lombard facility](#LombardFacility) → [portfolio](#Portfolio) | Portfolio pledged as collateral for a credit facility. Close match: [is collateralized by](https://spec.edmcouncil.org/fibo/ontology/FBC/DebtAndEquities/Debt/isCollateralizedBy) (FIBO, Release). | **ONT** [FIBO](#ref-FIBO) FBC/DebtAndEquities/Debt/isCollateralizedBy, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Pledge |
+| <a id="amount"></a>`pwm:amount` amount | any → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Numeric amount, read together with its currency. Close match: [has amount](https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasAmount) (FIBO, Release). | **ONT** [FIBO](#ref-FIBO) FND/Accounting/CurrencyAmount/hasAmount, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Amount and currency pattern |
 | <a id="currency"></a>`pwm:currency` currency | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Currency of an amount, as an ISO 4217 alphabetic code. Close match: [has currency](https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasCurrency) (FIBO, Release). | **ISO** [ISO 4217](#ref-ISO-4217) Alphabetic codes |
 
 ### Code lists
@@ -1074,7 +1107,7 @@ Financial product on the wealth manager's shelf, such as a fund, structured note
 - **Specialises:** [financial product](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/FinancialProductsAndServices/FinancialProduct) (FIBO, Release)
 - **Handling:** slow context, default classification C1
 - **Properties:** [`hasUnderlyingInstrument`](#hasUnderlyingInstrument), [`productComplexity`](#productComplexity)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Product shelf
+- **References:** **ONT** [FIBO](#ref-FIBO) FBC/ProductsAndServices/FinancialProductsAndServices/FinancialProduct, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Product shelf
 
 <a id="ProductRiskRating"></a>
 #### product risk rating (`pwm:ProductRiskRating`)
@@ -1127,7 +1160,7 @@ Offering document summarising a product's terms, payoff, risks and costs.
 
 - **Specialises:** [offering document](https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesIssuance/OfferingDocument) (FIBO, Release)
 - **Handling:** slow context, default classification C0
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Product documentation
+- **References:** **ONT** [FIBO](#ref-FIBO) SEC/Securities/SecuritiesIssuance/OfferingDocument, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Product documentation
 
 <a id="KeyInformationDocument"></a>
 #### key information document (`pwm:KeyInformationDocument`)
@@ -2488,12 +2521,30 @@ Applies to subjects of [CFI code](#cfiCode). Sources: [ISO 10962](#ref-ISO-10962
 
 - A CFI code is six letters (ISO 10962).
 
+<a id="EUSustainabilityAssessmentShape"></a>
+### EU sustainability assessment
+
+Applies to [suitability assessment](#SuitabilityAssessment). Sources: [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY).
+
+- EU suitability cites one recorded sustainability preference, including explicit no preference (2017/565 Art. 54(2)(a), (5), as amended by 2021/1253 Art. 1(6)).
+
+<a id="SustainabilityPreferenceShape"></a>
+### Sustainability preference
+
+Applies to [sustainability preference](#SustainabilityPreference). Sources: [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY).
+
+- sustainability preference kind: at least 1
+- minimum taxonomy aligned proportion: at most 1, of type decimal
+- minimum SFDR sustainable proportion: at most 1, of type decimal
+- PAI consideration elements: of type string
+- Record the minimum proportion for each selected category and client-determined PAI elements; no preference is exclusive and has no category details (2017/565 Art. 2(7)(a)-(c)).
+
 <a id="CodeListShapes"></a>
 ### Code lists
 
 Applies to every coded property. Sources: [SKOS](#ref-W3C-SKOS).
 
-- Each of the 48 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
+- Each of the 49 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
 
 ## Extending PWM for an institution
 
@@ -2511,7 +2562,7 @@ Save as `firm.ttl`:
 @prefix firm: <https://example.org/firm/ontology#> .
 
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.1> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.2> .
 
 # The firm's own risk scale, in place of the illustrative one
 firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
@@ -2566,8 +2617,8 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 | Ref | Mark | Title | Publisher | Date | Jurisdiction | Status | Note |
 |---|---|---|---|---|---|---|---|
-| <a id="ref-FIBO"></a>FIBO | ONT | [Financial Industry Business Ontology (FIBO)](https://github.com/edmcouncil/fibo) | EDM Council and Object Management Group | 2026-10-27 | Global | verified | Every FIBO IRI used here was checked against the ontology files at GitHub commit 33a92cd (27 October 2026). Each term's maturity level, Release or Provisional, is taken from the file that defines it. |
-| <a id="ref-OMG-COMMONS"></a>OMG Commons | ONT | [Commons Ontology Library](https://www.omg.org/spec/Commons/) | Object Management Group | 2025-08-01 | Global | verified | PartiesAndSituations and Organizations were read at version 20250801. Jurisdiction, RegulatoryAgency, Authorization, isPlayedBy and Document are referenced by FIBO production ontologies; their module files were not opened. |
+| <a id="ref-FIBO"></a>FIBO | ONT | [Financial Industry Business Ontology (FIBO)](https://github.com/edmcouncil/fibo) | EDM Council and Object Management Group | 2026-10-27 | Global | verified | Every FIBO IRI and maturity used here was rechecked on 3 November 2026 against raw .rdf files from master at GitHub commit 33a92cd34285d532c158da97bb42add089f135d3 (27 October 2026). Each term's maturity level, Release or Provisional, is taken from the file that defines it. |
+| <a id="ref-OMG-COMMONS"></a>OMG Commons | ONT | [Commons Ontology Library](https://www.omg.org/spec/Commons/) | Object Management Group | 2025-08-01 | Global | verified | Collections/hasMember was verified against https://www.omg.org/spec/Commons/20250801/Collections.rdf on 3 November 2026. PartiesAndSituations and Organizations were read at version 20250801. Jurisdiction, RegulatoryAgency, Authorization, isPlayedBy and Document are referenced by FIBO production ontologies; their module files were not opened. |
 | <a id="ref-W3C-PROV-O"></a>PROV-O | ONT | [PROV-O: The PROV Ontology](https://www.w3.org/TR/prov-o/) | W3C | 2013-04-30 | Global | instrument-level |  |
 | <a id="ref-W3C-SKOS"></a>SKOS | ONT | [SKOS Simple Knowledge Organization System Reference](https://www.w3.org/TR/skos-reference/) | W3C | 2009-08-18 | Global | instrument-level |  |
 | <a id="ref-DCMI-TERMS"></a>DCMI Terms | ONT | [DCMI Metadata Terms](https://www.dublincore.org/specifications/dublin-core/dcmi-terms/) | Dublin Core Metadata Initiative |  | Global | instrument-level |  |
@@ -2604,13 +2655,14 @@ Other code lists may require changes to handwritten constraints and code-depende
 | <a id="ref-CH-FINSA"></a>FinSA | REG | [Federal Act on Financial Services (FinSA), SR 950.1](https://www.fedlex.admin.ch/eli/cc/2019/758/en) | Swiss Confederation |  | CH | verified | Article 4 (client segmentation) and Article 5 (opting out and opting in) checked. Articles 10 to 14 (suitability and appropriateness) cited as a range. |
 | <a id="ref-US-REG-D"></a>SEC Regulation D | REG | [SEC Regulation D, Rule 501(a) definition of accredited investor (17 CFR 230.501)](https://www.ecfr.gov/current/title-17/section-230.501) | US Securities and Exchange Commission |  | US | instrument-level |  |
 | <a id="ref-US-REG-BI"></a>SEC Regulation Best Interest | REG | [SEC Regulation Best Interest (17 CFR 240.15l-1)](https://www.ecfr.gov/current/title-17/section-240.15l-1) | US Securities and Exchange Commission |  | US | instrument-level |  |
-| <a id="ref-KOG-ROADMAP"></a>Kognita roadmap | KOG | [Kognita Roadmap: From Governance Engine to Agent Harness (docs/ROADMAP.md)](https://github.com/mze3e/kognita/blob/main/docs/ROADMAP.md) | Kognita (open source, MIT) | 2026-09, at release 0.7.0 | Global | verified | Read at commit 9303769 (release 0.7.0). Locators name the release and roadmap item, for example 0.4 item 8. |
+| <a id="ref-EU-SUSTAINABILITY"></a>MiFID sustainability preferences | REG | [Commission Delegated Regulation (EU) 2021/1253 amending Delegated Regulation (EU) 2017/565](https://eur-lex.europa.eu/eli/reg_del/2021/1253/oj) | European Commission | 2021-04-21 | EU | verified | Verified against EUR-Lex CELEX 32021R1253, EN/ALL text and relationship table on 3 November 2026. Article 1(1) adds Article 2(7)(a)-(c) to 2017/565. Article 1(6)(a)-(f) amends Article 54(2)(a), (5), (9), (10), (12), (13). These are articles of the amended 2017/565, not Articles 2(7) and 54 of 2021/1253. No preference is an explicit PWM recording code, not a fourth statutory category. |
+| <a id="ref-KOG-ROADMAP"></a>Kognita roadmap | KOG | [Kognita Roadmap: From Governance Engine to Agent Harness (docs/ROADMAP.md)](https://github.com/mze3e/kognita/blob/9303769/docs/ROADMAP.md) | Kognita (open source, MIT) | 2026-09, at release 0.7.0 | Global | verified | Read at software release 0.7.0, commit 9303769, not roadmap milestone 0.7. Locators such as 0.4 item 8 refer to roadmap sections as recorded at that software release. |
 | <a id="ref-KOG-CONTROLS"></a>Kognita regulations library | KOG | [AI Control Frameworks: Wealth Management and Agentic AI Coverage (docs/control-frameworks.md), the Kognita regulations library](https://github.com/mze3e/kognita/blob/main/docs/control-frameworks.md) | Kognita (open source, MIT) | 2026-10-12 | Global | verified | Consolidates the 40-domain bank-grade framework, the 70-control wealth management framework (MAS, PDPC, SFC, FCA, Bank of England, APRA, ASIC, CSBS, BIS/FSI, ESMA), a paragraph map of the MAS AI Risk Management Guidelines, and the trust-architecture principles. |
 | <a id="ref-KOG-VOCAB"></a>Kognita vocabularies | KOG | [Kognita controlled vocabularies (src/kognita/vocabulary.py, usecases.py, claims.py, memory.py, origination.py)](https://github.com/mze3e/kognita/blob/main/src/kognita/vocabulary.py) | Kognita (open source, MIT) | release 0.7.0 | Global | verified |  |
 | <a id="ref-KOG-PB-PACK"></a>Kognita private-banking pack | KOG | [Kognita private-banking policy pack 1.0.0 (src/kognita/packs/data/private-banking)](https://github.com/mze3e/kognita/tree/main/src/kognita/packs/data/private-banking) | Kognita (open source, MIT) |  | Global | verified |  |
 | <a id="ref-EVOLVE"></a>EVOLVE | AM | [EVOLVE: Building the AI-Native Enterprise (organisational maturity model for AI)](https://ahmedmuzammil.com/frameworks/evolve) | Ahmed Muzammil |  | Global | verified |  |
 | <a id="ref-AM-GOVERNING-AGENTIC-AI"></a>Governing agentic AI (essay) | AM | [Governing agentic AI inside a regulated bank](https://ahmedmuzammil.com/ideas/governing-agentic-ai) | Ahmed Muzammil | 2026-09-21 | Global | verified |  |
-| <a id="ref-AM-FILING-CABINET"></a>Filing Cabinet talk | AM | [Your AI Is Only as Good as Your Filing Cabinet (AIIM ASEAN Forum, Singapore)](https://ahmedmuzammil.com/speaking) | Ahmed Muzammil | 2026-10-22 | Global | verified |  |
+| <a id="ref-AM-FILING-CABINET"></a>Filing Cabinet talk | AM | [Your AI Is Only as Good as Your Filing Cabinet (AIIM ASEAN Forum, Singapore)](https://ahmedmuzammil.com/speaking) | Ahmed Muzammil | 2026-10-22 | Global | verified | Checked https://www.ahmedmuzammil.com/sitemap.xml and the speaking page on 3 November 2026. No talk-specific page exists in the sitemap or speaking-page links; the general speaking page is retained. |
 | <a id="ref-PWM-PRACTICE"></a>PWM practitioner definition | NEW | Practitioner definition in this ontology | Ahmed Muzammil |  | Global | verified | Used where no term was found in FIBO, OMG Commons or DPV at the versions checked. Each use is a candidate for proposal to the relevant standard. |
 
 ## Annotation vocabulary
@@ -2640,4 +2692,83 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 | Version | Date | Change |
 |---|---|---|
+| 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
+
+## Verification for 0.2
+
+There are 80 node shapes: 30 written targeted shapes, 49 generated targeted shapes and one untargeted helper. The negative fixture file contains 40 records: 35 violating records and five supporting records, yielding 42 expected violations.
+
+The unversioned shapes IRI `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. The immutable 0.2 shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl`. The existing host excludes www. Publication is separate from this build.
+
+Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. Item locators retain the roadmap section numbers at that commit.
+
+EUR-Lex CELEX 32021R1253 (EN/ALL text and relationship table) confirms that 2021/1253 Art. 1(1) adds Art. 2(7)(a)-(c) to 2017/565; Art. 1(6) amends Art. 54(2)(a), (5), (9), (10), (12) and (13). The EU rule requires a preference record when jurisdictionCode is EU. Firms must mark applicability; this is a structural check, not product matching or the complete legal suitability test. No preference is an explicit recording code, not a fourth statutory category. New sustainability terms cite that regulation; they do not claim MAS, roadmap or talk grounds for EU law.
+
+No verifiable close match was found for `inInstrument` or `hasUnderlyingInstrument` with their broad PWM semantics, so both remain NEW. FIBO `hasOwnedAsset` describes an ownership situation rather than a holding or position, and `hasUnderlier` describes a derivative rather than any shelf product. No FIBO `CashAccount` was found; PWM CashAccount specialises verified Release `DepositAccount`. `hasHolding` maps closely to verified OMG Commons Collections/hasMember (20250801); `securedBy` maps closely to FIBO isCollateralizedBy. No equivalence is asserted for these narrower properties.
+
+All FIBO term IRIs below were checked against the actual master RDF/XML source, which resolved to commit `33a92cd34285d532c158da97bb42add089f135d3` on 3 November 2026. Maturity comes from the defining ontology's hasMaturityLevel. Source links are pinned to that verified master commit.
+
+| FIBO IRI | Maturity | Verification source |
+|---|---|---|
+| https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/FunctionalEntities/FamilyOffice | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/FunctionalEntities/FunctionalEntities.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LEIEntities/LegalEntityIdentifier | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/LegalEntities/LEIEntities.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateOwnership/BeneficialOwner | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/OwnershipAndControl/CorporateOwnership.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateOwnership/hasBeneficialOwner | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/OwnershipAndControl/CorporateOwnership.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/Executives/AuthorizedIndividual | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/OwnershipAndControl/Executives.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/Trust | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Trusts/Trusts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/TrustBeneficiary | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Trusts/Trusts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/Trustee | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Trusts/Trusts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/Trustor | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/BE/Trusts/Trusts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/DER/DerivativesContracts/StructuredInstruments/CapitalProtectedProduct | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/DER/DerivativesContracts/StructuredInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/DER/DerivativesContracts/StructuredInstruments/LeveragedProduct | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/DER/DerivativesContracts/StructuredInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/DER/DerivativesContracts/StructuredInstruments/StructuredProduct | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/DER/DerivativesContracts/StructuredInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/DebtAndEquities/Debt/isCollateralizedBy | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/DebtAndEquities/Debt.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/DebtInstrument | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FinancialInstruments/FinancialInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/DerivativeInstrument | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FinancialInstruments/FinancialInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/EquityInstrument | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FinancialInstruments/FinancialInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/FinancialInstrument | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FinancialInstruments/FinancialInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/Issuer | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FinancialInstruments/FinancialInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/Option | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FinancialInstruments/FinancialInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/Security | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FinancialInstruments/FinancialInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/FunctionalEntities/FinancialServicesEntities/Bank | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FunctionalEntities/FinancialServicesEntities.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/FunctionalEntities/FinancialServicesEntities/WealthManagementService | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FunctionalEntities/FinancialServicesEntities.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Account | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/AccountHolder | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Fee | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/InvestmentAccount | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/RelationshipManager | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/FinancialProductsAndServices/FinancialProduct | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/FinancialProductsAndServices.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/FinancialProductsAndServices/FinancialServiceProvider | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/FinancialProductsAndServices.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/FinancialProductsAndServices/Position | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/FinancialProductsAndServices.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasAmount | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/Accounting/CurrencyAmount.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasCurrency | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/Accounting/CurrencyAmount.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/AgentsAndPeople/People.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/Agreements/Contracts/ContractualCommitment | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/Agreements/Contracts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/Agreements/Contracts/WrittenContract | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/Agreements/Contracts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/GoalsAndObjectives/Objectives/InvestmentObjective | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/GoalsAndObjectives/Objectives.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/OwnershipAndControl/Ownership/DigitalAsset | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/OwnershipAndControl/Ownership.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/OwnershipAndControl/Ownership/Holding | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/OwnershipAndControl/Ownership.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/OwnershipAndControl/Ownership/Portfolio | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/OwnershipAndControl/Ownership.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/Parties/Parties/TaxIdentifier | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/Parties/Parties.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FND/ProductsAndServices/ProductsAndServices/Client | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FND/ProductsAndServices/ProductsAndServices.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/LOAN/LoansGeneral/Loans/CollateralizedLoan | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/LOAN/LoansGeneral/Loans.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Debt/Bonds/Bond | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Debt/Bonds.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Equities/EquityInstruments/Custodian | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Equities/EquityInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Equities/EquityInstruments/Share | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Equities/EquityInstruments.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/CollectiveInvestmentVehicles/KeyInvestorInformationDocument | Provisional | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Funds/CollectiveInvestmentVehicles.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/CollectiveInvestmentVehicles/PortfolioBenchmark | Provisional | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Funds/CollectiveInvestmentVehicles.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/CollectiveInvestmentVehicles/RiskLevel | Provisional | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Funds/CollectiveInvestmentVehicles.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/Funds/ExchangeTradedFund | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Funds/Funds.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/Funds/FundUnit | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Funds/Funds.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/Funds/HedgeFund | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Funds/Funds.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/Funds/MutualFund | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Funds/Funds.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/Funds/PrivateEquityFund | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Funds/Funds.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/Funds/UnitTrust | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Funds/Funds.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/Pools/CollectiveInvestmentVehicle | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Securities/Pools.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesClassification/FinancialInstrumentClassificationCode | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Securities/SecuritiesClassification.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesIssuance/OfferingDocument | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Securities/SecuritiesIssuance.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesIssuance/Prospectus | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Securities/SecuritiesIssuance.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesRestrictions/InvestorsDomicileRestriction | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Securities/SecuritiesRestrictions.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesRestrictions/QualifiedInvestorRestriction | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/SEC/Securities/SecuritiesRestrictions.rdf) |

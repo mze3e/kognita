@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.1 SHACL shapes
+#  PWM 0.2 SHACL shapes
 #
 #  The rules from the ontology that can be checked on data. Each shape names
 #  the references it enforces (dcterms:source) and each message gives the
@@ -25,13 +25,13 @@
 
 <https://ahmedmuzammil.com/ontology/pwm/shapes>
     a owl:Ontology ;
-    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/shapes/0.1> ;
-    owl:versionInfo "0.1 (draft)" ;
+    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl> ;
+    owl:versionInfo "0.2 (draft)" ;
     dcterms:title "Private Wealth Management Ontology: SHACL shapes"@en ;
-    dcterms:description "Data rules for the Private Wealth Management Ontology 0.1. Shapes stay generic; a firm adds its own thresholds and jurisdiction rules in a separate shapes graph."@en ;
+    dcterms:description "Data rules for the Private Wealth Management Ontology 0.2. Shapes stay generic; a firm adds its own thresholds and jurisdiction rules in a separate shapes graph."@en ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
-    dcterms:requires <https://ahmedmuzammil.com/ontology/pwm/0.1> ;
+    dcterms:requires <https://ahmedmuzammil.com/ontology/pwm/0.2> ;
     sh:declare
         [ sh:prefix "pwm" ; sh:namespace "https://ahmedmuzammil.com/ontology/pwm#"^^xsd:anyURI ] ,
         [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ,
@@ -742,6 +742,13 @@ pwmsh:CodeList_suitabilityOutcome a sh:NodeShape ;
     sh:property [ sh:path pwm:suitabilityOutcome ; sh:in ( pwm:InsufficientInformation pwm:NotSuitable pwm:Suitable pwm:SuitableWithConditions ) ;
         sh:message "Use a code from suitability outcomes (pwm:SuitabilityOutcomeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
+pwmsh:CodeList_sustainabilityPreferenceKind a sh:NodeShape ;
+    rdfs:label "Code list: sustainability preference kind"@en ;
+    sh:targetSubjectsOf pwm:sustainabilityPreferenceKind ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:sustainabilityPreferenceKind ; sh:in ( pwm:NoSustainabilityPreference pwm:PAIConsideration pwm:SFDRSustainableMinimum pwm:TaxonomyAlignedMinimum ) ;
+        sh:message "Use a code from sustainability preference categories (pwm:SustainabilityPreferenceScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
 pwmsh:CodeList_targetRiskProfile a sh:NodeShape ;
     rdfs:label "Code list: target risk profile"@en ;
     sh:targetSubjectsOf pwm:targetRiskProfile ;
@@ -763,3 +770,46 @@ pwmsh:CodeList_validatorStatus a sh:NodeShape ;
     sh:property [ sh:path pwm:validatorStatus ; sh:in ( pwm:ValidatorBlocked pwm:ValidatorConflicting pwm:ValidatorInferred pwm:ValidatorStale pwm:ValidatorUnverified pwm:ValidatorVerified ) ;
         sh:message "Use a code from validator statuses (pwm:ValidatorStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 # END GENERATED CODE-LIST SHAPES
+
+# Article 54 is jurisdiction-specific. A firm records EU applicability explicitly.
+pwmsh:EUSustainabilityAssessmentShape a sh:NodeShape ;
+    rdfs:label "EU sustainability assessment"@en ;
+    sh:targetClass pwm:SuitabilityAssessment ;
+    dcterms:source pwmref:EU-SUSTAINABILITY ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path pwm:jurisdictionCode ; sh:hasValue "EU" ] ] ]
+        [ sh:property [ sh:path pwm:usesSustainabilityPreference ; sh:minCount 1 ; sh:maxCount 1 ;
+            sh:class pwm:SustainabilityPreference ] ]
+    ) ;
+    sh:message "EU suitability cites one recorded sustainability preference, including explicit no preference (2017/565 Art. 54(2)(a), (5), as amended by 2021/1253 Art. 1(6))." .
+
+pwmsh:SustainabilityPreferenceShape a sh:NodeShape ;
+    rdfs:label "Sustainability preference"@en ;
+    sh:targetClass pwm:SustainabilityPreference ;
+    dcterms:source pwmref:EU-SUSTAINABILITY ;
+    sh:property [ sh:path pwm:sustainabilityPreferenceKind ; sh:minCount 1 ] ;
+    sh:property [ sh:path pwm:minimumTaxonomyAlignedProportion ; sh:maxCount 1 ;
+        sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0 ] ;
+    sh:property [ sh:path pwm:minimumSFDRSustainableProportion ; sh:maxCount 1 ;
+        sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0 ] ;
+    sh:property [ sh:path pwm:paiConsiderationElements ; sh:datatype xsd:string ; sh:minLength 1 ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+        sh:message "Record the minimum proportion for each selected category and client-determined PAI elements; no preference is exclusive and has no category details (2017/565 Art. 2(7)(a)-(c))." ;
+        sh:select """
+          SELECT $this WHERE {
+            FILTER (
+              (EXISTS { $this pwm:sustainabilityPreferenceKind pwm:TaxonomyAlignedMinimum }
+               != EXISTS { $this pwm:minimumTaxonomyAlignedProportion ?tax }) ||
+              (EXISTS { $this pwm:sustainabilityPreferenceKind pwm:SFDRSustainableMinimum }
+               != EXISTS { $this pwm:minimumSFDRSustainableProportion ?sfdr }) ||
+              (EXISTS { $this pwm:sustainabilityPreferenceKind pwm:PAIConsideration }
+               != EXISTS { $this pwm:paiConsiderationElements ?pai }) ||
+              (EXISTS { $this pwm:sustainabilityPreferenceKind pwm:NoSustainabilityPreference }
+               && EXISTS { $this pwm:sustainabilityPreferenceKind ?other .
+                           FILTER (?other != pwm:NoSustainabilityPreference) })
+            )
+          }
+        """
+    ] .

@@ -100,3 +100,121 @@ def test_duplicate_inferred_hash():
     g, ontology = inferred_chain()
     g.set((E('Evidence2'), E('recordHash'), g.value(E('Evidence1'), E('recordHash'))))
     assert any('duplicate recordHash:' in p for p in validator.chain_problems(g, ontology))
+
+
+def test_version_and_counts(tmp_path):
+    from rdflib.namespace import OWL, SKOS
+    g = Graph().parse(BASE / 'pwm.ttl')
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    site = 'https://ahmedmuzammil.com/ontology/pwm'
+    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.2')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.2/pwm-shapes.ttl')
+    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.2 (draft)'
+    import shutil
+    shutil.copytree(BASE / 'src', tmp_path / 'src')
+    shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
+    counts = builder.build(tmp_path, None)['counts']
+    assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (127, 105, 48, 38, 30, 49)
+    assert sum(validator.EXPECTED.values()) == 42
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 40
+
+
+def test_every_generated_code_list_rule():
+    """Each generated rule accepts all its codes and rejects a foreign IRI.
+
+    Use only generated shapes here, so unrelated required fields do not mask
+    a missing or incorrectly generated membership constraint.
+    """
+    from pyshacl import validate
+    from rdflib.namespace import SKOS
+    from rdflib.collection import Collection
+    ontology = Graph().parse(BASE / 'pwm.ttl')
+    all_shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    shapes = Graph()
+    good, bad = Graph(), Graph()
+    expected = set()
+    for prop, scheme in ontology.subject_objects(P('valuesFrom')):
+        shape = URIRef(validator.PWMSH + 'CodeList_' + builder.local(prop))
+        ps = all_shapes.value(shape, validator.SH.property)
+        assert ps is not None
+        codes = set(ontology.subjects(SKOS.inScheme, scheme))
+        assert set(Collection(all_shapes, all_shapes.value(ps, validator.SH['in']))) == codes
+        # Include the RDF list closure as well as shape and property triples.
+        pending, seen = [shape], set()
+        while pending:
+            node = pending.pop()
+            if node in seen:
+                continue
+            seen.add(node)
+            for triple in all_shapes.triples((node, None, None)):
+                shapes.add(triple)
+                from rdflib import BNode
+                if isinstance(triple[2], BNode):
+                    pending.append(triple[2])
+        for code in codes:
+            good.add((E(builder.local(prop)), prop, code))
+        focus = E('Invalid_' + builder.local(prop))
+        bad.add((focus, prop, E('UnknownCode')))
+        expected.add((focus, prop))
+    assert validate(good, shacl_graph=shapes)[0]
+    conforms, report, _ = validate(bad, shacl_graph=shapes)
+    assert not conforms
+    actual = {(report.value(r, validator.SH.focusNode), report.value(r, validator.SH.resultPath))
+              for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
+    assert actual == expected
+    assert len(actual) == 49
+
+
+def test_sustainability_preference_edges():
+    from pyshacl import validate
+    ontology = Graph().parse(BASE / 'pwm.ttl')
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+
+    def check(kinds, tax=None, sfdr=None, pai=None):
+        g = Graph()
+        node = E('Preference')
+        g.add((node, RDF.type, P('SustainabilityPreference')))
+        for kind in kinds:
+            g.add((node, P('sustainabilityPreferenceKind'), P(kind)))
+        for prop, value in [('minimumTaxonomyAlignedProportion', tax),
+                            ('minimumSFDRSustainableProportion', sfdr),
+                            ('paiConsiderationElements', pai)]:
+            if value is not None:
+                g.add((node, P(prop), value))
+        return validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
+
+    decimal = lambda value: Literal(value, datatype=XSD.decimal)
+    assert check(['NoSustainabilityPreference'])
+    assert check(['TaxonomyAlignedMinimum'], tax=decimal('0'))
+    assert check(['SFDRSustainableMinimum'], sfdr=decimal('1'))
+    assert check(['TaxonomyAlignedMinimum', 'SFDRSustainableMinimum', 'PAIConsideration'],
+                 tax=decimal('.2'), sfdr=decimal('.4'), pai=Literal('Emissions intensity'))
+    assert not check([])
+    assert not check(['TaxonomyAlignedMinimum'])
+    assert not check(['SFDRSustainableMinimum'])
+    assert not check(['PAIConsideration'], pai=Literal(''))
+    assert not check(['TaxonomyAlignedMinimum'], tax=decimal('-.1'))
+    assert not check(['SFDRSustainableMinimum'], sfdr=decimal('1.1'))
+    assert not check(['TaxonomyAlignedMinimum'], tax=Literal('0.2'))
+    assert not check(['NoSustainabilityPreference'], tax=decimal('.2'))
+    assert not check(['NoSustainabilityPreference', 'PAIConsideration'], pai=Literal('Emissions'))
+
+
+def test_eu_sustainability_requirement():
+    from pyshacl import validate
+    ontology = Graph().parse(BASE / 'pwm.ttl')
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    g = example()
+    # Existing SG assessment is valid without imposing the EU rule globally.
+    assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
+    g.remove((E('EUSuitability'), P('usesSustainabilityPreference'), None))
+    conforms, report, _ = validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
+    assert not conforms
+    assert set(report.objects(None, validator.SH.focusNode)) == {E('EUSuitability')}
+    # An explicit no-preference record satisfies collection of the choice.
+    g.add((E('EUSuitability'), P('usesSustainabilityPreference'), E('NoSustainabilityChoice')))
+    assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
+    # Two versions at once must not satisfy the one-version requirement.
+    g.add((E('EUSuitability'), P('usesSustainabilityPreference'), E('SustainabilityChoice')))
+    assert not validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]

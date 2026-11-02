@@ -21,7 +21,7 @@ pwmref:FIBO a pwm:Reference ;
     pwm:sourceType pwm:SourceStandardOntology ;
     pwm:jurisdiction "Global" ;
     pwm:verificationStatus "verified" ;
-    skos:note "Every FIBO IRI used here was checked against the ontology files at GitHub commit 33a92cd (27 October 2026). Each term's maturity level, Release or Provisional, is taken from the file that defines it." .
+    skos:note "Every FIBO IRI and maturity used here was rechecked on 3 November 2026 against raw .rdf files from master at GitHub commit 33a92cd34285d532c158da97bb42add089f135d3 (27 October 2026). Each term's maturity level, Release or Provisional, is taken from the file that defines it." .
 
 pwmref:OMG-COMMONS a pwm:Reference ;
     dcterms:alternative "OMG Commons" ;
@@ -32,7 +32,7 @@ pwmref:OMG-COMMONS a pwm:Reference ;
     pwm:sourceType pwm:SourceStandardOntology ;
     pwm:jurisdiction "Global" ;
     pwm:verificationStatus "verified" ;
-    skos:note "PartiesAndSituations and Organizations were read at version 20250801. Jurisdiction, RegulatoryAgency, Authorization, isPlayedBy and Document are referenced by FIBO production ontologies; their module files were not opened." .
+    skos:note "Collections/hasMember was verified against https://www.omg.org/spec/Commons/20250801/Collections.rdf on 3 November 2026. PartiesAndSituations and Organizations were read at version 20250801. Jurisdiction, RegulatoryAgency, Authorization, isPlayedBy and Document are referenced by FIBO production ontologies; their module files were not opened." .
 
 pwmref:W3C-PROV-O a pwm:Reference ;
     dcterms:alternative "PROV-O" ;
@@ -323,9 +323,9 @@ pwmref:KOG-ROADMAP a pwm:Reference ;
     dcterms:title "Kognita Roadmap: From Governance Engine to Agent Harness (docs/ROADMAP.md)" ;
     dcterms:publisher "Kognita (open source, MIT)" ;
     dcterms:date "2026-09, at release 0.7.0" ;
-    rdfs:seeAlso <https://github.com/mze3e/kognita/blob/main/docs/ROADMAP.md> ;
+    rdfs:seeAlso <https://github.com/mze3e/kognita/blob/9303769/docs/ROADMAP.md> ;
     pwm:sourceType pwm:SourceKognita ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" ;
-    skos:note "Read at commit 9303769 (release 0.7.0). Locators name the release and roadmap item, for example 0.4 item 8." .
+    skos:note "Read at software release 0.7.0, commit 9303769, not roadmap milestone 0.7. Locators such as 0.4 item 8 refer to roadmap sections as recorded at that software release." .
 
 pwmref:KOG-CONTROLS a pwm:Reference ;
     dcterms:alternative "Kognita regulations library" ;
@@ -374,6 +374,7 @@ pwmref:AM-FILING-CABINET a pwm:Reference ;
     dcterms:title "Your AI Is Only as Good as Your Filing Cabinet (AIIM ASEAN Forum, Singapore)" ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:date "2026-10-22" ;
+    skos:note "Checked https://www.ahmedmuzammil.com/sitemap.xml and the speaking page on 3 November 2026. No talk-specific page exists in the sitemap or speaking-page links; the general speaking page is retained." ;
     rdfs:seeAlso <https://ahmedmuzammil.com/speaking> ;
     pwm:sourceType pwm:SourceAuthorFramework ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" .
 
@@ -389,3 +390,11 @@ pwmref:PWM-PRACTICE a pwm:Reference ;
 # Citations for the context-speed device itself
 pwm:contextSpeed pwm:citation
     [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 7: policies change over months, client status over days, prices in seconds" ] .
+
+pwmref:EU-SUSTAINABILITY a pwm:Reference ;
+    dcterms:alternative "MiFID sustainability preferences" ;
+    dcterms:title "Commission Delegated Regulation (EU) 2021/1253 amending Delegated Regulation (EU) 2017/565" ;
+    dcterms:publisher "European Commission" ; dcterms:date "2021-04-21" ;
+    rdfs:seeAlso <https://eur-lex.europa.eu/eli/reg_del/2021/1253/oj> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "EU" ; pwm:verificationStatus "verified" ;
+    skos:note "Verified against EUR-Lex CELEX 32021R1253, EN/ALL text and relationship table on 3 November 2026. Article 1(1) adds Article 2(7)(a)-(c) to 2017/565. Article 1(6)(a)-(f) amends Article 54(2)(a), (5), (9), (10), (12), (13). These are articles of the amended 2017/565, not Articles 2(7) and 54 of 2021/1253. No preference is an explicit PWM recording code, not a fourth statutory category." .
