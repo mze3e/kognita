@@ -30,7 +30,7 @@
 <https://example.org/pwm-example> a owl:Ontology ;
     dcterms:title "PWM 0.2 example data"@en ;
     dcterms:description "Synthetic data for a fictional firm, Example Private Bank. No real client, person, firm or security."@en ;
-    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/shapes/0.2> ;
+    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl> ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
 
 # --- People (fictional) --------------------------------------------------------------------
@@ -377,7 +377,7 @@ ex:Suitability a pwm:SuitabilityAssessment ;
     pwm:usesMandate ex:Mandate ;
     pwm:usesProductRiskRating ex:ProductRating ;
     pwm:suitabilityOutcome pwm:Suitable ;
-    pwm:rationale "Product risk level RP3 matches the client's risk profile in force (RP3, version 2). The position would be 4% of portfolio value, inside the 10% single-issuer limit. The seven-year horizon covers the 2031 maturity." ;
+    pwm:rationale "Product risk level RP3 matches the client's risk profile in force (RP3, version 2). The position would be 4% of portfolio value, inside the 20% single-issuer limit. The seven-year horizon covers the 2031 maturity." ;
     prov:wasAttributedTo ex:RM ;
     prov:generatedAtTime "2026-11-02T10:04:00+08:00"^^xsd:dateTime .
 

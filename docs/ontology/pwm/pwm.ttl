@@ -1763,7 +1763,7 @@ pwm:CustodyAccount a owl:Class ;
 pwm:CashAccount a owl:Class ;
     rdfs:label "cash account"@en ;
     skos:definition "Current or deposit account in a single currency, linked to a client's investment activity."@en ;
-    rdfs:subClassOf <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount> , pwm:Account ;
+    rdfs:subClassOf <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount> , <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/CustomerAccount> , pwm:Account ;
     pwm:inModule pwm:ModuleAccounts ;
     pwm:contextSpeed pwm:FastContext ;
     pwm:defaultClassification pwm:C2 ;
@@ -3704,6 +3704,11 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
 
 <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/AccountHolder> a owl:Class ;
     rdfs:label "account holder"@en ;
+    rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;
+    pwm:fiboMaturity "Release" .
+
+<https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/CustomerAccount> a owl:Class ;
+    rdfs:label "customer account"@en ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;
     pwm:fiboMaturity "Release" .
 

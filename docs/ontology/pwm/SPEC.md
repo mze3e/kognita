@@ -22,7 +22,7 @@ A generic ontology for private banking and wealth management. It models parties 
 
 Draft for comment. Version 0.2 adds verified grounding and sustainability preferences. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
 
-Size: 127 classes, 105 object properties, 48 datatype properties, 38 code lists with 192 codes, 30 data rules plus 49 generated code-list rules, 47 references and 479 citations. 38 FIBO terms are specialised or mapped.
+Size: 127 classes, 105 object properties, 48 datatype properties, 38 code lists with 192 codes, 30 data rules plus 49 generated code-list rules, 47 references and 479 citations. 39 FIBO terms are specialised or mapped.
 
 ## Scope
 
@@ -986,7 +986,7 @@ Investment account in which the wealth manager holds a client's securities in sa
 
 Current or deposit account in a single currency, linked to a client's investment activity.
 
-- **Specialises:** [account](#Account), [deposit account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount) (FIBO, Release)
+- **Specialises:** [account](#Account), [customer account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/CustomerAccount) (FIBO, Release), [deposit account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount) (FIBO, Release)
 - **Handling:** fast context, default classification C2
 - **References:** **ONT** [FIBO](#ref-FIBO) FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount, Release; master source verified 2026-11-03; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Cash account
 
@@ -2735,6 +2735,7 @@ All FIBO term IRIs below were checked against the actual master RDF/XML source, 
 | https://spec.edmcouncil.org/fibo/ontology/FBC/FunctionalEntities/FinancialServicesEntities/WealthManagementService | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/FunctionalEntities/FinancialServicesEntities.rdf) |
 | https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Account | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
 | https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/AccountHolder | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
+| https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/CustomerAccount | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
 | https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
 | https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Fee | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |
 | https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/InvestmentAccount | Release | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/FBC/ProductsAndServices/ClientsAndAccounts.rdf) |

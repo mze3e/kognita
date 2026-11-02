@@ -152,6 +152,11 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;
     pwm:fiboMaturity "Release" .
 
+<https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/CustomerAccount> a owl:Class ;
+    rdfs:label "customer account"@en ;
+    rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;
+    pwm:fiboMaturity "Release" .
+
 <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount> a owl:Class ;
     rdfs:label "deposit account"@en ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;

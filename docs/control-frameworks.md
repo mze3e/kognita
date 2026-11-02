@@ -108,7 +108,7 @@ The frameworks use labels that clash with Kognita's own:
 
 ## IV. The Forty Domains (Bank-Grade Framework)
 
-*(See the comprehensive 40-domain table in [control-frameworks.md](control-frameworks.md), covering:)*
+*Excerpt: the first 10 of the framework's 40 domains are listed below. The full table is not included in this repository.*
 
 1. Human identity and accountability
 2. Agent identity
@@ -120,7 +120,6 @@ The frameworks use labels that clash with Kognita's own:
 8. Facts vs inferences vs recommendations
 9. Data freshness
 10. Deterministic financial calculations
-... *(30 more; full table on the separate document)*
 
 ---
 
