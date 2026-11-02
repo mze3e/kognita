@@ -1,0 +1,765 @@
+# =============================================================================
+#  PWM 0.1 SHACL shapes
+#
+#  The rules from the ontology that can be checked on data. Each shape names
+#  the references it enforces (dcterms:source) and each message gives the
+#  paragraph or item. Validate data together with pwm.ttl, with RDFS
+#  inference on, so that subclass targets and sub-properties resolve:
+#
+#    pyshacl -s pwm-shapes.ttl -e pwm.ttl -i rdfs data.ttl
+# =============================================================================
+
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/> .
+@prefix fibo-fnd-aap-ppl: <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/> .
+@prefix pwm:      <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix pwmref:   <https://ahmedmuzammil.com/ontology/pwm#ref-> .
+@prefix pwmsh:    <https://ahmedmuzammil.com/ontology/pwm/shapes#> .
+
+<https://ahmedmuzammil.com/ontology/pwm/shapes>
+    a owl:Ontology ;
+    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/shapes/0.1> ;
+    owl:versionInfo "0.1 (draft)" ;
+    dcterms:title "Private Wealth Management Ontology: SHACL shapes"@en ;
+    dcterms:description "Data rules for the Private Wealth Management Ontology 0.1. Shapes stay generic; a firm adds its own thresholds and jurisdiction rules in a separate shapes graph."@en ;
+    dcterms:creator "Ahmed Muzammil" ;
+    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
+    dcterms:requires <https://ahmedmuzammil.com/ontology/pwm/0.1> ;
+    sh:declare
+        [ sh:prefix "pwm" ; sh:namespace "https://ahmedmuzammil.com/ontology/pwm#"^^xsd:anyURI ] ,
+        [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ,
+        [ sh:prefix "cmns-rlcmp" ; sh:namespace "https://www.omg.org/spec/Commons/RolesAndCompositions/"^^xsd:anyURI ] .
+
+# --- Accountability: a named person, never an agent --------------------------------------
+
+pwmsh:AccountabilityRoleShape a sh:NodeShape ;
+    rdfs:label "Accountability role"@en ;
+    sh:targetClass pwm:AccountabilityRole ;
+    dcterms:source pwmref:KOG-ROADMAP , pwmref:MAS-AIRG ;
+    sh:property [
+        sh:path cmns-rlcmp:isPlayedBy ;
+        sh:minCount 1 ;
+        sh:class fibo-fnd-aap-ppl:Person ;
+        sh:message "An accountability role must be held by a named person (Kognita 0.4 item 8; MAS AIRG 4.7 key roles)." ;
+    ] ;
+    sh:property [
+        sh:path cmns-rlcmp:isPlayedBy ;
+        sh:not [ sh:class pwm:AIAgent ] ;
+        sh:message "An AI agent can never be named in an accountability role (Kognita 0.4 item 8)." ;
+    ] .
+
+# --- AI use case register ----------------------------------------------------------------
+
+pwmsh:AIUseCaseShape a sh:NodeShape ;
+    rdfs:label "AI use case"@en ;
+    sh:targetClass pwm:AIUseCase ;
+    dcterms:source pwmref:MAS-AIRG , pwmref:KOG-ROADMAP ;
+    sh:property [ sh:path pwm:hasPurpose ; sh:minCount 1 ;
+        sh:message "A use case records its purpose (MAS AIRG 4.7)." ] ;
+    sh:property [ sh:path pwm:approvedJurisdiction ; sh:minCount 1 ; sh:pattern "^[A-Z]{2}$" ;
+        sh:message "A use case records its approved jurisdiction as an ISO 3166-1 alpha-2 code (MAS AIRG 4.7 approved scope of use)." ] ;
+    sh:property [ sh:path pwm:lifecycleStatus ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( pwm:StatusPilot pwm:StatusLive pwm:StatusSuspended pwm:StatusRetired ) ;
+        sh:message "A use case has one lifecycle status: pilot, live, suspended or retired (MAS AIRG 4.7; Kognita 0.4 item 8)." ] ;
+    sh:property [ sh:path pwm:riskTier ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( pwm:Tier1 pwm:Tier2 pwm:Tier3 pwm:Tier4 ) ;
+        sh:message "A use case has one risk tier, 1 to 4 (Kognita 0.4 item 8)." ] ;
+    sh:property [ sh:path pwm:isMediated ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ;
+        sh:message "A use case states whether the control plane mediates it. Embedded vendor AI is registered too, marked unmediated (Kognita 0.4 item 8; MAS AIRG 4.2)." ] ;
+    sh:property [ sh:path pwm:nextReviewDate ; sh:minCount 1 ; sh:datatype xsd:date ;
+        sh:message "A use case carries a review date set by its tier; past it, the use case is refused (Kognita 0.4 item 8)." ] ;
+    sh:property [ sh:path pwm:hasAccountabilityRole ;
+        sh:qualifiedValueShape [ sh:class pwm:BusinessOwner ] ; sh:qualifiedMinCount 1 ;
+        sh:message "A use case with no business owner is refused (Kognita 0.4 item 8; MAS AIRG 4.7)." ] ;
+    sh:or (
+        [ sh:property [ sh:path pwm:riskTier ; sh:hasValue pwm:Tier1 ] ]
+        [ sh:property [ sh:path pwm:hasAccountabilityRole ;
+            sh:qualifiedValueShape [ sh:class pwm:KnowledgeLead ] ; sh:qualifiedMinCount 1 ] ]
+    ) ;
+    sh:message "A use case at tier 2 or above with no named Knowledge Lead is refused (Kognita 0.4 item 8)." .
+
+pwmsh:LiveUseCaseShape a sh:NodeShape ;
+    rdfs:label "Live use case"@en ;
+    sh:targetClass pwm:AIUseCase ;
+    dcterms:source pwmref:MAS-AIRG , pwmref:KOG-ROADMAP ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path pwm:lifecycleStatus ; sh:hasValue pwm:StatusLive ] ] ]
+        [ sh:property [ sh:path pwm:hasMaterialityAssessment ;
+            sh:qualifiedValueShape pwmsh:ApprovedMaterialityShape ; sh:qualifiedMinCount 1 ] ]
+    ) ;
+    sh:message "A live use case needs a materiality assessment with inherent and residual ratings, approved by the designated control function (MAS AIRG 4.11, 4.13; Kognita 0.4 item 8)." .
+
+pwmsh:ApprovedMaterialityShape a sh:NodeShape ;
+    rdfs:label "Approved materiality assessment"@en ;
+    rdfs:comment "Used inside LiveUseCaseShape. Has no target of its own."@en ;
+    sh:property [ sh:path pwm:approvedBy ; sh:minCount 1 ; sh:class pwm:DesignatedControlFunction ] ;
+    sh:property [ sh:path pwm:inherentMateriality ; sh:minCount 1 ] ;
+    sh:property [ sh:path pwm:residualMateriality ; sh:minCount 1 ] .
+
+pwmsh:ControlFunctionSeparationShape a sh:NodeShape ;
+    rdfs:label "Control function separation"@en ;
+    sh:targetClass pwm:AIUseCase ;
+    dcterms:source pwmref:KOG-ROADMAP , pwmref:MAS-AIRG ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "The person who approves a use case's materiality rating for the control function cannot also be its business or technology owner (Kognita 0.4 item 8; MAS AIRG 4.13 independent oversight)." ;
+        sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+        sh:select """
+            SELECT $this ?value WHERE {
+                $this pwm:hasMaterialityAssessment/pwm:approvedBy/cmns-rlcmp:isPlayedBy ?value .
+                $this pwm:hasAccountabilityRole ?owner .
+                ?owner cmns-rlcmp:isPlayedBy ?value .
+                { ?owner a pwm:BusinessOwner } UNION { ?owner a pwm:TechnologyOwner }
+            }
+        """ ;
+    ] .
+
+pwmsh:RiskMaterialityAssessmentShape a sh:NodeShape ;
+    rdfs:label "Risk materiality assessment"@en ;
+    sh:targetClass pwm:RiskMaterialityAssessment ;
+    dcterms:source pwmref:MAS-AIRG ;
+    sh:property [ sh:path pwm:impact ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( pwm:RatingLow pwm:RatingMedium pwm:RatingHigh pwm:RatingCritical ) ;
+        sh:message "Rate impact, low to critical (MAS AIRG 4.12(a))." ] ;
+    sh:property [ sh:path pwm:complexity ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( pwm:RatingLow pwm:RatingMedium pwm:RatingHigh pwm:RatingCritical ) ;
+        sh:message "Rate complexity, low to critical (MAS AIRG 4.12(b))." ] ;
+    sh:property [ sh:path pwm:reliance ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( pwm:RatingLow pwm:RatingMedium pwm:RatingHigh pwm:RatingCritical ) ;
+        sh:message "Rate reliance, including the autonomy granted, low to critical (MAS AIRG 4.12(c))." ] ;
+    sh:property [ sh:path pwm:inherentMateriality ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "Record materiality before controls (MAS AIRG 4.11)." ] ;
+    sh:property [ sh:path pwm:residualMateriality ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "Record materiality after controls (MAS AIRG 4.11)." ] .
+
+# --- Agents, tools and delegated authority -------------------------------------------------
+
+pwmsh:AIAgentShape a sh:NodeShape ;
+    rdfs:label "AI agent"@en ;
+    sh:targetClass pwm:AIAgent ;
+    dcterms:source pwmref:MAS-AIRG , pwmref:KOG-ROADMAP ;
+    sh:property [ sh:path pwm:agentIdentifier ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "An agent has one identifier (MAS AIRG footnote 25; Kognita 0.5 item 1)." ] ;
+    sh:property [ sh:path pwm:maxAutonomyLevel ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( pwm:L0Retrieve pwm:L1Explain pwm:L2Recommend pwm:L3Draft pwm:L4ActAfterApproval pwm:L5BoundedAutonomy pwm:L6BroadAutonomy ) ;
+        sh:message "An agent carries one maximum autonomy level, L0 to L6 (Kognita 0.5 item 3)." ] ;
+    sh:property [ sh:path pwm:registeredForUseCase ; sh:minCount 1 ;
+        sh:message "An agent is linked to at least one registered use case (Kognita 0.5 item 1)." ] ;
+    sh:property [ sh:path pwm:deploymentVersion ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "An agent's deployment version covers prompt, tools, permissions and data sources, not only code (Kognita 0.5 item 1; MAS AIRG 5.25(b))." ] ;
+    sh:property [ sh:path pwm:nextReviewDate ; sh:minCount 1 ; sh:datatype xsd:date ;
+        sh:message "An agent past its review date is refused, so it needs one (Kognita 0.5 item 1)." ] .
+
+pwmsh:AgentToolLevelShape a sh:NodeShape ;
+    rdfs:label "Agent tool level"@en ;
+    sh:targetClass pwm:AIAgent ;
+    dcterms:source pwmref:KOG-ROADMAP ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "An agent is permitted a tool that needs a higher autonomy level than the agent's maximum. A call above the agent's level is refused (Kognita 0.5 item 3)." ;
+        sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+        rdfs:comment "The level order is written into the query, so the check does not depend on the ontology's concept data being loaded with the data graph. An unknown level fails closed."@en ;
+        sh:select """
+            SELECT $this ?value WHERE {
+                $this pwm:maxAutonomyLevel ?agentLevel ;
+                      pwm:permittedTool ?value .
+                ?value pwm:requiredAutonomyLevel ?toolLevel .
+                BIND (IF(?agentLevel = pwm:L0Retrieve, 0, IF(?agentLevel = pwm:L1Explain, 1,
+                      IF(?agentLevel = pwm:L2Recommend, 2, IF(?agentLevel = pwm:L3Draft, 3,
+                      IF(?agentLevel = pwm:L4ActAfterApproval, 4, IF(?agentLevel = pwm:L5BoundedAutonomy, 5,
+                      IF(?agentLevel = pwm:L6BroadAutonomy, 6, -1))))))) AS ?agentRank)
+                BIND (IF(?toolLevel = pwm:L0Retrieve, 0, IF(?toolLevel = pwm:L1Explain, 1,
+                      IF(?toolLevel = pwm:L2Recommend, 2, IF(?toolLevel = pwm:L3Draft, 3,
+                      IF(?toolLevel = pwm:L4ActAfterApproval, 4, IF(?toolLevel = pwm:L5BoundedAutonomy, 5,
+                      IF(?toolLevel = pwm:L6BroadAutonomy, 6, 99))))))) AS ?toolRank)
+                FILTER (?toolRank > ?agentRank)
+            }
+        """ ;
+    ] .
+
+pwmsh:ToolShape a sh:NodeShape ;
+    rdfs:label "Tool"@en ;
+    sh:targetClass pwm:Tool ;
+    dcterms:source pwmref:KOG-ROADMAP ;
+    sh:property [ sh:path pwm:requiredAutonomyLevel ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "Every tool declares the autonomy level it requires (Kognita 0.5 item 3)." ] ;
+    sh:property [ sh:path pwm:actionVerb ; sh:minCount 1 ;
+        sh:message "A tool declares the verbs it performs, because action permissions are per verb (Kognita 0.5 item 3)." ] .
+
+pwmsh:DelegatedAuthorityShape a sh:NodeShape ;
+    rdfs:label "Delegated authority"@en ;
+    sh:targetClass pwm:DelegatedAuthority ;
+    dcterms:source pwmref:KOG-ROADMAP ;
+    sh:property [ sh:path pwm:delegatedBy ; sh:minCount 1 ; sh:maxCount 1 ; sh:class fibo-fnd-aap-ppl:Person ;
+        sh:message "A delegation is granted by one named person (Kognita 0.5 item 2)." ] ;
+    sh:property [ sh:path pwm:delegatedTo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AIAgent ;
+        sh:message "A delegation is granted to one registered agent (Kognita 0.5 item 2)." ] ;
+    sh:property [ sh:path pwm:hasPurpose ; sh:minCount 1 ;
+        sh:message "A delegation is bound to a purpose (Kognita 0.5 item 2)." ] ;
+    sh:property [ sh:path pwm:actionVerb ; sh:minCount 1 ;
+        sh:message "A delegation names the actions it allows (Kognita 0.5 item 2)." ] ;
+    sh:or (
+        [ sh:property [ sh:path pwm:validUntil ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path pwm:endsOnTaskCompletion ; sh:hasValue true ] ]
+    ) ;
+    sh:message "A delegation is temporary: it has an end time, or ends when its task completes (Kognita 0.5 item 2)." .
+
+# --- Client communication ------------------------------------------------------------------
+
+pwmsh:ClientCommunicationShape a sh:NodeShape ;
+    rdfs:label "Client communication"@en ;
+    sh:targetClass pwm:ClientCommunication ;
+    dcterms:source pwmref:KOG-ROADMAP ;
+    sh:property [ sh:path pwm:derivedFromDecision ; sh:minCount 1 ;
+        sh:message "A communication that does not trace back to a final decision is refused (Kognita 0.4 item 12)." ] ;
+    sh:property [ sh:path pwm:communicationLevel ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "Every communication is classified by communication level (Kognita 0.4 item 12)." ] ;
+    sh:property [ sh:path pwm:contentProvenance ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "Every communication carries its content provenance label (Kognita 0.4 item 11)." ] ;
+    sh:property [ sh:path pwm:viaChannel ; sh:minCount 1 ;
+        sh:node [ sh:property [ sh:path pwm:isApprovedChannel ; sh:hasValue true ] ] ;
+        sh:message "Client communication goes only through a registered, approved channel (Kognita 0.4 item 12)." ] .
+
+pwmsh:AIDisclosureShape a sh:NodeShape ;
+    rdfs:label "AI disclosure"@en ;
+    rdfs:comment "Kognita's private-banking pack applies this rule in SG, HK, CH and AE. Where no disclosure rule applies, a firm can switch the shape off in its own shapes graph with sh:deactivated true."@en ;
+    sh:targetClass pwm:ClientCommunication ;
+    dcterms:source pwmref:KOG-PB-PACK , pwmref:MAS-AIRG ;
+    sh:or (
+        [ sh:property [ sh:path pwm:contentProvenance ; sh:in ( pwm:ProvenanceHuman pwm:ProvenanceHumanAIAssisted ) ] ]
+        [ sh:property [ sh:path pwm:aiDisclosureGiven ; sh:hasValue true ] ]
+    ) ;
+    sh:message "When AI generated the content, the client communication must say so (Kognita private-banking pack, client-ai-disclosure; MAS AIRG 5.6)." .
+
+# --- Claims, facts and figures --------------------------------------------------------------
+
+pwmsh:ClaimShape a sh:NodeShape ;
+    rdfs:label "Claim"@en ;
+    sh:targetClass pwm:Claim ;
+    dcterms:source pwmref:KOG-ROADMAP ;
+    sh:property [ sh:path pwm:claimType ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "Unlabelled claims cannot be shown to an RM or sent to a client (Kognita 0.6 item 5)." ] ;
+    sh:property [ sh:path pwm:validatorStatus ; sh:maxCount 1 ] ;
+    sh:or (
+        [ sh:not [ sh:property [ sh:path pwm:claimType ; sh:hasValue pwm:VerifiedFact ] ] ]
+        [ sh:property [ sh:path pwm:citesSource ; sh:minCount 1 ] ;
+          sh:property [ sh:path pwm:validatorStatus ; sh:hasValue pwm:ValidatorVerified ] ]
+    ) ;
+    sh:message "A claim typed as verified fact must cite a source and carry the validator status verified. The model's own knowledge is never a source, and an inference cannot become a fact without verification (Kognita 0.6 items 3, 5 and 7)." .
+
+pwmsh:FactShape a sh:NodeShape ;
+    rdfs:label "Fact"@en ;
+    sh:targetClass pwm:Fact ;
+    dcterms:source pwmref:KOG-ROADMAP ;
+    sh:property [ sh:path pwm:asOf ; sh:minCount 1 ; sh:datatype xsd:dateTime ;
+        sh:message "A fact carries its as-of time (Kognita 0.6 item 2)." ] ;
+    sh:property [ sh:path pwm:freshnessThreshold ; sh:minCount 1 ; sh:datatype xsd:duration ;
+        sh:message "A fact carries a freshness threshold (Kognita 0.6 item 2)." ] ;
+    sh:property [ sh:path pwm:classification ; sh:minCount 1 ;
+        sh:message "A fact carries its classification (Kognita 0.6 item 2)." ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:minCount 1 ;
+        sh:message "A fact names its source system (Kognita 0.6 item 2)." ] .
+
+pwmsh:ValuationShape a sh:NodeShape ;
+    rdfs:label "Valuation"@en ;
+    sh:targetClass pwm:Valuation ;
+    dcterms:source pwmref:KOG-ROADMAP ;
+    sh:property [ sh:path pwm:amount ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ] ;
+    sh:property [ sh:path pwm:currency ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:asOf ; sh:minCount 1 ; sh:datatype xsd:dateTime ] ;
+    sh:property [ sh:path pwm:calculatedBy ; sh:minCount 1 ;
+        sh:message "A figure presented as authoritative must cite a registered calculation service (Kognita 0.6 item 6)." ] .
+
+# --- Suitability ---------------------------------------------------------------------------
+
+pwmsh:SuitabilityAssessmentShape a sh:NodeShape ;
+    rdfs:label "Suitability assessment"@en ;
+    sh:targetClass pwm:SuitabilityAssessment ;
+    dcterms:source pwmref:EU-MIFID2 , pwmref:EU-MIFID2-DR , pwmref:KOG-PB-PACK ;
+    sh:property [ sh:path pwm:assessesRecommendation ; sh:minCount 1 ;
+        sh:message "Name the recommendation being assessed." ] ;
+    sh:property [ sh:path pwm:usesRiskProfile ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "Cite the one risk profile in force when the assessment was made (MiFID II Art. 25(2); Delegated Regulation (EU) 2017/565 Art. 54)." ] ;
+    sh:property [ sh:path pwm:usesMandate ; sh:minCount 1 ;
+        sh:message "Check the recommendation against the recorded mandate (Kognita private-banking pack, mandate)." ] ;
+    sh:property [ sh:path pwm:suitabilityOutcome ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( pwm:Suitable pwm:SuitableWithConditions pwm:NotSuitable pwm:InsufficientInformation ) ] ;
+    sh:property [ sh:path pwm:rationale ; sh:minCount 1 ;
+        sh:message "Record how the recommendation meets the client's objectives and characteristics, not a bare score (MiFID II Art. 25(6))." ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:minCount 1 ;
+        sh:message "Record who made the assessment." ] .
+
+pwmsh:InvestorRiskProfileShape a sh:NodeShape ;
+    rdfs:label "Investor risk profile"@en ;
+    sh:targetClass pwm:InvestorRiskProfile ;
+    dcterms:source pwmref:EU-MIFID2-DR ;
+    sh:property [ sh:path pwm:riskProfileLevel ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:validFrom ; sh:minCount 1 ; sh:datatype xsd:dateTime ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:minCount 1 ] .
+
+pwmsh:InvestorClassificationShape a sh:NodeShape ;
+    rdfs:label "Investor classification"@en ;
+    sh:targetClass pwm:InvestorClassification ;
+    dcterms:source pwmref:SG-SFA , pwmref:CH-FINSA , pwmref:EU-MIFID2 ;
+    sh:property [ sh:path pwm:investorCategory ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:jurisdictionCode ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "A classification is made under one jurisdiction's rules." ] ;
+    sh:property [ sh:path pwm:optStatus ; sh:maxCount 1 ] .
+
+# --- Information governance and evidence ---------------------------------------------------
+
+pwmsh:GovernedInformationAssetShape a sh:NodeShape ;
+    rdfs:label "Governed information asset"@en ;
+    sh:targetClass pwm:GovernedInformationAsset ;
+    dcterms:source pwmref:AM-FILING-CABINET ;
+    sh:property [ sh:path pwm:informationOwner ; sh:minCount 1 ; sh:message "Minimum label: owner (Filing Cabinet, slide 8)." ] ;
+    sh:property [ sh:path pwm:approvalStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Minimum label: approval status (Filing Cabinet, slide 8)." ] ;
+    sh:property [ sh:path pwm:validFrom ; sh:minCount 1 ; sh:message "Minimum label: effective date (Filing Cabinet, slide 8)." ] ;
+    sh:property [ sh:path pwm:retentionUntil ; sh:minCount 1 ; sh:message "Minimum label: retention date (Filing Cabinet, slide 8)." ] ;
+    sh:or (
+        [ sh:property [ sh:path pwm:versionId ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path pwm:contentHash ; sh:minCount 1 ] ]
+    ) ;
+    sh:message "Minimum label: version identifier or content hash (Filing Cabinet, slide 8)." .
+
+pwmsh:DocumentSectionShape a sh:NodeShape ;
+    rdfs:label "Document section"@en ;
+    sh:targetClass pwm:DocumentSection ;
+    dcterms:source pwmref:AM-FILING-CABINET ;
+    sh:property [ sh:path pwm:classification ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "Classify per section, not per document (Filing Cabinet, slide 8)." ] .
+
+pwmsh:PolicyRuleShape a sh:NodeShape ;
+    rdfs:label "Policy rule"@en ;
+    sh:targetClass pwm:PolicyRule ;
+    dcterms:source pwmref:KOG-ROADMAP ;
+    sh:property [ sh:path pwm:ruleCitation ; sh:minCount 1 ;
+        sh:message "Every rule carries a citation to what it implements (Kognita 0.4 item 3)." ] ;
+    sh:property [ sh:path pwm:validFrom ; sh:minCount 1 ;
+        sh:message "Rules are effective-dated (Kognita 0.3 item 7)." ] ;
+    sh:property [ sh:path pwm:versionId ; sh:minCount 1 ;
+        sh:message "A change to a rule is a new version, never an edit in place (Kognita 0.3 item 7)." ] .
+
+pwmsh:CrossBorderRuleShape a sh:NodeShape ;
+    rdfs:label "Cross-border rule"@en ;
+    sh:targetClass pwm:CrossBorderRule ;
+    dcterms:source pwmref:KOG-PB-PACK ;
+    sh:property [ sh:path pwm:appliesToActivity ; sh:minCount 1 ] ;
+    sh:property [ sh:path pwm:permitted ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
+    sh:property [ sh:path pwm:clientDomicileCode ; sh:minCount 1 ; sh:pattern "^[A-Z]{2}$" ;
+        sh:message "Client domicile is an ISO 3166-1 alpha-2 code." ] ;
+    sh:property [ sh:path pwm:bookingCentreCode ; sh:minCount 1 ; sh:pattern "^[A-Z]{2}$" ;
+        sh:message "Booking centre is an ISO 3166-1 alpha-2 code." ] .
+
+pwmsh:PolicyDecisionShape a sh:NodeShape ;
+    rdfs:label "Policy decision"@en ;
+    sh:targetClass pwm:PolicyDecision ;
+    dcterms:source pwmref:KOG-ROADMAP , pwmref:AM-FILING-CABINET ;
+    sh:property [ sh:path pwm:decisionOutcome ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( pwm:OutcomeDeny pwm:OutcomeEscalate pwm:OutcomeHumanApproval pwm:OutcomeAllow pwm:OutcomeObserve ) ] ;
+    sh:property [ sh:path pwm:decidedByRule ; sh:minCount 1 ;
+        sh:message "Every decision names the rule and rule version that decided it (Filing Cabinet, slide 14)." ] ;
+    sh:property [ sh:path pwm:underUseCase ; sh:minCount 1 ;
+        sh:message "Every decision references a registered use case (Kognita 0.4 item 8)." ] .
+
+pwmsh:EvidenceRecordShape a sh:NodeShape ;
+    rdfs:label "Evidence record"@en ;
+    sh:targetClass pwm:EvidenceRecord ;
+    dcterms:source pwmref:KOG-CONTROLS , pwmref:MAS-AIRG ;
+    sh:property [ sh:path pwm:eventType ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:recordHash ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "Evidence records are hash-chained (Kognita control frameworks)." ] ;
+    sh:property [ sh:path prov:generatedAtTime ; sh:minCount 1 ; sh:datatype xsd:dateTime ;
+        sh:message "An evidence record states when the event happened (MAS AIRG 5.23(d))." ] ;
+    sh:property [ sh:path pwm:previousRecordHash ; sh:maxCount 1 ] ;
+    sh:xone (
+        [ sh:property [ sh:path pwm:previousRecordHash ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path pwm:chainStart ; sh:hasValue true ] ]
+    ) ;
+    sh:message "Every evidence record names the hash of the record before it, except the first record of a chain, which is marked chain start (Kognita control frameworks: hash-chained evidence)." .
+
+# --- Identifier and code formats (ISO) -----------------------------------------------------
+
+pwmsh:CurrencyCodeShape a sh:NodeShape ;
+    rdfs:label "Currency code"@en ;
+    sh:targetSubjectsOf pwm:currency ;
+    dcterms:source pwmref:ISO-4217 ;
+    sh:property [ sh:path pwm:currency ; sh:pattern "^[A-Z]{3}$" ;
+        sh:message "Currency is an ISO 4217 alphabetic code, such as SGD." ] .
+
+pwmsh:CountryCodeShape a sh:NodeShape ;
+    rdfs:label "Country code"@en ;
+    sh:targetSubjectsOf pwm:residenceCountry , pwm:domicileCountry , pwm:nationalityCountry , pwm:jurisdictionCode , pwm:taxResidenceCountry ;
+    dcterms:source pwmref:ISO-3166 ;
+    sh:property [ sh:path pwm:residenceCountry ; sh:pattern "^[A-Z]{2}$" ; sh:message "Residence is an ISO 3166-1 alpha-2 code, such as SG." ] ;
+    sh:property [ sh:path pwm:domicileCountry ; sh:pattern "^[A-Z]{2}$" ; sh:message "Domicile is an ISO 3166-1 alpha-2 code, such as SG." ] ;
+    sh:property [ sh:path pwm:nationalityCountry ; sh:pattern "^[A-Z]{2}$" ; sh:message "Nationality is an ISO 3166-1 alpha-2 code, such as SG." ] ;
+    sh:property [ sh:path pwm:jurisdictionCode ; sh:pattern "^[A-Z]{2}$" ; sh:message "Jurisdiction is an ISO 3166-1 alpha-2 code, such as SG." ] ;
+    sh:property [ sh:path pwm:taxResidenceCountry ; sh:pattern "^[A-Z]{2}$" ; sh:message "Tax residence is an ISO 3166-1 alpha-2 code, such as SG." ] .
+
+pwmsh:LEIShape a sh:NodeShape ;
+    rdfs:label "Legal Entity Identifier"@en ;
+    sh:targetSubjectsOf pwm:legalEntityIdentifier ;
+    dcterms:source pwmref:ISO-17442 ;
+    sh:property [ sh:path pwm:legalEntityIdentifier ; sh:pattern "^[A-Z0-9]{18}[0-9]{2}$" ;
+        sh:message "An LEI is 18 letters or digits followed by two check digits (ISO 17442)." ] .
+
+pwmsh:ISINShape a sh:NodeShape ;
+    rdfs:label "ISIN"@en ;
+    sh:targetSubjectsOf pwm:isin ;
+    dcterms:source pwmref:ISO-6166 ;
+    sh:property [ sh:path pwm:isin ; sh:pattern "^[A-Z]{2}[A-Z0-9]{9}[0-9]$" ;
+        sh:message "An ISIN is a two-letter prefix, nine letters or digits and a check digit (ISO 6166)." ] .
+
+pwmsh:CFIShape a sh:NodeShape ;
+    rdfs:label "CFI code"@en ;
+    sh:targetSubjectsOf pwm:cfiCode ;
+    dcterms:source pwmref:ISO-10962 ;
+    sh:property [ sh:path pwm:cfiCode ; sh:pattern "^[A-Z]{6}$" ;
+        sh:message "A CFI code is six letters (ISO 10962)." ] .
+
+# BEGIN GENERATED CODE-LIST SHAPES (tools/build.py writes this block from pwm:valuesFrom; do not edit)
+
+pwmsh:CodeList_actionVerb a sh:NodeShape ;
+    rdfs:label "Code list: action verb"@en ;
+    sh:targetSubjectsOf pwm:actionVerb ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:actionVerb ; sh:in ( pwm:VerbAnalyse pwm:VerbDraft pwm:VerbExecute pwm:VerbQueue pwm:VerbRead pwm:VerbRecommend pwm:VerbSend ) ;
+        sh:message "Use a code from action verbs (pwm:ActionVerbScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_amlRiskLevel a sh:NodeShape ;
+    rdfs:label "Code list: AML risk level"@en ;
+    sh:targetSubjectsOf pwm:amlRiskLevel ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:amlRiskLevel ; sh:in ( pwm:AMLHigh pwm:AMLLow pwm:AMLMedium pwm:AMLOutsideAppetite ) ;
+        sh:message "Use a code from AML risk levels (pwm:AMLRiskLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_appliesToActivity a sh:NodeShape ;
+    rdfs:label "Code list: applies to activity"@en ;
+    sh:targetSubjectsOf pwm:appliesToActivity ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:appliesToActivity ; sh:in ( pwm:ActivityAdvice pwm:ActivityExecution pwm:ActivityMarketing pwm:ActivityResearchDistribution pwm:ActivityReverseEnquiry pwm:ActivitySolicitation ) ;
+        sh:message "Use a code from cross-border activities (pwm:CrossBorderActivityScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_appliesToInvestorCategory a sh:NodeShape ;
+    rdfs:label "Code list: applies to investor category"@en ;
+    sh:targetSubjectsOf pwm:appliesToInvestorCategory ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:appliesToInvestorCategory ; sh:in ( pwm:AccreditedInvestorSG pwm:AccreditedInvestorUS pwm:EligibleCounterpartyEU pwm:ExpertInvestorSG pwm:InstitutionalClientCH pwm:InstitutionalInvestorSG pwm:NonRetailCategory pwm:PrivateClientCH pwm:ProfessionalClientCH pwm:ProfessionalClientEU pwm:ProfessionalClientUK pwm:ProfessionalInvestorHK pwm:RetailCategory pwm:RetailClientEU pwm:RetailClientUK pwm:RetailInvestorSG ) ;
+        sh:message "Use a code from investor categories (pwm:InvestorCategoryScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_approvalStatus a sh:NodeShape ;
+    rdfs:label "Code list: approval status"@en ;
+    sh:targetSubjectsOf pwm:approvalStatus ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:approvalStatus ; sh:in ( pwm:AssetCurrent pwm:AssetDraft pwm:AssetSuperseded pwm:AssetWithdrawn ) ;
+        sh:message "Use a code from information asset statuses (pwm:AssetStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_autonomyAxis a sh:NodeShape ;
+    rdfs:label "Code list: autonomy axis"@en ;
+    sh:targetSubjectsOf pwm:autonomyAxis ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:autonomyAxis ; sh:in ( pwm:AutonomyAssisted pwm:AutonomyConditional pwm:AutonomyHigh pwm:AutonomyNone ) ;
+        sh:message "Use a code from use-case autonomy axis (pwm:AutonomyAxisScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_boundaryTier a sh:NodeShape ;
+    rdfs:label "Code list: boundary tier"@en ;
+    sh:targetSubjectsOf pwm:boundaryTier ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:boundaryTier ; sh:in ( pwm:AlwaysDo pwm:AskFirst pwm:NeverDo ) ;
+        sh:message "Use a code from boundary tiers (pwm:BoundaryTierScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_businessCriticality a sh:NodeShape ;
+    rdfs:label "Code list: business criticality"@en ;
+    sh:targetSubjectsOf pwm:businessCriticality ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:businessCriticality ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_capacityForLoss a sh:NodeShape ;
+    rdfs:label "Code list: capacity for loss"@en ;
+    sh:targetSubjectsOf pwm:capacityForLoss ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:capacityForLoss ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_claimType a sh:NodeShape ;
+    rdfs:label "Code list: claim type"@en ;
+    sh:targetSubjectsOf pwm:claimType ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:claimType ; sh:in ( pwm:ConversationHypothesis pwm:Inference pwm:PossibleProviderCapability pwm:VerifiedFact ) ;
+        sh:message "Use a code from claim types (pwm:ClaimTypeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_classification a sh:NodeShape ;
+    rdfs:label "Code list: classification"@en ;
+    sh:targetSubjectsOf pwm:classification ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:classification ; sh:in ( pwm:C0 pwm:C1 pwm:C2 pwm:C3 ) ;
+        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_clientImpactClass a sh:NodeShape ;
+    rdfs:label "Code list: client-impact class"@en ;
+    sh:targetSubjectsOf pwm:clientImpactClass ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:clientImpactClass ; sh:in ( pwm:ImpactAdvice pwm:ImpactClientCommunication pwm:ImpactClientInfluence pwm:ImpactExecution pwm:ImpactInternalProductivity pwm:ImpactRMAssistance ) ;
+        sh:message "Use a code from client-impact classes (pwm:ClientImpactClassScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_communicationLevel a sh:NodeShape ;
+    rdfs:label "Code list: communication level"@en ;
+    sh:targetSubjectsOf pwm:communicationLevel ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:communicationLevel ; sh:in ( pwm:CommContextualisedInsight pwm:CommGeneralInformation pwm:CommHouseView pwm:CommInvestmentDiscussion pwm:CommProductRecommendation pwm:CommTransaction ) ;
+        sh:message "Use a code from communication levels (pwm:CommunicationLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_complexity a sh:NodeShape ;
+    rdfs:label "Code list: complexity"@en ;
+    sh:targetSubjectsOf pwm:complexity ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:complexity ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_contentProvenance a sh:NodeShape ;
+    rdfs:label "Code list: content provenance"@en ;
+    sh:targetSubjectsOf pwm:contentProvenance ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:contentProvenance ; sh:in ( pwm:ProvenanceAI pwm:ProvenanceAIHumanEdited pwm:ProvenanceHuman pwm:ProvenanceHumanAIAssisted ) ;
+        sh:message "Use a code from content provenance labels (pwm:ContentProvenanceScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_coverageRole a sh:NodeShape ;
+    rdfs:label "Code list: coverage role"@en ;
+    sh:targetSubjectsOf pwm:coverageRole ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:coverageRole ; sh:in ( pwm:CoveragePrimary pwm:CoverageSecondary pwm:CoverageSpecialist ) ;
+        sh:message "Use a code from coverage roles (pwm:CoverageRoleScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_decisionConsequence a sh:NodeShape ;
+    rdfs:label "Code list: decision consequence"@en ;
+    sh:targetSubjectsOf pwm:decisionConsequence ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:decisionConsequence ; sh:in ( pwm:ConsequenceClientCommunication pwm:ConsequenceFinancialAction pwm:ConsequenceInformational pwm:ConsequenceOperational pwm:ConsequenceSuitability ) ;
+        sh:message "Use a code from decision consequences (pwm:DecisionConsequenceScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_decisionOutcome a sh:NodeShape ;
+    rdfs:label "Code list: decision outcome"@en ;
+    sh:targetSubjectsOf pwm:decisionOutcome ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:decisionOutcome ; sh:in ( pwm:OutcomeAllow pwm:OutcomeDeny pwm:OutcomeEscalate pwm:OutcomeHumanApproval pwm:OutcomeObserve ) ;
+        sh:message "Use a code from policy decision outcomes (pwm:DecisionOutcomeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_decisionResult a sh:NodeShape ;
+    rdfs:label "Code list: decision result"@en ;
+    sh:targetSubjectsOf pwm:decisionResult ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:decisionResult ; sh:in ( pwm:DecisionApprove pwm:DecisionEscalate pwm:DecisionModify pwm:DecisionReject ) ;
+        sh:message "Use a code from final decision results (pwm:DecisionResultScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_disclosureTrigger a sh:NodeShape ;
+    rdfs:label "Code list: disclosure trigger"@en ;
+    sh:targetSubjectsOf pwm:disclosureTrigger ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:disclosureTrigger ; sh:in ( pwm:TriggerAIGeneratedContent pwm:TriggerAssistedAnalysis pwm:TriggerMaterialContribution pwm:TriggerPowersChatbot ) ;
+        sh:message "Use a code from AI disclosure triggers (pwm:DisclosureTriggerScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_doNotContactReason a sh:NodeShape ;
+    rdfs:label "Code list: do-not-contact reason"@en ;
+    sh:targetSubjectsOf pwm:doNotContactReason ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:doNotContactReason ; sh:in ( pwm:DNCExcessiveFrequency pwm:DNCLowRelevance pwm:DNCPoorTiming pwm:DNCRecentRejection pwm:DNCRelationshipCircumstance pwm:DNCVulnerability ) ;
+        sh:message "Use a code from do-not-contact reasons (pwm:DoNotContactReasonScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_eventType a sh:NodeShape ;
+    rdfs:label "Code list: event type"@en ;
+    sh:targetSubjectsOf pwm:eventType ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:eventType ; sh:in ( pwm:EventApproval pwm:EventClaim pwm:EventClientCommunication pwm:EventEgress pwm:EventErasure pwm:EventFinalDecision pwm:EventIncidentOpened pwm:EventIntervention pwm:EventModelCall pwm:EventModelRefusal pwm:EventNearMiss pwm:EventOrigination pwm:EventOutcome pwm:EventPolicyChange pwm:EventPolicyDecision pwm:EventRetrieval pwm:EventToolCall ) ;
+        sh:message "Use a code from evidence event types (pwm:EvidenceEventTypeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_feeType a sh:NodeShape ;
+    rdfs:label "Code list: fee type"@en ;
+    sh:targetSubjectsOf pwm:feeType ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:feeType ; sh:in ( pwm:FeeAdvisory pwm:FeeCustody pwm:FeeManagement pwm:FeePerformance pwm:FeeTransaction ) ;
+        sh:message "Use a code from fee types (pwm:FeeTypeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_impact a sh:NodeShape ;
+    rdfs:label "Code list: impact"@en ;
+    sh:targetSubjectsOf pwm:impact ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:impact ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_inherentMateriality a sh:NodeShape ;
+    rdfs:label "Code list: inherent materiality"@en ;
+    sh:targetSubjectsOf pwm:inherentMateriality ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:inherentMateriality ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_investorCategory a sh:NodeShape ;
+    rdfs:label "Code list: investor category"@en ;
+    sh:targetSubjectsOf pwm:investorCategory ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:investorCategory ; sh:in ( pwm:AccreditedInvestorSG pwm:AccreditedInvestorUS pwm:EligibleCounterpartyEU pwm:ExpertInvestorSG pwm:InstitutionalClientCH pwm:InstitutionalInvestorSG pwm:NonRetailCategory pwm:PrivateClientCH pwm:ProfessionalClientCH pwm:ProfessionalClientEU pwm:ProfessionalClientUK pwm:ProfessionalInvestorHK pwm:RetailCategory pwm:RetailClientEU pwm:RetailClientUK pwm:RetailInvestorSG ) ;
+        sh:message "Use a code from investor categories (pwm:InvestorCategoryScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_lifecycleStatus a sh:NodeShape ;
+    rdfs:label "Code list: lifecycle status"@en ;
+    sh:targetSubjectsOf pwm:lifecycleStatus ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:lifecycleStatus ; sh:in ( pwm:StatusLive pwm:StatusPilot pwm:StatusRetired pwm:StatusSuspended ) ;
+        sh:message "Use a code from use-case lifecycle statuses (pwm:UseCaseStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_maxAutonomyLevel a sh:NodeShape ;
+    rdfs:label "Code list: maximum autonomy level"@en ;
+    sh:targetSubjectsOf pwm:maxAutonomyLevel ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:maxAutonomyLevel ; sh:in ( pwm:L0Retrieve pwm:L1Explain pwm:L2Recommend pwm:L3Draft pwm:L4ActAfterApproval pwm:L5BoundedAutonomy pwm:L6BroadAutonomy ) ;
+        sh:message "Use a code from agent autonomy levels (pwm:AutonomyLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_memoryScope a sh:NodeShape ;
+    rdfs:label "Code list: memory scope"@en ;
+    sh:targetSubjectsOf pwm:memoryScope ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:memoryScope ; sh:in ( pwm:MemoryInstitutional pwm:MemoryRelationship pwm:MemoryWorking ) ;
+        sh:message "Use a code from memory scopes (pwm:MemoryScopeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_optStatus a sh:NodeShape ;
+    rdfs:label "Code list: opt status"@en ;
+    sh:targetSubjectsOf pwm:optStatus ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:optStatus ; sh:in ( pwm:OptDefault pwm:OptedIn pwm:OptedOut ) ;
+        sh:message "Use a code from opt statuses (pwm:OptStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_originationTrigger a sh:NodeShape ;
+    rdfs:label "Code list: origination trigger"@en ;
+    sh:targetSubjectsOf pwm:originationTrigger ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:originationTrigger ; sh:in ( pwm:OriginationEvent pwm:OriginationRMRequest pwm:OriginationSchedule ) ;
+        sh:message "Use a code from origination triggers (pwm:OriginationTriggerScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_pepCategory a sh:NodeShape ;
+    rdfs:label "Code list: PEP category"@en ;
+    sh:targetSubjectsOf pwm:pepCategory ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:pepCategory ; sh:in ( pwm:DomesticPEP pwm:ForeignPEP pwm:InternationalOrganisationPEP pwm:PEPCloseAssociate pwm:PEPFamilyMember ) ;
+        sh:message "Use a code from politically exposed person categories (pwm:PEPCategoryScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_permitsDataClass a sh:NodeShape ;
+    rdfs:label "Code list: permits data class"@en ;
+    sh:targetSubjectsOf pwm:permitsDataClass ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:permitsDataClass ; sh:in ( pwm:C0 pwm:C1 pwm:C2 pwm:C3 ) ;
+        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_primaryMetric a sh:NodeShape ;
+    rdfs:label "Code list: primary metric"@en ;
+    sh:targetSubjectsOf pwm:primaryMetric ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:primaryMetric ; sh:in ( pwm:MetricCycleTime pwm:MetricDecisionQuality pwm:MetricKnowledgeRetention pwm:MetricReliability ) ;
+        sh:message "Use a code from primary outcome metrics (pwm:PrimaryMetricScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_productComplexity a sh:NodeShape ;
+    rdfs:label "Code list: product complexity"@en ;
+    sh:targetSubjectsOf pwm:productComplexity ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:productComplexity ; sh:in ( pwm:ComplexProduct pwm:ExcludedInvestmentProductSG pwm:NonComplexProduct pwm:SpecifiedInvestmentProductSG ) ;
+        sh:message "Use a code from product complexity classes (pwm:ProductComplexityScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_productRiskLevel a sh:NodeShape ;
+    rdfs:label "Code list: product risk level"@en ;
+    sh:targetSubjectsOf pwm:productRiskLevel ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:productRiskLevel ; sh:in ( pwm:RP1 pwm:RP2 pwm:RP3 pwm:RP4 pwm:RP5 ) ;
+        sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_reliance a sh:NodeShape ;
+    rdfs:label "Code list: reliance"@en ;
+    sh:targetSubjectsOf pwm:reliance ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:reliance ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_requiredAutonomyLevel a sh:NodeShape ;
+    rdfs:label "Code list: required autonomy level"@en ;
+    sh:targetSubjectsOf pwm:requiredAutonomyLevel ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:requiredAutonomyLevel ; sh:in ( pwm:L0Retrieve pwm:L1Explain pwm:L2Recommend pwm:L3Draft pwm:L4ActAfterApproval pwm:L5BoundedAutonomy pwm:L6BroadAutonomy ) ;
+        sh:message "Use a code from agent autonomy levels (pwm:AutonomyLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_residualMateriality a sh:NodeShape ;
+    rdfs:label "Code list: residual materiality"@en ;
+    sh:targetSubjectsOf pwm:residualMateriality ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:residualMateriality ; sh:in ( pwm:RatingCritical pwm:RatingHigh pwm:RatingLow pwm:RatingMedium ) ;
+        sh:message "Use a code from rating levels (pwm:RatingLevelScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_riskProfileLevel a sh:NodeShape ;
+    rdfs:label "Code list: risk profile level"@en ;
+    sh:targetSubjectsOf pwm:riskProfileLevel ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:riskProfileLevel ; sh:in ( pwm:RP1 pwm:RP2 pwm:RP3 pwm:RP4 pwm:RP5 ) ;
+        sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_riskTier a sh:NodeShape ;
+    rdfs:label "Code list: risk tier"@en ;
+    sh:targetSubjectsOf pwm:riskTier ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:riskTier ; sh:in ( pwm:Tier1 pwm:Tier2 pwm:Tier3 pwm:Tier4 ) ;
+        sh:message "Use a code from use-case risk tiers (pwm:RiskTierScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_screeningDisposition a sh:NodeShape ;
+    rdfs:label "Code list: screening disposition"@en ;
+    sh:targetSubjectsOf pwm:screeningDisposition ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:screeningDisposition ; sh:in ( pwm:ScreeningEscalated pwm:ScreeningFalsePositive pwm:ScreeningPending pwm:ScreeningTrueMatch ) ;
+        sh:message "Use a code from screening dispositions (pwm:ScreeningDispositionScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_signingRule a sh:NodeShape ;
+    rdfs:label "Code list: signing rule"@en ;
+    sh:targetSubjectsOf pwm:signingRule ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:signingRule ; sh:in ( pwm:SignAllJointly pwm:SignAnyOne pwm:SignTwoJointly ) ;
+        sh:message "Use a code from signing rules (pwm:SigningRuleScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_staleAction a sh:NodeShape ;
+    rdfs:label "Code list: stale action"@en ;
+    sh:targetSubjectsOf pwm:staleAction ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:staleAction ; sh:in ( pwm:StaleRefresh pwm:StaleSuppress pwm:StaleWarn ) ;
+        sh:message "Use a code from stale-data actions (pwm:StaleActionScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_suitabilityOutcome a sh:NodeShape ;
+    rdfs:label "Code list: suitability outcome"@en ;
+    sh:targetSubjectsOf pwm:suitabilityOutcome ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:suitabilityOutcome ; sh:in ( pwm:InsufficientInformation pwm:NotSuitable pwm:Suitable pwm:SuitableWithConditions ) ;
+        sh:message "Use a code from suitability outcomes (pwm:SuitabilityOutcomeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_targetRiskProfile a sh:NodeShape ;
+    rdfs:label "Code list: target risk profile"@en ;
+    sh:targetSubjectsOf pwm:targetRiskProfile ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:targetRiskProfile ; sh:in ( pwm:RP1 pwm:RP2 pwm:RP3 pwm:RP4 pwm:RP5 ) ;
+        sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_usesDataClass a sh:NodeShape ;
+    rdfs:label "Code list: uses data class"@en ;
+    sh:targetSubjectsOf pwm:usesDataClass ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:usesDataClass ; sh:in ( pwm:C0 pwm:C1 pwm:C2 pwm:C3 ) ;
+        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_validatorStatus a sh:NodeShape ;
+    rdfs:label "Code list: validator status"@en ;
+    sh:targetSubjectsOf pwm:validatorStatus ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:validatorStatus ; sh:in ( pwm:ValidatorBlocked pwm:ValidatorConflicting pwm:ValidatorInferred pwm:ValidatorStale pwm:ValidatorUnverified pwm:ValidatorVerified ) ;
+        sh:message "Use a code from validator statuses (pwm:ValidatorStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+# END GENERATED CODE-LIST SHAPES

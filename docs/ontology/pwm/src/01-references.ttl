@@ -1,0 +1,391 @@
+
+# -----------------------------------------------------------------------------
+#  Reference register
+#
+#  verificationStatus values:
+#    "verified"          checked against the source file, official text or
+#                        regulator page while drafting this version
+#    "instrument-level"  cited from the published instrument; article and
+#                        paragraph numbers to be re-checked before formal use
+# -----------------------------------------------------------------------------
+
+# --- Standard ontologies and vocabularies ------------------------------------
+
+pwmref:FIBO a pwm:Reference ;
+    dcterms:alternative "FIBO" ;
+    dcterms:title "Financial Industry Business Ontology (FIBO)" ;
+    dcterms:publisher "EDM Council and Object Management Group" ;
+    dcterms:date "2026-10-27" ;
+    dcterms:license <https://opensource.org/licenses/MIT> ;
+    rdfs:seeAlso <https://spec.edmcouncil.org/fibo/> , <https://github.com/edmcouncil/fibo> ;
+    pwm:sourceType pwm:SourceStandardOntology ;
+    pwm:jurisdiction "Global" ;
+    pwm:verificationStatus "verified" ;
+    skos:note "Every FIBO IRI used here was checked against the ontology files at GitHub commit 33a92cd (27 October 2026). Each term's maturity level, Release or Provisional, is taken from the file that defines it." .
+
+pwmref:OMG-COMMONS a pwm:Reference ;
+    dcterms:alternative "OMG Commons" ;
+    dcterms:title "Commons Ontology Library" ;
+    dcterms:publisher "Object Management Group" ;
+    dcterms:date "2025-08-01" ;
+    rdfs:seeAlso <https://www.omg.org/spec/Commons/> ;
+    pwm:sourceType pwm:SourceStandardOntology ;
+    pwm:jurisdiction "Global" ;
+    pwm:verificationStatus "verified" ;
+    skos:note "PartiesAndSituations and Organizations were read at version 20250801. Jurisdiction, RegulatoryAgency, Authorization, isPlayedBy and Document are referenced by FIBO production ontologies; their module files were not opened." .
+
+pwmref:W3C-PROV-O a pwm:Reference ;
+    dcterms:alternative "PROV-O" ;
+    dcterms:title "PROV-O: The PROV Ontology" ;
+    dcterms:publisher "W3C" ;
+    dcterms:date "2013-04-30" ;
+    rdfs:seeAlso <https://www.w3.org/TR/prov-o/> ;
+    pwm:sourceType pwm:SourceStandardOntology ;
+    pwm:jurisdiction "Global" ;
+    pwm:verificationStatus "instrument-level" .
+
+pwmref:W3C-SKOS a pwm:Reference ;
+    dcterms:alternative "SKOS" ;
+    dcterms:title "SKOS Simple Knowledge Organization System Reference" ;
+    dcterms:publisher "W3C" ;
+    dcterms:date "2009-08-18" ;
+    rdfs:seeAlso <https://www.w3.org/TR/skos-reference/> ;
+    pwm:sourceType pwm:SourceStandardOntology ;
+    pwm:jurisdiction "Global" ;
+    pwm:verificationStatus "instrument-level" .
+
+pwmref:DCMI-TERMS a pwm:Reference ;
+    dcterms:alternative "DCMI Terms" ;
+    dcterms:title "DCMI Metadata Terms" ;
+    dcterms:publisher "Dublin Core Metadata Initiative" ;
+    rdfs:seeAlso <https://www.dublincore.org/specifications/dublin-core/dcmi-terms/> ;
+    pwm:sourceType pwm:SourceStandardOntology ;
+    pwm:jurisdiction "Global" ;
+    pwm:verificationStatus "instrument-level" .
+
+pwmref:W3C-DPV a pwm:Reference ;
+    dcterms:alternative "DPV" ;
+    dcterms:title "Data Privacy Vocabulary (DPV) 2.3, with the AI extension" ;
+    dcterms:publisher "W3C Data Privacy Vocabularies and Controls Community Group" ;
+    rdfs:seeAlso <https://w3id.org/dpv> , <https://w3id.org/dpv/ai> ;
+    pwm:sourceType pwm:SourceStandardOntology ;
+    pwm:jurisdiction "Global" ;
+    pwm:verificationStatus "verified" ;
+    skos:note "Concept IRIs checked against the DPV 2.3 Turtle files (dpv and ai) in the w3c-cg/dpv repository." .
+
+# --- ISO and ISO/IEC standards -------------------------------------------------
+
+pwmref:ISO-17442 a pwm:Reference ;
+    dcterms:alternative "ISO 17442" ;
+    dcterms:title "ISO 17442-1 Financial services: Legal entity identifier (LEI)" ;
+    dcterms:publisher "ISO" ;
+    rdfs:seeAlso <https://www.gleif.org/en/about-lei/iso-17442-the-lei-code-structure> ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:ISO-6166 a pwm:Reference ;
+    dcterms:alternative "ISO 6166" ;
+    dcterms:title "ISO 6166 Securities: International securities identification number (ISIN)" ;
+    dcterms:publisher "ISO" ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:ISO-10962 a pwm:Reference ;
+    dcterms:alternative "ISO 10962" ;
+    dcterms:title "ISO 10962 Securities: Classification of financial instruments (CFI)" ;
+    dcterms:publisher "ISO" ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:ISO-4217 a pwm:Reference ;
+    dcterms:alternative "ISO 4217" ;
+    dcterms:title "ISO 4217 Codes for the representation of currencies" ;
+    dcterms:publisher "ISO" ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:ISO-3166 a pwm:Reference ;
+    dcterms:alternative "ISO 3166" ;
+    dcterms:title "ISO 3166-1 Codes for the representation of names of countries" ;
+    dcterms:publisher "ISO" ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:ISO-20022 a pwm:Reference ;
+    dcterms:alternative "ISO 20022" ;
+    dcterms:title "ISO 20022 Universal financial industry message scheme" ;
+    dcterms:publisher "ISO" ;
+    rdfs:seeAlso <https://www.iso20022.org/> ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:ISO-22222 a pwm:Reference ;
+    dcterms:alternative "ISO 22222" ;
+    dcterms:title "ISO 22222:2005 Personal financial planning: Requirements for personal financial planners" ;
+    dcterms:publisher "ISO" ;
+    dcterms:date "2005" ;
+    rdfs:seeAlso <https://www.iso.org/standard/43033.html> ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" ;
+    skos:note "Listed as current; confirmed at review in 2023." .
+
+pwmref:ISO-IEC-22989 a pwm:Reference ;
+    dcterms:alternative "ISO/IEC 22989" ;
+    dcterms:title "ISO/IEC 22989:2022 Artificial intelligence concepts and terminology" ;
+    dcterms:publisher "ISO/IEC" ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" ;
+    skos:note "Cited by the MAS AI Risk Management Guidelines (footnote 27) for the AI life cycle." .
+
+pwmref:ISO-IEC-42001 a pwm:Reference ;
+    dcterms:alternative "ISO/IEC 42001" ;
+    dcterms:title "ISO/IEC 42001:2023 Artificial intelligence management system" ;
+    dcterms:publisher "ISO/IEC" ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:ISO-15489 a pwm:Reference ;
+    dcterms:alternative "ISO 15489" ;
+    dcterms:title "ISO 15489-1:2016 Records management: Concepts and principles" ;
+    dcterms:publisher "ISO" ;
+    pwm:sourceType pwm:SourceTechnicalStandard ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" .
+
+# --- International standard-setters -------------------------------------------
+
+pwmref:FATF a pwm:Reference ;
+    dcterms:alternative "FATF Recommendations" ;
+    dcterms:title "International Standards on Combating Money Laundering and the Financing of Terrorism and Proliferation (the FATF Recommendations)" ;
+    dcterms:publisher "Financial Action Task Force" ;
+    dcterms:date "2012, as updated" ;
+    rdfs:seeAlso <https://www.fatf-gafi.org/en/publications/Fatfrecommendations/Fatf-recommendations.html> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "Global" ; pwm:verificationStatus "instrument-level" ;
+    skos:note "Recommendation 12 (politically exposed persons, including source of wealth and source of funds) was checked; other Recommendation numbers are cited from the published text." .
+
+pwmref:OECD-CRS a pwm:Reference ;
+    dcterms:alternative "OECD CRS" ;
+    dcterms:title "Standard for Automatic Exchange of Financial Account Information in Tax Matters: Common Reporting Standard" ;
+    dcterms:publisher "OECD" ;
+    rdfs:seeAlso <https://www.oecd.org/tax/automatic-exchange/common-reporting-standard/> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" ;
+    skos:note "Controlling Persons is defined in Section VIII(D)(6)." .
+
+pwmref:IMDA-MGF-AGENTIC a pwm:Reference ;
+    dcterms:alternative "IMDA agentic AI framework" ;
+    dcterms:title "Model AI Governance Framework for Agentic AI" ;
+    dcterms:publisher "Infocomm Media Development Authority (Singapore)" ;
+    rdfs:seeAlso <https://www.imda.gov.sg/-/media/imda/files/about/emerging-tech-and-research/artificial-intelligence/mgf-for-agentic-ai.pdf> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "SG" ; pwm:verificationStatus "instrument-level" ;
+    skos:note "Referenced by the MAS AI Risk Management Guidelines, footnote 11." .
+
+# --- Singapore ------------------------------------------------------------------
+
+pwmref:MAS-AIRG a pwm:Reference ;
+    dcterms:alternative "MAS AIRG" ;
+    dcterms:title "Guidelines on Artificial Intelligence Risk Management" ;
+    dcterms:publisher "Monetary Authority of Singapore" ;
+    dcterms:date "2026-10-07" ;
+    rdfs:seeAlso <https://www.mas.gov.sg/-/media/mas-media-library/regulation/guidelines/bd/guidelines-on-artificial-intelligence-risk-management-for-financial-institutions/guidelines-on-artificial-intelligence-risk-management.pdf> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "SG" ; pwm:verificationStatus "verified" ;
+    skos:note "Read in full from the MAS PDF. Effective 7 October 2027: Sections 3 and 4 from that date; Sections 5 and 6 by 7 October 2028 (para 1.8). MAS intends to consult in 2027 on further guidance for agentic AI." .
+
+pwmref:MAS-FEAT a pwm:Reference ;
+    dcterms:alternative "MAS FEAT" ;
+    dcterms:title "Principles to Promote Fairness, Ethics, Accountability and Transparency (FEAT) in the Use of AI and Data Analytics in Singapore's Financial Sector" ;
+    dcterms:publisher "Monetary Authority of Singapore" ;
+    dcterms:date "2018" ;
+    rdfs:seeAlso <https://www.mas.gov.sg/publications/monographs-or-information-paper/2018/feat> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "SG" ; pwm:verificationStatus "verified" .
+
+pwmref:MAS-FAA-N16 a pwm:Reference ;
+    dcterms:alternative "MAS FAA-N16" ;
+    dcterms:title "Notice FAA-N16 Recommendations on Investment Products" ;
+    dcterms:publisher "Monetary Authority of Singapore" ;
+    rdfs:seeAlso <https://www.mas.gov.sg/regulation/notices/notice-faa-n16> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "SG" ; pwm:verificationStatus "verified" .
+
+pwmref:MAS-SFA04-N12 a pwm:Reference ;
+    dcterms:alternative "MAS SFA 04-N12" ;
+    dcterms:title "Notice SFA 04-N12 Sale of Investment Products" ;
+    dcterms:publisher "Monetary Authority of Singapore" ;
+    rdfs:seeAlso <https://www.mas.gov.sg/regulation/notices/notice-sfa-04-n12> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "SG" ; pwm:verificationStatus "verified" .
+
+pwmref:MAS-626 a pwm:Reference ;
+    dcterms:alternative "MAS Notice 626" ;
+    dcterms:title "Notice 626 Prevention of Money Laundering and Countering the Financing of Terrorism: Banks" ;
+    dcterms:publisher "Monetary Authority of Singapore" ;
+    rdfs:seeAlso <https://www.mas.gov.sg/regulation/notices/notice-626> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "SG" ; pwm:verificationStatus "verified" .
+
+pwmref:SG-SFA a pwm:Reference ;
+    dcterms:alternative "Securities and Futures Act (SG)" ;
+    dcterms:title "Securities and Futures Act 2001, section 4A (accredited, expert and institutional investors), with the opt-in regime for accredited investors" ;
+    dcterms:publisher "Singapore Parliament; Monetary Authority of Singapore" ;
+    rdfs:seeAlso <https://sso.agc.gov.sg/Act/SFA2001> , <https://www.mas.gov.sg/-/media/MAS/Regulations-and-Financial-Stability/Regulations-Guidance-and-Licensing/Securities-Futures-and-Fund-Management/IID-FAQs/FAQs-on-the-Definition-of-Accredited-Investor-and-Opt-In-Process_4-Feb-2019.pdf> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "SG" ; pwm:verificationStatus "verified" .
+
+pwmref:SG-BANKING-ACT a pwm:Reference ;
+    dcterms:alternative "Banking Act (SG)" ;
+    dcterms:title "Banking Act 1970, section 47 (banking secrecy) and the Third Schedule" ;
+    dcterms:publisher "Singapore Parliament" ;
+    rdfs:seeAlso <https://sso.agc.gov.sg/Act/BA1970> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "SG" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:MAS-FAIR-DEALING a pwm:Reference ;
+    dcterms:alternative "MAS Fair Dealing Guidelines" ;
+    dcterms:title "Guidelines on Fair Dealing: Board and Senior Management Responsibilities for Delivering Fair Dealing Outcomes to Customers" ;
+    dcterms:publisher "Monetary Authority of Singapore" ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "SG" ; pwm:verificationStatus "instrument-level" ;
+    skos:note "Cited by the MAS AI Risk Management Guidelines, footnote 15." .
+
+# --- European Union -------------------------------------------------------------
+
+pwmref:EU-MIFID2 a pwm:Reference ;
+    dcterms:alternative "MiFID II" ;
+    dcterms:title "Directive 2014/65/EU on markets in financial instruments (MiFID II)" ;
+    dcterms:publisher "European Parliament and Council" ;
+    dcterms:date "2014-05-15" ;
+    rdfs:seeAlso <https://eur-lex.europa.eu/eli/dir/2014/65/oj> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "EU" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:EU-MIFID2-DR a pwm:Reference ;
+    dcterms:alternative "MiFID II Delegated Regulation" ;
+    dcterms:title "Commission Delegated Regulation (EU) 2017/565 supplementing MiFID II (organisational requirements and operating conditions)" ;
+    dcterms:publisher "European Commission" ;
+    rdfs:seeAlso <https://eur-lex.europa.eu/eli/reg_del/2017/565/oj> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "EU" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:EU-PRIIPS a pwm:Reference ;
+    dcterms:alternative "PRIIPs Regulation" ;
+    dcterms:title "Regulation (EU) No 1286/2014 on key information documents for packaged retail and insurance-based investment products (PRIIPs)" ;
+    dcterms:publisher "European Parliament and Council" ;
+    rdfs:seeAlso <https://eur-lex.europa.eu/eli/reg/2014/1286/oj> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "EU" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:EU-AI-ACT a pwm:Reference ;
+    dcterms:alternative "EU AI Act" ;
+    dcterms:title "Regulation (EU) 2024/1689 laying down harmonised rules on artificial intelligence (AI Act)" ;
+    dcterms:publisher "European Parliament and Council" ;
+    rdfs:seeAlso <https://eur-lex.europa.eu/eli/reg/2024/1689/oj> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "EU" ; pwm:verificationStatus "instrument-level" .
+
+# --- United Kingdom -------------------------------------------------------------
+
+pwmref:UK-FCA-COBS a pwm:Reference ;
+    dcterms:alternative "FCA COBS" ;
+    dcterms:title "FCA Handbook, Conduct of Business Sourcebook (COBS 3 client categorisation; COBS 9A suitability; COBS 10A appropriateness)" ;
+    dcterms:publisher "Financial Conduct Authority" ;
+    rdfs:seeAlso <https://www.handbook.fca.org.uk/handbook/COBS/> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "GB" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:UK-FCA-FG21-1 a pwm:Reference ;
+    dcterms:alternative "FCA FG21/1" ;
+    dcterms:title "FG21/1 Guidance for firms on the fair treatment of vulnerable customers" ;
+    dcterms:publisher "Financial Conduct Authority" ;
+    dcterms:date "2021" ;
+    rdfs:seeAlso <https://www.fca.org.uk/publication/finalised-guidance/fg21-1.pdf> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "GB" ; pwm:verificationStatus "instrument-level" .
+
+# --- Hong Kong, Switzerland, United States -----------------------------------------
+
+pwmref:HK-SFC-COC a pwm:Reference ;
+    dcterms:alternative "SFC Code of Conduct" ;
+    dcterms:title "Code of Conduct for Persons Licensed by or Registered with the Securities and Futures Commission (para 5.2 suitability; para 15 professional investors)" ;
+    dcterms:publisher "Securities and Futures Commission" ;
+    rdfs:seeAlso <https://www.sfc.hk/en/Rules-and-standards/Suitability-requirement> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "HK" ; pwm:verificationStatus "verified" ;
+    skos:note "Paragraph 5.2 (suitability) checked. Paragraph 15 cited from the published Code." .
+
+pwmref:HK-PI-RULES a pwm:Reference ;
+    dcterms:alternative "HK Professional Investor Rules" ;
+    dcterms:title "Securities and Futures (Professional Investor) Rules (Cap. 571D)" ;
+    dcterms:publisher "Hong Kong SAR Government" ;
+    rdfs:seeAlso <https://www.elegislation.gov.hk/hk/cap571D> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "HK" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:CH-FINSA a pwm:Reference ;
+    dcterms:alternative "FinSA" ;
+    dcterms:title "Federal Act on Financial Services (FinSA), SR 950.1" ;
+    dcterms:publisher "Swiss Confederation" ;
+    rdfs:seeAlso <https://www.fedlex.admin.ch/eli/cc/2019/758/en> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "CH" ; pwm:verificationStatus "verified" ;
+    skos:note "Article 4 (client segmentation) and Article 5 (opting out and opting in) checked. Articles 10 to 14 (suitability and appropriateness) cited as a range." .
+
+pwmref:US-REG-D a pwm:Reference ;
+    dcterms:alternative "SEC Regulation D" ;
+    dcterms:title "SEC Regulation D, Rule 501(a) definition of accredited investor (17 CFR 230.501)" ;
+    dcterms:publisher "US Securities and Exchange Commission" ;
+    rdfs:seeAlso <https://www.ecfr.gov/current/title-17/section-230.501> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "US" ; pwm:verificationStatus "instrument-level" .
+
+pwmref:US-REG-BI a pwm:Reference ;
+    dcterms:alternative "SEC Regulation Best Interest" ;
+    dcterms:title "SEC Regulation Best Interest (17 CFR 240.15l-1)" ;
+    dcterms:publisher "US Securities and Exchange Commission" ;
+    rdfs:seeAlso <https://www.ecfr.gov/current/title-17/section-240.15l-1> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "US" ; pwm:verificationStatus "instrument-level" .
+
+# --- Kognita (the regulations library and roadmap this ontology supports) ----------
+
+pwmref:KOG-ROADMAP a pwm:Reference ;
+    dcterms:alternative "Kognita roadmap" ;
+    dcterms:title "Kognita Roadmap: From Governance Engine to Agent Harness (docs/ROADMAP.md)" ;
+    dcterms:publisher "Kognita (open source, MIT)" ;
+    dcterms:date "2026-09, at release 0.7.0" ;
+    rdfs:seeAlso <https://github.com/mze3e/kognita/blob/main/docs/ROADMAP.md> ;
+    pwm:sourceType pwm:SourceKognita ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" ;
+    skos:note "Read at commit 9303769 (release 0.7.0). Locators name the release and roadmap item, for example 0.4 item 8." .
+
+pwmref:KOG-CONTROLS a pwm:Reference ;
+    dcterms:alternative "Kognita regulations library" ;
+    dcterms:title "AI Control Frameworks: Wealth Management and Agentic AI Coverage (docs/control-frameworks.md), the Kognita regulations library" ;
+    dcterms:publisher "Kognita (open source, MIT)" ;
+    dcterms:date "2026-10-12" ;
+    rdfs:seeAlso <https://github.com/mze3e/kognita/blob/main/docs/control-frameworks.md> ;
+    pwm:sourceType pwm:SourceKognita ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" ;
+    skos:note "Consolidates the 40-domain bank-grade framework, the 70-control wealth management framework (MAS, PDPC, SFC, FCA, Bank of England, APRA, ASIC, CSBS, BIS/FSI, ESMA), a paragraph map of the MAS AI Risk Management Guidelines, and the trust-architecture principles." .
+
+pwmref:KOG-VOCAB a pwm:Reference ;
+    dcterms:alternative "Kognita vocabularies" ;
+    dcterms:title "Kognita controlled vocabularies (src/kognita/vocabulary.py, usecases.py, claims.py, memory.py, origination.py)" ;
+    dcterms:publisher "Kognita (open source, MIT)" ;
+    dcterms:date "release 0.7.0" ;
+    rdfs:seeAlso <https://github.com/mze3e/kognita/blob/main/src/kognita/vocabulary.py> ;
+    pwm:sourceType pwm:SourceKognita ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" .
+
+pwmref:KOG-PB-PACK a pwm:Reference ;
+    dcterms:alternative "Kognita private-banking pack" ;
+    dcterms:title "Kognita private-banking policy pack 1.0.0 (src/kognita/packs/data/private-banking)" ;
+    dcterms:publisher "Kognita (open source, MIT)" ;
+    rdfs:seeAlso <https://github.com/mze3e/kognita/tree/main/src/kognita/packs/data/private-banking> ;
+    pwm:sourceType pwm:SourceKognita ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" .
+
+# --- Author frameworks ------------------------------------------------------------
+
+pwmref:EVOLVE a pwm:Reference ;
+    dcterms:alternative "EVOLVE" ;
+    dcterms:title "EVOLVE: Building the AI-Native Enterprise (organisational maturity model for AI)" ;
+    dcterms:creator "Ahmed Muzammil" ;
+    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
+    rdfs:seeAlso <https://ahmedmuzammil.com/frameworks/evolve> ;
+    pwm:sourceType pwm:SourceAuthorFramework ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" .
+
+pwmref:AM-GOVERNING-AGENTIC-AI a pwm:Reference ;
+    dcterms:alternative "Governing agentic AI (essay)" ;
+    dcterms:title "Governing agentic AI inside a regulated bank" ;
+    dcterms:creator "Ahmed Muzammil" ;
+    dcterms:date "2026-09-21" ;
+    rdfs:seeAlso <https://ahmedmuzammil.com/ideas/governing-agentic-ai> ;
+    pwm:sourceType pwm:SourceAuthorFramework ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" .
+
+pwmref:AM-FILING-CABINET a pwm:Reference ;
+    dcterms:alternative "Filing Cabinet talk" ;
+    dcterms:title "Your AI Is Only as Good as Your Filing Cabinet (AIIM ASEAN Forum, Singapore)" ;
+    dcterms:creator "Ahmed Muzammil" ;
+    dcterms:date "2026-10-22" ;
+    rdfs:seeAlso <https://ahmedmuzammil.com/speaking> ;
+    pwm:sourceType pwm:SourceAuthorFramework ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" .
+
+# --- Defined here -----------------------------------------------------------------
+
+pwmref:PWM-PRACTICE a pwm:Reference ;
+    dcterms:alternative "PWM practitioner definition" ;
+    dcterms:title "Practitioner definition in this ontology" ;
+    dcterms:creator "Ahmed Muzammil" ;
+    pwm:sourceType pwm:SourcePractice ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" ;
+    skos:note "Used where no term was found in FIBO, OMG Commons or DPV at the versions checked. Each use is a candidate for proposal to the relevant standard." .
+
+# Citations for the context-speed device itself
+pwm:contextSpeed pwm:citation
+    [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 7: policies change over months, client status over days, prices in seconds" ] .

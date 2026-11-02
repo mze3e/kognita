@@ -1,0 +1,58 @@
+
+# -----------------------------------------------------------------------------
+#  Code-list bindings
+#
+#  Which code list each coded property takes its values from. The ranges above
+#  say only skos:Concept; these annotations name the scheme. An extension may
+#  bind a property to its own scheme instead, for example a firm's risk scale
+#  in place of the illustrative one.
+# -----------------------------------------------------------------------------
+
+pwm:actionVerb pwm:valuesFrom pwm:ActionVerbScheme .
+pwm:amlRiskLevel pwm:valuesFrom pwm:AMLRiskLevelScheme .
+pwm:appliesToActivity pwm:valuesFrom pwm:CrossBorderActivityScheme .
+pwm:appliesToInvestorCategory pwm:valuesFrom pwm:InvestorCategoryScheme .
+pwm:approvalStatus pwm:valuesFrom pwm:AssetStatusScheme .
+pwm:autonomyAxis pwm:valuesFrom pwm:AutonomyAxisScheme .
+pwm:boundaryTier pwm:valuesFrom pwm:BoundaryTierScheme .
+pwm:businessCriticality pwm:valuesFrom pwm:RatingLevelScheme .
+pwm:capacityForLoss pwm:valuesFrom pwm:RatingLevelScheme .
+pwm:claimType pwm:valuesFrom pwm:ClaimTypeScheme .
+pwm:classification pwm:valuesFrom pwm:DataClassificationScheme .
+pwm:clientImpactClass pwm:valuesFrom pwm:ClientImpactClassScheme .
+pwm:communicationLevel pwm:valuesFrom pwm:CommunicationLevelScheme .
+pwm:complexity pwm:valuesFrom pwm:RatingLevelScheme .
+pwm:contentProvenance pwm:valuesFrom pwm:ContentProvenanceScheme .
+pwm:coverageRole pwm:valuesFrom pwm:CoverageRoleScheme .
+pwm:decisionConsequence pwm:valuesFrom pwm:DecisionConsequenceScheme .
+pwm:decisionOutcome pwm:valuesFrom pwm:DecisionOutcomeScheme .
+pwm:decisionResult pwm:valuesFrom pwm:DecisionResultScheme .
+pwm:disclosureTrigger pwm:valuesFrom pwm:DisclosureTriggerScheme .
+pwm:doNotContactReason pwm:valuesFrom pwm:DoNotContactReasonScheme .
+pwm:eventType pwm:valuesFrom pwm:EvidenceEventTypeScheme .
+pwm:feeType pwm:valuesFrom pwm:FeeTypeScheme .
+pwm:impact pwm:valuesFrom pwm:RatingLevelScheme .
+pwm:inherentMateriality pwm:valuesFrom pwm:RatingLevelScheme .
+pwm:investorCategory pwm:valuesFrom pwm:InvestorCategoryScheme .
+pwm:lifecycleStatus pwm:valuesFrom pwm:UseCaseStatusScheme .
+pwm:maxAutonomyLevel pwm:valuesFrom pwm:AutonomyLevelScheme .
+pwm:memoryScope pwm:valuesFrom pwm:MemoryScopeScheme .
+pwm:optStatus pwm:valuesFrom pwm:OptStatusScheme .
+pwm:originationTrigger pwm:valuesFrom pwm:OriginationTriggerScheme .
+pwm:pepCategory pwm:valuesFrom pwm:PEPCategoryScheme .
+pwm:permitsDataClass pwm:valuesFrom pwm:DataClassificationScheme .
+pwm:primaryMetric pwm:valuesFrom pwm:PrimaryMetricScheme .
+pwm:productComplexity pwm:valuesFrom pwm:ProductComplexityScheme .
+pwm:productRiskLevel pwm:valuesFrom pwm:IllustrativeRiskScale .
+pwm:reliance pwm:valuesFrom pwm:RatingLevelScheme .
+pwm:requiredAutonomyLevel pwm:valuesFrom pwm:AutonomyLevelScheme .
+pwm:residualMateriality pwm:valuesFrom pwm:RatingLevelScheme .
+pwm:riskProfileLevel pwm:valuesFrom pwm:IllustrativeRiskScale .
+pwm:riskTier pwm:valuesFrom pwm:RiskTierScheme .
+pwm:screeningDisposition pwm:valuesFrom pwm:ScreeningDispositionScheme .
+pwm:signingRule pwm:valuesFrom pwm:SigningRuleScheme .
+pwm:staleAction pwm:valuesFrom pwm:StaleActionScheme .
+pwm:suitabilityOutcome pwm:valuesFrom pwm:SuitabilityOutcomeScheme .
+pwm:targetRiskProfile pwm:valuesFrom pwm:IllustrativeRiskScale .
+pwm:usesDataClass pwm:valuesFrom pwm:DataClassificationScheme .
+pwm:validatorStatus pwm:valuesFrom pwm:ValidatorStatusScheme .

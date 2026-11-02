@@ -1,0 +1,448 @@
+
+# =============================================================================
+#  Module 9: Information governance, claims and evidence
+# =============================================================================
+
+pwm:GovernedInformationAsset a owl:Class ;
+    rdfs:label "governed information asset"@en ;
+    skos:definition "Document, record or dataset carrying the minimum governance labels that make it safe to give to AI: owner, approval status, effective date, what it supersedes, classification per section, version identifier or content hash, and retention date."@en ;
+    skos:scopeNote "When content is deleted, keep its hash and record the deletion."@en ;
+    rdfs:subClassOf cmns-doc:Document ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: minimum labels" ] ,
+                 [ pwm:cites pwmref:ISO-15489 ; pwm:locator "Records: authenticity, reliability, integrity, usability" ] ,
+                 [ pwm:cites pwmref:DCMI-TERMS ; pwm:locator "dcterms:valid, dcterms:replaces" ] .
+
+pwm:DocumentSection a owl:Class ;
+    rdfs:label "document section"@en ;
+    skos:definition "Section of a governed information asset with its own classification, so entitlements apply per section rather than per document."@en ;
+    rdfs:subClassOf cmns-doc:Document ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: classification per section, not per document" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1: per-section classification at ingestion" ] .
+
+pwm:ApprovedSource a owl:Class ;
+    rdfs:label "approved source"@en ;
+    skos:definition "Source registered as approved for a use case's regulated claims, such as CIO research, product documentation, permitted market data or policy. A model's own knowledge is never an approved source."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 3: approved-source grounding" ] .
+
+pwm:GovernedDefinition a owl:Class ;
+    rdfs:label "governed definition"@en ;
+    skos:definition "Authoritative, versioned definition of a business term, such as assets under management, net new money or concentration, with an owner. Figures using the term must cite it."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Stage 5: define truth once (one definition of AUM)" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 12: governed business definitions" ] .
+
+pwm:CalculationService a owl:Class ;
+    rdfs:label "calculation service"@en ;
+    skos:definition "Registered service that produces authoritative figures, such as performance, valuation, concentration, exposure or suitability scores. A model may explain a calculation; it may not invent one."@en ;
+    rdfs:subClassOf prov:SoftwareAgent ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 6: calculation provenance" ] .
+
+pwm:Fact a owl:Class ;
+    rdfs:label "fact"@en ;
+    skos:definition "Authoritative value from a system of record, carrying its source, owner, as-of time, classification, entitlement and freshness threshold. Stale facts are refreshed, suppressed or flagged, never silently used."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: fact contract and freshness" ] .
+
+pwm:Claim a owl:Class ;
+    rdfs:label "claim"@en ;
+    skos:definition "Material statement an agent produces for a person or client, typed as verified fact, inference, conversation hypothesis or possible provider capability, with its sources, calculation method, model and prompt versions and validator status."@en ;
+    skos:scopeNote "Unlabelled claims cannot be shown. An inference cannot be relabelled as fact without a cited source and verification."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 items 1, 5, 7: claim provenance, claim types, verification gate" ] ,
+                 [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiables 6 and 7" ] .
+
+pwm:PolicyRule a owl:Class ;
+    rdfs:label "policy rule"@en ;
+    skos:definition "Effective-dated, citable rule evaluated outside the model before data moves or an action runs. Rules are versioned, never edited in place."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Design rule: never rely on the LLM to enforce a control that can be enforced outside it" ] ,
+                 [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.25(b): change control and version control" ] .
+
+pwm:PolicyDecision a owl:Class ;
+    rdfs:label "policy decision"@en ;
+    skos:definition "Deterministic outcome of evaluating every applicable rule for a request, allow, deny, escalate or hold for human approval, citing the deciding rule and its version, the use case and any delegation relied on. One failing rule denies."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:FastContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 9: runtime policy enforcement outside the LLM" ] ,
+                 [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.Outcome, OUTCOME_PRECEDENCE" ] ,
+                 [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 14: the AI answer receipt, for approvals and denials" ] .
+
+pwm:EvidenceRecord a owl:Class ;
+    rdfs:label "evidence record"@en ;
+    skos:definition "Append-only, hash-chained record of an event, such as a policy decision, model call, tool call, retrieval, approval or communication, holding hashes and references rather than content, from which an interaction can be reconstructed."@en ;
+    skos:scopeNote "Record a model refusal separately from a policy denial. Otherwise the evidence shows only that the model usually behaves, not that the controls work."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:FastContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(d): logging of prompts, responses, model versions; 5.17 reproducibility" ] ,
+                 [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 12: complete action audit trail" ] ,
+                 [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 15: append-only, tamper-evident; log refusals and blocks separately" ] .
+
+pwm:HumanReview a owl:Class ;
+    rdfs:label "human review"@en ;
+    skos:definition "Review of AI output or a proposed action by a competent person with authority to intervene, given a complete packet of action, reason, evidence, risks, alternatives and checks run."@en ;
+    rdfs:subClassOf prov:Activity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(a) to (d): human oversight; automation bias and decision fatigue" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11 (approval packet); item 13 (risk-based review)" ] .
+
+pwm:AIIncident a owl:Class ;
+    rdfs:label "AI incident"@en ;
+    skos:definition "Incident involving a failure, malfunction or poor performance of an AI system or model, escalated, tracked and linked to the clients affected."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "fn 20 (definition); 3.5(e) escalation; 5.23(b) incident management" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14 (affected-client query); 0.7 (incident evidence and report)" ] .
+
+pwm:NearMiss a owl:Class ;
+    rdfs:label "near miss"@en ;
+    skos:definition "Event where harm was avoided, such as a blocked action, a verifier block, a reviewer rejection, an unsafe draft or unusual agent behaviour, aggregated to find weak controls before harm occurs."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): review incidents and near misses" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15: near-miss register" ] .
+
+pwm:MemoryRecord a owl:Class ;
+    rdfs:label "memory record"@en ;
+    skos:definition "Item an agent retains beyond a single step, scoped as working, relationship or institutional memory and typed like a claim, with retention, a correction path and expiry."@en ;
+    skos:scopeNote "An inference becomes a relationship record only after verification by a person. Client data never enters institutional memory."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 8: memory governance" ] ,
+                 [ pwm:cites pwmref:EVOLVE ; pwm:locator "Closed-loop learning; human expertise becomes institutional capability" ] .
+
+# --- Properties --------------------------------------------------------------------
+
+pwm:informationOwner a owl:ObjectProperty ;
+    rdfs:label "information owner"@en ;
+    skos:definition "Role accountable for a governed information asset or definition."@en ;
+    rdfs:range cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: owner" ] .
+
+pwm:approvalStatus a owl:ObjectProperty ;
+    rdfs:label "approval status"@en ;
+    skos:definition "Approval status of a governed information asset: draft, current, superseded or withdrawn."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slides 8 and 9: approval status" ] .
+
+pwm:versionId a owl:DatatypeProperty ;
+    rdfs:label "version identifier"@en ;
+    skos:definition "Version identifier of an asset, definition, rule, model or deployment."@en ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: version ID or content hash" ] .
+
+pwm:retentionUntil a owl:DatatypeProperty ;
+    rdfs:label "retention until"@en ;
+    skos:definition "Date until which a record must be kept. An AI record never expires before the regulatory record it supports."@en ;
+    rdfs:range xsd:date ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: retention date" ] , [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.7: retention by record class" ] .
+
+pwm:hasSection a owl:ObjectProperty ;
+    rdfs:label "has section"@en ;
+    skos:definition "Section of a governed information asset."@en ;
+    rdfs:domain pwm:GovernedInformationAsset ; rdfs:range pwm:DocumentSection ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8" ] .
+
+pwm:classification a owl:ObjectProperty ;
+    rdfs:label "classification"@en ;
+    skos:definition "Data classification of an asset, section, fact or record."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.4(d)" ] , [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.Classification" ] .
+
+pwm:approvedForUseCase a owl:ObjectProperty ;
+    rdfs:label "approved for use case"@en ;
+    skos:definition "Use case for which a source is approved."@en ;
+    rdfs:domain pwm:ApprovedSource ; rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 3: each use case has a register of approved sources" ] .
+
+pwm:definesTerm a owl:DatatypeProperty ;
+    rdfs:label "defines term"@en ;
+    skos:definition "Business term a governed definition defines."@en ;
+    rdfs:domain pwm:GovernedDefinition ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 12" ] .
+
+pwm:claimType a owl:ObjectProperty ;
+    rdfs:label "claim type"@en ;
+    skos:definition "Epistemic type of a claim or memory record."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "claims: VERIFIED_FACT, INFERENCE, CONVERSATION_HYPOTHESIS, POSSIBLE_BANK_CAPABILITY" ] .
+
+pwm:validatorStatus a owl:ObjectProperty ;
+    rdfs:label "validator status"@en ;
+    skos:definition "Verdict of an independent verifier on a claim. Policy decides what each status may reach."@en ;
+    rdfs:domain pwm:Claim ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 7: verification gate" ] .
+
+pwm:citesSource a owl:ObjectProperty ;
+    rdfs:label "cites source"@en ;
+    skos:definition "Approved source, governed asset or fact a claim relies on."@en ;
+    rdfs:subPropertyOf prov:wasDerivedFrom ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 items 1, 3" ] .
+
+pwm:usesDefinition a owl:ObjectProperty ;
+    rdfs:label "uses definition"@en ;
+    skos:definition "Governed definition, at a version, that a claim or figure uses."@en ;
+    rdfs:range pwm:GovernedDefinition ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 12" ] .
+
+pwm:calculatedBy a owl:ObjectProperty ;
+    rdfs:label "calculated by"@en ;
+    skos:definition "Calculation service that produced a figure."@en ;
+    rdfs:subPropertyOf prov:wasAttributedTo ;
+    rdfs:range pwm:CalculationService ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 6: calculation_method" ] .
+
+pwm:asOf a owl:DatatypeProperty ;
+    rdfs:label "as of"@en ;
+    skos:definition "Time at which a fact or valuation was true in its system of record."@en ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: as-of date" ] .
+
+pwm:freshnessThreshold a owl:DatatypeProperty ;
+    rdfs:label "freshness threshold"@en ;
+    skos:definition "Maximum age at which a fact may still be used, as an xsd:duration."@en ;
+    rdfs:domain pwm:Fact ; rdfs:range xsd:duration ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: freshness thresholds per data type" ] .
+
+pwm:staleAction a owl:ObjectProperty ;
+    rdfs:label "stale action"@en ;
+    skos:definition "What happens when a fact is older than its threshold."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.StaleAction" ] .
+
+pwm:ruleCitation a owl:DatatypeProperty ;
+    rdfs:label "rule citation"@en ;
+    skos:definition "Text citing the policy, regulation or standard a rule implements."@en ;
+    rdfs:domain pwm:PolicyRule ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Every decision citable to policy" ] .
+
+pwm:decisionOutcome a owl:ObjectProperty ;
+    rdfs:label "decision outcome"@en ;
+    skos:definition "Outcome of a policy decision."@en ;
+    rdfs:domain pwm:PolicyDecision ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.Outcome" ] .
+
+pwm:decidedByRule a owl:ObjectProperty ;
+    rdfs:label "decided by rule"@en ;
+    skos:definition "Rule, at its version, that determined a policy decision."@en ;
+    rdfs:domain pwm:PolicyDecision ; rdfs:range pwm:PolicyRule ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 14: the rule and rule version that decided it" ] .
+
+pwm:underUseCase a owl:ObjectProperty ;
+    rdfs:label "under use case"@en ;
+    skos:definition "Registered use case a decision, claim or event was produced under."@en ;
+    rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: every decision must reference a registered use case" ] .
+
+pwm:reliesOnDelegation a owl:ObjectProperty ;
+    rdfs:label "relies on delegation"@en ;
+    skos:definition "Delegated authority a decision or action relied on."@en ;
+    rdfs:range pwm:DelegatedAuthority ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2: every decision references the delegation it relied on" ] .
+
+pwm:eventType a owl:ObjectProperty ;
+    rdfs:label "event type"@en ;
+    skos:definition "Kind of event an evidence record captures."@en ;
+    rdfs:domain pwm:EvidenceRecord ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.EventType" ] .
+
+pwm:evidenceFor a owl:ObjectProperty ;
+    rdfs:label "evidence for"@en ;
+    skos:definition "Decision, action, communication or other record that an evidence record documents. The record points to it by identifier and hash and does not copy its content."@en ;
+    rdfs:domain pwm:EvidenceRecord ;
+    rdfs:subPropertyOf dcterms:references ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Hash-chained evidence" ] , [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(d)" ] .
+
+pwm:recordHash a owl:DatatypeProperty ;
+    rdfs:label "record hash"@en ;
+    skos:definition "Hash of an evidence record, chained to the previous record so deletion or alteration is detectable."@en ;
+    rdfs:domain pwm:EvidenceRecord ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Hash-chained evidence" ] .
+
+pwm:previousRecordHash a owl:DatatypeProperty ;
+    rdfs:label "previous record hash"@en ;
+    skos:definition "Hash of the record that precedes this one in the chain. Required on every record except the first in a chain."@en ;
+    rdfs:domain pwm:EvidenceRecord ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Hash-chained evidence" ] .
+
+pwm:chainStart a owl:DatatypeProperty ;
+    rdfs:label "chain start"@en ;
+    skos:definition "True on the first record of an evidence chain, the only record without a previous record hash."@en ;
+    rdfs:domain pwm:EvidenceRecord ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Hash-chained evidence" ] .
+
+pwm:modelVersion a owl:DatatypeProperty ;
+    rdfs:label "model version"@en ;
+    skos:definition "Provider model version as served for a model call, claim or evaluation."@en ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(d): applicable model versions" ] .
+
+pwm:memoryScope a owl:ObjectProperty ;
+    rdfs:label "memory scope"@en ;
+    skos:definition "Scope of a memory record."@en ;
+    rdfs:domain pwm:MemoryRecord ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "memory.MemoryScope" ] .
+
+# --- Concept schemes -------------------------------------------------------------------
+
+pwm:DataClassificationScheme a skos:ConceptScheme ;
+    skos:prefLabel "data classifications"@en ;
+    skos:scopeNote "Ordered by sensitivity. Compare by rank, never by label: entitlement filtering and egress control depend on the order."@en ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.Classification" ] , [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.4(d)" ] .
+pwm:C0 a skos:Concept ; skos:inScheme pwm:DataClassificationScheme ; skos:topConceptOf pwm:DataClassificationScheme ; skos:notation "C0" ;
+    skos:prefLabel "public"@en ; skos:definition "Approved for public release."@en .
+pwm:C1 a skos:Concept ; skos:inScheme pwm:DataClassificationScheme ; skos:topConceptOf pwm:DataClassificationScheme ; skos:notation "C1" ;
+    skos:prefLabel "internal"@en ; skos:definition "For staff; no client identity."@en .
+pwm:C2 a skos:Concept ; skos:inScheme pwm:DataClassificationScheme ; skos:topConceptOf pwm:DataClassificationScheme ; skos:notation "C2" ;
+    skos:prefLabel "confidential"@en ; skos:altLabel "client-identifying"@en ;
+    skos:definition "Identifies a client; within banking secrecy where it applies."@en ; skos:closeMatch dpv:PersonalData .
+pwm:C3 a skos:Concept ; skos:inScheme pwm:DataClassificationScheme ; skos:topConceptOf pwm:DataClassificationScheme ; skos:notation "C3" ;
+    skos:prefLabel "restricted"@en ; skos:altLabel "need-to-know"@en , "highly sensitive"@en ;
+    skos:definition "Need-to-know only, such as screening hits, investigations, special-category data and material non-public information."@en ;
+    skos:closeMatch dpv:SpecialCategoryPersonalData .
+
+pwm:DecisionOutcomeScheme a skos:ConceptScheme ;
+    skos:prefLabel "policy decision outcomes"@en ;
+    skos:scopeNote "Resolution is fail-closed: the most severe outcome present decides, in the order deny, escalate, human approval, allow."@en ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.Outcome, OUTCOME_PRECEDENCE" ] .
+pwm:OutcomeDeny a skos:Concept ; skos:inScheme pwm:DecisionOutcomeScheme ; skos:topConceptOf pwm:DecisionOutcomeScheme ; skos:notation "DENY" ;
+    skos:prefLabel "deny"@en ; skos:definition "Refused; nothing moves."@en .
+pwm:OutcomeEscalate a skos:Concept ; skos:inScheme pwm:DecisionOutcomeScheme ; skos:topConceptOf pwm:DecisionOutcomeScheme ; skos:notation "ESCALATE" ;
+    skos:prefLabel "escalate"@en ; skos:definition "Uncertain; referred to a person."@en .
+pwm:OutcomeHumanApproval a skos:Concept ; skos:inScheme pwm:DecisionOutcomeScheme ; skos:topConceptOf pwm:DecisionOutcomeScheme ; skos:notation "HUMAN_APPROVAL" ;
+    skos:prefLabel "human approval"@en ; skos:definition "Held until a named person approves this exact action."@en .
+pwm:OutcomeAllow a skos:Concept ; skos:inScheme pwm:DecisionOutcomeScheme ; skos:topConceptOf pwm:DecisionOutcomeScheme ; skos:notation "ALLOW" ;
+    skos:prefLabel "allow"@en ; skos:definition "Every rule passed."@en .
+pwm:OutcomeObserve a skos:Concept ; skos:inScheme pwm:DecisionOutcomeScheme ; skos:topConceptOf pwm:DecisionOutcomeScheme ; skos:notation "OBSERVE" ;
+    skos:prefLabel "observe"@en ; skos:definition "Recorded without gating, in monitor-only deployments."@en .
+
+pwm:ClaimTypeScheme a skos:ConceptScheme ;
+    skos:prefLabel "claim types"@en ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 5" ] , [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "claims.ClaimType" ] .
+pwm:VerifiedFact a skos:Concept ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
+    skos:prefLabel "verified fact"@en ; skos:definition "Backed by a cited source and verification."@en .
+pwm:Inference a skos:Concept ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
+    skos:prefLabel "inference"@en ; skos:definition "Reasoned from facts; not itself verified."@en .
+pwm:ConversationHypothesis a skos:Concept ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
+    skos:prefLabel "conversation hypothesis"@en ; skos:definition "Something worth raising with the client, to be tested in conversation."@en .
+pwm:PossibleProviderCapability a skos:Concept ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
+    skos:prefLabel "possible provider capability"@en ; skos:altLabel "possible bank capability"@en ;
+    skos:definition "Something the institution might be able to offer, not yet confirmed."@en .
+
+pwm:ValidatorStatusScheme a skos:ConceptScheme ;
+    skos:prefLabel "validator statuses"@en ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 7" ] , [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "claims.ValidatorStatus" ] .
+pwm:ValidatorVerified a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "verified"@en ; skos:definition "Verifier confirmed it."@en .
+pwm:ValidatorInferred a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "inferred"@en ; skos:definition "Supported only by inference."@en .
+pwm:ValidatorUnverified a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "unverified"@en ; skos:definition "Not yet checked."@en .
+pwm:ValidatorConflicting a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "conflicting"@en ; skos:definition "Sources disagree."@en .
+pwm:ValidatorStale a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "stale"@en ; skos:definition "Relies on data past its freshness threshold."@en .
+pwm:ValidatorBlocked a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "blocked"@en ; skos:definition "May not be released."@en .
+
+pwm:AssetStatusScheme a skos:ConceptScheme ;
+    skos:prefLabel "information asset statuses"@en ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 9: superseded, current, draft" ] .
+pwm:AssetDraft a skos:Concept ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "draft"@en ; skos:definition "Not approved; never given to AI as authoritative."@en .
+pwm:AssetCurrent a skos:Concept ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "current"@en ; skos:definition "Approved and in force."@en .
+pwm:AssetSuperseded a skos:Concept ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "superseded"@en ; skos:definition "Replaced by a later version; kept for reconstruction only."@en .
+pwm:AssetWithdrawn a skos:Concept ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "withdrawn"@en ; skos:definition "Withdrawn without replacement."@en .
+
+pwm:StaleActionScheme a skos:ConceptScheme ;
+    skos:prefLabel "stale-data actions"@en ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.StaleAction" ] .
+pwm:StaleRefresh a skos:Concept ; skos:inScheme pwm:StaleActionScheme ; skos:topConceptOf pwm:StaleActionScheme ; skos:prefLabel "refresh"@en ; skos:definition "Fetch a current value before use."@en .
+pwm:StaleSuppress a skos:Concept ; skos:inScheme pwm:StaleActionScheme ; skos:topConceptOf pwm:StaleActionScheme ; skos:prefLabel "suppress"@en ; skos:definition "Do not use the value."@en .
+pwm:StaleWarn a skos:Concept ; skos:inScheme pwm:StaleActionScheme ; skos:topConceptOf pwm:StaleActionScheme ; skos:prefLabel "warn"@en ; skos:definition "Use with a visible staleness warning."@en .
+
+pwm:MemoryScopeScheme a skos:ConceptScheme ;
+    skos:prefLabel "memory scopes"@en ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "memory.MemoryScope" ] .
+pwm:MemoryWorking a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "working"@en ; skos:definition "Temporary context; expires with the run."@en .
+pwm:MemoryRelationship a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "relationship"@en ; skos:definition "Durable client information, governed like any bank record."@en .
+pwm:MemoryInstitutional a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "institutional"@en ; skos:definition "What the organisation learns across clients; no client data."@en .
+
+pwm:EvidenceEventTypeScheme a skos:ConceptScheme ;
+    skos:prefLabel "evidence event types"@en ;
+    skos:scopeNote "Notations match Kognita EventType values. Model refusal is added from the Filing Cabinet talk so refusals and policy denials are logged apart."@en ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.EventType" ] , [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 15" ] .
+pwm:EventPolicyDecision a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "POLICY_DECISION" ; skos:prefLabel "policy decision"@en ; skos:definition "A decision was taken."@en .
+pwm:EventModelCall a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "MODEL_CALL" ; skos:prefLabel "model call"@en ; skos:definition "A model was called; provider, version and prompt and response hashes recorded."@en .
+pwm:EventToolCall a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "TOOL_CALL" ; skos:prefLabel "tool call"@en ; skos:definition "A tool was invoked; arguments recorded as hashes."@en .
+pwm:EventRetrieval a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "RETRIEVAL" ; skos:prefLabel "retrieval"@en ; skos:definition "Content was retrieved, with item hashes."@en .
+pwm:EventApproval a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "APPROVAL" ; skos:prefLabel "approval"@en ; skos:definition "A person signed an approval."@en .
+pwm:EventEgress a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "EGRESS" ; skos:prefLabel "egress"@en ; skos:definition "Data left for a provider, allowed, redacted or denied."@en .
+pwm:EventPolicyChange a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "POLICY_CHANGE" ; skos:prefLabel "policy change"@en ; skos:definition "A rule or register entry changed."@en .
+pwm:EventOrigination a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "ORIGINATION" ; skos:prefLabel "origination"@en ; skos:definition "A client or product was selected."@en .
+pwm:EventFinalDecision a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "FINAL_DECISION" ; skos:prefLabel "final decision"@en ; skos:definition "A person decided."@en .
+pwm:EventClientCommunication a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "CLIENT_COMMUNICATION" ; skos:prefLabel "client communication"@en ; skos:definition "Something was sent to a client."@en .
+pwm:EventIntervention a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "INTERVENTION" ; skos:prefLabel "intervention"@en ; skos:definition "A person paused, overrode, restricted, revoked or recovered a live run."@en .
+pwm:EventOutcome a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "OUTCOME" ; skos:prefLabel "outcome"@en ; skos:definition "A complaint, correction or other outcome was linked to the interaction."@en .
+pwm:EventNearMiss a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "NEAR_MISS" ; skos:prefLabel "near miss"@en ; skos:definition "A near miss was recorded."@en .
+pwm:EventClaim a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "CLAIM" ; skos:prefLabel "claim"@en ; skos:definition "A claim was recorded."@en .
+pwm:EventIncidentOpened a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "INCIDENT_OPENED" ; skos:prefLabel "incident opened"@en ; skos:definition "An AI incident was opened."@en .
+pwm:EventErasure a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "ERASURE" ; skos:prefLabel "erasure"@en ; skos:definition "Content was erased; the chain stays verifiable."@en .
+pwm:EventModelRefusal a skos:Concept ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:notation "MODEL_REFUSAL" ; skos:prefLabel "model refusal"@en ;
+    skos:definition "The model declined, as distinct from a policy denial."@en .

@@ -1,0 +1,471 @@
+
+# =============================================================================
+#  Module 0: Core patterns
+# =============================================================================
+
+pwm:Assessment a owl:Class ;
+    rdfs:label "assessment"@en ;
+    skos:definition "Dated, attributable record of an evaluation of a party, product, portfolio or AI use case, valid for a period and replaceable by a later assessment."@en ;
+    skos:scopeNote "Due diligence, investor classification, risk profile, suitability, product risk rating and AI risk materiality are all assessments. Who assessed it is recorded with prov:wasAttributedTo; when, with prov:generatedAtTime."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleCore ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:citation [ pwm:cites pwmref:W3C-PROV-O ; pwm:locator "prov:Entity, prov:wasAttributedTo, prov:generatedAtTime" ] ,
+                 [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Shared pattern for dated evaluations" ] .
+
+pwm:assesses a owl:ObjectProperty ;
+    rdfs:label "assesses"@en ;
+    skos:definition "Thing an assessment evaluates."@en ;
+    rdfs:domain pwm:Assessment ;
+    pwm:inModule pwm:ModuleCore ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Core pattern" ] .
+
+pwm:validFrom a owl:DatatypeProperty ;
+    rdfs:label "valid from"@en ;
+    skos:definition "Start of the period in which a record, rule or document is in force."@en ;
+    rdfs:range xsd:dateTime ;
+    skos:closeMatch dcterms:valid ;
+    pwm:inModule pwm:ModuleCore ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: effective date as a minimum label" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.3: policy rows effective-dated; 0.6 item 8: standards are effective-dated" ] .
+
+pwm:validUntil a owl:DatatypeProperty ;
+    rdfs:label "valid until"@en ;
+    skos:definition "End of the period in which a record, rule or document is in force. Absent while it remains in force."@en ;
+    rdfs:range xsd:dateTime ;
+    skos:closeMatch dcterms:valid ;
+    pwm:inModule pwm:ModuleCore ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: created, effective, superseded and expiry dates" ] .
+
+pwm:supersedes a owl:ObjectProperty ;
+    rdfs:label "supersedes"@en ;
+    skos:definition "Earlier version that this record, rule or document replaces. The earlier version stays readable for reconstruction but may no longer be used."@en ;
+    skos:closeMatch dcterms:replaces ;
+    pwm:inModule pwm:ModuleCore ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: what it supersedes, as a minimum label" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 4: house-view change propagation" ] .
+
+pwm:nextReviewDate a owl:DatatypeProperty ;
+    rdfs:label "next review date"@en ;
+    skos:definition "Date by which a record must be reviewed. Past this date the record is treated as expired."@en ;
+    rdfs:range xsd:date ;
+    pwm:inModule pwm:ModuleCore ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10: ongoing due diligence" ] ,
+                 [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.11, 4.13: assessments regularly reviewed" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: past its review date, a use case is a DENY" ] .
+
+pwm:rationale a owl:DatatypeProperty ;
+    rdfs:label "rationale"@en ;
+    skos:definition "Reasons for an assessment or decision, stated as facts and evidence rather than as a bare score."@en ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleCore ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 10: reasons, not scores" ] .
+
+pwm:approvedBy a owl:ObjectProperty ;
+    rdfs:label "approved by"@en ;
+    skos:definition "Role whose holder approved this record."@en ;
+    rdfs:range cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleCore ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.13: control function approves materiality; 5.21: approval body" ] .
+
+# =============================================================================
+#  Module 1: Parties, roles and relationships
+# =============================================================================
+
+pwm:Client a owl:Class ;
+    rdfs:label "client"@en ;
+    skos:definition "Role of a party that has, or is establishing, a business relationship with a wealth manager to receive investment, banking, advisory or fiduciary services."@en ;
+    rdfs:subClassOf fibo-fnd-pas-pas:Client ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10: customer subject to due diligence" ] .
+
+pwm:IndividualClient a owl:Class ;
+    rdfs:label "individual client"@en ;
+    skos:definition "Client role played by a natural person."@en ;
+    rdfs:subClassOf pwm:Client ,
+        [ a owl:Restriction ; owl:onProperty cmns-rlcmp:isPlayedBy ; owl:someValuesFrom fibo-fnd-aap-ppl:Person ] ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10" ] .
+
+pwm:EntityClient a owl:Class ;
+    rdfs:label "entity client"@en ;
+    skos:definition "Client role played by a legal person or a legal arrangement, such as a company, foundation or trust."@en ;
+    rdfs:subClassOf pwm:Client ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10, R.24, R.25" ] .
+
+pwm:Prospect a owl:Class ;
+    rdfs:label "prospect"@en ;
+    skos:definition "Role of a party a wealth manager is considering or approaching before any business relationship exists."@en ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 11: prospect scoring in fairness reporting" ] ,
+                 [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Pre-relationship role" ] .
+
+pwm:ClientRelationship a owl:Class ;
+    rdfs:label "client relationship"@en ;
+    skos:definition "Business relationship between a wealth manager and one or more clients, booked in a booking centre and covered by named relationship managers for a period."@en ;
+    rdfs:subClassOf cmns-pts:Situation ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10: business relationship" ] ,
+                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre, relationship-manager" ] .
+
+pwm:RelationshipGroup a owl:Class ;
+    rdfs:label "relationship group"@en ;
+    skos:altLabel "household"@en , "family group"@en ;
+    skos:definition "Set of related clients, such as a family, its holding structures and its trusts, managed and reported together."@en ;
+    skos:editorialNote "FIBO's Household (IND/EconomicIndicators) is a statistical concept for economic indicators and is not aligned here."@en ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Household and family-group view used in private banking" ] .
+
+pwm:RelationshipManager a owl:Class ;
+    rdfs:label "relationship manager"@en ;
+    skos:definition "Person responsible for a client relationship on behalf of the wealth manager."@en ;
+    rdfs:subClassOf fibo-fbc-pas-caa:RelationshipManager ;
+    skos:exactMatch fibo-fbc-pas-caa:RelationshipManager ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "relationship-manager (acting principal equals the named RM); rm-location" ] .
+
+pwm:CoverageAssignment a owl:Class ;
+    rdfs:label "coverage assignment"@en ;
+    skos:definition "Assignment of a relationship manager or a specialist to a client relationship, in a stated coverage role, for a period."@en ;
+    rdfs:subClassOf cmns-pts:Situation ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "relationship-manager" ] ,
+                 [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Primary and secondary coverage" ] .
+
+pwm:InvestmentAdviser a owl:Class ;
+    rdfs:label "investment adviser"@en ;
+    skos:definition "Role of a person who gives investment advice to clients under the wealth manager's licence or registration."@en ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 4(1)(4): investment advice" ] ,
+                 [ pwm:cites pwmref:MAS-FAA-N16 ; pwm:locator "Recommendations on investment products" ] .
+
+pwm:ExternalAssetManager a owl:Class ;
+    rdfs:label "external asset manager"@en ;
+    skos:altLabel "independent asset manager"@en ;
+    skos:definition "Independent firm that manages a client's assets booked with the wealth manager, acting under a limited power of attorney granted by the client."@en ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Intermediated private banking model" ] .
+
+pwm:AuthorisedSignatory a owl:Class ;
+    rdfs:label "authorised signatory"@en ;
+    skos:definition "Person authorised to give instructions on an account or for an entity client, within stated signing rules."@en ;
+    rdfs:subClassOf fibo-be-oac-exec:AuthorizedIndividual ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Account mandate and signing authority" ] .
+
+pwm:PowerOfAttorneyHolder a owl:Class ;
+    rdfs:label "power of attorney holder"@en ;
+    skos:definition "Party authorised by a client, under a power of attorney, to act for the client within the scope that instrument grants."@en ;
+    rdfs:subClassOf fibo-be-oac-exec:AuthorizedIndividual ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "General and limited powers of attorney" ] .
+
+pwm:BeneficialOwner a owl:Class ;
+    rdfs:label "beneficial owner"@en ;
+    skos:definition "Natural person who ultimately owns or controls a client, or on whose behalf a transaction is conducted, including those exercising ultimate effective control over a legal person or arrangement."@en ;
+    rdfs:subClassOf fibo-be-oac-cown:BeneficialOwner ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "Glossary: beneficial owner; R.24; R.25" ] ,
+                 [ pwm:cites pwmref:MAS-626 ; pwm:locator "Customer due diligence on beneficial owners" ] .
+
+pwm:ControllingPerson a owl:Class ;
+    rdfs:label "controlling person"@en ;
+    skos:definition "Natural person who exercises control over an entity account holder for tax-reporting purposes; for a trust, the settlor, trustees, protector, beneficiaries and anyone with ultimate effective control."@en ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    skos:closeMatch pwm:BeneficialOwner ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "Section VIII(D)(6)" ] .
+
+pwm:PoliticallyExposedPerson a owl:Class ;
+    rdfs:label "politically exposed person"@en ;
+    skos:altLabel "PEP"@en ;
+    skos:definition "Role of a person who is or has been entrusted with a prominent public function, or is a family member or close associate of such a person, attracting enhanced due diligence."@en ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C3 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.12; Glossary: politically exposed persons" ] ,
+                 [ pwm:cites pwmref:MAS-626 ; pwm:locator "Politically exposed persons" ] .
+
+pwm:ConnectedParty a owl:Class ;
+    rdfs:label "connected party"@en ;
+    skos:definition "Party linked to a client by family, business or control, recorded for due diligence and conflict checks."@en ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.12: family members and close associates" ] .
+
+pwm:LegalArrangement a owl:Class ;
+    rdfs:label "legal arrangement"@en ;
+    skos:definition "Express trust or similar arrangement through which assets are held and controlled, treated as a party to the relationship."@en ;
+    skos:editorialNote "FIBO models a trust as a legal entity. PWM keeps that alignment and adds this FATF term so trusts and similar arrangements can be handled together."@en ;
+    rdfs:subClassOf cmns-pts:Party ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.25; Glossary: legal arrangements" ] .
+
+pwm:Trust a owl:Class ;
+    rdfs:label "trust"@en ;
+    skos:definition "Arrangement in which a settlor places assets under the control of a trustee for the benefit of beneficiaries."@en ;
+    rdfs:subClassOf fibo-be-tr-tr:Trust , pwm:LegalArrangement ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.25" ] .
+
+pwm:Settlor a owl:Class ;
+    rdfs:label "settlor"@en ;
+    skos:altLabel "trustor"@en ;
+    skos:definition "Party that establishes a trust and places assets into it."@en ;
+    rdfs:subClassOf fibo-be-tr-tr:Trustor ;
+    skos:exactMatch fibo-be-tr-tr:Trustor ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.25" ] , [ pwm:cites pwmref:OECD-CRS ; pwm:locator "Section VIII(D)(6)" ] .
+
+pwm:Trustee a owl:Class ;
+    rdfs:label "trustee"@en ;
+    skos:definition "Party that holds and manages trust assets for the beneficiaries."@en ;
+    rdfs:subClassOf fibo-be-tr-tr:Trustee ;
+    skos:exactMatch fibo-be-tr-tr:Trustee ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.25" ] .
+
+pwm:TrustBeneficiary a owl:Class ;
+    rdfs:label "trust beneficiary"@en ;
+    skos:definition "Party, or class of parties, for whose benefit a trust holds assets."@en ;
+    rdfs:subClassOf fibo-be-tr-tr:TrustBeneficiary ;
+    skos:exactMatch fibo-be-tr-tr:TrustBeneficiary ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.25" ] .
+
+pwm:Protector a owl:Class ;
+    rdfs:label "protector"@en ;
+    skos:definition "Party appointed under a trust instrument to oversee the trustee, often with powers of consent or removal."@en ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.25" ] , [ pwm:cites pwmref:OECD-CRS ; pwm:locator "Section VIII(D)(6)" ] .
+
+pwm:Foundation a owl:Class ;
+    rdfs:label "private foundation"@en ;
+    skos:definition "Legal person, without shareholders, established to hold and administer assets for stated purposes or beneficiaries."@en ;
+    rdfs:subClassOf cmns-org:LegalEntity ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.24: legal persons" ] ,
+                 [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "No FIBO class for foundations at the version checked" ] .
+
+pwm:PrivateInvestmentCompany a owl:Class ;
+    rdfs:label "private investment company"@en ;
+    skos:definition "Company formed to hold the investments of an individual or family, usually with no operating business."@en ;
+    rdfs:subClassOf cmns-org:LegalEntity ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Personal holding structure" ] , [ pwm:cites pwmref:FATF ; pwm:locator "R.24" ] .
+
+pwm:FamilyOffice a owl:Class ;
+    rdfs:label "family office"@en ;
+    skos:definition "Organisation that administers and manages the affairs and wealth of one or more families."@en ;
+    rdfs:subClassOf fibo-be-fct-fct:FamilyOffice ;
+    skos:exactMatch fibo-be-fct-fct:FamilyOffice ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Client or intermediary" ] .
+
+pwm:WealthManager a owl:Class ;
+    rdfs:label "wealth manager"@en ;
+    skos:definition "Financial service provider that delivers wealth management services: advice, portfolio management, custody, lending and planning."@en ;
+    rdfs:subClassOf fibo-fbc-pas-fpas:FinancialServiceProvider ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:ISO-22222 ; pwm:locator "Scope of personal financial planning" ] .
+
+pwm:PrivateBank a owl:Class ;
+    rdfs:label "private bank"@en ;
+    skos:definition "Bank that delivers wealth management services to high-net-worth clients."@en ;
+    rdfs:subClassOf fibo-fbc-fct-fse:Bank , pwm:WealthManager ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:SG-BANKING-ACT ; pwm:locator "s47: customer information may be disclosed only as the Act provides" ] .
+
+pwm:WealthManagementService a owl:Class ;
+    rdfs:label "wealth management service"@en ;
+    skos:definition "Service combining investment advice or portfolio management with planning, custody, credit and estate services for a client."@en ;
+    rdfs:subClassOf fibo-fbc-fct-fse:WealthManagementService ;
+    skos:exactMatch fibo-fbc-fct-fse:WealthManagementService ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:ISO-22222 ; pwm:locator "Personal financial planning process" ] .
+
+pwm:BookingCentre a owl:Class ;
+    rdfs:label "booking centre"@en ;
+    skos:definition "Role of a legal entity or branch of a wealth manager in which client accounts, contracts and assets are booked, and whose jurisdiction's rules apply to them."@en ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre: recognised booking centres" ] ,
+                 [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Booking model" ] .
+
+pwm:Custodian a owl:Class ;
+    rdfs:label "custodian"@en ;
+    skos:definition "Financial institution that holds clients' securities for safekeeping."@en ;
+    rdfs:subClassOf fibo-sec-eq-eq:Custodian ;
+    skos:exactMatch fibo-sec-eq-eq:Custodian ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Custody chain" ] .
+
+# --- Properties ------------------------------------------------------------------
+
+pwm:hasClient a owl:ObjectProperty ;
+    rdfs:label "has client"@en ;
+    skos:definition "Client in a client relationship."@en ;
+    rdfs:domain pwm:ClientRelationship ; rdfs:range pwm:Client ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10" ] .
+
+pwm:hasProvider a owl:ObjectProperty ;
+    rdfs:label "has provider"@en ;
+    skos:definition "Wealth manager in a client relationship."@en ;
+    rdfs:domain pwm:ClientRelationship ; rdfs:range pwm:WealthManager ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Relationship pattern" ] .
+
+pwm:isBookedAt a owl:ObjectProperty ;
+    rdfs:label "is booked at"@en ;
+    skos:definition "Booking centre in which a relationship, account or contract is booked."@en ;
+    rdfs:range pwm:BookingCentre ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .
+
+pwm:inGroup a owl:ObjectProperty ;
+    rdfs:label "in group"@en ;
+    skos:definition "Relationship group a client belongs to."@en ;
+    rdfs:domain pwm:Client ; rdfs:range pwm:RelationshipGroup ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Household view" ] .
+
+pwm:assignedCoverage a owl:ObjectProperty ;
+    rdfs:label "assigned coverage"@en ;
+    skos:definition "Party role named in a coverage assignment: a relationship manager, or a product, credit, investment or planning specialist. The coverage role says which."@en ;
+    rdfs:domain pwm:CoverageAssignment ; rdfs:range cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Coverage model" ] .
+
+pwm:assignedRelationshipManager a owl:ObjectProperty ;
+    rdfs:label "assigned relationship manager"@en ;
+    skos:definition "Relationship manager named in a coverage assignment. Specialists are named with the parent property, assigned coverage."@en ;
+    rdfs:subPropertyOf pwm:assignedCoverage ;
+    rdfs:domain pwm:CoverageAssignment ; rdfs:range pwm:RelationshipManager ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "relationship-manager" ] .
+
+pwm:coversRelationship a owl:ObjectProperty ;
+    rdfs:label "covers relationship"@en ;
+    skos:definition "Client relationship that a coverage assignment covers."@en ;
+    rdfs:domain pwm:CoverageAssignment ; rdfs:range pwm:ClientRelationship ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "relationship-manager" ] .
+
+pwm:coverageRole a owl:ObjectProperty ;
+    rdfs:label "coverage role"@en ;
+    skos:definition "Role of the assignee in a coverage assignment: primary, secondary or specialist."@en ;
+    rdfs:domain pwm:CoverageAssignment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Coverage model" ] .
+
+pwm:hasBeneficialOwner a owl:ObjectProperty ;
+    rdfs:label "has beneficial owner"@en ;
+    skos:definition "Beneficial owner of a client, entity or account."@en ;
+    rdfs:range pwm:BeneficialOwner ;
+    skos:closeMatch fibo-be-oac-cown:hasBeneficialOwner ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10, R.24, R.25" ] .
+
+pwm:pepCategory a owl:ObjectProperty ;
+    rdfs:label "PEP category"@en ;
+    skos:definition "Kind of politically exposed person."@en ;
+    rdfs:domain pwm:PoliticallyExposedPerson ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.12" ] .
+
+pwm:connectedTo a owl:ObjectProperty ;
+    rdfs:label "connected to"@en ;
+    skos:definition "Client or party that a connected party is linked to."@en ;
+    rdfs:domain pwm:ConnectedParty ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.12" ] .
+
+pwm:residenceCountry a owl:DatatypeProperty ;
+    rdfs:label "residence country"@en ;
+    skos:definition "Country where a natural person resides, as an ISO 3166-1 alpha-2 code."@en ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile" ] .
+
+pwm:domicileCountry a owl:DatatypeProperty ;
+    rdfs:label "domicile country"@en ;
+    skos:definition "Country of a party's domicile, as an ISO 3166-1 alpha-2 code. Drives cross-border rules."@en ;
+    rdfs:range xsd:string ;
+    skos:closeMatch cmns-org:isDomiciledIn ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile: recognised domiciles" ] .
+
+pwm:nationalityCountry a owl:DatatypeProperty ;
+    rdfs:label "nationality country"@en ;
+    skos:definition "Country of a natural person's nationality, as an ISO 3166-1 alpha-2 code."@en ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] .
+
+pwm:jurisdictionCode a owl:DatatypeProperty ;
+    rdfs:label "jurisdiction code"@en ;
+    skos:definition "Jurisdiction of a booking centre, rule or use case, as an ISO 3166-1 alpha-2 code."@en ;
+    rdfs:range xsd:string ;
+    skos:closeMatch cmns-rga:hasJurisdiction ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre, rm-location" ] .
+
+pwm:legalEntityIdentifier a owl:DatatypeProperty ;
+    rdfs:label "legal entity identifier"@en ;
+    skos:altLabel "LEI"@en ;
+    skos:definition "Twenty-character ISO 17442 identifier of a legal entity."@en ;
+    rdfs:range xsd:string ;
+    skos:closeMatch fibo-be-le-lei:LegalEntityIdentifier ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:ISO-17442 ; pwm:locator "LEI code structure" ] .
+
+# --- Concept schemes ---------------------------------------------------------------
+
+pwm:CoverageRoleScheme a skos:ConceptScheme ;
+    skos:prefLabel "coverage roles"@en ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Coverage model" ] .
+pwm:CoveragePrimary a skos:Concept ; skos:inScheme pwm:CoverageRoleScheme ; skos:topConceptOf pwm:CoverageRoleScheme ;
+    skos:prefLabel "primary"@en ; skos:definition "Lead relationship manager, accountable for the relationship."@en .
+pwm:CoverageSecondary a skos:Concept ; skos:inScheme pwm:CoverageRoleScheme ; skos:topConceptOf pwm:CoverageRoleScheme ;
+    skos:prefLabel "secondary"@en ; skos:definition "Backup relationship manager."@en .
+pwm:CoverageSpecialist a skos:Concept ; skos:inScheme pwm:CoverageRoleScheme ; skos:topConceptOf pwm:CoverageRoleScheme ;
+    skos:prefLabel "specialist"@en ; skos:definition "Product, credit, investment or planning specialist supporting the relationship."@en .
+
+pwm:PEPCategoryScheme a skos:ConceptScheme ;
+    skos:prefLabel "politically exposed person categories"@en ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.12; Glossary" ] .
+pwm:ForeignPEP a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;
+    skos:prefLabel "foreign PEP"@en ; skos:definition "Entrusted with a prominent public function by a foreign country."@en .
+pwm:DomesticPEP a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;
+    skos:prefLabel "domestic PEP"@en ; skos:definition "Entrusted domestically with a prominent public function."@en .
+pwm:InternationalOrganisationPEP a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;
+    skos:prefLabel "international organisation PEP"@en ; skos:definition "Entrusted with a prominent function by an international organisation."@en .
+pwm:PEPFamilyMember a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;
+    skos:prefLabel "family member of a PEP"@en ; skos:definition "Related to a PEP by blood or marriage."@en .
+pwm:PEPCloseAssociate a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;
+    skos:prefLabel "close associate of a PEP"@en ; skos:definition "Closely connected to a PEP, socially or professionally."@en .

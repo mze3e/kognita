@@ -1,0 +1,264 @@
+# =============================================================================
+#  Private Wealth Management Ontology (PWM), version 0.1 (draft)
+#
+#  A generic ontology for private banking and wealth management, built on
+#  published standards (FIBO, OMG Commons, W3C PROV-O, SKOS, DPV) and grounded
+#  in regulation and in the Kognita governed-agent roadmap.
+#
+#  Author: Ahmed Muzammil (https://ahmedmuzammil.com)
+#  Licence: Creative Commons Attribution-ShareAlike 4.0 International
+#
+#  How to read the references: every PWM term carries one or more
+#  pwm:citation nodes. Each names a reference in the register (pwmref:...) and
+#  a locator inside it (article, paragraph, roadmap item). Alignments to FIBO,
+#  OMG Commons, PROV-O and DPV are expressed as rdfs:subClassOf or
+#  skos:exactMatch / skos:closeMatch, and are not repeated as citations.
+#
+#  This file does not owl:import FIBO or OMG Commons. External terms are
+#  declared with rdfs:isDefinedBy pointing at their source ontology, so the
+#  file loads on its own; import FIBO alongside it to reason over FIBO axioms.
+# =============================================================================
+
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix vann:     <http://purl.org/vocab/vann/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix dpv:      <https://w3id.org/dpv#> .
+@prefix ai:       <https://w3id.org/dpv/ai#> .
+
+@prefix cmns-pts:   <https://www.omg.org/spec/Commons/PartiesAndSituations/> .
+@prefix cmns-org:   <https://www.omg.org/spec/Commons/Organizations/> .
+@prefix cmns-rga:   <https://www.omg.org/spec/Commons/RegulatoryAgencies/> .
+@prefix cmns-bauth: <https://www.omg.org/spec/Commons/BusinessAuthorizations/> .
+@prefix cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/> .
+@prefix cmns-doc:   <https://www.omg.org/spec/Commons/Documents/> .
+
+@prefix fibo-fnd-pas-pas:  <https://spec.edmcouncil.org/fibo/ontology/FND/ProductsAndServices/ProductsAndServices/> .
+@prefix fibo-fnd-aap-ppl:  <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/> .
+@prefix fibo-fnd-oac-own:  <https://spec.edmcouncil.org/fibo/ontology/FND/OwnershipAndControl/Ownership/> .
+@prefix fibo-fnd-gao-obj:  <https://spec.edmcouncil.org/fibo/ontology/FND/GoalsAndObjectives/Objectives/> .
+@prefix fibo-fnd-agr-ctr:  <https://spec.edmcouncil.org/fibo/ontology/FND/Agreements/Contracts/> .
+@prefix fibo-fnd-acc-cur:  <https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/> .
+@prefix fibo-fnd-pty-pty:  <https://spec.edmcouncil.org/fibo/ontology/FND/Parties/Parties/> .
+@prefix fibo-fnd-rel-rel:  <https://spec.edmcouncil.org/fibo/ontology/FND/Relations/Relations/> .
+@prefix fibo-fbc-pas-caa:  <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> .
+@prefix fibo-fbc-pas-fpas: <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/FinancialProductsAndServices/> .
+@prefix fibo-fbc-fct-fse:  <https://spec.edmcouncil.org/fibo/ontology/FBC/FunctionalEntities/FinancialServicesEntities/> .
+@prefix fibo-fbc-fi-fi:    <https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/> .
+@prefix fibo-be-oac-cown:  <https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateOwnership/> .
+@prefix fibo-be-oac-exec:  <https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/Executives/> .
+@prefix fibo-be-tr-tr:     <https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/> .
+@prefix fibo-be-fct-fct:   <https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/FunctionalEntities/> .
+@prefix fibo-be-le-lei:    <https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LEIEntities/> .
+@prefix fibo-sec-eq-eq:    <https://spec.edmcouncil.org/fibo/ontology/SEC/Equities/EquityInstruments/> .
+@prefix fibo-sec-dbt-bnd:  <https://spec.edmcouncil.org/fibo/ontology/SEC/Debt/Bonds/> .
+@prefix fibo-sec-sec-pls:  <https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/Pools/> .
+@prefix fibo-sec-fund-fund: <https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/Funds/> .
+@prefix fibo-sec-fund-civ: <https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/CollectiveInvestmentVehicles/> .
+@prefix fibo-sec-sec-rst:  <https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesRestrictions/> .
+@prefix fibo-sec-sec-iss:  <https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesIssuance/> .
+@prefix fibo-sec-sec-cls:  <https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesClassification/> .
+@prefix fibo-der-drc-str:  <https://spec.edmcouncil.org/fibo/ontology/DER/DerivativesContracts/StructuredInstruments/> .
+@prefix fibo-loan-ln-ln:   <https://spec.edmcouncil.org/fibo/ontology/LOAN/LoansGeneral/Loans/> .
+
+@prefix pwm:    <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix pwmref: <https://ahmedmuzammil.com/ontology/pwm#ref-> .
+
+# -----------------------------------------------------------------------------
+#  Ontology
+# -----------------------------------------------------------------------------
+
+<https://ahmedmuzammil.com/ontology/pwm>
+    a owl:Ontology ;
+    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/0.1> ;
+    owl:versionInfo "0.1 (draft)" ;
+    dcterms:title "Private Wealth Management Ontology"@en ;
+    dcterms:alternative "PWM"@en ;
+    dcterms:description """A generic ontology for private banking and wealth management. It models parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, client interactions, and the governance of AI that acts on them: use cases, agents, delegated authority, claims and evidence. Business concepts reuse or specialise the Financial Industry Business Ontology (FIBO) and the OMG Commons library. Governance concepts follow the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) and the Kognita roadmap. Every term cites the references it is grounded in. Institution-specific detail belongs in an extension that imports this ontology."""@en ;
+    dcterms:creator "Ahmed Muzammil" ;
+    dcterms:created "2026-11-02"^^xsd:date ;
+    dcterms:modified "2026-11-02"^^xsd:date ;
+    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
+    dcterms:source <https://github.com/edmcouncil/fibo> , <https://github.com/mze3e/kognita> ;
+    vann:preferredNamespacePrefix "pwm" ;
+    vann:preferredNamespaceUri "https://ahmedmuzammil.com/ontology/pwm#" ;
+    rdfs:seeAlso <https://ahmedmuzammil.com/ontology/pwm> .
+
+# -----------------------------------------------------------------------------
+#  Declarations, so the file stays within OWL 2 DL. SKOS terms take the types
+#  the SKOS Reference gives them; DCMI Terms and VANN are annotations.
+# -----------------------------------------------------------------------------
+
+skos:Concept a owl:Class .
+skos:ConceptScheme a owl:Class .
+
+skos:prefLabel a owl:AnnotationProperty .
+skos:altLabel a owl:AnnotationProperty .
+skos:notation a owl:DatatypeProperty .
+skos:definition a owl:AnnotationProperty .
+skos:scopeNote a owl:AnnotationProperty .
+skos:note a owl:AnnotationProperty .
+skos:editorialNote a owl:AnnotationProperty .
+skos:example a owl:AnnotationProperty .
+skos:inScheme a owl:ObjectProperty .
+skos:topConceptOf a owl:ObjectProperty .
+skos:broader a owl:ObjectProperty .
+skos:exactMatch a owl:ObjectProperty .
+skos:closeMatch a owl:ObjectProperty .
+skos:relatedMatch a owl:ObjectProperty .
+
+dcterms:title a owl:AnnotationProperty .
+dcterms:alternative a owl:AnnotationProperty .
+dcterms:description a owl:AnnotationProperty .
+dcterms:creator a owl:AnnotationProperty .
+dcterms:publisher a owl:AnnotationProperty .
+dcterms:created a owl:AnnotationProperty .
+dcterms:modified a owl:AnnotationProperty .
+dcterms:date a owl:AnnotationProperty .
+dcterms:license a owl:AnnotationProperty .
+dcterms:source a owl:AnnotationProperty .
+vann:preferredNamespacePrefix a owl:AnnotationProperty .
+vann:preferredNamespaceUri a owl:AnnotationProperty .
+
+xsd:date a rdfs:Datatype .
+xsd:duration a rdfs:Datatype .
+
+# -----------------------------------------------------------------------------
+#  Meta-model: how terms are grouped, cited and marked
+# -----------------------------------------------------------------------------
+
+pwm:Module a owl:Class ;
+    rdfs:label "module"@en ;
+    skos:definition "Thematic grouping of PWM terms used to organise this specification."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:Reference a owl:Class ;
+    rdfs:label "reference"@en ;
+    skos:definition "Published source that a PWM term is grounded in: a standard, an ontology, a regulation or supervisory guideline, or a Kognita or EVOLVE document."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:Citation a owl:Class ;
+    rdfs:label "citation"@en ;
+    skos:definition "Pointer from a PWM term to a reference, with a locator inside that reference."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:SourceType a owl:Class ;
+    rdfs:label "source type"@en ;
+    skos:definition "Kind of reference, used to mark how a term is grounded."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:ContextSpeed a owl:Class ;
+    rdfs:label "context speed"@en ;
+    skos:definition "How quickly facts of a given kind change, which decides how an AI context layer may hold them."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:inModule a owl:AnnotationProperty ;
+    rdfs:label "in module"@en ;
+    skos:definition "Module of this specification that a term belongs to."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:moduleOrder a owl:AnnotationProperty ;
+    rdfs:label "module order"@en ;
+    skos:definition "Position of a module in the specification."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:citation a owl:AnnotationProperty ;
+    rdfs:label "citation"@en ;
+    skos:definition "Links a term to a citation node naming a reference and a locator."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:cites a owl:AnnotationProperty ;
+    rdfs:label "cites"@en ;
+    skos:definition "Reference that a citation points at."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:locator a owl:AnnotationProperty ;
+    rdfs:label "locator"@en ;
+    skos:definition "Article, paragraph, section or item inside the cited reference."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:sourceType a owl:AnnotationProperty ;
+    rdfs:label "source type"@en ;
+    skos:definition "Kind of a reference."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:jurisdiction a owl:AnnotationProperty ;
+    rdfs:label "jurisdiction"@en ;
+    skos:definition "Jurisdiction a reference applies in, as an ISO 3166-1 alpha-2 code, EU, or Global."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:verificationStatus a owl:AnnotationProperty ;
+    rdfs:label "verification status"@en ;
+    skos:definition "How the reference was checked while drafting this version."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:valuesFrom a owl:AnnotationProperty ;
+    rdfs:label "values from"@en ;
+    skos:definition "Code list (SKOS concept scheme) that a coded property takes its values from."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:contextSpeed a owl:AnnotationProperty ;
+    rdfs:label "context speed"@en ;
+    skos:definition "How quickly facts of this kind change. Fast facts are looked up live at the moment of use and are never cached or embedded for AI."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:defaultClassification a owl:AnnotationProperty ;
+    rdfs:label "default classification"@en ;
+    skos:definition "Data classification that instances of this class carry unless a more restrictive one applies."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+pwm:reusedIn a owl:AnnotationProperty ;
+    rdfs:label "reused in"@en ;
+    skos:definition "Marks an external term that PWM reuses without change, and the module that uses it."@en ;
+    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
+
+# Modules
+
+pwm:ModuleCore a pwm:Module ; rdfs:label "Core patterns"@en ; pwm:moduleOrder 0 ;
+    skos:definition "Assessments, validity periods and supersession: the patterns every other module reuses."@en .
+pwm:ModuleParties a pwm:Module ; rdfs:label "Parties, roles and relationships"@en ; pwm:moduleOrder 1 ;
+    skos:definition "Clients, related parties, legal arrangements, providers and the relationship that binds them."@en .
+pwm:ModuleCompliance a pwm:Module ; rdfs:label "Due diligence, financial crime and tax"@en ; pwm:moduleOrder 2 ;
+    skos:definition "Customer due diligence, risk rating, source of wealth, screening and tax residency."@en .
+pwm:ModuleSuitability a pwm:Module ; rdfs:label "Investor profile and suitability"@en ; pwm:moduleOrder 3 ;
+    skos:definition "Regulatory investor classification, risk profile, knowledge and experience, and suitability and appropriateness."@en .
+pwm:ModuleMandates a pwm:Module ; rdfs:label "Mandates, restrictions and fees"@en ; pwm:moduleOrder 4 ;
+    skos:definition "The service model agreed with the client, its investment restrictions and its charges."@en .
+pwm:ModuleAccounts a pwm:Module ; rdfs:label "Accounts, portfolios and holdings"@en ; pwm:moduleOrder 5 ;
+    skos:definition "Where assets are held, what is held, and how it is valued."@en .
+pwm:ModuleProducts a pwm:Module ; rdfs:label "Products, distribution and research"@en ; pwm:moduleOrder 6 ;
+    skos:definition "The product shelf, product risk and target market, cross-border distribution rules, offering documents and the house view."@en .
+pwm:ModuleInteractions a pwm:Module ; rdfs:label "Interactions, advice and communication"@en ; pwm:moduleOrder 7 ;
+    skos:definition "Why a client was approached, what was recommended, who decided, and what reached the client."@en .
+pwm:ModuleGovernance a pwm:Module ; rdfs:label "AI use cases, authority and accountability"@en ; pwm:moduleOrder 8 ;
+    skos:definition "The AI inventory, risk materiality, agents, delegated authority, autonomy and the people accountable for them."@en .
+pwm:ModuleEvidence a pwm:Module ; rdfs:label "Information governance, claims and evidence"@en ; pwm:moduleOrder 9 ;
+    skos:definition "Governed documents and definitions, facts and claims, policy decisions and the evidence that reconstructs them."@en .
+
+# Source types (the marks shown against every term)
+
+pwm:SourceStandardOntology a pwm:SourceType ; rdfs:label "standard ontology"@en ; skos:notation "ONT" ;
+    skos:definition "Published ontology reused or specialised: FIBO, OMG Commons, W3C PROV-O, DPV."@en .
+pwm:SourceTechnicalStandard a pwm:SourceType ; rdfs:label "technical standard"@en ; skos:notation "ISO" ;
+    skos:definition "ISO or ISO/IEC standard, used for identifiers, code formats and terminology."@en .
+pwm:SourceRegulatory a pwm:SourceType ; rdfs:label "regulation or supervisory guidance"@en ; skos:notation "REG" ;
+    skos:definition "Law, regulation, supervisory guideline, notice or international standard-setter recommendation."@en .
+pwm:SourceKognita a pwm:SourceType ; rdfs:label "Kognita"@en ; skos:notation "KOG" ;
+    skos:definition "Kognita roadmap, regulations library (control-frameworks.md), controlled vocabularies or policy packs."@en .
+pwm:SourceAuthorFramework a pwm:SourceType ; rdfs:label "author framework"@en ; skos:notation "AM" ;
+    skos:definition "EVOLVE framework, essays and talks by Ahmed Muzammil."@en .
+pwm:SourcePractice a pwm:SourceType ; rdfs:label "practitioner definition"@en ; skos:notation "NEW" ;
+    skos:definition "Defined in this ontology because no published standard term was found at the versions checked."@en .
+
+# Context speeds
+
+pwm:SlowContext a pwm:ContextSpeed ; rdfs:label "slow"@en ;
+    skos:definition "Changes over weeks or months, such as policies, definitions and the house view. Curated, versioned and owned; safe to cache with an effective date."@en .
+pwm:MediumContext a pwm:ContextSpeed ; rdfs:label "medium"@en ;
+    skos:definition "Changes over days or weeks, such as client profile, KYC status and mandate. Synchronised from the system of record and cached with an explicit as-of time."@en .
+pwm:FastContext a pwm:ContextSpeed ; rdfs:label "fast"@en ;
+    skos:definition "Changes in seconds or minutes, such as positions, prices, cash and orders. Looked up live from the system of record; never cached or embedded for AI."@en .
