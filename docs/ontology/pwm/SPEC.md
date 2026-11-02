@@ -2493,11 +2493,13 @@ Applies to subjects of [CFI code](#cfiCode). Sources: [ISO 10962](#ref-ISO-10962
 
 Applies to every coded property. Sources: [SKOS](#ref-W3C-SKOS).
 
-- Each of the 48 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. A firm that binds its own code list switches the matching shape off with sh:deactivated true.
+- Each of the 48 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see README.md.
 
 ## Extending PWM for an institution
 
 Keep institution detail in a separate ontology that imports PWM by its version IRI, which resolves to the Turtle file. Specialise PWM classes, add the firm's code lists, and bind coded properties to them with `pwm:valuesFrom`. Keep confidential content out of public repositories.
+
+Save as `firm.ttl`:
 
 ```turtle
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
@@ -2516,16 +2518,47 @@ firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
 firm:R1 a skos:Concept ; skos:inScheme firm:RiskScale ; skos:notation "R1" ;
     skos:prefLabel "capital preservation"@en .
 
-# PWM's own binding stays in place, so switch off the generated rule for the
-# illustrative scale and enforce the firm's scale in the firm's shapes graph
+# Additional bindings do not remove the defaults; see the separate shapes below
 pwm:riskProfileLevel pwm:valuesFrom firm:RiskScale .
-pwmsh:CodeList_riskProfileLevel sh:deactivated true .
+pwm:productRiskLevel pwm:valuesFrom firm:RiskScale .
+pwm:targetRiskProfile pwm:valuesFrom firm:RiskScale .
 
 # A firm product type specialising a PWM class
 firm:StructuredNote a owl:Class ;
     rdfs:subClassOf pwm:Product ;
     rdfs:label "structured note"@en .
 ```
+
+Save separately as `firm-shapes.ttl`:
+
+```turtle
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix pwm: <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix pwmsh: <https://ahmedmuzammil.com/ontology/pwm/shapes#> .
+@prefix firm: <https://example.org/firm/ontology#> .
+pwmsh:CodeList_riskProfileLevel sh:deactivated true .
+pwmsh:CodeList_productRiskLevel sh:deactivated true .
+pwmsh:CodeList_targetRiskProfile sh:deactivated true .
+firm:RiskCodes a sh:NodeShape ;
+    sh:targetSubjectsOf pwm:riskProfileLevel, pwm:productRiskLevel, pwm:targetRiskProfile ;
+    sh:property [ sh:path pwm:riskProfileLevel ; sh:in ( firm:R1 ) ],
+                [ sh:path pwm:productRiskLevel ; sh:in ( firm:R1 ) ],
+                [ sh:path pwm:targetRiskProfile ; sh:in ( firm:R1 ) ] .
+```
+
+Load both shapes graphs together:
+
+```python
+from rdflib import Graph
+from pyshacl import validate
+shapes = Graph().parse('pwm-shapes.ttl').parse('firm-shapes.ttl')
+ontology = Graph().parse('pwm.ttl').parse('firm.ttl')
+conforms, report, text = validate(Graph().parse('your-data.ttl'),
+    shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
+print(text)
+```
+
+Other code lists may require changes to handwritten constraints and code-dependent rules too; see README.md.
 
 <a id="references"></a>
 

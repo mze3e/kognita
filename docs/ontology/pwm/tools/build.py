@@ -92,15 +92,29 @@ firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
 firm:R1 a skos:Concept ; skos:inScheme firm:RiskScale ; skos:notation "R1" ;
     skos:prefLabel "capital preservation"@en .
 
-# PWM's own binding stays in place, so switch off the generated rule for the
-# illustrative scale and enforce the firm's scale in the firm's shapes graph
+# Additional bindings do not remove the defaults; see the separate shapes below
 pwm:riskProfileLevel pwm:valuesFrom firm:RiskScale .
-pwmsh:CodeList_riskProfileLevel sh:deactivated true .
+pwm:productRiskLevel pwm:valuesFrom firm:RiskScale .
+pwm:targetRiskProfile pwm:valuesFrom firm:RiskScale .
 
 # A firm product type specialising a PWM class
 firm:StructuredNote a owl:Class ;
     rdfs:subClassOf pwm:Product ;
     rdfs:label "structured note"@en ."""
+
+
+EXTENSION_SHAPES_TTL = """@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix pwm: <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix pwmsh: <https://ahmedmuzammil.com/ontology/pwm/shapes#> .
+@prefix firm: <https://example.org/firm/ontology#> .
+pwmsh:CodeList_riskProfileLevel sh:deactivated true .
+pwmsh:CodeList_productRiskLevel sh:deactivated true .
+pwmsh:CodeList_targetRiskProfile sh:deactivated true .
+firm:RiskCodes a sh:NodeShape ;
+    sh:targetSubjectsOf pwm:riskProfileLevel, pwm:productRiskLevel, pwm:targetRiskProfile ;
+    sh:property [ sh:path pwm:riskProfileLevel ; sh:in ( firm:R1 ) ],
+                [ sh:path pwm:productRiskLevel ; sh:in ( firm:R1 ) ],
+                [ sh:path pwm:targetRiskProfile ; sh:in ( firm:R1 ) ] ."""
 
 
 def lit(g, s, p):
@@ -349,7 +363,7 @@ def build(base: Path, site_path):
             "id": "CodeListShapes", "label": "Code lists", "targets": [], "sources": ["W3C-SKOS"],
             "checks": [f"Each of the {len(generated)} coded properties takes its values only from the code list it is bound to with "
                        "pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. "
-                       "A firm that binds its own code list switches the matching shape off with sh:deactivated true."],
+                       "List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see README.md."],
             "comment": None,
         })
     shape_order = {m.group(1): m.start() for m in re.finditer(r"^pwmsh:(\w+) a sh:NodeShape", (base / "pwm-shapes.ttl").read_text(encoding="utf-8"), re.M)}
@@ -407,11 +421,11 @@ def write_code_list_shapes(g, shapes_path):
         members = " ".join(f"pwm:{str(c)[len(PWM):]}" for c in concepts)
         lines += [
             f"pwmsh:CodeList_{name} a sh:NodeShape ;",
-            f'    rdfs:label "Code list: {lit(g, prop, RDFS.label)}"@en ;',
+            f"    rdfs:label {Literal('Code list: ' + lit(g, prop, RDFS.label), lang='en').n3()} ;",
             f"    sh:targetSubjectsOf pwm:{name} ;",
             f"    dcterms:source pwmref:W3C-SKOS ;",
             f"    sh:property [ sh:path pwm:{name} ; sh:in ( {members} ) ;",
-            f'        sh:message "Use a code from {lit(g, sch, SKOS.prefLabel)} (pwm:{sname}). A firm that binds its own code list switches this shape off with sh:deactivated true." ] .',
+            f"        sh:message {Literal(f'Use a code from {lit(g, sch, SKOS.prefLabel)} (pwm:{sname}). See README.md for replacement requirements.').n3()} ] .",
             "",
         ]
     text = shapes_path.read_text(encoding="utf-8")
@@ -531,7 +545,16 @@ def spec_md(d, refs):
             out += ["", f"*{r['comment']}*"]
     out += ["", "## Extending PWM for an institution", "",
             "Keep institution detail in a separate ontology that imports PWM by its version IRI, which resolves to the Turtle file. Specialise PWM classes, add the firm's code lists, and bind coded properties to them with `pwm:valuesFrom`. Keep confidential content out of public repositories.", "",
-            "```turtle", d["extensionExample"], "```", "",
+            "Save as `firm.ttl`:", "", "```turtle", d["extensionExample"], "```", "",
+            "Save separately as `firm-shapes.ttl`:", "", "```turtle", EXTENSION_SHAPES_TTL, "```", "",
+            "Load both shapes graphs together:", "", "```python",
+            "from rdflib import Graph", "from pyshacl import validate",
+            "shapes = Graph().parse('pwm-shapes.ttl').parse('firm-shapes.ttl')",
+            "ontology = Graph().parse('pwm.ttl').parse('firm.ttl')",
+            "conforms, report, text = validate(Graph().parse('your-data.ttl'),",
+            "    shacl_graph=shapes, ont_graph=ontology, inference='rdfs')",
+            "print(text)", "```", "",
+            "Other code lists may require changes to handwritten constraints and code-dependent rules too; see README.md.", "",
             '<a id="references"></a>', "", "## Reference register", "",
             "| Ref | Mark | Title | Publisher | Date | Jurisdiction | Status | Note |", "|---|---|---|---|---|---|---|---|"]
     for r in d["references"]:

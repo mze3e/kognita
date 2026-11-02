@@ -16,6 +16,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from owlrl import DeductiveClosure, RDFS_Semantics
 from pyshacl import validate
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF
@@ -104,19 +105,27 @@ def run(base: Path, data_files):
     return conforms, found, messages
 
 
-def chain_problems(g):
+def chain_problems(g, ontology=None):
     """Links between evidence records: each record names the hash of the one
-    before it. Only one record may point outside the data (where the excerpt
-    starts) unless it is marked chain start; no two records may share a
-    predecessor; and links must go forward in time."""
+    before it. One root is allowed: a genesis record or an external predecessor
+    at the start of an excerpt. All records must form one acyclic chain, with
+    no shared predecessors and links that go forward in time."""
     P = lambda x: URIRef(PWM + x)
     prov_time = URIRef("http://www.w3.org/ns/prov#generatedAtTime")
-    records = list(g.subjects(RDF.type, P("EvidenceRecord")))
+    inferred = Graph()
+    if ontology is None:
+        ontology = Graph().parse(Path(__file__).resolve().parents[1] / "pwm.ttl")
+    inferred += ontology
+    inferred += g
+    DeductiveClosure(RDFS_Semantics).expand(inferred)
+    records = list(inferred.subjects(RDF.type, P("EvidenceRecord")))
     by_hash = {str(g.value(r, P("recordHash"))): r for r in records}
     problems, outside, seen = [], [], {}
+    roots, successors = [], {}
     for r in records:
         prev = g.value(r, P("previousRecordHash"))
         if prev is None:
+            roots.append(r)
             continue
         prev = str(prev)
         if prev in seen:
@@ -125,8 +134,27 @@ def chain_problems(g):
         before = by_hash.get(prev)
         if before is None:
             outside.append(r)
-        elif g.value(before, prov_time).toPython() > g.value(r, prov_time).toPython():
-            problems.append(f"link goes back in time: {local(r)}")
+            roots.append(r)
+        else:
+            successors[before] = r
+            earlier = g.value(before, prov_time)
+            later = g.value(r, prov_time)
+            if earlier is not None and later is not None:
+                try:
+                    if earlier.toPython() > later.toPython():
+                        problems.append(f"link goes back in time: {local(r)}")
+                except TypeError:
+                    problems.append(f"indeterminate time ordering: {local(r)}")
+    if records:
+        if len(roots) != 1:
+            problems.append("evidence records must have exactly one chain root")
+        visited = set()
+        current = roots[0] if roots else None
+        while current is not None and current not in visited:
+            visited.add(current)
+            current = successors.get(current)
+        if visited != set(records) or current is not None:
+            problems.append("evidence records do not form one connected acyclic chain")
     if len(outside) > 1:
         problems.append("more than one record points outside the data: " + ", ".join(sorted(local(r) for r in outside)))
     return problems
@@ -141,7 +169,8 @@ def main():
     ok = True
 
     example = Graph().parse(base / "examples/pwm-example.ttl")
-    problems = chain_problems(example)
+    ontology = Graph().parse(base / "pwm.ttl")
+    problems = chain_problems(example, ontology)
     print(f"example evidence chain unbroken: {not problems}")
     if problems:
         ok = False
@@ -150,7 +179,7 @@ def main():
     broken += example
     e2 = URIRef(EX + "Evidence2")
     broken.set((e2, URIRef(PWM + "previousRecordHash"), Literal("sha256:" + "0" * 64)))
-    if not chain_problems(broken):
+    if not chain_problems(broken, ontology):
         ok = False
         print("a broken evidence chain was not detected")
 

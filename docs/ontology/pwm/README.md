@@ -51,11 +51,13 @@ Keep an institution's detail in its own extension: specialise PWM classes, add t
 
 **Replacing a code list.** `pwm:valuesFrom` in `pwm.ttl` names PWM's default code list for each coded property, and the generated shape `pwmsh:CodeList_<property>` enforces it. A binding added in an extension does not remove PWM's: both remain in the merged graph. To use the firm's own list, for example its risk scale in place of the illustrative one:
 
-1. Add the firm's binding: `pwm:riskProfileLevel pwm:valuesFrom firm:RiskScale .`
-2. In the firm's shapes graph, switch off PWM's rule: `pwmsh:CodeList_riskProfileLevel sh:deactivated true .`
-3. Add a shape that enforces `firm:RiskScale`. The PWM rule is the template.
+1. Add `pwm:valuesFrom firm:RiskScale` bindings for `pwm:riskProfileLevel`, `pwm:productRiskLevel` and `pwm:targetRiskProfile`.
+2. In the firm's shapes graph, set `sh:deactivated true` on `pwmsh:CodeList_riskProfileLevel`, `pwmsh:CodeList_productRiskLevel` and `pwmsh:CodeList_targetRiskProfile`.
+3. Add shapes enforcing the firm's allowed codes on all three properties. See the separate ontology and shapes examples and graph-loading code in [SPEC.md](SPEC.md#extending-pwm-for-an-institution).
 
-Treat the firm's binding as the one in force. The same pattern switches off any other generic rule.
+Treat the firm's binding as the one in force for this validation configuration; ontology triples do not override each other. `check.py` checks the base ontology only.
+
+Deactivation alone does not support arbitrary list replacement. Handwritten constraints and code-dependent rules still require built-in codes, including lifecycle status, communication level, classification, claim type, validator status and autonomy level. Replacing those lists requires adapting every affected handwritten constraint and rule in the firm's shapes graph too. The risk-scale example has no such additional code restrictions.
 
 ## Checks
 
