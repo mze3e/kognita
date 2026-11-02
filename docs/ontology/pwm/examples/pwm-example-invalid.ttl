@@ -207,4 +207,24 @@ ex:BadCrossBorderCode a pwm:CrossBorderRule ;
 # Evidence record with no hash.
 ex:BadEvidenceNoHash a pwm:EvidenceRecord ;
     pwm:eventType pwm:EventToolCall ;
+    pwm:chainStart true ;
     prov:generatedAtTime "2026-11-02T10:06:00+08:00"^^xsd:dateTime .
+
+# Evidence record after the first in its chain that does not name its predecessor.
+ex:BadEvidenceUnchained a pwm:EvidenceRecord ;
+    pwm:eventType pwm:EventRetrieval ;
+    pwm:recordHash "sha256:0000000000000000000000000000000000000000000000000000000000000004" ;
+    prov:generatedAtTime "2026-11-02T10:07:00+08:00"^^xsd:dateTime .
+
+# Claim typed as verified fact with a source but not verified.
+ex:BadClaimUnverified a pwm:Claim ;
+    pwm:claimType pwm:VerifiedFact ;
+    pwm:citesSource ex:FactRiskProfile ;
+    pwm:validatorStatus pwm:ValidatorUnverified .
+
+# Risk profile level taken from the wrong code list.
+ex:BadRiskProfileWrongCode a pwm:InvestorRiskProfile ;
+    pwm:assesses ex:Client ;
+    pwm:riskProfileLevel pwm:RatingHigh ;
+    pwm:validFrom "2026-11-01T00:00:00+08:00"^^xsd:dateTime ;
+    prov:wasAttributedTo ex:RM .

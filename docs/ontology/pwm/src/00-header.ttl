@@ -89,8 +89,8 @@
     rdfs:seeAlso <https://ahmedmuzammil.com/ontology/pwm> .
 
 # -----------------------------------------------------------------------------
-#  Declarations, so the file stays within OWL 2 DL. SKOS, DCMI Terms and VANN
-#  are used for documentation and code lists, not for logical axioms.
+#  Declarations, so the file stays within OWL 2 DL. SKOS terms take the types
+#  the SKOS Reference gives them; DCMI Terms and VANN are annotations.
 # -----------------------------------------------------------------------------
 
 skos:Concept a owl:Class .
@@ -98,18 +98,18 @@ skos:ConceptScheme a owl:Class .
 
 skos:prefLabel a owl:AnnotationProperty .
 skos:altLabel a owl:AnnotationProperty .
-skos:notation a owl:AnnotationProperty .
+skos:notation a owl:DatatypeProperty .
 skos:definition a owl:AnnotationProperty .
 skos:scopeNote a owl:AnnotationProperty .
 skos:note a owl:AnnotationProperty .
 skos:editorialNote a owl:AnnotationProperty .
 skos:example a owl:AnnotationProperty .
-skos:inScheme a owl:AnnotationProperty .
-skos:topConceptOf a owl:AnnotationProperty .
-skos:broader a owl:AnnotationProperty .
-skos:exactMatch a owl:AnnotationProperty .
-skos:closeMatch a owl:AnnotationProperty .
-skos:relatedMatch a owl:AnnotationProperty .
+skos:inScheme a owl:ObjectProperty .
+skos:topConceptOf a owl:ObjectProperty .
+skos:broader a owl:ObjectProperty .
+skos:exactMatch a owl:ObjectProperty .
+skos:closeMatch a owl:ObjectProperty .
+skos:relatedMatch a owl:ObjectProperty .
 
 dcterms:title a owl:AnnotationProperty .
 dcterms:alternative a owl:AnnotationProperty .

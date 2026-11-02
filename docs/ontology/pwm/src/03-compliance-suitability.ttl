@@ -339,13 +339,14 @@ pwm:AccreditedInvestorUS a skos:Concept ; skos:inScheme pwm:InvestorCategorySche
 pwm:OptStatusScheme a skos:ConceptScheme ;
     skos:prefLabel "opt statuses"@en ;
     pwm:inModule pwm:ModuleSuitability ;
+    skos:scopeNote "Directions differ by jurisdiction. In Singapore an eligible investor opts in to accredited-investor status and gives up some retail protections. Under FinSA a high-net-worth retail client opts out to be treated as a professional client, and some professional clients opt in to be treated as retail. Record the resulting category on the classification."@en ;
     pwm:citation [ pwm:cites pwmref:SG-SFA ; pwm:locator "Opt-in regime" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 5" ] .
 pwm:OptDefault a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
     skos:prefLabel "default"@en ; skos:definition "Category applies by default, with no election."@en .
 pwm:OptedIn a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
-    skos:prefLabel "opted in"@en ; skos:definition "Client elected into a less protected category."@en .
+    skos:prefLabel "opted in"@en ; skos:definition "Client made an opt-in election under the jurisdiction's rules. Which category that moves the client into, and whether protection rises or falls, depends on the jurisdiction, so record the classification it produced."@en .
 pwm:OptedOut a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
-    skos:prefLabel "opted out"@en ; skos:definition "Client elected out of a category into a more protected one."@en .
+    skos:prefLabel "opted out"@en ; skos:definition "Client made an opt-out election under the jurisdiction's rules. Which category that moves the client into, and whether protection rises or falls, depends on the jurisdiction, so record the classification it produced."@en .
 
 pwm:SuitabilityOutcomeScheme a skos:ConceptScheme ;
     skos:prefLabel "suitability outcomes"@en ;

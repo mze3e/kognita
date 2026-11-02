@@ -104,7 +104,8 @@ pwm:AIRiskAppetite a owl:Class ;
 pwm:AccountabilityRole a owl:Class ;
     rdfs:label "accountability role"@en ;
     skos:definition "Role of a named person accountable for an AI use case. Accountability can be supported by functions but cannot be delegated to an agent."@en ;
-    rdfs:subClassOf cmns-pts:PartyRole ;
+    rdfs:subClassOf cmns-pts:PartyRole ,
+        [ a owl:Restriction ; owl:onProperty cmns-rlcmp:isPlayedBy ; owl:allValuesFrom [ a owl:Class ; owl:complementOf pwm:AIAgent ] ] ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "3.5(d): clear roles and responsibilities" ] ,
                  [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: an agent can never be named in an owner role" ] ,
@@ -346,7 +347,7 @@ pwm:autonomyAxis a owl:ObjectProperty ;
 
 pwm:hasAccountabilityRole a owl:ObjectProperty ;
     rdfs:label "has accountability role"@en ;
-    skos:definition "Accountability role held for a use case or agent."@en ;
+    skos:definition "Links a use case or agent to an accountability role held for it. The person holding the role is given on the role, with is played by."@en ;
     rdfs:range pwm:AccountabilityRole ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: owner roles; accountability matrix" ] .
@@ -534,7 +535,7 @@ pwm:AlwaysDo a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topCon
 pwm:AskFirst a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
     skos:prefLabel "ask first"@en ; skos:definition "Consequential or client-facing; the agent prepares and a person decides."@en .
 pwm:NeverDo a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
-    skos:prefLabel "never do"@en ; skos:definition "Permanently outside scope, such as executing transactions, changing permissions or sending client communications, enforced in permissions."@en .
+    skos:prefLabel "never do"@en ; skos:definition "Outside this agent's scope, whatever it is asked, enforced in its permissions rather than by asking. Which actions sit here is set per agent, for example sending client communications for an agent that only drafts."@en .
 
 pwm:ActionVerbScheme a skos:ConceptScheme ;
     skos:prefLabel "action verbs"@en ;

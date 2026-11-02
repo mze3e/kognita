@@ -45,7 +45,7 @@ for f in sorted(root.rglob("*.rdf")):
                 "file": rel, "maturity": maturity, "defined_by": defined_by[:1],
                 "super": supers,
             }.items() if v})
-out.write_text(json.dumps(index, indent=1, sort_keys=True))
+out.write_text(json.dumps(index, indent=1, sort_keys=True), encoding="utf-8")
 print("terms:", len(index), "parse errors:", len(errors))
 for e in errors[:10]:
     print("ERR", e)

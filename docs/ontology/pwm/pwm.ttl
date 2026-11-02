@@ -89,8 +89,8 @@
     rdfs:seeAlso <https://ahmedmuzammil.com/ontology/pwm> .
 
 # -----------------------------------------------------------------------------
-#  Declarations, so the file stays within OWL 2 DL. SKOS, DCMI Terms and VANN
-#  are used for documentation and code lists, not for logical axioms.
+#  Declarations, so the file stays within OWL 2 DL. SKOS terms take the types
+#  the SKOS Reference gives them; DCMI Terms and VANN are annotations.
 # -----------------------------------------------------------------------------
 
 skos:Concept a owl:Class .
@@ -98,18 +98,18 @@ skos:ConceptScheme a owl:Class .
 
 skos:prefLabel a owl:AnnotationProperty .
 skos:altLabel a owl:AnnotationProperty .
-skos:notation a owl:AnnotationProperty .
+skos:notation a owl:DatatypeProperty .
 skos:definition a owl:AnnotationProperty .
 skos:scopeNote a owl:AnnotationProperty .
 skos:note a owl:AnnotationProperty .
 skos:editorialNote a owl:AnnotationProperty .
 skos:example a owl:AnnotationProperty .
-skos:inScheme a owl:AnnotationProperty .
-skos:topConceptOf a owl:AnnotationProperty .
-skos:broader a owl:AnnotationProperty .
-skos:exactMatch a owl:AnnotationProperty .
-skos:closeMatch a owl:AnnotationProperty .
-skos:relatedMatch a owl:AnnotationProperty .
+skos:inScheme a owl:ObjectProperty .
+skos:topConceptOf a owl:ObjectProperty .
+skos:broader a owl:ObjectProperty .
+skos:exactMatch a owl:ObjectProperty .
+skos:closeMatch a owl:ObjectProperty .
+skos:relatedMatch a owl:ObjectProperty .
 
 dcterms:title a owl:AnnotationProperty .
 dcterms:alternative a owl:AnnotationProperty .
@@ -792,7 +792,7 @@ pwm:RelationshipManager a owl:Class ;
 
 pwm:CoverageAssignment a owl:Class ;
     rdfs:label "coverage assignment"@en ;
-    skos:definition "Assignment of a relationship manager or specialist to a client relationship, in a stated coverage role, for a period."@en ;
+    skos:definition "Assignment of a relationship manager or a specialist to a client relationship, in a stated coverage role, for a period."@en ;
     rdfs:subClassOf cmns-pts:Situation ;
     pwm:inModule pwm:ModuleParties ;
     pwm:contextSpeed pwm:MediumContext ;
@@ -1004,9 +1004,17 @@ pwm:inGroup a owl:ObjectProperty ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Household view" ] .
 
+pwm:assignedCoverage a owl:ObjectProperty ;
+    rdfs:label "assigned coverage"@en ;
+    skos:definition "Party role named in a coverage assignment: a relationship manager, or a product, credit, investment or planning specialist. The coverage role says which."@en ;
+    rdfs:domain pwm:CoverageAssignment ; rdfs:range cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Coverage model" ] .
+
 pwm:assignedRelationshipManager a owl:ObjectProperty ;
     rdfs:label "assigned relationship manager"@en ;
-    skos:definition "Relationship manager named in a coverage assignment."@en ;
+    skos:definition "Relationship manager named in a coverage assignment. Specialists are named with the parent property, assigned coverage."@en ;
+    rdfs:subPropertyOf pwm:assignedCoverage ;
     rdfs:domain pwm:CoverageAssignment ; rdfs:range pwm:RelationshipManager ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "relationship-manager" ] .
@@ -1457,13 +1465,14 @@ pwm:AccreditedInvestorUS a skos:Concept ; skos:inScheme pwm:InvestorCategorySche
 pwm:OptStatusScheme a skos:ConceptScheme ;
     skos:prefLabel "opt statuses"@en ;
     pwm:inModule pwm:ModuleSuitability ;
+    skos:scopeNote "Directions differ by jurisdiction. In Singapore an eligible investor opts in to accredited-investor status and gives up some retail protections. Under FinSA a high-net-worth retail client opts out to be treated as a professional client, and some professional clients opt in to be treated as retail. Record the resulting category on the classification."@en ;
     pwm:citation [ pwm:cites pwmref:SG-SFA ; pwm:locator "Opt-in regime" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 5" ] .
 pwm:OptDefault a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
     skos:prefLabel "default"@en ; skos:definition "Category applies by default, with no election."@en .
 pwm:OptedIn a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
-    skos:prefLabel "opted in"@en ; skos:definition "Client elected into a less protected category."@en .
+    skos:prefLabel "opted in"@en ; skos:definition "Client made an opt-in election under the jurisdiction's rules. Which category that moves the client into, and whether protection rises or falls, depends on the jurisdiction, so record the classification it produced."@en .
 pwm:OptedOut a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
-    skos:prefLabel "opted out"@en ; skos:definition "Client elected out of a category into a more protected one."@en .
+    skos:prefLabel "opted out"@en ; skos:definition "Client made an opt-out election under the jurisdiction's rules. Which category that moves the client into, and whether protection rises or falls, depends on the jurisdiction, so record the classification it produced."@en .
 
 pwm:SuitabilityOutcomeScheme a skos:ConceptScheme ;
     skos:prefLabel "suitability outcomes"@en ;
@@ -1500,7 +1509,7 @@ pwm:RP5 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConce
 
 pwm:Mandate a owl:Class ;
     rdfs:label "mandate"@en ;
-    skos:definition "Written agreement under which a wealth manager serves a client on a stated service model, advisory, discretionary or execution-only, within investment restrictions."@en ;
+    skos:definition "Written agreement under which a wealth manager serves a client on a stated service model: advisory, discretionary, execution-only or custody-only. Investment restrictions apply where the service model calls for them."@en ;
     rdfs:subClassOf fibo-fnd-agr-ctr:WrittenContract ;
     pwm:inModule pwm:ModuleMandates ;
     pwm:contextSpeed pwm:MediumContext ;
@@ -1578,8 +1587,8 @@ pwm:Fee a owl:Class ;
 pwm:ThirdPartyPayment a owl:Class ;
     rdfs:label "third-party payment"@en ;
     skos:altLabel "inducement"@en , "retrocession"@en ;
-    skos:definition "Fee or benefit the wealth manager receives from a third party, such as a product provider, in connection with a client service."@en ;
-    rdfs:subClassOf pwm:Fee ;
+    skos:definition "Payment or non-monetary benefit the wealth manager receives from a third party, such as a product provider, in connection with a client service. It is not a charge to the client."@en ;
+    rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleMandates ;
     pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 24(9)" ] .
 
@@ -1880,7 +1889,7 @@ pwm:ApprovedProductList a owl:Class ;
 pwm:CrossBorderRule a owl:Class ;
     rdfs:label "cross-border rule"@en ;
     skos:definition "Deterministic rule stating whether an activity, such as solicitation, advice or research distribution, is permitted for a client domicile, booking centre, investor category and product."@en ;
-    skos:scopeNote "A rule table evaluated outside the model. It is not AI under MAS AIRG para 1.3 unless a model takes part in the decision."@en ;
+    skos:scopeNote "A rule table evaluated outside the model. It is not AI under MAS AIRG para 1.3 unless a model takes part in the decision. Activity, client domicile and booking centre are required; an absent investor category or product means all. When rules overlap, the most specific rule (most scope values set) decides; on a tie, not permitted wins; with no matching rule the activity is not permitted (fail closed)."@en ;
     rdfs:subClassOf pwm:PolicyRule ;
     skos:relatedMatch fibo-sec-sec-rst:InvestorsDomicileRestriction , fibo-sec-sec-rst:QualifiedInvestorRestriction ;
     pwm:inModule pwm:ModuleProducts ;
@@ -1962,7 +1971,7 @@ pwm:cfiCode a owl:DatatypeProperty ;
 
 pwm:appliesToActivity a owl:ObjectProperty ;
     rdfs:label "applies to activity"@en ;
-    skos:definition "Activity a cross-border rule decides on."@en ;
+    skos:definition "Activity a cross-border rule decides on. Required: a rule without an activity is incomplete, not a rule for every activity."@en ;
     rdfs:domain pwm:CrossBorderRule ; rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "cross-border-solicitation, research-distribution" ] .
@@ -1976,21 +1985,21 @@ pwm:appliesToProduct a owl:ObjectProperty ;
 
 pwm:appliesToInvestorCategory a owl:ObjectProperty ;
     rdfs:label "applies to investor category"@en ;
-    skos:definition "Investor category a rule covers."@en ;
+    skos:definition "Investor category a rule covers. Absent when the rule covers all investor categories."@en ;
     rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 16(3): target market" ] .
 
 pwm:clientDomicileCode a owl:DatatypeProperty ;
     rdfs:label "client domicile code"@en ;
-    skos:definition "Client domicile a rule covers, as an ISO 3166-1 alpha-2 code."@en ;
+    skos:definition "Client domicile a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a domicile is incomplete, not a rule for every domicile."@en ;
     rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile" ] .
 
 pwm:bookingCentreCode a owl:DatatypeProperty ;
     rdfs:label "booking centre code"@en ;
-    skos:definition "Booking centre jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code."@en ;
+    skos:definition "Booking centre jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a booking centre is incomplete, not a rule for every booking centre."@en ;
     rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .
@@ -2219,7 +2228,7 @@ pwm:aiDisclosureGiven a owl:DatatypeProperty ;
 
 pwm:disclosureTrigger a owl:ObjectProperty ;
     rdfs:label "disclosure trigger"@en ;
-    skos:definition "Reason a client must be told AI was involved."@en ;
+    skos:definition "Reason recorded for an AI disclosure: what the AI did that the disclosure describes. Whether disclosure is required is decided by the jurisdiction's disclosure rule and the content provenance."@en ;
     rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleInteractions ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.DISCLOSURE_TRIGGERS" ] .
@@ -2422,7 +2431,8 @@ pwm:AIRiskAppetite a owl:Class ;
 pwm:AccountabilityRole a owl:Class ;
     rdfs:label "accountability role"@en ;
     skos:definition "Role of a named person accountable for an AI use case. Accountability can be supported by functions but cannot be delegated to an agent."@en ;
-    rdfs:subClassOf cmns-pts:PartyRole ;
+    rdfs:subClassOf cmns-pts:PartyRole ,
+        [ a owl:Restriction ; owl:onProperty cmns-rlcmp:isPlayedBy ; owl:allValuesFrom [ a owl:Class ; owl:complementOf pwm:AIAgent ] ] ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "3.5(d): clear roles and responsibilities" ] ,
                  [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: an agent can never be named in an owner role" ] ,
@@ -2664,7 +2674,7 @@ pwm:autonomyAxis a owl:ObjectProperty ;
 
 pwm:hasAccountabilityRole a owl:ObjectProperty ;
     rdfs:label "has accountability role"@en ;
-    skos:definition "Accountability role held for a use case or agent."@en ;
+    skos:definition "Links a use case or agent to an accountability role held for it. The person holding the role is given on the role, with is played by."@en ;
     rdfs:range pwm:AccountabilityRole ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: owner roles; accountability matrix" ] .
@@ -2852,7 +2862,7 @@ pwm:AlwaysDo a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topCon
 pwm:AskFirst a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
     skos:prefLabel "ask first"@en ; skos:definition "Consequential or client-facing; the agent prepares and a person decides."@en .
 pwm:NeverDo a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
-    skos:prefLabel "never do"@en ; skos:definition "Permanently outside scope, such as executing transactions, changing permissions or sending client communications, enforced in permissions."@en .
+    skos:prefLabel "never do"@en ; skos:definition "Outside this agent's scope, whatever it is asked, enforced in its permissions rather than by asking. Which actions sit here is set per agent, for example sending client communications for an agent that only drafts."@en .
 
 pwm:ActionVerbScheme a skos:ConceptScheme ;
     skos:prefLabel "action verbs"@en ;
@@ -3266,8 +3276,15 @@ pwm:recordHash a owl:DatatypeProperty ;
 
 pwm:previousRecordHash a owl:DatatypeProperty ;
     rdfs:label "previous record hash"@en ;
-    skos:definition "Hash of the record that precedes this one in the chain."@en ;
+    skos:definition "Hash of the record that precedes this one in the chain. Required on every record except the first in a chain."@en ;
     rdfs:domain pwm:EvidenceRecord ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Hash-chained evidence" ] .
+
+pwm:chainStart a owl:DatatypeProperty ;
+    rdfs:label "chain start"@en ;
+    skos:definition "True on the first record of an evidence chain, the only record without a previous record hash."@en ;
+    rdfs:domain pwm:EvidenceRecord ; rdfs:range xsd:boolean ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Hash-chained evidence" ] .
 

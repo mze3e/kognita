@@ -4,14 +4,20 @@ The valid example must conform. The negative fixture, merged with the valid
 example, must produce exactly the violations listed in EXPECTED: nothing
 missing, nothing extra.
 
-Usage: python3 tools/validate.py [ontology_dir]   (default: current directory)
+It also checks that the evidence records in the example form one unbroken
+hash chain, and that a broken chain is detected.
+
+Usage: python3 tools/validate.py [ontology_dir] [-v]
+  ontology_dir  folder holding pwm.ttl and pwm-shapes.ttl (default: current directory)
+  -v            print every violation message raised by the negative fixture
 """
+import argparse
 import sys
 from collections import Counter
 from pathlib import Path
 
 from pyshacl import validate
-from rdflib import Graph, Namespace, URIRef
+from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF
 
 SH = Namespace("http://www.w3.org/ns/shacl#")
@@ -55,6 +61,9 @@ EXPECTED = Counter([
     ("BadRuleNoVersion", "PolicyRuleShape", "versionId"),
     ("BadCrossBorderCode", "CrossBorderRuleShape", "bookingCentreCode"),
     ("BadEvidenceNoHash", "EvidenceRecordShape", "recordHash"),
+    ("BadEvidenceUnchained", "EvidenceRecordShape", None),
+    ("BadClaimUnverified", "ClaimShape", None),
+    ("BadRiskProfileWrongCode", "CodeList_riskProfileLevel", "riskProfileLevel"),
 ])
 
 
@@ -95,9 +104,55 @@ def run(base: Path, data_files):
     return conforms, found, messages
 
 
+def chain_problems(g):
+    """Links between evidence records: each record names the hash of the one
+    before it. Only one record may point outside the data (where the excerpt
+    starts) unless it is marked chain start; no two records may share a
+    predecessor; and links must go forward in time."""
+    P = lambda x: URIRef(PWM + x)
+    prov_time = URIRef("http://www.w3.org/ns/prov#generatedAtTime")
+    records = list(g.subjects(RDF.type, P("EvidenceRecord")))
+    by_hash = {str(g.value(r, P("recordHash"))): r for r in records}
+    problems, outside, seen = [], [], {}
+    for r in records:
+        prev = g.value(r, P("previousRecordHash"))
+        if prev is None:
+            continue
+        prev = str(prev)
+        if prev in seen:
+            problems.append(f"fork: {local(r)} and {local(seen[prev])} share a predecessor")
+        seen[prev] = r
+        before = by_hash.get(prev)
+        if before is None:
+            outside.append(r)
+        elif g.value(before, prov_time).toPython() > g.value(r, prov_time).toPython():
+            problems.append(f"link goes back in time: {local(r)}")
+    if len(outside) > 1:
+        problems.append("more than one record points outside the data: " + ", ".join(sorted(local(r) for r in outside)))
+    return problems
+
+
 def main():
-    base = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("ontology_dir", nargs="?", default=".")
+    ap.add_argument("-v", "--verbose", action="store_true")
+    args = ap.parse_args()
+    base = Path(args.ontology_dir)
     ok = True
+
+    example = Graph().parse(base / "examples/pwm-example.ttl")
+    problems = chain_problems(example)
+    print(f"example evidence chain unbroken: {not problems}")
+    if problems:
+        ok = False
+        print("\n".join("  " + x for x in problems))
+    broken = Graph()
+    broken += example
+    e2 = URIRef(EX + "Evidence2")
+    broken.set((e2, URIRef(PWM + "previousRecordHash"), Literal("sha256:" + "0" * 64)))
+    if not chain_problems(broken):
+        ok = False
+        print("a broken evidence chain was not detected")
 
     conforms, found, messages = run(base, ["examples/pwm-example.ttl"])
     print(f"valid example conforms: {conforms}")
@@ -119,14 +174,16 @@ def main():
         print("EXTRA (raised but not expected):")
         for k, n in sorted(extra.items(), key=str):
             print("  ", k, "x", n)
-    if "-v" in sys.argv:
+    if args.verbose:
         print("\n".join(sorted(messages)))
 
     shapes = Graph().parse(base / "pwm-shapes.ttl")
     targeted = {local(s) for s in shapes.subjects(RDF.type, SH.NodeShape)
                 if any((s, p, None) in shapes for p in (SH.targetClass, SH.targetSubjectsOf))}
     exercised = {k[1] for k in EXPECTED}
-    print(f"shapes with targets: {len(targeted)}; exercised by the negative fixture: {len(targeted & exercised)}")
+    written = {s for s in targeted if not s.startswith("CodeList_")}
+    print(f"written shapes: {len(written)}; exercised by the negative fixture: {len(written & exercised)}")
+    print(f"generated code-list shapes: {len(targeted - written)}; exercised: {len((targeted - written) & exercised)}")
     print("\nall validation tests passed" if ok else "\nVALIDATION TESTS FAILED")
     sys.exit(0 if ok else 1)
 

@@ -11,12 +11,12 @@ from rdflib import Graph, URIRef, BNode
 from rdflib.namespace import OWL, RDF, RDFS, SKOS
 
 src = pathlib.Path(sys.argv[1])
-fibo_index = json.loads(pathlib.Path(sys.argv[2]).read_text())
+fibo_index = json.loads(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"))
 out = src / "90-external.ttl"
 
 g = Graph()
 # Section files share the prefix block in 00-header.ttl, so parse them as one document.
-g.parse(data="\n".join(f.read_text() for f in sorted(src.glob("[0-8]*.ttl"))), format="turtle")
+g.parse(data="\n".join(f.read_text(encoding="utf-8") for f in sorted(src.glob("[0-8]*.ttl"))), format="turtle")
 
 PWM = "https://ahmedmuzammil.com/ontology/pwm#"
 FIBO = "https://spec.edmcouncil.org/fibo/ontology/"
@@ -172,5 +172,5 @@ header = ['pwm:fiboMaturity a owl:AnnotationProperty ;',
           '    rdfs:label "FIBO maturity"@en ;',
           '    skos:definition "Maturity level of a FIBO term, Release or Provisional, read from the FIBO source file that defines it."@en ;',
           '    rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .', '']
-out.write_text("\n".join(lines[:5] + header + lines[5:]) + "\n")
+out.write_text("\n".join(lines[:5] + header + lines[5:]) + "\n", encoding="utf-8")
 print(f"wrote {out.name}: {len(used)} declared terms, {len(mapped)} mapping targets")

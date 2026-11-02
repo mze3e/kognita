@@ -10,7 +10,9 @@
 #    client communication, with the AI use case, agent, delegation, policy
 #    decision and hash-chained evidence behind it.
 #
-#  Validate:  pyshacl -s pwm-shapes.ttl -e pwm.ttl -i rdfs examples/pwm-example.ttl
+#  Validate, from the folder holding pwm.ttl and pwm-shapes.ttl:
+#    pyshacl -s pwm-shapes.ttl -e pwm.ttl -i rdfs examples/pwm-example.ttl
+#  If you downloaded the three files into one folder, drop the examples/ prefix.
 # =============================================================================
 
 @prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .

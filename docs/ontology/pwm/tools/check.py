@@ -2,6 +2,8 @@
 
 Usage: check.py pwm.ttl fibo-index.json [dpv-dir]
 
+Without dpv-dir, DPV IRIs are not checked and the script says so.
+
 Fails (exit 1) if any term lacks a label, definition, module or citation, if a
 citation points at an unregistered reference, if any pwm: IRI is used but not
 defined, or if any FIBO, OMG Commons or DPV IRI cannot be found in its source.
@@ -18,7 +20,7 @@ ttl, fibo_path = sys.argv[1], sys.argv[2]
 dpv_dir = pathlib.Path(sys.argv[3]) if len(sys.argv) > 3 else None
 g = Graph()
 g.parse(ttl, format="turtle")
-fibo = json.loads(pathlib.Path(fibo_path).read_text())
+fibo = json.loads(pathlib.Path(fibo_path).read_text(encoding="utf-8"))
 
 PWM = "https://ahmedmuzammil.com/ontology/pwm#"
 P = lambda x: URIRef(PWM + x)
@@ -76,9 +78,10 @@ commons_ok = {
     "BusinessAuthorizations/Authorization", "RolesAndCompositions/isPlayedBy", "Documents/Document",
 }
 dpv_terms = {}
+dpv_unchecked = set()
 if dpv_dir:
     for f, ns in ((dpv_dir / "dpv" / "dpv.ttl", "https://w3id.org/dpv#"), (dpv_dir / "ai" / "ai.ttl", "https://w3id.org/dpv/ai#")):
-        text = f.read_text()
+        text = f.read_text(encoding="utf-8")
         prefix = "dpv:" if ns.endswith("dpv#") else "ai:"
         dpv_terms[ns] = set(re.findall(r"^" + re.escape(prefix) + r"([A-Za-z0-9]+) a ", text, flags=re.M))
 for node in set(o for o in g.objects() if isinstance(o, URIRef)) | set(g.subjects()) | set(g.predicates()):
@@ -89,7 +92,10 @@ for node in set(o for o in g.objects() if isinstance(o, URIRef)) | set(g.subject
     elif iri.startswith("https://www.omg.org/spec/Commons/") and not iri.endswith("/"):
         if iri.split("Commons/", 1)[1] not in commons_ok:
             problems.append(f"Commons IRI not on the verified list: {iri}")
-    elif dpv_dir and (iri.startswith("https://w3id.org/dpv#") or iri.startswith("https://w3id.org/dpv/ai#")):
+    elif iri.startswith("https://w3id.org/dpv#") or iri.startswith("https://w3id.org/dpv/ai#"):
+        if not dpv_dir:
+            dpv_unchecked.add(iri)
+            continue
         ns, local = iri.split("#")[0] + "#", iri.split("#")[1]
         if local not in dpv_terms.get(ns, set()):
             problems.append(f"DPV IRI not found in DPV 2.3: {iri}")
@@ -112,4 +118,6 @@ if problems:
     for p in sorted(set(problems)):
         print("  -", p)
     sys.exit(1)
-print("\nall integrity checks passed")
+if dpv_unchecked:
+    print(f"\nWARNING: {len(dpv_unchecked)} DPV IRIs were not checked; pass the DPV 2.3 folder as the third argument")
+print("\nall integrity checks passed" + (" except the DPV check, which was skipped" if dpv_unchecked else ""))

@@ -19,7 +19,7 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 | Path | What it is |
 |---|---|
 | `pwm.ttl` | The ontology, built from `src/`. Do not edit; edit `src/` and rebuild |
-| `pwm-shapes.ttl` | SHACL data rules, each citing the paragraph or item it enforces |
+| `pwm-shapes.ttl` | SHACL data rules, each citing the paragraph or item it enforces, plus one generated code-list rule per coded property |
 | `SPEC.md` | The specification, generated from the Turtle |
 | `examples/pwm-example.ttl` | Synthetic data for a fictional firm: one client journey end to end |
 | `examples/pwm-example-invalid.ttl` | Negative fixture: each record breaks one rule |
@@ -37,7 +37,25 @@ Import the version IRI:
     owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.1> .
 ```
 
-Keep an institution's detail in its own extension: specialise PWM classes, add the firm's code lists (risk scale, booking centres, product types), bind coded properties to them with `pwm:valuesFrom`, and add firm thresholds in a separate shapes graph. A generic rule can be switched off there with `sh:deactivated true`. Keep confidential content out of public repositories.
+The version IRI resolves to `pwm.ttl` once the web page is published. Until then, or to work offline, map it to a local copy. In Protégé, put a `catalog-v001.xml` next to your ontology:
+
+```xml
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+  <uri name="https://ahmedmuzammil.com/ontology/pwm/0.1" uri="pwm.ttl"/>
+</catalog>
+```
+
+ROBOT reads the same catalog with `--catalog catalog-v001.xml`. With rdflib or pyshacl, load `pwm.ttl` directly.
+
+Keep an institution's detail in its own extension: specialise PWM classes, add the firm's code lists (risk scale, booking centres, product types), and add firm thresholds in a separate shapes graph. Keep confidential content out of public repositories.
+
+**Replacing a code list.** `pwm:valuesFrom` in `pwm.ttl` names PWM's default code list for each coded property, and the generated shape `pwmsh:CodeList_<property>` enforces it. A binding added in an extension does not remove PWM's: both remain in the merged graph. To use the firm's own list, for example its risk scale in place of the illustrative one:
+
+1. Add the firm's binding: `pwm:riskProfileLevel pwm:valuesFrom firm:RiskScale .`
+2. In the firm's shapes graph, switch off PWM's rule: `pwmsh:CodeList_riskProfileLevel sh:deactivated true .`
+3. Add a shape that enforces `firm:RiskScale`. The PWM rule is the template.
+
+Treat the firm's binding as the one in force. The same pattern switches off any other generic rule.
 
 ## Checks
 
@@ -49,11 +67,17 @@ python3 tools/build.py
 
 # Integrity: labels, definitions, modules, citations, code-list bindings, and every
 # FIBO, OMG Commons and DPV IRI checked against its source
-git clone https://github.com/edmcouncil/fibo /tmp/fibo
+# (FIBO at the commit the register cites; DPV 2.3 from https://github.com/w3c/dpv)
+git clone https://github.com/edmcouncil/fibo /tmp/fibo && git -C /tmp/fibo checkout 33a92cd
 python3 tools/index_fibo.py /tmp/fibo /tmp/fibo-index.json
-python3 tools/check.py pwm.ttl /tmp/fibo-index.json [path-to-dpv-2.3]
+python3 tools/check.py pwm.ttl /tmp/fibo-index.json path/to/dpv/2.3   # without the DPV folder, DPV IRIs are reported as unchecked
 
-# SHACL: the example conforms; the negative fixture raises exactly the expected violations
+# Every pwm: term used in the shapes and examples is defined (exits 1 if not)
+python3 tools/check_shapes_terms.py pwm.ttl pwm-shapes.ttl
+python3 tools/check_shapes_terms.py pwm.ttl examples/pwm-example.ttl
+
+# SHACL: the example conforms and its evidence chain is unbroken; the negative
+# fixture raises exactly the expected violations (-v prints them)
 python3 tools/validate.py
 
 # OWL 2 DL profile and reasoning (ROBOT, https://robot.obolibrary.org)
@@ -61,7 +85,9 @@ robot validate-profile --profile DL --input pwm.ttl
 robot reason --reasoner HermiT --equivalent-classes-allowed none --input pwm.ttl --output /tmp/reasoned.ttl
 ```
 
-At 0.1 all of these pass: OWL 2 DL, consistent with no unsatisfiable classes under HermiT, the example conforms, and the negative fixture raises the 33 expected violations across all 28 targeted shapes.
+To reason over data, merge it with `pwm.ttl` as RDF first (for example with rdflib), so that properties keep the types `pwm.ttl` declares.
+
+At 0.1 all of these pass. The ontology is in the OWL 2 DL profile and consistent under HermiT, with no unsatisfiable classes. The example conforms, is consistent with the ontology, and has an unbroken evidence chain. The negative fixture raises the 36 expected violations: it covers all 28 written shapes and one of the 48 generated code-list shapes. Under HermiT it is inconsistent, because it names an AI agent in an accountability role.
 
 ## Status and licence
 

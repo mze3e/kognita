@@ -312,8 +312,15 @@ pwm:recordHash a owl:DatatypeProperty ;
 
 pwm:previousRecordHash a owl:DatatypeProperty ;
     rdfs:label "previous record hash"@en ;
-    skos:definition "Hash of the record that precedes this one in the chain."@en ;
+    skos:definition "Hash of the record that precedes this one in the chain. Required on every record except the first in a chain."@en ;
     rdfs:domain pwm:EvidenceRecord ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleEvidence ;
+    pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Hash-chained evidence" ] .
+
+pwm:chainStart a owl:DatatypeProperty ;
+    rdfs:label "chain start"@en ;
+    skos:definition "True on the first record of an evidence chain, the only record without a previous record hash."@en ;
+    rdfs:domain pwm:EvidenceRecord ; rdfs:range xsd:boolean ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Hash-chained evidence" ] .
 

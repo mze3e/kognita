@@ -137,7 +137,7 @@ pwm:RelationshipManager a owl:Class ;
 
 pwm:CoverageAssignment a owl:Class ;
     rdfs:label "coverage assignment"@en ;
-    skos:definition "Assignment of a relationship manager or specialist to a client relationship, in a stated coverage role, for a period."@en ;
+    skos:definition "Assignment of a relationship manager or a specialist to a client relationship, in a stated coverage role, for a period."@en ;
     rdfs:subClassOf cmns-pts:Situation ;
     pwm:inModule pwm:ModuleParties ;
     pwm:contextSpeed pwm:MediumContext ;
@@ -349,9 +349,17 @@ pwm:inGroup a owl:ObjectProperty ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Household view" ] .
 
+pwm:assignedCoverage a owl:ObjectProperty ;
+    rdfs:label "assigned coverage"@en ;
+    skos:definition "Party role named in a coverage assignment: a relationship manager, or a product, credit, investment or planning specialist. The coverage role says which."@en ;
+    rdfs:domain pwm:CoverageAssignment ; rdfs:range cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleParties ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Coverage model" ] .
+
 pwm:assignedRelationshipManager a owl:ObjectProperty ;
     rdfs:label "assigned relationship manager"@en ;
-    skos:definition "Relationship manager named in a coverage assignment."@en ;
+    skos:definition "Relationship manager named in a coverage assignment. Specialists are named with the parent property, assigned coverage."@en ;
+    rdfs:subPropertyOf pwm:assignedCoverage ;
     rdfs:domain pwm:CoverageAssignment ; rdfs:range pwm:RelationshipManager ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "relationship-manager" ] .

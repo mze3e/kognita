@@ -186,7 +186,7 @@ pwm:aiDisclosureGiven a owl:DatatypeProperty ;
 
 pwm:disclosureTrigger a owl:ObjectProperty ;
     rdfs:label "disclosure trigger"@en ;
-    skos:definition "Reason a client must be told AI was involved."@en ;
+    skos:definition "Reason recorded for an AI disclosure: what the AI did that the disclosure describes. Whether disclosure is required is decided by the jurisdiction's disclosure rule and the content provenance."@en ;
     rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleInteractions ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.DISCLOSURE_TRIGGERS" ] .

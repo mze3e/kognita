@@ -5,7 +5,7 @@
 
 pwm:Mandate a owl:Class ;
     rdfs:label "mandate"@en ;
-    skos:definition "Written agreement under which a wealth manager serves a client on a stated service model, advisory, discretionary or execution-only, within investment restrictions."@en ;
+    skos:definition "Written agreement under which a wealth manager serves a client on a stated service model: advisory, discretionary, execution-only or custody-only. Investment restrictions apply where the service model calls for them."@en ;
     rdfs:subClassOf fibo-fnd-agr-ctr:WrittenContract ;
     pwm:inModule pwm:ModuleMandates ;
     pwm:contextSpeed pwm:MediumContext ;
@@ -83,8 +83,8 @@ pwm:Fee a owl:Class ;
 pwm:ThirdPartyPayment a owl:Class ;
     rdfs:label "third-party payment"@en ;
     skos:altLabel "inducement"@en , "retrocession"@en ;
-    skos:definition "Fee or benefit the wealth manager receives from a third party, such as a product provider, in connection with a client service."@en ;
-    rdfs:subClassOf pwm:Fee ;
+    skos:definition "Payment or non-monetary benefit the wealth manager receives from a third party, such as a product provider, in connection with a client service. It is not a charge to the client."@en ;
+    rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleMandates ;
     pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 24(9)" ] .
 
@@ -385,7 +385,7 @@ pwm:ApprovedProductList a owl:Class ;
 pwm:CrossBorderRule a owl:Class ;
     rdfs:label "cross-border rule"@en ;
     skos:definition "Deterministic rule stating whether an activity, such as solicitation, advice or research distribution, is permitted for a client domicile, booking centre, investor category and product."@en ;
-    skos:scopeNote "A rule table evaluated outside the model. It is not AI under MAS AIRG para 1.3 unless a model takes part in the decision."@en ;
+    skos:scopeNote "A rule table evaluated outside the model. It is not AI under MAS AIRG para 1.3 unless a model takes part in the decision. Activity, client domicile and booking centre are required; an absent investor category or product means all. When rules overlap, the most specific rule (most scope values set) decides; on a tie, not permitted wins; with no matching rule the activity is not permitted (fail closed)."@en ;
     rdfs:subClassOf pwm:PolicyRule ;
     skos:relatedMatch fibo-sec-sec-rst:InvestorsDomicileRestriction , fibo-sec-sec-rst:QualifiedInvestorRestriction ;
     pwm:inModule pwm:ModuleProducts ;
@@ -467,7 +467,7 @@ pwm:cfiCode a owl:DatatypeProperty ;
 
 pwm:appliesToActivity a owl:ObjectProperty ;
     rdfs:label "applies to activity"@en ;
-    skos:definition "Activity a cross-border rule decides on."@en ;
+    skos:definition "Activity a cross-border rule decides on. Required: a rule without an activity is incomplete, not a rule for every activity."@en ;
     rdfs:domain pwm:CrossBorderRule ; rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "cross-border-solicitation, research-distribution" ] .
@@ -481,21 +481,21 @@ pwm:appliesToProduct a owl:ObjectProperty ;
 
 pwm:appliesToInvestorCategory a owl:ObjectProperty ;
     rdfs:label "applies to investor category"@en ;
-    skos:definition "Investor category a rule covers."@en ;
+    skos:definition "Investor category a rule covers. Absent when the rule covers all investor categories."@en ;
     rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 16(3): target market" ] .
 
 pwm:clientDomicileCode a owl:DatatypeProperty ;
     rdfs:label "client domicile code"@en ;
-    skos:definition "Client domicile a rule covers, as an ISO 3166-1 alpha-2 code."@en ;
+    skos:definition "Client domicile a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a domicile is incomplete, not a rule for every domicile."@en ;
     rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile" ] .
 
 pwm:bookingCentreCode a owl:DatatypeProperty ;
     rdfs:label "booking centre code"@en ;
-    skos:definition "Booking centre jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code."@en ;
+    skos:definition "Booking centre jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a booking centre is incomplete, not a rule for every booking centre."@en ;
     rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .

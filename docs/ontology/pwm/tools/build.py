@@ -79,7 +79,9 @@ CHANGELOG = [("0.1", "2026-11-02", "First public draft: 10 modules, reference re
 EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
 @prefix pwm:  <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix pwmsh: <https://ahmedmuzammil.com/ontology/pwm/shapes#> .
 @prefix firm: <https://example.org/firm/ontology#> .
 
 <https://example.org/firm/ontology> a owl:Ontology ;
@@ -89,6 +91,11 @@ EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
 firm:R1 a skos:Concept ; skos:inScheme firm:RiskScale ; skos:notation "R1" ;
     skos:prefLabel "capital preservation"@en .
+
+# PWM's own binding stays in place, so switch off the generated rule for the
+# illustrative scale and enforce the firm's scale in the firm's shapes graph
+pwm:riskProfileLevel pwm:valuesFrom firm:RiskScale .
+pwmsh:CodeList_riskProfileLevel sh:deactivated true .
 
 # A firm product type specialising a PWM class
 firm:StructuredNote a owl:Class ;
@@ -119,13 +126,14 @@ def humanise(name):
 
 def build(base: Path, site_path):
     src = sorted((base / "src").glob("*.ttl"))
-    text = "".join(f.read_text() for f in src)
-    (base / "pwm.ttl").write_text(text)
+    text = "".join(f.read_text(encoding="utf-8") for f in src)
+    (base / "pwm.ttl").write_text(text, encoding="utf-8")
     order = {}
     for m in re.finditer(r"^pwm(?:ref)?:([A-Za-z0-9_-]+)\s+a\s", text, flags=re.M):
         order.setdefault(m.group(1), m.start())
 
     g = Graph().parse(base / "pwm.ttl")
+    write_code_list_shapes(g, base / "pwm-shapes.ttl")
     sg = Graph().parse(base / "pwm-shapes.ttl")
     ont = URIRef(SITE)
 
@@ -188,7 +196,9 @@ def build(base: Path, site_path):
         for kind, word in ((OWL.someValuesFrom, "some"), (OWL.allValuesFrom, "only"), (OWL.hasValue, "value")):
             v = g.value(b, kind)
             if v is not None:
-                return {"property": link(prop), "quantifier": word, "filler": link(v)}
+                comp = g.value(v, OWL.complementOf) if isinstance(v, BNode) else None
+                filler = {**link(comp), "label": "anything except " + label(comp)} if comp is not None else link(v)
+                return {"property": link(prop), "quantifier": word, "filler": filler}
         return None
 
     domain_of, used_by = {}, {}
@@ -332,8 +342,18 @@ def build(base: Path, site_path):
             "sources": sorted(local(r)[4:] for r in sg.objects(s, DCTERMS.source)),
             "checks": checks, "comment": lit(sg, s, RDFS.comment),
         })
-    shape_order = {m.group(1): m.start() for m in re.finditer(r"^pwmsh:(\w+) a sh:NodeShape", (base / "pwm-shapes.ttl").read_text(), re.M)}
-    rules.sort(key=lambda r: shape_order.get(r["id"], 0))
+    generated = [r for r in rules if r["id"].startswith("CodeList_")]
+    rules = [r for r in rules if not r["id"].startswith("CodeList_")]
+    if generated:
+        rules.append({
+            "id": "CodeListShapes", "label": "Code lists", "targets": [], "sources": ["W3C-SKOS"],
+            "checks": [f"Each of the {len(generated)} coded properties takes its values only from the code list it is bound to with "
+                       "pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. "
+                       "A firm that binds its own code list switches the matching shape off with sh:deactivated true."],
+            "comment": None,
+        })
+    shape_order = {m.group(1): m.start() for m in re.finditer(r"^pwmsh:(\w+) a sh:NodeShape", (base / "pwm-shapes.ttl").read_text(encoding="utf-8"), re.M)}
+    rules.sort(key=lambda r: shape_order.get(r["id"], 10**9))
 
     allterms = [t for m in modules for k in ("classes", "objectProperties", "datatypeProperties", "codeLists") for t in m[k]]
     counts = {
@@ -344,7 +364,8 @@ def build(base: Path, site_path):
         "concepts": sum(len(t["concepts"]) for m in modules for t in m["codeLists"]),
         "references": len(refs),
         "citations": sum(1 for _ in g.subject_objects(P("citation"))),
-        "rules": len(rules),
+        "rules": len(rules) - (1 if generated else 0),
+        "codeListRules": len(generated),
         "externalTerms": sum(1 for s in g.subjects(RDFS.isDefinedBy, None) if not is_pwm(s) and (s, RDF.type, None) in g),
     }
     fibo_terms = {t["iri"]: t for x in allterms for t in [*x.get("supers", []), *(m["target"] for m in x.get("matches", []))]
@@ -361,10 +382,43 @@ def build(base: Path, site_path):
             "metaTerms": meta_terms, "rules": rules, "references": ref_list, "extensionExample": EXTENSION_TTL,
             "changelog": [{"version": v, "date": d, "note": n} for v, d, n in CHANGELOG]}
 
-    (base / "SPEC.md").write_text(spec_md(data, refs))
+    (base / "SPEC.md").write_text(spec_md(data, refs), encoding="utf-8")
     if site_path:
-        Path(site_path).write_text(site_ts(data))
+        Path(site_path).write_text(site_ts(data), encoding="utf-8")
     return data
+
+
+BEGIN = "# BEGIN GENERATED CODE-LIST SHAPES"
+END = "# END GENERATED CODE-LIST SHAPES"
+
+
+def write_code_list_shapes(g, shapes_path):
+    """One shape per coded property: values must come from its bound code list.
+
+    The concept IRIs are written into the shape, so the check works without the
+    ontology's concept data in the data graph.
+    """
+    lines = []
+    for prop in sorted(g.subjects(P("valuesFrom"), None)):
+        sch = g.value(prop, P("valuesFrom"))
+        concepts = sorted(g.subjects(SKOS.inScheme, sch))
+        name = str(prop)[len(PWM):]
+        sname = str(sch)[len(PWM):]
+        members = " ".join(f"pwm:{str(c)[len(PWM):]}" for c in concepts)
+        lines += [
+            f"pwmsh:CodeList_{name} a sh:NodeShape ;",
+            f'    rdfs:label "Code list: {lit(g, prop, RDFS.label)}"@en ;',
+            f"    sh:targetSubjectsOf pwm:{name} ;",
+            f"    dcterms:source pwmref:W3C-SKOS ;",
+            f"    sh:property [ sh:path pwm:{name} ; sh:in ( {members} ) ;",
+            f'        sh:message "Use a code from {lit(g, sch, SKOS.prefLabel)} (pwm:{sname}). A firm that binds its own code list switches this shape off with sh:deactivated true." ] .',
+            "",
+        ]
+    text = shapes_path.read_text(encoding="utf-8")
+    head, rest = text.split(BEGIN, 1)
+    tail = rest.split(END, 1)[1]
+    block = BEGIN + " (tools/build.py writes this block from pwm:valuesFrom; do not edit)\n\n" + "\n".join(lines) + END
+    shapes_path.write_text(head + block + tail, encoding="utf-8")
 
 
 # --- Markdown -----------------------------------------------------------------------------
@@ -402,7 +456,7 @@ def spec_md(d, refs):
            "## Abstract", "", m["description"], "",
            "## Status", "", m["status"], "",
            f"Size: {c['classes']} classes, {c['objectProperties']} object properties, {c['datatypeProperties']} datatype properties, "
-           f"{c['codeLists']} code lists with {c['concepts']} codes, {c['rules']} data rules, {c['references']} references and "
+           f"{c['codeLists']} code lists with {c['concepts']} codes, {c['rules']} data rules plus {c['codeListRules']} generated code-list rules, {c['references']} references and "
            f"{c['citations']} citations. {m['fiboAligned']} FIBO terms are specialised or mapped.", "",
            "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.1:", ""] + \
           [f"- {s}" for s in d["scopeOut"]] + ["", "## Design principles", ""] + \
@@ -470,7 +524,7 @@ def spec_md(d, refs):
             "```sh", "pyshacl -s pwm-shapes.ttl -e pwm.ttl -i rdfs your-data.ttl", "```", "",
             "A firm can switch a rule off in its own shapes graph with `sh:deactivated true`, and add its own thresholds there."]
     for r in d["rules"]:
-        tg = ", ".join(("subjects of " if t.get("subjectsOf") else "") + md_link(t) for t in r["targets"])
+        tg = ", ".join(("subjects of " if t.get("subjectsOf") else "") + md_link(t) for t in r["targets"]) or "every coded property"
         out += ["", f'<a id="{r["id"]}"></a>', f"### {r['label']}", "", f"Applies to {tg}. Sources: " +
                 ", ".join(f"[{refs[s]['short']}](#ref-{s})" for s in r["sources"]) + ".", ""] + [f"- {x}" for x in r["checks"]]
         if r.get("comment"):
@@ -506,7 +560,7 @@ def site_ts(d):
         "export type PwmRule = { id: string; label: string; targets: PwmLink[]; sources: string[]; checks: string[]; comment: string | null };\n"
         "export type PwmOntology = {\n"
         "  meta: { title: string; short: string; version: string; ontologyIri: string; versionIri: string; namespace: string; shapesIri: string; created: string; modified: string; creator: string; license: string; description: string; status: string; fiboAligned: number };\n"
-        "  counts: { classes: number; objectProperties: number; datatypeProperties: number; codeLists: number; concepts: number; references: number; citations: number; rules: number; externalTerms: number };\n"
+        "  counts: { classes: number; objectProperties: number; datatypeProperties: number; codeLists: number; concepts: number; references: number; citations: number; rules: number; codeListRules: number; externalTerms: number };\n"
         "  principles: { title: string; body: string }[];\n"
         "  scopeIn: string[];\n  scopeOut: string[];\n"
         "  marks: { mark: string; label: string; definition: string }[];\n"
