@@ -61,8 +61,10 @@ Deactivation alone does not support arbitrary list replacement. Handwritten cons
 
 ## Checks
 
+Run these commands from `docs/ontology/pwm`.
+
 ```sh
-pip install rdflib pyshacl
+pip install rdflib pyshacl pytest
 
 # Rebuild pwm.ttl and SPEC.md from src/
 python3 tools/build.py
@@ -81,6 +83,9 @@ python3 tools/check_shapes_terms.py pwm.ttl examples/pwm-example.ttl
 # SHACL: the example conforms and its evidence chain is unbroken; the negative
 # fixture raises exactly the expected violations (-v prints them)
 python3 tools/validate.py
+
+# PWM regression tests (separate from root pytest collection)
+python3 -m pytest tests/test_review_regressions.py
 
 # OWL 2 DL profile and reasoning (ROBOT, https://robot.obolibrary.org)
 robot validate-profile --profile DL --input pwm.ttl

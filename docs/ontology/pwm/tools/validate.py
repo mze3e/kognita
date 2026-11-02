@@ -119,11 +119,18 @@ def chain_problems(g, ontology=None):
     inferred += g
     DeductiveClosure(RDFS_Semantics).expand(inferred)
     records = list(inferred.subjects(RDF.type, P("EvidenceRecord")))
-    by_hash = {str(g.value(r, P("recordHash"))): r for r in records}
     problems, outside, seen = [], [], {}
+    by_hash = {}
+    for r in records:
+        for record_hash in inferred.objects(r, P("recordHash")):
+            key = str(record_hash)
+            if key in by_hash:
+                problems.append(f"duplicate recordHash: {key}")
+            else:
+                by_hash[key] = r
     roots, successors = [], {}
     for r in records:
-        prev = g.value(r, P("previousRecordHash"))
+        prev = inferred.value(r, P("previousRecordHash"))
         if prev is None:
             roots.append(r)
             continue
@@ -137,8 +144,8 @@ def chain_problems(g, ontology=None):
             roots.append(r)
         else:
             successors[before] = r
-            earlier = g.value(before, prov_time)
-            later = g.value(r, prov_time)
+            earlier = inferred.value(before, prov_time)
+            later = inferred.value(r, prov_time)
             if earlier is not None and later is not None:
                 try:
                     if earlier.toPython() > later.toPython():

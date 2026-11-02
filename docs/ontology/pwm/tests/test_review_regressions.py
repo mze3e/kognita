@@ -70,5 +70,33 @@ def test_firm_shapes():
     for prop in ('riskProfileLevel', 'productRiskLevel', 'targetRiskProfile'):
         data.add((E('FirmRisk'), P(prop), URIRef('https://example.org/firm/ontology#R1')))
     assert validate(data, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
-    data.add((E('FirmRisk'), P('productRiskLevel'), P('RiskLevel1')))
+    data.add((E('FirmRisk'), P('productRiskLevel'), P('RP1')))
     assert not validate(data, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
+
+
+def inferred_chain():
+    from rdflib.namespace import RDFS
+    g = example()
+    ontology = Graph().parse(BASE / 'pwm.ttl')
+    for predicate in (P('recordHash'), P('previousRecordHash'),
+                      URIRef('http://www.w3.org/ns/prov#generatedAtTime')):
+        subproperty = E(str(predicate).rsplit('#', 1)[-1])
+        ontology.add((subproperty, RDFS.subPropertyOf, predicate))
+        for subject, value in list(g.subject_objects(predicate)):
+            g.remove((subject, predicate, value))
+            g.add((subject, subproperty, value))
+    return g, ontology
+
+
+def test_inferred_chain_values():
+    g, ontology = inferred_chain()
+    assert validator.chain_problems(g, ontology) == []
+    g.set((E('Evidence2'), E('generatedAtTime'),
+           Literal('2000-01-01T00:00:00Z', datatype=XSD.dateTime)))
+    assert any('back in time' in p for p in validator.chain_problems(g, ontology))
+
+
+def test_duplicate_inferred_hash():
+    g, ontology = inferred_chain()
+    g.set((E('Evidence2'), E('recordHash'), g.value(E('Evidence1'), E('recordHash'))))
+    assert any('duplicate recordHash:' in p for p in validator.chain_problems(g, ontology))
