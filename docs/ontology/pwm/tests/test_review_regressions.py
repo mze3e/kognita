@@ -213,8 +213,32 @@ def test_eu_sustainability_requirement():
     assert not conforms
     assert set(report.objects(None, validator.SH.focusNode)) == {E('EUSuitability')}
     # An explicit no-preference record satisfies collection of the choice.
+    g.add((E("NoSustainabilityChoice"), RDF.type, P("SustainabilityPreference")))
+    g.add((E("NoSustainabilityChoice"), P("sustainabilityPreferenceKind"),
+           P("NoSustainabilityPreference")))
     g.add((E('EUSuitability'), P('usesSustainabilityPreference'), E('NoSustainabilityChoice')))
     assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
     # Two versions at once must not satisfy the one-version requirement.
     g.add((E('EUSuitability'), P('usesSustainabilityPreference'), E('SustainabilityChoice')))
     assert not validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
+
+
+def test_eu_example_is_self_contained():
+    from pyshacl import validate
+    g = example()
+    eu = Graph()
+    pending, seen = [E('EUSuitability')], set()
+    while pending:
+        node = pending.pop()
+        if node in seen:
+            continue
+        seen.add(node)
+        assert str(node).startswith(validator.EX + 'EU') or node == E('SustainabilityChoice')
+        assert (node, RDF.type, None) in g
+        for triple in g.triples((node, None, None)):
+            eu.add(triple)
+            if str(triple[2]).startswith(validator.EX):
+                pending.append(triple[2])
+    assert validate(eu, shacl_graph=Graph().parse(BASE / 'pwm-shapes.ttl'),
+                    ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')[0]
+    assert not list(g.triples((E('NoSustainabilityChoice'), None, None)))

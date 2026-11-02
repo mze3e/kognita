@@ -229,20 +229,26 @@ ex:BadRiskProfileWrongCode a pwm:InvestorRiskProfile ;
     pwm:validFrom "2026-11-01T00:00:00+08:00"^^xsd:dateTime ;
     prov:wasAttributedTo ex:RM .
 
+# EU assessment is missing the required sustainability preference record.
 ex:BadEUSuitability a pwm:SuitabilityAssessment ;
     pwm:jurisdictionCode "EU" ; pwm:assessesRecommendation ex:Recommendation ;
     pwm:usesRiskProfile ex:RiskProfileV2 ; pwm:usesMandate ex:Mandate ;
     pwm:suitabilityOutcome pwm:InsufficientInformation ;
     pwm:rationale "No sustainability preference record collected." ; prov:wasAttributedTo ex:RM .
+# Taxonomy preference is missing its minimum aligned proportion.
 ex:BadTaxonomyPreference a pwm:SustainabilityPreference ;
     pwm:sustainabilityPreferenceKind pwm:TaxonomyAlignedMinimum .
+# SFDR minimum proportion exceeds the allowed fraction of 1.
 ex:BadSFDRProportion a pwm:SustainabilityPreference ;
     pwm:sustainabilityPreferenceKind pwm:SFDRSustainableMinimum ;
     pwm:minimumSFDRSustainableProportion 1.20 .
+# PAI preference is missing client-determined PAI elements.
 ex:BadPAIPreference a pwm:SustainabilityPreference ;
     pwm:sustainabilityPreferenceKind pwm:PAIConsideration .
+# No preference cannot be combined with a taxonomy preference or minimum proportion.
 ex:BadNoPreference a pwm:SustainabilityPreference ;
     pwm:sustainabilityPreferenceKind pwm:NoSustainabilityPreference, pwm:TaxonomyAlignedMinimum ;
     pwm:minimumTaxonomyAlignedProportion 0.20 .
+# RP1 is not a sustainability preference kind.
 ex:BadPreferenceCode a pwm:SustainabilityPreference ;
     pwm:sustainabilityPreferenceKind pwm:RP1 .

@@ -456,22 +456,47 @@ ex:Evidence3 a pwm:EvidenceRecord ;
     prov:generatedAtTime "2026-11-02T10:20:00+08:00"^^xsd:dateTime .
 
 # An EU assessment is illustrative, separate from the SG client journey above.
+ex:EUClientPerson a fibo-fnd-aap-ppl:Person ; rdfs:label "EU client (fictional person)"@en .
+ex:EURMPerson a fibo-fnd-aap-ppl:Person ; rdfs:label "EU relationship manager (fictional person)"@en .
+
+ex:EUClient a pwm:IndividualClient ;
+    cmns-rlcmp:isPlayedBy ex:EUClientPerson ;
+    pwm:residenceCountry "DE" ; pwm:domicileCountry "DE" .
+
+ex:EURM a pwm:RelationshipManager ;
+    cmns-rlcmp:isPlayedBy ex:EURMPerson .
+
+ex:EURiskProfile a pwm:InvestorRiskProfile ;
+    pwm:assesses ex:EUClient ; pwm:riskProfileLevel pwm:RP3 ;
+    pwm:validFrom "2026-11-02T00:00:00Z"^^xsd:dateTime ;
+    prov:wasAttributedTo ex:EURM .
+
+ex:EUMandate a pwm:AdvisoryMandate ;
+    rdfs:label "EU advisory mandate (fictional)"@en ;
+    pwm:validFrom "2026-11-02T00:00:00Z"^^xsd:dateTime .
+
+ex:EUProduct a pwm:Product ;
+    rdfs:label "EU investment product pending sustainability evidence (fictional)"@en ;
+    pwm:currency "EUR" .
+
+ex:EURecommendation a pwm:Recommendation ;
+    pwm:withClient ex:EUClient ; pwm:recommendsProduct ex:EUProduct ;
+    pwm:rationale "Proposed EUR investment pending product sustainability evidence and suitability assessment." ;
+    prov:wasAttributedTo ex:EURM .
+
 ex:SustainabilityChoice a pwm:SustainabilityPreference ;
     pwm:sustainabilityPreferenceKind pwm:TaxonomyAlignedMinimum, pwm:SFDRSustainableMinimum, pwm:PAIConsideration ;
     pwm:minimumTaxonomyAlignedProportion 0.20 ;
     pwm:minimumSFDRSustainableProportion 0.40 ;
     pwm:paiConsiderationElements "Client requests consideration of greenhouse gas emissions intensity." ;
     pwm:validFrom "2026-11-02T00:00:00Z"^^xsd:dateTime ;
-    prov:wasAttributedTo ex:Client .
-
-ex:NoSustainabilityChoice a pwm:SustainabilityPreference ;
-    pwm:sustainabilityPreferenceKind pwm:NoSustainabilityPreference .
+    prov:wasAttributedTo ex:EUClient .
 
 ex:EUSuitability a pwm:SuitabilityAssessment ;
     pwm:jurisdictionCode "EU" ;
-    pwm:assessesRecommendation ex:Recommendation ;
-    pwm:usesRiskProfile ex:RiskProfileV2 ; pwm:usesMandate ex:Mandate ;
+    pwm:assessesRecommendation ex:EURecommendation ;
+    pwm:usesRiskProfile ex:EURiskProfile ; pwm:usesMandate ex:EUMandate ;
     pwm:usesSustainabilityPreference ex:SustainabilityChoice ;
     pwm:suitabilityOutcome pwm:InsufficientInformation ;
     pwm:rationale "Preferences recorded; product sustainability evidence is still required before a suitable outcome can be reached." ;
-    prov:wasAttributedTo ex:RM .
+    prov:wasAttributedTo ex:EURM .
