@@ -1,7 +1,7 @@
 # Private Wealth Management Ontology (PWM)
 
 **Version 0.1, draft for comment (2 November 2026).**
-Web page: https://ahmedmuzammil.com/ontology/pwm · Full specification: [SPEC.md](SPEC.md)
+Web page: https://ahmedmuzammil.com/ontology/pwm · Full specification: [SPEC.md](SPEC.md) · Road to 1.0: [ROADMAP.md](ROADMAP.md)
 
 PWM is a generic ontology for private banking and wealth management, and for the AI that works on it. It covers parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, the client journey from origination to communication, and the governance of AI: use cases, risk materiality, accountability, agents, delegated authority, claims and evidence.
 
@@ -21,6 +21,7 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 | `pwm.ttl` | The ontology, built from `src/`. Do not edit; edit `src/` and rebuild |
 | `pwm-shapes.ttl` | SHACL data rules, each citing the paragraph or item it enforces, plus one generated code-list rule per coded property |
 | `SPEC.md` | The specification, generated from the Turtle |
+| `ROADMAP.md` | The plan from 0.1 to 1.0 |
 | `examples/pwm-example.ttl` | Synthetic data for a fictional firm: one client journey end to end |
 | `examples/pwm-example-invalid.ttl` | Negative fixture: each record breaks one rule |
 | `src/*.ttl` | Sources: header, reference register, one file per module group, code-list bindings, external declarations |
