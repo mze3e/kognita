@@ -1,0 +1,538 @@
+
+# =============================================================================
+#  Module 4: Mandates, restrictions and fees
+# =============================================================================
+
+pwm:Mandate a owl:Class ;
+    rdfs:label "mandate"@en ;
+    skos:definition "Written agreement under which a wealth manager serves a client on a stated service model, advisory, discretionary or execution-only, within investment restrictions."@en ;
+    rdfs:subClassOf fibo-fnd-agr-ctr:WrittenContract ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 4(1)(4), 4(1)(8), 25(4)" ] ,
+                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "mandate: the discussion must sit inside the recorded mandate" ] .
+
+pwm:AdvisoryMandate a owl:Class ;
+    rdfs:label "advisory mandate"@en ;
+    skos:definition "Mandate under which the wealth manager makes personal recommendations and the client takes each investment decision."@en ;
+    rdfs:subClassOf pwm:Mandate ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 4(1)(4): investment advice" ] , [ pwm:cites pwmref:MAS-FAA-N16 ; pwm:locator "Recommendations" ] .
+
+pwm:DiscretionaryMandate a owl:Class ;
+    rdfs:label "discretionary mandate"@en ;
+    skos:definition "Mandate under which the wealth manager takes investment decisions for the client within agreed guidelines."@en ;
+    rdfs:subClassOf pwm:Mandate ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 4(1)(8): portfolio management" ] .
+
+pwm:ExecutionOnlyArrangement a owl:Class ;
+    rdfs:label "execution-only arrangement"@en ;
+    skos:definition "Arrangement under which the wealth manager executes client instructions without advice."@en ;
+    rdfs:subClassOf pwm:Mandate ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(4)" ] .
+
+pwm:CustodyOnlyArrangement a owl:Class ;
+    rdfs:label "custody-only arrangement"@en ;
+    skos:definition "Arrangement under which the wealth manager holds assets and services them, without advice or dealing."@en ;
+    rdfs:subClassOf pwm:Mandate ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Custody-only service model" ] .
+
+pwm:InvestmentRestriction a owl:Class ;
+    rdfs:label "investment restriction"@en ;
+    skos:definition "Provision of a mandate that limits what may be held or done: asset-class bands, concentration limits, excluded issuers or sectors, prohibited instruments, leverage limits."@en ;
+    rdfs:subClassOf fibo-fnd-agr-ctr:ContractualCommitment ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "mandate; concentration" ] .
+
+pwm:ConcentrationLimit a owl:Class ;
+    rdfs:label "concentration limit"@en ;
+    skos:definition "Investment restriction capping exposure to one issuer, sector, country, currency or product type as a share of the portfolio."@en ;
+    rdfs:subClassOf pwm:InvestmentRestriction ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "concentration: inside the recorded concentration limit" ] .
+
+pwm:ModelPortfolio a owl:Class ;
+    rdfs:label "model portfolio"@en ;
+    skos:definition "Target allocation, for a risk profile or strategy, from which client portfolios are built and against which drift is measured."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Model-based portfolio management" ] .
+
+pwm:Benchmark a owl:Class ;
+    rdfs:label "benchmark"@en ;
+    skos:definition "Index or composite against which a portfolio's performance is evaluated."@en ;
+    skos:closeMatch fibo-sec-fund-civ:PortfolioBenchmark ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "FIBO's PortfolioBenchmark is Provisional, so it is matched, not specialised" ] .
+
+pwm:Fee a owl:Class ;
+    rdfs:label "fee"@en ;
+    skos:definition "Charge for services under a mandate or account, of a stated type."@en ;
+    rdfs:subClassOf fibo-fbc-pas-caa:Fee ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 24(4): information on costs and charges" ] .
+
+pwm:ThirdPartyPayment a owl:Class ;
+    rdfs:label "third-party payment"@en ;
+    skos:altLabel "inducement"@en , "retrocession"@en ;
+    skos:definition "Fee or benefit the wealth manager receives from a third party, such as a product provider, in connection with a client service."@en ;
+    rdfs:subClassOf pwm:Fee ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 24(9)" ] .
+
+pwm:governedByMandate a owl:ObjectProperty ;
+    rdfs:label "governed by mandate"@en ;
+    skos:definition "Mandate under which an account or portfolio is managed or advised."@en ;
+    rdfs:range pwm:Mandate ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "mandate" ] .
+
+pwm:hasRestriction a owl:ObjectProperty ;
+    rdfs:label "has restriction"@en ;
+    skos:definition "Investment restriction that forms part of a mandate."@en ;
+    rdfs:domain pwm:Mandate ; rdfs:range pwm:InvestmentRestriction ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "mandate; concentration" ] .
+
+pwm:limitValue a owl:DatatypeProperty ;
+    rdfs:label "limit value"@en ;
+    skos:definition "Numeric limit of a restriction, read together with its limit basis."@en ;
+    rdfs:domain pwm:InvestmentRestriction ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "concentration" ] .
+
+pwm:limitBasis a owl:DatatypeProperty ;
+    rdfs:label "limit basis"@en ;
+    skos:definition "What the limit value is measured against, such as percent of portfolio market value."@en ;
+    rdfs:domain pwm:InvestmentRestriction ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Restriction definition" ] .
+
+pwm:feeType a owl:ObjectProperty ;
+    rdfs:label "fee type"@en ;
+    skos:definition "Kind of fee."@en ;
+    rdfs:domain pwm:Fee ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 24(4)" ] .
+
+pwm:targetRiskProfile a owl:ObjectProperty ;
+    rdfs:label "target risk profile"@en ;
+    skos:definition "Risk profile level a model portfolio or product is designed for."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Model portfolio design" ] .
+
+pwm:hasBenchmark a owl:ObjectProperty ;
+    rdfs:label "has benchmark"@en ;
+    skos:definition "Benchmark a mandate or portfolio is measured against."@en ;
+    rdfs:range pwm:Benchmark ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Performance measurement" ] .
+
+pwm:FeeTypeScheme a skos:ConceptScheme ;
+    skos:prefLabel "fee types"@en ;
+    pwm:inModule pwm:ModuleMandates ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 24(4)" ] .
+pwm:FeeManagement a skos:Concept ; skos:inScheme pwm:FeeTypeScheme ; skos:topConceptOf pwm:FeeTypeScheme ;
+    skos:prefLabel "management fee"@en ; skos:definition "For discretionary portfolio management."@en .
+pwm:FeeAdvisory a skos:Concept ; skos:inScheme pwm:FeeTypeScheme ; skos:topConceptOf pwm:FeeTypeScheme ;
+    skos:prefLabel "advisory fee"@en ; skos:definition "For advice under an advisory mandate."@en .
+pwm:FeeCustody a skos:Concept ; skos:inScheme pwm:FeeTypeScheme ; skos:topConceptOf pwm:FeeTypeScheme ;
+    skos:prefLabel "custody fee"@en ; skos:definition "For safekeeping and servicing of assets."@en .
+pwm:FeeTransaction a skos:Concept ; skos:inScheme pwm:FeeTypeScheme ; skos:topConceptOf pwm:FeeTypeScheme ;
+    skos:prefLabel "transaction fee"@en ; skos:definition "Per transaction, such as brokerage."@en .
+pwm:FeePerformance a skos:Concept ; skos:inScheme pwm:FeeTypeScheme ; skos:topConceptOf pwm:FeeTypeScheme ;
+    skos:prefLabel "performance fee"@en ; skos:definition "Contingent on returns above a hurdle or high-water mark."@en .
+
+# =============================================================================
+#  Module 5: Accounts, portfolios and holdings
+# =============================================================================
+
+pwm:Account a owl:Class ;
+    rdfs:label "account"@en ;
+    skos:definition "Record of a business arrangement between a client and a wealth manager, in which balances and transactions are kept."@en ;
+    rdfs:subClassOf fibo-fbc-pas-caa:Account ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:SG-BANKING-ACT ; pwm:locator "s47: customer information includes particulars of an account" ] .
+
+pwm:InvestmentAccount a owl:Class ;
+    rdfs:label "investment account"@en ;
+    skos:definition "Account that records securities and cash held for investment."@en ;
+    rdfs:subClassOf fibo-fbc-pas-caa:InvestmentAccount , pwm:Account ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Specialises FIBO InvestmentAccount within the PWM account hierarchy" ] .
+
+pwm:CustodyAccount a owl:Class ;
+    rdfs:label "custody account"@en ;
+    skos:altLabel "securities account"@en ;
+    skos:definition "Investment account in which the wealth manager holds a client's securities in safekeeping."@en ;
+    rdfs:subClassOf pwm:InvestmentAccount ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "No FIBO class for custody accounts at the version checked" ] .
+
+pwm:CashAccount a owl:Class ;
+    rdfs:label "cash account"@en ;
+    skos:definition "Current or deposit account in a single currency, linked to a client's investment activity."@en ;
+    rdfs:subClassOf fibo-fbc-pas-caa:CustomerAccount , pwm:Account ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:contextSpeed pwm:FastContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Cash account" ] .
+
+pwm:JointAccount a owl:Class ;
+    rdfs:label "joint account"@en ;
+    skos:definition "Account held by two or more holders, operated under a stated signing rule."@en ;
+    rdfs:subClassOf pwm:Account ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Joint holding and signing rules" ] .
+
+pwm:AccountHolder a owl:Class ;
+    rdfs:label "account holder"@en ;
+    skos:definition "Role of a party that owns an account."@en ;
+    rdfs:subClassOf fibo-fbc-pas-caa:AccountHolder ;
+    skos:exactMatch fibo-fbc-pas-caa:AccountHolder ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "Section VIII: account holder" ] .
+
+pwm:Portfolio a owl:Class ;
+    rdfs:label "portfolio"@en ;
+    skos:definition "Collection of holdings managed or advised as a unit under one mandate."@en ;
+    rdfs:subClassOf fibo-fnd-oac-own:Portfolio ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "review_portfolio tool under contact-frequency" ] .
+
+pwm:Holding a owl:Class ;
+    rdfs:label "holding"@en ;
+    skos:definition "Quantity of a financial instrument or other asset held in a portfolio or account at a point in time."@en ;
+    rdfs:subClassOf fibo-fnd-oac-own:Holding ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:contextSpeed pwm:FastContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 7: fast-moving facts are looked up live" ] .
+
+pwm:Position a owl:Class ;
+    rdfs:label "position"@en ;
+    skos:definition "Financial exposure from owning, borrowing, shorting or contracting, including derivatives and credit."@en ;
+    rdfs:subClassOf fibo-fbc-pas-fpas:Position ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:contextSpeed pwm:FastContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 7" ] .
+
+pwm:Valuation a owl:Class ;
+    rdfs:label "valuation"@en ;
+    skos:definition "Monetary value of a portfolio, account or holding at a stated time, produced by a registered calculation service."@en ;
+    skos:scopeNote "A figure presented as authoritative must cite its calculation service. A model may explain a valuation; it may not produce one."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:contextSpeed pwm:FastContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 6: calculation provenance" ] ,
+                 [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 8: deterministic financial calculations" ] .
+
+pwm:LombardFacility a owl:Class ;
+    rdfs:label "Lombard facility"@en ;
+    skos:altLabel "securities-backed loan"@en ;
+    skos:definition "Credit extended to a client against a pledged portfolio of financial assets, with an advance rate per asset."@en ;
+    rdfs:subClassOf fibo-loan-ln-ln:CollateralizedLoan ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:contextSpeed pwm:FastContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Portfolio-backed lending" ] .
+
+pwm:accountHeldBy a owl:ObjectProperty ;
+    rdfs:label "account held by"@en ;
+    skos:definition "Account holder of an account."@en ;
+    rdfs:domain pwm:Account ; rdfs:range pwm:AccountHolder ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "Section VIII" ] .
+
+pwm:hasPortfolio a owl:ObjectProperty ;
+    rdfs:label "has portfolio"@en ;
+    skos:definition "Portfolio recorded in an account."@en ;
+    rdfs:domain pwm:Account ; rdfs:range pwm:Portfolio ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Account and portfolio" ] .
+
+pwm:hasHolding a owl:ObjectProperty ;
+    rdfs:label "has holding"@en ;
+    skos:definition "Holding that forms part of a portfolio."@en ;
+    rdfs:domain pwm:Portfolio ; rdfs:range pwm:Holding ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Portfolio composition" ] .
+
+pwm:inInstrument a owl:ObjectProperty ;
+    rdfs:label "in instrument"@en ;
+    skos:definition "Financial instrument a holding or position is in."@en ;
+    rdfs:range fibo-fbc-fi-fi:FinancialInstrument ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Holding to instrument" ] .
+
+pwm:valuationOf a owl:ObjectProperty ;
+    rdfs:label "valuation of"@en ;
+    skos:definition "Portfolio, account or holding a valuation measures."@en ;
+    rdfs:domain pwm:Valuation ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 6" ] .
+
+pwm:amount a owl:DatatypeProperty ;
+    rdfs:label "amount"@en ;
+    skos:definition "Numeric amount, read together with its currency."@en ;
+    rdfs:range xsd:decimal ;
+    skos:closeMatch fibo-fnd-acc-cur:hasAmount ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Amount and currency pattern" ] .
+
+pwm:currency a owl:DatatypeProperty ;
+    rdfs:label "currency"@en ;
+    skos:definition "Currency of an amount, as an ISO 4217 alphabetic code."@en ;
+    rdfs:range xsd:string ;
+    skos:closeMatch fibo-fnd-acc-cur:hasCurrency ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:ISO-4217 ; pwm:locator "Alphabetic codes" ] .
+
+pwm:signingRule a owl:ObjectProperty ;
+    rdfs:label "signing rule"@en ;
+    skos:definition "Rule for who must sign instructions on a joint account or for an entity."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Signing authority" ] .
+
+pwm:securedBy a owl:ObjectProperty ;
+    rdfs:label "secured by"@en ;
+    skos:definition "Portfolio pledged as collateral for a credit facility."@en ;
+    rdfs:domain pwm:LombardFacility ; rdfs:range pwm:Portfolio ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Pledge" ] .
+
+pwm:SigningRuleScheme a skos:ConceptScheme ;
+    skos:prefLabel "signing rules"@en ;
+    pwm:inModule pwm:ModuleAccounts ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Signing authority" ] .
+pwm:SignAnyOne a skos:Concept ; skos:inScheme pwm:SigningRuleScheme ; skos:topConceptOf pwm:SigningRuleScheme ;
+    skos:prefLabel "any one to sign"@en ; skos:definition "Any single authorised signatory may instruct."@en .
+pwm:SignTwoJointly a skos:Concept ; skos:inScheme pwm:SigningRuleScheme ; skos:topConceptOf pwm:SigningRuleScheme ;
+    skos:prefLabel "two to sign"@en ; skos:definition "Any two authorised signatories together."@en .
+pwm:SignAllJointly a skos:Concept ; skos:inScheme pwm:SigningRuleScheme ; skos:topConceptOf pwm:SigningRuleScheme ;
+    skos:prefLabel "all to sign"@en ; skos:definition "Every holder or signatory must sign."@en .
+
+# =============================================================================
+#  Module 6: Products, distribution and research
+# =============================================================================
+
+pwm:Product a owl:Class ;
+    rdfs:label "product"@en ;
+    skos:definition "Financial product on the wealth manager's shelf, such as a fund, structured note, bond, deposit or credit facility, linked to the instruments that underlie it."@en ;
+    rdfs:subClassOf fibo-fbc-pas-fpas:FinancialProduct ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product shelf" ] .
+
+pwm:ProductRiskRating a owl:Class ;
+    rdfs:label "product risk rating"@en ;
+    skos:definition "Wealth manager's assessment of a product's risk on its own scale, used to match products to client risk profiles."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    skos:relatedMatch fibo-sec-fund-civ:RiskLevel ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 16(3), 24(2): product governance" ] .
+
+pwm:productRiskLevel a owl:ObjectProperty ;
+    rdfs:label "product risk level"@en ;
+    skos:definition "Level a product risk rating assigns, on a scale that can be compared with client risk profile levels."@en ;
+    skos:scopeNote "Use the same scale as the risk profile, or a published mapping between the two, so a suitability check can compare them."@en ;
+    rdfs:domain pwm:ProductRiskRating ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 16(3), 24(2): product governance" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "suitability" ] .
+
+pwm:TargetMarket a owl:Class ;
+    rdfs:label "target market"@en ;
+    skos:definition "Description of the clients a product is designed for, and those it is not, by category, knowledge, risk and objectives."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 16(3), 24(2)" ] .
+
+pwm:ApprovedProductList a owl:Class ;
+    rdfs:label "approved product list"@en ;
+    skos:altLabel "product shelf"@en ;
+    skos:definition "Versioned list of products approved for distribution from a booking centre."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "product-eligibility" ] , [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Shelf governance" ] .
+
+pwm:CrossBorderRule a owl:Class ;
+    rdfs:label "cross-border rule"@en ;
+    skos:definition "Deterministic rule stating whether an activity, such as solicitation, advice or research distribution, is permitted for a client domicile, booking centre, investor category and product."@en ;
+    skos:scopeNote "A rule table evaluated outside the model. It is not AI under MAS AIRG para 1.3 unless a model takes part in the decision."@en ;
+    rdfs:subClassOf pwm:PolicyRule ;
+    skos:relatedMatch fibo-sec-sec-rst:InvestorsDomicileRestriction , fibo-sec-sec-rst:QualifiedInvestorRestriction ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile, booking-centre, rm-location, cross-border-solicitation, research-distribution" ] ,
+                 [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.3, fn 6: rule-based tools are not AI" ] .
+
+pwm:ProductTermSheet a owl:Class ;
+    rdfs:label "product term sheet"@en ;
+    skos:definition "Offering document summarising a product's terms, payoff, risks and costs."@en ;
+    skos:editorialNote "FIBO's TermSheet (FND/Agreements) is a non-binding deal agreement, a different concept, so it is not aligned."@en ;
+    rdfs:subClassOf fibo-sec-sec-iss:OfferingDocument ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C0 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product documentation" ] .
+
+pwm:KeyInformationDocument a owl:Class ;
+    rdfs:label "key information document"@en ;
+    skos:altLabel "KID"@en ;
+    skos:definition "Short standardised disclosure of a packaged product's nature, risks, costs and potential returns."@en ;
+    rdfs:subClassOf fibo-sec-sec-iss:OfferingDocument ;
+    skos:closeMatch fibo-sec-fund-civ:KeyInvestorInformationDocument ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C0 ;
+    pwm:citation [ pwm:cites pwmref:EU-PRIIPS ; pwm:locator "Key information document" ] .
+
+pwm:ResearchPublication a owl:Class ;
+    rdfs:label "research publication"@en ;
+    skos:definition "Authored, dated and versioned investment research, with effective, last-reviewed, superseded and expiry dates and any distribution restrictions."@en ;
+    rdfs:subClassOf cmns-doc:Document ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: research provenance and lifecycle" ] ,
+                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "research-distribution" ] .
+
+pwm:HouseView a owl:Class ;
+    rdfs:label "house view"@en ;
+    skos:altLabel "CIO view"@en ;
+    skos:definition "Wealth manager's current official view on markets and asset allocation. When it changes, recommendations that depend on it are invalidated."@en ;
+    rdfs:subClassOf pwm:ResearchPublication ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 4: house-view change propagation" ] ,
+                 [ pwm:cites pwmref:EVOLVE ; pwm:locator "Define truth once: one source for policies" ] .
+
+pwm:hasUnderlyingInstrument a owl:ObjectProperty ;
+    rdfs:label "has underlying instrument"@en ;
+    skos:definition "Financial instrument a product consists of or refers to."@en ;
+    rdfs:domain pwm:Product ; rdfs:range fibo-fbc-fi-fi:FinancialInstrument ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product to instrument" ] .
+
+pwm:productComplexity a owl:ObjectProperty ;
+    rdfs:label "product complexity"@en ;
+    skos:definition "Regulatory complexity class of a product."@en ;
+    rdfs:domain pwm:Product ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(4)" ] , [ pwm:cites pwmref:MAS-SFA04-N12 ; pwm:locator "Specified and excluded investment products" ] .
+
+pwm:isin a owl:DatatypeProperty ;
+    rdfs:label "ISIN"@en ;
+    skos:definition "Twelve-character ISO 6166 international securities identification number."@en ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:ISO-6166 ; pwm:locator "ISIN structure" ] .
+
+pwm:cfiCode a owl:DatatypeProperty ;
+    rdfs:label "CFI code"@en ;
+    skos:definition "Six-letter ISO 10962 classification of financial instruments code."@en ;
+    rdfs:range xsd:string ;
+    skos:closeMatch fibo-sec-sec-cls:FinancialInstrumentClassificationCode ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:ISO-10962 ; pwm:locator "CFI code" ] .
+
+pwm:appliesToActivity a owl:ObjectProperty ;
+    rdfs:label "applies to activity"@en ;
+    skos:definition "Activity a cross-border rule decides on."@en ;
+    rdfs:domain pwm:CrossBorderRule ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "cross-border-solicitation, research-distribution" ] .
+
+pwm:appliesToProduct a owl:ObjectProperty ;
+    rdfs:label "applies to product"@en ;
+    skos:definition "Product a rule covers. Absent when the rule covers all products."@en ;
+    rdfs:range pwm:Product ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "product-eligibility" ] .
+
+pwm:appliesToInvestorCategory a owl:ObjectProperty ;
+    rdfs:label "applies to investor category"@en ;
+    skos:definition "Investor category a rule covers."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 16(3): target market" ] .
+
+pwm:clientDomicileCode a owl:DatatypeProperty ;
+    rdfs:label "client domicile code"@en ;
+    skos:definition "Client domicile a rule covers, as an ISO 3166-1 alpha-2 code."@en ;
+    rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile" ] .
+
+pwm:bookingCentreCode a owl:DatatypeProperty ;
+    rdfs:label "booking centre code"@en ;
+    skos:definition "Booking centre jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code."@en ;
+    rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .
+
+pwm:permitted a owl:DatatypeProperty ;
+    rdfs:label "permitted"@en ;
+    skos:definition "Whether the activity is permitted under the rule."@en ;
+    rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "cross-border-solicitation: the pack enforces the flag the bank recorded" ] .
+
+pwm:ProductComplexityScheme a skos:ConceptScheme ;
+    skos:prefLabel "product complexity classes"@en ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(4)" ] , [ pwm:cites pwmref:MAS-SFA04-N12 ; pwm:locator "Specified investment products" ] .
+pwm:ComplexProduct a skos:Concept ; skos:inScheme pwm:ProductComplexityScheme ; skos:topConceptOf pwm:ProductComplexityScheme ;
+    skos:prefLabel "complex"@en ; skos:definition "Requires an assessment of knowledge and experience before sale."@en .
+pwm:NonComplexProduct a skos:Concept ; skos:inScheme pwm:ProductComplexityScheme ; skos:topConceptOf pwm:ProductComplexityScheme ;
+    skos:prefLabel "non-complex"@en ; skos:definition "May be sold without an appropriateness check where the rules allow."@en .
+pwm:SpecifiedInvestmentProductSG a skos:Concept ; skos:inScheme pwm:ProductComplexityScheme ; skos:broader pwm:ComplexProduct ;
+    skos:prefLabel "specified investment product (SG)"@en ; skos:definition "Product that MAS requires a customer knowledge or account assessment for before sale to retail customers."@en .
+pwm:ExcludedInvestmentProductSG a skos:Concept ; skos:inScheme pwm:ProductComplexityScheme ; skos:broader pwm:NonComplexProduct ;
+    skos:prefLabel "excluded investment product (SG)"@en ; skos:definition "Product outside the specified-investment-product regime."@en .
+
+pwm:CrossBorderActivityScheme a skos:ConceptScheme ;
+    skos:prefLabel "cross-border activities"@en ;
+    pwm:inModule pwm:ModuleProducts ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "cross-border-solicitation, research-distribution" ] .
+pwm:ActivitySolicitation a skos:Concept ; skos:inScheme pwm:CrossBorderActivityScheme ; skos:topConceptOf pwm:CrossBorderActivityScheme ;
+    skos:prefLabel "solicitation"@en ; skos:definition "Approaching a client or prospect unprompted."@en .
+pwm:ActivityReverseEnquiry a skos:Concept ; skos:inScheme pwm:CrossBorderActivityScheme ; skos:topConceptOf pwm:CrossBorderActivityScheme ;
+    skos:prefLabel "reverse enquiry"@en ; skos:definition "Responding to a request the client initiated."@en .
+pwm:ActivityAdvice a skos:Concept ; skos:inScheme pwm:CrossBorderActivityScheme ; skos:topConceptOf pwm:CrossBorderActivityScheme ;
+    skos:prefLabel "advice"@en ; skos:definition "Giving a personal recommendation."@en .
+pwm:ActivityExecution a skos:Concept ; skos:inScheme pwm:CrossBorderActivityScheme ; skos:topConceptOf pwm:CrossBorderActivityScheme ;
+    skos:prefLabel "execution"@en ; skos:definition "Executing a client instruction."@en .
+pwm:ActivityMarketing a skos:Concept ; skos:inScheme pwm:CrossBorderActivityScheme ; skos:topConceptOf pwm:CrossBorderActivityScheme ;
+    skos:prefLabel "marketing"@en ; skos:definition "Promoting a product or service."@en .
+pwm:ActivityResearchDistribution a skos:Concept ; skos:inScheme pwm:CrossBorderActivityScheme ; skos:topConceptOf pwm:CrossBorderActivityScheme ;
+    skos:prefLabel "research distribution"@en ; skos:definition "Sending research to a client."@en .

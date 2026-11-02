@@ -1,0 +1,377 @@
+
+# =============================================================================
+#  Module 2: Due diligence, financial crime and tax
+# =============================================================================
+
+pwm:CustomerDueDiligence a owl:Class ;
+    rdfs:label "customer due diligence"@en ;
+    skos:altLabel "CDD"@en , "KYC"@en ;
+    skos:definition "Assessment that identifies and verifies a client and its beneficial owners, and establishes the purpose and intended nature of the relationship."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10" ] , [ pwm:cites pwmref:MAS-626 ; pwm:locator "Customer due diligence" ] ,
+                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "kyc-onboarding: prepared by the agent, approved by a person" ] .
+
+pwm:EnhancedDueDiligence a owl:Class ;
+    rdfs:label "enhanced due diligence"@en ;
+    skos:altLabel "EDD"@en ;
+    skos:definition "Customer due diligence with additional measures, applied where the client presents higher risk, such as a politically exposed person."@en ;
+    rdfs:subClassOf pwm:CustomerDueDiligence ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:defaultClassification pwm:C3 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10, R.12" ] , [ pwm:cites pwmref:MAS-626 ; pwm:locator "Enhanced customer due diligence" ] .
+
+pwm:PeriodicReview a owl:Class ;
+    rdfs:label "periodic review"@en ;
+    skos:definition "Scheduled re-assessment of a client's due diligence, at a frequency set by the client's risk rating, or earlier on a trigger event."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10: ongoing due diligence" ] .
+
+pwm:CustomerRiskRating a owl:Class ;
+    rdfs:label "customer risk rating"@en ;
+    skos:definition "Assessment of the money-laundering and terrorist-financing risk a client presents, which sets due diligence depth and review frequency."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:defaultClassification pwm:C3 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.1: risk-based approach; R.10" ] , [ pwm:cites pwmref:MAS-626 ; pwm:locator "Risk assessment" ] .
+
+pwm:SourceOfWealthAssessment a owl:Class ;
+    rdfs:label "source of wealth assessment"@en ;
+    skos:definition "Assessment of how a client accumulated their total wealth, with the evidence relied on."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:defaultClassification pwm:C3 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.12: establish the source of wealth" ] , [ pwm:cites pwmref:MAS-626 ; pwm:locator "Source of wealth" ] .
+
+pwm:SourceOfFundsAssessment a owl:Class ;
+    rdfs:label "source of funds assessment"@en ;
+    skos:definition "Assessment of where specific funds or assets entering the relationship come from."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:defaultClassification pwm:C3 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.12: establish the source of funds" ] , [ pwm:cites pwmref:MAS-626 ; pwm:locator "Source of funds" ] .
+
+pwm:ScreeningResult a owl:Class ;
+    rdfs:label "screening result"@en ;
+    skos:definition "Outcome of screening a party against sanctions, politically exposed person and adverse-media sources, with its disposition."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:defaultClassification pwm:C3 ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.6, R.7: targeted financial sanctions; R.12" ] .
+
+pwm:TaxResidencySelfCertification a owl:Class ;
+    rdfs:label "tax residency self-certification"@en ;
+    skos:definition "Client's declaration of tax residence countries and taxpayer identification numbers, collected at account opening and on change of circumstances."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "Sections IV and VI: self-certification for new accounts; Section VIII: definitions" ] .
+
+pwm:amlRiskLevel a owl:ObjectProperty ;
+    rdfs:label "AML risk level"@en ;
+    skos:definition "Level of a customer risk rating."@en ;
+    rdfs:domain pwm:CustomerRiskRating ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.1" ] .
+
+pwm:screeningDisposition a owl:ObjectProperty ;
+    rdfs:label "screening disposition"@en ;
+    skos:definition "How a screening alert was resolved."@en ;
+    rdfs:domain pwm:ScreeningResult ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Alert disposition" ] .
+
+pwm:taxResidenceCountry a owl:DatatypeProperty ;
+    rdfs:label "tax residence country"@en ;
+    skos:definition "Country of tax residence declared in a self-certification, as an ISO 3166-1 alpha-2 code."@en ;
+    rdfs:domain pwm:TaxResidencySelfCertification ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "Section VIII" ] , [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] .
+
+pwm:hasTaxIdentifier a owl:ObjectProperty ;
+    rdfs:label "has tax identifier"@en ;
+    skos:definition "Taxpayer identification number declared in a self-certification."@en ;
+    rdfs:domain pwm:TaxResidencySelfCertification ; rdfs:range fibo-fnd-pty-pty:TaxIdentifier ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "Section VIII: TIN" ] .
+
+pwm:AMLRiskLevelScheme a skos:ConceptScheme ;
+    skos:prefLabel "AML risk levels"@en ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.1, R.10" ] .
+pwm:AMLLow a skos:Concept ; skos:inScheme pwm:AMLRiskLevelScheme ; skos:topConceptOf pwm:AMLRiskLevelScheme ; skos:notation "L" ;
+    skos:prefLabel "low"@en ; skos:definition "Simplified measures may apply where permitted."@en .
+pwm:AMLMedium a skos:Concept ; skos:inScheme pwm:AMLRiskLevelScheme ; skos:topConceptOf pwm:AMLRiskLevelScheme ; skos:notation "M" ;
+    skos:prefLabel "medium"@en ; skos:definition "Standard due diligence."@en .
+pwm:AMLHigh a skos:Concept ; skos:inScheme pwm:AMLRiskLevelScheme ; skos:topConceptOf pwm:AMLRiskLevelScheme ; skos:notation "H" ;
+    skos:prefLabel "high"@en ; skos:definition "Enhanced due diligence and senior approval."@en .
+pwm:AMLOutsideAppetite a skos:Concept ; skos:inScheme pwm:AMLRiskLevelScheme ; skos:topConceptOf pwm:AMLRiskLevelScheme ; skos:notation "X" ;
+    skos:prefLabel "outside risk appetite"@en ; skos:definition "Relationship declined or exited."@en .
+
+pwm:ScreeningDispositionScheme a skos:ConceptScheme ;
+    skos:prefLabel "screening dispositions"@en ;
+    pwm:inModule pwm:ModuleCompliance ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Alert disposition" ] .
+pwm:ScreeningPending a skos:Concept ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
+    skos:prefLabel "pending review"@en ; skos:definition "Alert raised, not yet reviewed."@en .
+pwm:ScreeningFalsePositive a skos:Concept ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
+    skos:prefLabel "false positive"@en ; skos:definition "Reviewed; not the listed party."@en .
+pwm:ScreeningTrueMatch a skos:Concept ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
+    skos:prefLabel "true match"@en ; skos:definition "Reviewed; confirmed as the listed party."@en .
+pwm:ScreeningEscalated a skos:Concept ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
+    skos:prefLabel "escalated"@en ; skos:definition "Referred to compliance for decision."@en .
+
+# =============================================================================
+#  Module 3: Investor profile and suitability
+# =============================================================================
+
+pwm:InvestorClassification a owl:Class ;
+    rdfs:label "investor classification"@en ;
+    skos:definition "Regulatory categorisation of a client under one jurisdiction's rules, such as retail, professional or accredited, with any opt-in or opt-out recorded."@en ;
+    skos:editorialNote "FIBO models qualified-investor and domicile restrictions on the instrument side (SecuritiesRestrictions). This class records the client side of the same test."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    skos:relatedMatch fibo-sec-sec-rst:QualifiedInvestorRestriction ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:SG-SFA ; pwm:locator "s4A; opt-in regime for accredited investors" ] ,
+                 [ pwm:cites pwmref:HK-SFC-COC ; pwm:locator "para 15" ] , [ pwm:cites pwmref:HK-PI-RULES ; pwm:locator "Professional investor tests" ] ,
+                 [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 4 (client segmentation), Art. 5 (opting out and opting in)" ] ,
+                 [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Annex II (professional clients); Art. 30 (eligible counterparties)" ] ,
+                 [ pwm:cites pwmref:UK-FCA-COBS ; pwm:locator "COBS 3" ] , [ pwm:cites pwmref:US-REG-D ; pwm:locator "Rule 501(a)" ] .
+
+pwm:InvestorRiskProfile a owl:Class ;
+    rdfs:label "investor risk profile"@en ;
+    skos:definition "Versioned assessment of a client's risk tolerance, capacity for loss and investment horizon, expressed on the wealth manager's risk scale."@en ;
+    skos:scopeNote "Each change produces a new version that supersedes the last. A suitability assessment cites the version in force at the time."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(2): investment objectives including risk tolerance" ] ,
+                 [ pwm:cites pwmref:EU-MIFID2-DR ; pwm:locator "Art. 54" ] , [ pwm:cites pwmref:HK-SFC-COC ; pwm:locator "para 5.2" ] ,
+                 [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 10 to 14" ] , [ pwm:cites pwmref:MAS-FAA-N16 ; pwm:locator "Know-your-customer information" ] ,
+                 [ pwm:cites pwmref:ISO-22222 ; pwm:locator "Gathering client information" ] .
+
+pwm:KnowledgeAndExperienceAssessment a owl:Class ;
+    rdfs:label "knowledge and experience assessment"@en ;
+    skos:definition "Assessment of whether a client understands the risks of a type of product or service, from education, work and past investments."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(2), 25(3)" ] , [ pwm:cites pwmref:EU-MIFID2-DR ; pwm:locator "Art. 55" ] ,
+                 [ pwm:cites pwmref:MAS-SFA04-N12 ; pwm:locator "Assessment of customer knowledge and experience for specified investment products" ] ,
+                 [ pwm:cites pwmref:MAS-FAA-N16 ; pwm:locator "Assessment of customer knowledge and experience for specified investment products" ] .
+
+pwm:FinancialSituationAssessment a owl:Class ;
+    rdfs:label "financial situation assessment"@en ;
+    skos:definition "Assessment of a client's income, assets, liabilities and liquidity needs, including the ability to bear losses."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(2): financial situation including ability to bear losses" ] ,
+                 [ pwm:cites pwmref:EU-MIFID2-DR ; pwm:locator "Art. 54" ] .
+
+pwm:InvestmentObjective a owl:Class ;
+    rdfs:label "investment objective"@en ;
+    skos:definition "Financial objective a client states for their investments, used to judge whether an investment is appropriate for them."@en ;
+    rdfs:subClassOf fibo-fnd-gao-obj:InvestmentObjective ;
+    skos:exactMatch fibo-fnd-gao-obj:InvestmentObjective ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(2)" ] .
+
+pwm:SuitabilityAssessment a owl:Class ;
+    rdfs:label "suitability assessment"@en ;
+    skos:definition "Determination, before a recommendation or a discretionary decision, that a product or transaction fits the client's objectives, financial situation, and knowledge and experience, within the mandate."@en ;
+    skos:scopeNote "Origination records why a client or product was proposed. Suitability records why it was permitted. Keep them separate."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(2)" ] , [ pwm:cites pwmref:EU-MIFID2-DR ; pwm:locator "Art. 54" ] ,
+                 [ pwm:cites pwmref:MAS-FAA-N16 ; pwm:locator "Know-your-customer and suitability of recommendations" ] , [ pwm:cites pwmref:HK-SFC-COC ; pwm:locator "para 5.2" ] ,
+                 [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 10 to 14" ] , [ pwm:cites pwmref:US-REG-BI ; pwm:locator "Care obligation" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 10: origination says why proposed; suitability says why permitted" ] ,
+                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "suitability: the pack requires the flag and does not compute suitability" ] .
+
+pwm:AppropriatenessAssessment a owl:Class ;
+    rdfs:label "appropriateness assessment"@en ;
+    skos:definition "Check, for services without advice, that a client has the knowledge and experience to understand the risks of the product."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(3)" ] , [ pwm:cites pwmref:EU-MIFID2-DR ; pwm:locator "Art. 56" ] ,
+                 [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 10 to 14" ] , [ pwm:cites pwmref:UK-FCA-COBS ; pwm:locator "COBS 10A" ] .
+
+pwm:SuitabilityReport a owl:Class ;
+    rdfs:label "suitability report"@en ;
+    skos:definition "Statement given to the client explaining how advice meets their preferences, objectives and other characteristics."@en ;
+    rdfs:subClassOf cmns-doc:Document ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(6)" ] ,
+                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "suitability-report: a draft from a meeting transcript needs a person before use" ] .
+
+pwm:ClientAcknowledgement a owl:Class ;
+    rdfs:label "client acknowledgement"@en ;
+    skos:definition "Record that a client received, read or accepted a disclosure, risk warning or document, and when."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Evidence of disclosure" ] .
+
+pwm:investorCategory a owl:ObjectProperty ;
+    rdfs:label "investor category"@en ;
+    skos:definition "Category assigned by an investor classification."@en ;
+    rdfs:domain pwm:InvestorClassification ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:SG-SFA ; pwm:locator "s4A" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 4" ] .
+
+pwm:optStatus a owl:ObjectProperty ;
+    rdfs:label "opt status"@en ;
+    skos:definition "Whether the classification is the default, or results from the client opting in or out."@en ;
+    rdfs:domain pwm:InvestorClassification ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:SG-SFA ; pwm:locator "Opt-in regime" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 5" ] .
+
+pwm:riskProfileLevel a owl:ObjectProperty ;
+    rdfs:label "risk profile level"@en ;
+    skos:definition "Point on the wealth manager's risk scale assigned by a risk profile."@en ;
+    rdfs:domain pwm:InvestorRiskProfile ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2-DR ; pwm:locator "Art. 54" ] .
+
+pwm:capacityForLoss a owl:ObjectProperty ;
+    rdfs:label "capacity for loss"@en ;
+    skos:definition "Client's ability to bear losses without a material change to their standard of living or objectives."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(2): ability to bear losses" ] .
+
+pwm:investmentHorizonYears a owl:DatatypeProperty ;
+    rdfs:label "investment horizon (years)"@en ;
+    skos:definition "Length of time, in years, the client intends to hold the investments."@en ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2-DR ; pwm:locator "Art. 54" ] .
+
+pwm:suitabilityOutcome a owl:ObjectProperty ;
+    rdfs:label "suitability outcome"@en ;
+    skos:definition "Result of a suitability or appropriateness assessment."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(2), 25(3)" ] .
+
+pwm:assessesRecommendation a owl:ObjectProperty ;
+    rdfs:label "assesses recommendation"@en ;
+    skos:definition "Recommendation that a suitability assessment evaluates."@en ;
+    rdfs:subPropertyOf pwm:assesses ;
+    rdfs:domain pwm:SuitabilityAssessment ; rdfs:range pwm:Recommendation ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 10" ] .
+
+pwm:usesRiskProfile a owl:ObjectProperty ;
+    rdfs:label "uses risk profile"@en ;
+    skos:definition "Version of the client's risk profile in force when the assessment was made."@en ;
+    rdfs:domain pwm:SuitabilityAssessment ; rdfs:range pwm:InvestorRiskProfile ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2-DR ; pwm:locator "Art. 54" ] .
+
+pwm:usesMandate a owl:ObjectProperty ;
+    rdfs:label "uses mandate"@en ;
+    skos:definition "Mandate whose terms and restrictions the assessment was checked against."@en ;
+    rdfs:domain pwm:SuitabilityAssessment ; rdfs:range pwm:Mandate ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "mandate" ] .
+
+pwm:usesProductRiskRating a owl:ObjectProperty ;
+    rdfs:label "uses product risk rating"@en ;
+    skos:definition "Product risk rating in force when the assessment was made."@en ;
+    rdfs:domain pwm:SuitabilityAssessment ; rdfs:range pwm:ProductRiskRating ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 24(2)" ] .
+
+pwm:InvestorCategoryScheme a skos:ConceptScheme ;
+    skos:prefLabel "investor categories"@en ;
+    skos:scopeNote "Two generic top concepts, retail and non-retail, with jurisdiction-specific categories beneath them. Thresholds stay in each jurisdiction's rules, not in the ontology."@en ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:SG-SFA ; pwm:locator "s4A" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 4" ] ,
+                 [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Annex II; Art. 30" ] , [ pwm:cites pwmref:UK-FCA-COBS ; pwm:locator "COBS 3" ] ,
+                 [ pwm:cites pwmref:HK-PI-RULES ; pwm:locator "Professional investor" ] , [ pwm:cites pwmref:US-REG-D ; pwm:locator "Rule 501(a)" ] .
+pwm:RetailCategory a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:topConceptOf pwm:InvestorCategoryScheme ;
+    skos:prefLabel "retail"@en ; skos:definition "Client given the full protections of the jurisdiction's conduct rules."@en .
+pwm:NonRetailCategory a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:topConceptOf pwm:InvestorCategoryScheme ;
+    skos:prefLabel "non-retail"@en ; skos:definition "Client treated as able to bear more risk, with some protections relaxed."@en .
+pwm:RetailInvestorSG a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
+    skos:prefLabel "retail investor (SG)"@en ; skos:definition "Not an accredited, expert or institutional investor under the Securities and Futures Act."@en .
+pwm:AccreditedInvestorSG a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "accredited investor (SG)"@en ; skos:definition "Accredited investor under s4A of the Securities and Futures Act, subject to the opt-in regime."@en .
+pwm:ExpertInvestorSG a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "expert investor (SG)"@en ; skos:definition "Expert investor under s4A of the Securities and Futures Act."@en .
+pwm:InstitutionalInvestorSG a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "institutional investor (SG)"@en ; skos:definition "Institutional investor under s4A of the Securities and Futures Act."@en .
+pwm:ProfessionalInvestorHK a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "professional investor (HK)"@en ; skos:definition "Professional investor under the Securities and Futures Ordinance and the Professional Investor Rules."@en .
+pwm:PrivateClientCH a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
+    skos:prefLabel "private client (CH)"@en ; skos:definition "Private client under FinSA Art. 4."@en .
+pwm:ProfessionalClientCH a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "professional client (CH)"@en ; skos:definition "Professional client under FinSA Art. 4."@en .
+pwm:InstitutionalClientCH a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "institutional client (CH)"@en ; skos:definition "Institutional client under FinSA Art. 4."@en .
+pwm:RetailClientEU a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
+    skos:prefLabel "retail client (EU)"@en ; skos:definition "Client that is not a professional client under MiFID II."@en .
+pwm:ProfessionalClientEU a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "professional client (EU)"@en ; skos:definition "Professional client under MiFID II Annex II, per se or on request."@en .
+pwm:EligibleCounterpartyEU a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "eligible counterparty (EU)"@en ; skos:definition "Eligible counterparty under MiFID II Art. 30."@en .
+pwm:RetailClientUK a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
+    skos:prefLabel "retail client (UK)"@en ; skos:definition "Retail client under COBS 3."@en .
+pwm:ProfessionalClientUK a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "professional client (UK)"@en ; skos:definition "Professional client under COBS 3."@en .
+pwm:AccreditedInvestorUS a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+    skos:prefLabel "accredited investor (US)"@en ; skos:definition "Accredited investor under Regulation D, Rule 501(a)."@en .
+
+pwm:OptStatusScheme a skos:ConceptScheme ;
+    skos:prefLabel "opt statuses"@en ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:SG-SFA ; pwm:locator "Opt-in regime" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 5" ] .
+pwm:OptDefault a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
+    skos:prefLabel "default"@en ; skos:definition "Category applies by default, with no election."@en .
+pwm:OptedIn a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
+    skos:prefLabel "opted in"@en ; skos:definition "Client elected into a less protected category."@en .
+pwm:OptedOut a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
+    skos:prefLabel "opted out"@en ; skos:definition "Client elected out of a category into a more protected one."@en .
+
+pwm:SuitabilityOutcomeScheme a skos:ConceptScheme ;
+    skos:prefLabel "suitability outcomes"@en ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(2), 25(3)" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 10 to 14" ] .
+pwm:Suitable a skos:Concept ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
+    skos:prefLabel "suitable"@en ; skos:definition "Fits the profile and mandate."@en .
+pwm:SuitableWithConditions a skos:Concept ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
+    skos:prefLabel "suitable with conditions"@en ; skos:definition "Fits if stated conditions are met, such as a size limit."@en .
+pwm:NotSuitable a skos:Concept ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
+    skos:prefLabel "not suitable"@en ; skos:definition "Does not fit; may not be recommended."@en .
+pwm:InsufficientInformation a skos:Concept ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
+    skos:prefLabel "insufficient information"@en ; skos:definition "Cannot be assessed; no recommendation may be made."@en .
+
+pwm:IllustrativeRiskScale a skos:ConceptScheme ;
+    skos:prefLabel "illustrative risk scale"@en ;
+    skos:scopeNote "Placeholder five-point scale. An institution replaces it with its own scale in its extension."@en ;
+    pwm:inModule pwm:ModuleSuitability ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Illustrative only" ] .
+pwm:RP1 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConceptOf pwm:IllustrativeRiskScale ; skos:notation "RP1" ;
+    skos:prefLabel "conservative"@en ; skos:definition "Capital preservation first."@en .
+pwm:RP2 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConceptOf pwm:IllustrativeRiskScale ; skos:notation "RP2" ;
+    skos:prefLabel "moderately conservative"@en ; skos:definition "Income with limited volatility."@en .
+pwm:RP3 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConceptOf pwm:IllustrativeRiskScale ; skos:notation "RP3" ;
+    skos:prefLabel "balanced"@en ; skos:definition "Growth and income in balance."@en .
+pwm:RP4 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConceptOf pwm:IllustrativeRiskScale ; skos:notation "RP4" ;
+    skos:prefLabel "growth"@en ; skos:definition "Growth with higher volatility."@en .
+pwm:RP5 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConceptOf pwm:IllustrativeRiskScale ; skos:notation "RP5" ;
+    skos:prefLabel "aggressive"@en ; skos:definition "Maximum growth; accepts large drawdowns."@en .

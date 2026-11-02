@@ -1,0 +1,210 @@
+# =============================================================================
+#  PWM 0.1 negative test fixture
+#
+#  Each resource below breaks one rule. Validate it together with
+#  pwm-example.ttl, which supplies the people, use case, agent and decision
+#  the broken records point to. tools/validate.py lists the exact violations
+#  expected; any other result, or a missing one, fails the test.
+# =============================================================================
+
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/> .
+@prefix pwm:      <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix ex:       <https://example.org/pwm-example#> .
+
+# Live use case whose materiality rating was approved by the risk owner, not the control function.
+ex:BadUseCaseUnapproved a pwm:AIUseCase ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:approvedJurisdiction "SG" ;
+    pwm:lifecycleStatus pwm:StatusLive ;
+    pwm:riskTier pwm:Tier1 ;
+    pwm:isMediated true ;
+    pwm:nextReviewDate "2027-05-01"^^xsd:date ;
+    pwm:hasAccountabilityRole ex:BusinessOwner ;
+    pwm:hasMaterialityAssessment ex:BadMaterialityRiskOwner .
+
+ex:BadMaterialityRiskOwner a pwm:RiskMaterialityAssessment ;
+    pwm:impact pwm:RatingLow ; pwm:complexity pwm:RatingLow ; pwm:reliance pwm:RatingLow ;
+    pwm:inherentMateriality pwm:RatingLow ; pwm:residualMateriality pwm:RatingLow ;
+    pwm:approvedBy ex:RiskOwner .
+
+# Tier 3 use case with no Knowledge Lead.
+ex:BadUseCaseNoKnowledgeLead a pwm:AIUseCase ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:approvedJurisdiction "SG" ;
+    pwm:lifecycleStatus pwm:StatusPilot ;
+    pwm:riskTier pwm:Tier3 ;
+    pwm:isMediated true ;
+    pwm:nextReviewDate "2027-05-01"^^xsd:date ;
+    pwm:hasAccountabilityRole ex:BusinessOwner .
+
+# The person approving for the control function is also the business owner.
+ex:BadControlFunction a pwm:DesignatedControlFunction ;
+    cmns-rlcmp:isPlayedBy ex:PersonHeadOfAdvisory .
+
+ex:BadMaterialitySelfApproved a pwm:RiskMaterialityAssessment ;
+    pwm:impact pwm:RatingLow ; pwm:complexity pwm:RatingLow ; pwm:reliance pwm:RatingLow ;
+    pwm:inherentMateriality pwm:RatingLow ; pwm:residualMateriality pwm:RatingLow ;
+    pwm:approvedBy ex:BadControlFunction .
+
+ex:BadUseCaseSelfApproved a pwm:AIUseCase ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:approvedJurisdiction "SG" ;
+    pwm:lifecycleStatus pwm:StatusLive ;
+    pwm:riskTier pwm:Tier1 ;
+    pwm:isMediated true ;
+    pwm:nextReviewDate "2027-05-01"^^xsd:date ;
+    pwm:hasAccountabilityRole ex:BusinessOwner ;
+    pwm:hasMaterialityAssessment ex:BadMaterialitySelfApproved .
+
+# Agent permitted a tool that needs a higher autonomy level than its maximum.
+ex:BadToolExecute a pwm:Tool ;
+    pwm:requiredAutonomyLevel pwm:L4ActAfterApproval ;
+    pwm:actionVerb pwm:VerbExecute .
+
+ex:BadAgentOverreach a pwm:AIAgent ;
+    pwm:agentIdentifier "AGENT-RM-SUMMARY-02" ;
+    pwm:maxAutonomyLevel pwm:L2Recommend ;
+    pwm:registeredForUseCase ex:UseCaseMeetingPrep ;
+    pwm:deploymentVersion "sha256:0000000000000000000000000000000000000000000000000000000000000002" ;
+    pwm:nextReviewDate "2027-02-01"^^xsd:date ;
+    pwm:permittedTool ex:ToolPortfolioRead , ex:BadToolExecute .
+
+# Agent with no review date.
+ex:BadAgentNoReview a pwm:AIAgent ;
+    pwm:agentIdentifier "AGENT-OPS-03" ;
+    pwm:maxAutonomyLevel pwm:L1Explain ;
+    pwm:registeredForUseCase ex:UseCaseMeetingPrep ;
+    pwm:deploymentVersion "sha256:0000000000000000000000000000000000000000000000000000000000000003" .
+
+# An agent named in an accountability role.
+ex:BadAgentOwner a pwm:ModelOwner ;
+    cmns-rlcmp:isPlayedBy ex:Agent .
+
+# Delegation with no end time that does not end with its task.
+ex:BadDelegationOpenEnded a pwm:DelegatedAuthority ;
+    pwm:delegatedBy ex:PersonRM ;
+    pwm:delegatedTo ex:Agent ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:actionVerb pwm:VerbRead ;
+    pwm:endsOnTaskCompletion false .
+
+# AI-generated client communication with no AI disclosure.
+ex:BadCommunicationNoDisclosure a pwm:ClientCommunication ;
+    pwm:derivedFromDecision ex:Decision ;
+    pwm:communicationLevel pwm:CommProductRecommendation ;
+    pwm:contentProvenance pwm:ProvenanceAI ;
+    pwm:aiDisclosureGiven false ;
+    pwm:viaChannel ex:SecurePortal .
+
+# Client communication with no final decision behind it.
+ex:BadCommunicationNoDecision a pwm:ClientCommunication ;
+    pwm:communicationLevel pwm:CommHouseView ;
+    pwm:contentProvenance pwm:ProvenanceHuman ;
+    pwm:viaChannel ex:SecurePortal .
+
+# Client communication through an unapproved channel.
+ex:BadPersonalMessaging a pwm:CommunicationChannel ;
+    rdfs:label "Personal messaging app"@en ;
+    pwm:isApprovedChannel false .
+
+ex:BadCommunicationChannel a pwm:ClientCommunication ;
+    pwm:derivedFromDecision ex:Decision ;
+    pwm:communicationLevel pwm:CommProductRecommendation ;
+    pwm:contentProvenance pwm:ProvenanceHuman ;
+    pwm:viaChannel ex:BadPersonalMessaging .
+
+# Claim typed as verified fact with no source, and a claim with no type.
+ex:BadClaimNoSource a pwm:Claim ;
+    pwm:claimType pwm:VerifiedFact ;
+    pwm:validatorStatus pwm:ValidatorUnverified .
+
+ex:BadClaimUntyped a pwm:Claim ;
+    rdfs:label "A claim nobody labelled"@en .
+
+# Valuation presented as authoritative with no calculation service.
+ex:BadValuation a pwm:Valuation ;
+    pwm:valuationOf ex:Portfolio ;
+    pwm:amount 2400000.00 ;
+    pwm:currency "SGD" ;
+    pwm:asOf "2026-11-01T17:00:00+08:00"^^xsd:dateTime .
+
+# Suitability assessment citing two risk profiles and giving no rationale.
+ex:BadSuitability a pwm:SuitabilityAssessment ;
+    pwm:assessesRecommendation ex:Recommendation ;
+    pwm:usesRiskProfile ex:RiskProfileV1 , ex:RiskProfileV2 ;
+    pwm:usesMandate ex:Mandate ;
+    pwm:suitabilityOutcome pwm:Suitable ;
+    prov:wasAttributedTo ex:RM .
+
+# Malformed codes: currency, ISIN, CFI, LEI and country.
+ex:BadCodes a pwm:Product ;
+    pwm:currency "Sgd" ;
+    pwm:isin "XS00EXAMPLE" ;
+    pwm:cfiCode "DBF" ;
+    pwm:legalEntityIdentifier "EXMP00PRIVATEBANK0" ;
+    pwm:domicileCountry "SGP" .
+
+# Governed information asset with no retention date and no version or hash.
+ex:BadAsset a pwm:GovernedInformationAsset ;
+    pwm:informationOwner ex:BusinessOwner ;
+    pwm:approvalStatus pwm:AssetDraft ;
+    pwm:validFrom "2026-11-01T00:00:00+08:00"^^xsd:dateTime .
+
+# Policy decision that names no rule.
+ex:BadPolicyDecision a pwm:PolicyDecision ;
+    pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:underUseCase ex:UseCaseMeetingPrep .
+
+# Materiality assessment with no reliance rating.
+ex:BadMaterialityNoReliance a pwm:RiskMaterialityAssessment ;
+    pwm:impact pwm:RatingMedium ; pwm:complexity pwm:RatingMedium ;
+    pwm:inherentMateriality pwm:RatingMedium ; pwm:residualMateriality pwm:RatingLow .
+
+# Tool that does not declare the verbs it performs.
+ex:BadToolNoVerb a pwm:Tool ;
+    pwm:requiredAutonomyLevel pwm:L1Explain .
+
+# Fact with no freshness threshold.
+ex:BadFactNoFreshness a pwm:Fact ;
+    prov:wasAttributedTo ex:SuitabilitySystem ;
+    pwm:asOf "2026-11-02T09:58:00+08:00"^^xsd:dateTime ;
+    pwm:classification pwm:C2 .
+
+# Risk profile with no level.
+ex:BadRiskProfileNoLevel a pwm:InvestorRiskProfile ;
+    pwm:assesses ex:Client ;
+    pwm:validFrom "2026-11-01T00:00:00+08:00"^^xsd:dateTime ;
+    prov:wasAttributedTo ex:RM .
+
+# Investor classification made under two jurisdictions at once.
+ex:BadClassificationTwoJurisdictions a pwm:InvestorClassification ;
+    pwm:assesses ex:Client ;
+    pwm:investorCategory pwm:AccreditedInvestorSG ;
+    pwm:jurisdictionCode "SG" , "HK" .
+
+# Document section with no classification.
+ex:BadSectionUnclassified a pwm:DocumentSection ;
+    rdfs:label "Section with no classification"@en .
+
+# Policy rule with no version.
+ex:BadRuleNoVersion a pwm:PolicyRule ;
+    pwm:ruleCitation "Kognita private-banking pack, contact-frequency" ;
+    pwm:validFrom "2026-01-01T00:00:00+08:00"^^xsd:dateTime .
+
+# Cross-border rule with a three-letter booking centre code.
+ex:BadCrossBorderCode a pwm:CrossBorderRule ;
+    pwm:appliesToActivity pwm:ActivityMarketing ;
+    pwm:permitted false ;
+    pwm:clientDomicileCode "HK" ;
+    pwm:bookingCentreCode "SGP" ;
+    pwm:ruleCitation "Illustrative only" ;
+    pwm:versionId "1.0" ;
+    pwm:validFrom "2026-01-01T00:00:00+08:00"^^xsd:dateTime .
+
+# Evidence record with no hash.
+ex:BadEvidenceNoHash a pwm:EvidenceRecord ;
+    pwm:eventType pwm:EventToolCall ;
+    prov:generatedAtTime "2026-11-02T10:06:00+08:00"^^xsd:dateTime .

@@ -966,6 +966,10 @@ Kognita governs policies, guidelines and governance records: the rules, the regi
 
 > **Removed after 0.3.0.** The Graphiti and Kuzu graph engine (`kognita.graph`, the `[graph]` extra, and the `[anthropic]`, `[groq]` and `[gemini]` extras that only installed it) is no longer part of the package. Pin `kognita[graph]==0.3.0` if you still need it. Details: [docs/decisions/0008-remove-the-graph-engine.md](docs/decisions/0008-remove-the-graph-engine.md).
 
+## Domain ontology
+
+[docs/ontology/pwm](docs/ontology/pwm) holds the Private Wealth Management Ontology (draft 0.1): a generic, FIBO-aligned data model for private banking and the AI that works on it, with SHACL rules for the controls in this roadmap. Every term cites its standard, regulation or roadmap item.
+
 ## Layout
 
 ```

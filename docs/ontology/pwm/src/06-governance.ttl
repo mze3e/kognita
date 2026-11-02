@@ -1,0 +1,636 @@
+
+# =============================================================================
+#  Module 8: AI use cases, authority and accountability
+# =============================================================================
+
+pwm:AIUseCase a owl:Class ;
+    rdfs:label "AI use case"@en ;
+    skos:definition "Specific real-world context that an AI model or system is applied to, registered as a versioned inventory entry with its purpose, approved scope including jurisdiction, data, dependencies, lifecycle status, risk materiality, review status and accountable people."@en ;
+    skos:scopeNote "The use case, not the model, is the unit of risk assessment. Every policy decision cites the use case it was taken under; an unregistered or retired use case is refused."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.4(c) use case; 4.5 to 4.9 inventory; 4.7 attributes" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: use-case register" ] ,
+                 [ pwm:cites pwmref:ISO-IEC-42001 ; pwm:locator "AI management system" ] ,
+                 [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 19: an unregistered use case is refused" ] .
+
+pwm:AISystem a owl:Class ;
+    rdfs:label "AI system"@en ;
+    skos:definition "Machine-based system of one or more models and other components that derives outputs, such as predictions, content, recommendations or decisions, from learned premises."@en ;
+    skos:scopeNote "Tools whose outputs are fully determined by manually specified rules, and robotic process automation without learning, are not AI for this purpose."@en ;
+    rdfs:subClassOf prov:Entity ;
+    skos:closeMatch ai:AISystem ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.3 and fn 6 (definition and exclusions); 1.4(b) system" ] ,
+                 [ pwm:cites pwmref:EU-AI-ACT ; pwm:locator "Art. 3(1)" ] , [ pwm:cites pwmref:ISO-IEC-22989 ; pwm:locator "AI system" ] .
+
+pwm:AIModel a owl:Class ;
+    rdfs:label "AI model"@en ;
+    skos:definition "Method that converts assumptions and input data into outputs such as estimates, decisions or recommendations, pinned to a provider and version."@en ;
+    rdfs:subClassOf prov:Entity ;
+    skos:closeMatch ai:Model ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.4(a) model" ] , [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.3: pinned provider model version per call" ] .
+
+pwm:AIAgent a owl:Class ;
+    rdfs:label "AI agent"@en ;
+    skos:definition "Software agent that plans and takes actions with tools on behalf of a person, holding its own credentials, a maximum autonomy level, a tool allow-list, guardrails and a deployment version that covers prompt, tools, permissions and data."@en ;
+    skos:scopeNote "An agent can never hold an accountability role. Its entitlements are always narrower than those of the person it acts for."@en ;
+    rdfs:subClassOf cmns-pts:SoftwareAgent , prov:SoftwareAgent ;
+    skos:closeMatch ai:AIAgent ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 (agent risks); fn 25 (agent identifiers, tools, components, guardrails)" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 1: agent identity" ] ,
+                 [ pwm:cites pwmref:IMDA-MGF-AGENTIC ; pwm:locator "Agentic AI governance" ] .
+
+pwm:ThirdPartyAI a owl:Class ;
+    rdfs:label "third-party AI"@en ;
+    skos:definition "AI system, model, or service using AI, that an external party develops, owns, operates or provides and the institution procures, accesses or relies on, including AI embedded in software services."@en ;
+    rdfs:subClassOf pwm:AISystem ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "fn 10 (definition); 4.2 and fn 21 (embedded AI); 5.10, 5.11 (management)" ] .
+
+pwm:ModelProvider a owl:Class ;
+    rdfs:label "model provider"@en ;
+    skos:definition "Organisation that supplies AI models or AI services, tracked for concentration, change notification and exit."@en ;
+    rdfs:subClassOf cmns-org:ServiceProvider ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.11(c) concentration; 5.11(d) change management" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.7: model-provider register" ] .
+
+pwm:ModelCard a owl:Class ;
+    rdfs:label "model card"@en ;
+    skos:definition "Record of an approved model: provider, name and version, intended use, known limitations, the evaluation relied on, approval date and approver."@en ;
+    rdfs:subClassOf cmns-doc:Document ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: model card per approved model" ] ,
+                 [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.10: documentation of how third-party AI was tested" ] .
+
+pwm:Tool a owl:Class ;
+    rdfs:label "tool"@en ;
+    skos:definition "Capability an agent can invoke, such as an MCP tool or API, declaring the action verb it performs, the autonomy level it requires and a maximum duration."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3 (per-verb permissions), item 5 (allow-lists), item 16 (maximum duration)" ] ,
+                 [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.16(c): govern plugins and APIs" ] .
+
+pwm:RiskMaterialityAssessment a owl:Class ;
+    rdfs:label "risk materiality assessment"@en ;
+    skos:definition "Assessment of an AI use case on impact, complexity and reliance, including the autonomy granted, recorded before controls (inherent) and after them (residual), and approved by the designated control function."@en ;
+    skos:scopeNote "Residual materiality must be within risk appetite before deployment. Kognita's six axes (business criticality, client-impact class, decision consequence, data sensitivity, autonomy, complexity) roll up into the three MAS dimensions."@en ;
+    rdfs:subClassOf pwm:Assessment ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.10 to 4.13" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: six axes; inherent and residual materiality" ] ,
+                 [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Gaps 3 and 4" ] .
+
+pwm:AIRiskAppetite a owl:Class ;
+    rdfs:label "AI risk appetite"@en ;
+    skos:definition "Board-approved statement of the AI uses the institution will and will not accept, with quantitative measures such as AI incident counts, material use cases depending on one provider, and use cases breaching performance thresholds."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "3.4(b) and fn 18" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: AI risk appetite as top-level policy; quantitative measures" ] .
+
+pwm:AccountabilityRole a owl:Class ;
+    rdfs:label "accountability role"@en ;
+    skos:definition "Role of a named person accountable for an AI use case. Accountability can be supported by functions but cannot be delegated to an agent."@en ;
+    rdfs:subClassOf cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "3.5(d): clear roles and responsibilities" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: an agent can never be named in an owner role" ] ,
+                 [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 05: a name, not a forum" ] .
+
+pwm:BusinessOwner a owl:Class ;
+    rdfs:label "business owner"@en ;
+    skos:altLabel "accountable owner"@en ;
+    skos:definition "Accountability role answerable for an AI use case's business outcome and residual risk acceptance. Every decision under the use case cites this person."@en ;
+    rdfs:subClassOf pwm:AccountabilityRole ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: a use case with no current owner is a DENY" ] ,
+                 [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(c): accountable person for monitoring and incidents" ] .
+
+pwm:TechnologyOwner a owl:Class ;
+    rdfs:label "technology owner"@en ;
+    skos:definition "Accountability role for the technology that delivers an AI use case."@en ;
+    rdfs:subClassOf pwm:AccountabilityRole ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases._OWNER_ROLES" ] .
+
+pwm:RiskOwner a owl:Class ;
+    rdfs:label "risk owner"@en ;
+    skos:definition "Accountability role for an AI use case's residual risk; receives fairness and drift findings."@en ;
+    rdfs:subClassOf pwm:AccountabilityRole ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases._OWNER_ROLES" ] .
+
+pwm:ModelOwner a owl:Class ;
+    rdfs:label "model owner"@en ;
+    skos:definition "Accountability role for the models an AI use case relies on."@en ;
+    rdfs:subClassOf pwm:AccountabilityRole ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases._OWNER_ROLES" ] .
+
+pwm:KnowledgeLead a owl:Class ;
+    rdfs:label "Knowledge Lead"@en ;
+    skos:definition "Named owner of an AI workflow's quality standard: defines the standard and primary metric, approves consequential outputs, receives escalations of ambiguity and exceptions, and approves changes to the standard, including those learned from operations."@en ;
+    rdfs:subClassOf pwm:AccountabilityRole ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Stage 4: every AI-powered workflow needs a named Knowledge Lead" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: a tier 2+ use case with no current Knowledge Lead is a DENY" ] ,
+                 [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 05: named owner" ] .
+
+pwm:DesignatedControlFunction a owl:Class ;
+    rdfs:label "designated control function"@en ;
+    skos:definition "Control function, independent of a use case's business and technology owners, that is final arbiter of whether a use constitutes AI, owns inventory policy, and approves risk materiality ratings."@en ;
+    rdfs:subClassOf pwm:AccountabilityRole ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.3, 4.9, 4.13" ] , [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Gap 2" ] .
+
+pwm:IndependentValidator a owl:Class ;
+    rdfs:label "independent validator"@en ;
+    skos:definition "Person or function, independent of development and deployment, that validates a high-materiality AI use case before deployment and periodically afterwards."@en ;
+    rdfs:subClassOf pwm:AccountabilityRole ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.18 to 5.21 (pre-deployment review); 5.24 (re-validation)" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: independent validation as separation of duties" ] .
+
+pwm:DelegatedAuthority a owl:Class ;
+    rdfs:label "delegated authority"@en ;
+    skos:definition "Authorisation that binds a person, an agent, a purpose, a client, permitted actions, permitted data, a period and limits. Specific, temporary, revocable, and ended by task completion as well as by time."@en ;
+    skos:scopeNote "A request is allowed only if the person holds the entitlement and the agent holds a live delegation for it."@en ;
+    rdfs:subClassOf cmns-bauth:Authorization ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:FastContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2: delegated authority" ] ,
+                 [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 2: explicit delegated authority" ] .
+
+pwm:AutonomyPromotionGate a owl:Class ;
+    rdfs:label "autonomy promotion gate"@en ;
+    skos:definition "Evidence thresholds an agent must meet over a minimum sample and window before its autonomy level may rise, and below which it steps down automatically."@en ;
+    skos:example "Quality at or above 95 percent, exception rate below 5 percent, every action in the window reconstructable."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Stage 4: allow more autonomy only when quality metrics improve" ] ,
+                 [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 04: autonomy is a licence, not a launch setting" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: evidence gates for promotion; automatic step-down" ] .
+
+pwm:OutcomeMetric a owl:Class ;
+    rdfs:label "outcome metric"@en ;
+    skos:definition "Primary metric of an AI use case, cycle time, decision quality or reliability, with a baseline and target computed from the institution's own records."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Measure what matters" ] , [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 7; item 8" ] .
+
+pwm:Purpose a owl:Class ;
+    rdfs:label "purpose"@en ;
+    skos:definition "Declared reason for processing data or invoking AI. Access is bound to it; a request without a registered purpose is refused."@en ;
+    skos:closeMatch dpv:Purpose ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7: purpose and description" ] ,
+                 [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 3: purpose-bound access" ] ,
+                 [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 11: who, why, what, where before retrieval" ] .
+
+pwm:KillSwitch a owl:Class ;
+    rdfs:label "kill switch"@en ;
+    skos:definition "Mechanism that deactivates an AI system expeditiously when it exceeds risk tolerances, effective on the next decision, with a tested activation protocol and fallback."@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:contextSpeed pwm:FastContext ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.3 and fn 29; 5.23(b)" ] , [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 12" ] .
+
+pwm:KillSwitchDrill a owl:Class ;
+    rdfs:label "kill-switch drill"@en ;
+    skos:definition "Test activation of a kill switch, recording who activated it, how long until the next decision was denied, and how the fallback was reached."@en ;
+    rdfs:subClassOf prov:Activity ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.3: activation protocols tested regularly" ] , [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Gap 7" ] .
+
+# --- Properties --------------------------------------------------------------------
+
+pwm:hasPurpose a owl:ObjectProperty ;
+    rdfs:label "has purpose"@en ;
+    skos:definition "Registered purpose of a use case, delegation or request."@en ;
+    rdfs:range pwm:Purpose ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7" ] .
+
+pwm:approvedJurisdiction a owl:DatatypeProperty ;
+    rdfs:label "approved jurisdiction"@en ;
+    skos:definition "Jurisdiction in which a use case is approved for use, as an ISO 3166-1 alpha-2 code."@en ;
+    rdfs:domain pwm:AIUseCase ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7: approved scope of use (e.g., jurisdiction)" ] .
+
+pwm:modelType a owl:DatatypeProperty ;
+    rdfs:label "model type"@en ;
+    skos:definition "Kind of model a use case relies on, such as a classifier, ranking model or large language model."@en ;
+    rdfs:domain pwm:AIUseCase ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7" ] .
+
+pwm:usesDataClass a owl:ObjectProperty ;
+    rdfs:label "uses data class"@en ;
+    skos:definition "Data classification a use case is permitted to process."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7: data used; 5.4(d): data classification" ] .
+
+pwm:dependsOn a owl:ObjectProperty ;
+    rdfs:label "depends on"@en ;
+    skos:definition "AI system, model, provider or other use case that a use case relies on."@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7: dependencies; fn 26" ] .
+
+pwm:lifecycleStatus a owl:ObjectProperty ;
+    rdfs:label "lifecycle status"@en ;
+    skos:definition "Lifecycle status of a use case: pilot, live, suspended or retired."@en ;
+    rdfs:domain pwm:AIUseCase ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7: lifecycle status" ] , [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.STATUSES" ] .
+
+pwm:isMediated a owl:DatatypeProperty ;
+    rdfs:label "is mediated"@en ;
+    skos:definition "Whether a use case runs through the institution's AI control plane. Unmediated entries record the assurance gap and compensating control."@en ;
+    rdfs:domain pwm:AIUseCase ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.2, 4.4: AI in third-party services and shadow AI" ] , [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Gap 1" ] .
+
+pwm:riskTier a owl:ObjectProperty ;
+    rdfs:label "risk tier"@en ;
+    skos:definition "Risk tier derived from a use case's classification, which sets its minimum controls and maximum autonomy."@en ;
+    rdfs:domain pwm:AIUseCase ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: risk tier 1 to 4" ] .
+
+pwm:hasMaterialityAssessment a owl:ObjectProperty ;
+    rdfs:label "has materiality assessment"@en ;
+    skos:definition "Risk materiality assessment of a use case."@en ;
+    rdfs:domain pwm:AIUseCase ; rdfs:range pwm:RiskMaterialityAssessment ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.10" ] .
+
+pwm:impact a owl:ObjectProperty ;
+    rdfs:label "impact"@en ;
+    skos:definition "Impact rating: consequence of failure or poor performance for the institution, its customers and stakeholders, including the sensitivity of the data processed."@en ;
+    rdfs:domain pwm:RiskMaterialityAssessment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.12(a)" ] .
+
+pwm:complexity a owl:ObjectProperty ;
+    rdfs:label "complexity"@en ;
+    skos:definition "Complexity rating: from the technology, novelty, data and explainability, and for third-party AI the visibility into it."@en ;
+    rdfs:domain pwm:RiskMaterialityAssessment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.12(b)" ] .
+
+pwm:reliance a owl:ObjectProperty ;
+    rdfs:label "reliance"@en ;
+    skos:definition "Reliance rating: how far the decision or output rests on AI, including the autonomy granted and the degree of human oversight."@en ;
+    rdfs:domain pwm:RiskMaterialityAssessment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.12(c)" ] .
+
+pwm:inherentMateriality a owl:ObjectProperty ;
+    rdfs:label "inherent materiality"@en ;
+    skos:definition "Materiality before controls are applied."@en ;
+    rdfs:domain pwm:RiskMaterialityAssessment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.11" ] .
+
+pwm:residualMateriality a owl:ObjectProperty ;
+    rdfs:label "residual materiality"@en ;
+    skos:definition "Materiality after controls; must be within risk appetite before deployment."@en ;
+    rdfs:domain pwm:RiskMaterialityAssessment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.11" ] .
+
+pwm:businessCriticality a owl:ObjectProperty ;
+    rdfs:label "business criticality"@en ;
+    skos:definition "Kognita classification axis: how critical the use case is to the business."@en ;
+    rdfs:domain pwm:RiskMaterialityAssessment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.BUSINESS_CRITICALITY" ] .
+
+pwm:clientImpactClass a owl:ObjectProperty ;
+    rdfs:label "client-impact class"@en ;
+    skos:definition "Kognita classification axis: how directly the use case reaches clients."@en ;
+    rdfs:domain pwm:RiskMaterialityAssessment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.CLIENT_IMPACT" ] .
+
+pwm:decisionConsequence a owl:ObjectProperty ;
+    rdfs:label "decision consequence"@en ;
+    skos:definition "Kognita classification axis: the kind of decision the use case informs or takes."@en ;
+    rdfs:domain pwm:RiskMaterialityAssessment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.DECISION_CONSEQUENCE" ] .
+
+pwm:autonomyAxis a owl:ObjectProperty ;
+    rdfs:label "autonomy axis"@en ;
+    skos:definition "Kognita classification axis: autonomy granted to the use case."@en ;
+    rdfs:domain pwm:RiskMaterialityAssessment ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.AUTONOMY_AXIS" ] .
+
+pwm:hasAccountabilityRole a owl:ObjectProperty ;
+    rdfs:label "has accountability role"@en ;
+    skos:definition "Accountability role held for a use case or agent."@en ;
+    rdfs:range pwm:AccountabilityRole ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: owner roles; accountability matrix" ] .
+
+pwm:registeredForUseCase a owl:ObjectProperty ;
+    rdfs:label "registered for use case"@en ;
+    skos:definition "Use case an agent is registered to act under."@en ;
+    rdfs:domain pwm:AIAgent ; rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 1: linked use cases" ] .
+
+pwm:agentIdentifier a owl:DatatypeProperty ;
+    rdfs:label "agent identifier"@en ;
+    skos:definition "Readable, unique identifier of an agent, such as AGENT-RM-PRECALL-01."@en ;
+    rdfs:domain pwm:AIAgent ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "fn 25: agent-specific identifiers" ] , [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 1" ] .
+
+pwm:deploymentVersion a owl:DatatypeProperty ;
+    rdfs:label "deployment version"@en ;
+    skos:definition "Hash over an agent's system prompt, instructions, tools, permissions, data sources, orchestration and memory behaviour. Any change needs re-approval before the agent can act."@en ;
+    rdfs:domain pwm:AIAgent ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 1: deployment version covers behaviour" ] , [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.25: change management" ] .
+
+pwm:maxAutonomyLevel a owl:ObjectProperty ;
+    rdfs:label "maximum autonomy level"@en ;
+    skos:definition "Highest autonomy level an agent may operate at, capped by its use case's risk tier."@en ;
+    rdfs:domain pwm:AIAgent ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3" ] .
+
+pwm:requiredAutonomyLevel a owl:ObjectProperty ;
+    rdfs:label "required autonomy level"@en ;
+    skos:definition "Autonomy level a tool requires. A call above the agent's level is refused; a call at L4 routes to human approval."@en ;
+    rdfs:domain pwm:Tool ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3" ] .
+
+pwm:actionVerb a owl:ObjectProperty ;
+    rdfs:label "action verb"@en ;
+    skos:definition "Action a tool performs, or a delegation permits."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: action permissions are per verb" ] .
+
+pwm:permittedTool a owl:ObjectProperty ;
+    rdfs:label "permitted tool"@en ;
+    skos:definition "Tool on an agent's allow-list."@en ;
+    rdfs:domain pwm:AIAgent ; rdfs:range pwm:Tool ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "fn 25: tools and systems the agent can access" ] , [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 5" ] .
+
+pwm:boundaryTier a owl:ObjectProperty ;
+    rdfs:label "boundary tier"@en ;
+    skos:definition "Whether an action is always permitted, needs asking first, or is never permitted for an agent."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Stage 4: the three-tier boundary system" ] ,
+                 [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 03: three-tier boundaries" ] .
+
+pwm:delegatedBy a owl:ObjectProperty ;
+    rdfs:label "delegated by"@en ;
+    skos:definition "Person who grants a delegated authority. They must hold the entitlement themselves."@en ;
+    rdfs:domain pwm:DelegatedAuthority ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2: dual check" ] .
+
+pwm:delegatedTo a owl:ObjectProperty ;
+    rdfs:label "delegated to"@en ;
+    skos:definition "Agent that receives a delegated authority."@en ;
+    rdfs:domain pwm:DelegatedAuthority ; rdfs:range pwm:AIAgent ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2" ] .
+
+pwm:aboutClient a owl:ObjectProperty ;
+    rdfs:label "about client"@en ;
+    skos:definition "Client a delegation, claim or fact is about."@en ;
+    rdfs:range pwm:Client ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2; 0.6 item 1" ] .
+
+pwm:permitsDataClass a owl:ObjectProperty ;
+    rdfs:label "permits data class"@en ;
+    skos:definition "Highest data classification a delegation permits the agent to access."@en ;
+    rdfs:domain pwm:DelegatedAuthority ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2: allowed data" ] .
+
+pwm:endsOnTaskCompletion a owl:DatatypeProperty ;
+    rdfs:label "ends on task completion"@en ;
+    skos:definition "Whether a delegation is revoked when its task completes, not only when its period ends."@en ;
+    rdfs:domain pwm:DelegatedAuthority ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2: authority ends when the task does" ] .
+
+pwm:approvalThreshold a owl:DatatypeProperty ;
+    rdfs:label "approval threshold"@en ;
+    skos:definition "Statement of which actions under a delegation require human approval."@en ;
+    rdfs:domain pwm:DelegatedAuthority ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2" ] .
+
+pwm:qualityThreshold a owl:DatatypeProperty ;
+    rdfs:label "quality threshold"@en ;
+    skos:definition "Minimum share of outputs meeting the agreed standard, as a fraction from 0 to 1."@en ;
+    rdfs:domain pwm:AutonomyPromotionGate ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Quality at least 95 percent" ] .
+
+pwm:exceptionRateThreshold a owl:DatatypeProperty ;
+    rdfs:label "exception rate threshold"@en ;
+    skos:definition "Maximum share of runs that leave the always-do path, as a fraction from 0 to 1."@en ;
+    rdfs:domain pwm:AutonomyPromotionGate ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Exception rate below 5 percent" ] .
+
+pwm:requiresFullTraceability a owl:DatatypeProperty ;
+    rdfs:label "requires full traceability"@en ;
+    skos:definition "Whether every action in the evaluation window must be reconstructable for the gate to pass."@en ;
+    rdfs:domain pwm:AutonomyPromotionGate ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Evidence fully traceable" ] .
+
+pwm:primaryMetric a owl:ObjectProperty ;
+    rdfs:label "primary metric"@en ;
+    skos:definition "Kind of an outcome metric."@en ;
+    rdfs:domain pwm:OutcomeMetric ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.PRIMARY_METRICS" ] .
+
+pwm:baselineValue a owl:DatatypeProperty ;
+    rdfs:label "baseline value"@en ;
+    skos:definition "Measured value of an outcome metric before the use case."@en ;
+    rdfs:domain pwm:OutcomeMetric ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Outcome baselines" ] .
+
+pwm:targetValue a owl:DatatypeProperty ;
+    rdfs:label "target value"@en ;
+    skos:definition "Agreed target for an outcome metric."@en ;
+    rdfs:domain pwm:OutcomeMetric ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Targets agreed with the process owner" ] .
+
+pwm:providedBy a owl:ObjectProperty ;
+    rdfs:label "provided by"@en ;
+    skos:definition "Model provider that supplies a model or AI service."@en ;
+    rdfs:range pwm:ModelProvider ;
+    skos:closeMatch cmns-org:isProvidedBy ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.11" ] .
+
+# --- Concept schemes -----------------------------------------------------------------
+
+pwm:AutonomyLevelScheme a skos:ConceptScheme ;
+    skos:prefLabel "agent autonomy levels"@en ;
+    skos:scopeNote "Early private-banking deployments are expected at L1 to L4. Raising a level is a governed change needing the accountable owner and independent validation. The four-step gate in the Filing Cabinet talk (suggest, draft, act with approval, act alone) corresponds to L2, L3, L4 and L5 or above."@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: autonomy levels" ] ,
+                 [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 12: reading is not the same as acting" ] .
+pwm:L0Retrieve a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L0" ;
+    skos:prefLabel "retrieve"@en ; skos:definition "Fetch authorised information."@en .
+pwm:L1Explain a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L1" ;
+    skos:prefLabel "explain"@en ; skos:definition "Summarise or explain retrieved information."@en .
+pwm:L2Recommend a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L2" ;
+    skos:prefLabel "recommend"@en ; skos:definition "Propose an option. Recommending never implies permission to execute."@en .
+pwm:L3Draft a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L3" ;
+    skos:prefLabel "draft"@en ; skos:definition "Prepare an artefact a person reviews before use."@en .
+pwm:L4ActAfterApproval a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L4" ;
+    skos:prefLabel "act after approval"@en ; skos:definition "Take an action once a named person, not the requester, has approved that exact action."@en .
+pwm:L5BoundedAutonomy a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L5" ;
+    skos:prefLabel "bounded autonomous action"@en ; skos:definition "Act without per-action approval inside explicit limits."@en .
+pwm:L6BroadAutonomy a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L6" ;
+    skos:prefLabel "broad autonomy"@en ; skos:definition "Act across tasks with broad discretion."@en .
+
+pwm:BoundaryTierScheme a skos:ConceptScheme ;
+    skos:prefLabel "boundary tiers"@en ;
+    skos:scopeNote "Set per action for each agent, independently of the autonomy-level scale. As a rule of thumb, internal work at L0 to L3 sits in always do, and L4 in ask first."@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Stage 4: the three-tier boundary system" ] ,
+                 [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 03" ] .
+pwm:AlwaysDo a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
+    skos:prefLabel "always do"@en ; skos:definition "Safe, reversible, inside the mandate and already authorised, such as retrieving authorised data or drafting an internal briefing."@en .
+pwm:AskFirst a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
+    skos:prefLabel "ask first"@en ; skos:definition "Consequential or client-facing; the agent prepares and a person decides."@en .
+pwm:NeverDo a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
+    skos:prefLabel "never do"@en ; skos:definition "Permanently outside scope, such as executing transactions, changing permissions or sending client communications, enforced in permissions."@en .
+
+pwm:ActionVerbScheme a skos:ConceptScheme ;
+    skos:prefLabel "action verbs"@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: read, analyse, recommend, draft, queue, send and execute" ] .
+pwm:VerbRead a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "read"@en ; skos:definition "Read information."@en .
+pwm:VerbAnalyse a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "analyse"@en ; skos:definition "Derive insight from information."@en .
+pwm:VerbRecommend a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "recommend"@en ; skos:definition "Propose an option."@en .
+pwm:VerbDraft a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "draft"@en ; skos:definition "Prepare an artefact."@en .
+pwm:VerbQueue a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "queue"@en ; skos:definition "Place an artefact for release by a person."@en .
+pwm:VerbSend a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "send"@en ; skos:definition "Release an artefact outside the institution."@en .
+pwm:VerbExecute a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "execute"@en ; skos:definition "Change a system of record or move value."@en .
+
+pwm:UseCaseStatusScheme a skos:ConceptScheme ;
+    skos:prefLabel "use-case lifecycle statuses"@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.STATUSES" ] , [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7; 5.2 fn 28 (pilots); 5.26 (decommissioning)" ] .
+pwm:StatusPilot a skos:Concept ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
+    skos:prefLabel "pilot"@en ; skos:definition "Limited by end date, named users and success criteria."@en ; skos:closeMatch ai:DeploymentStage .
+pwm:StatusLive a skos:Concept ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
+    skos:prefLabel "live"@en ; skos:definition "In production use."@en ; skos:closeMatch ai:OperationStage .
+pwm:StatusSuspended a skos:Concept ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
+    skos:prefLabel "suspended"@en ; skos:definition "Stopped pending review; decisions are refused."@en .
+pwm:StatusRetired a skos:Concept ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
+    skos:prefLabel "retired"@en ; skos:definition "Decommissioned; its agents are stopped and retention applies."@en ; skos:closeMatch ai:DecommissionStage .
+
+pwm:RiskTierScheme a skos:ConceptScheme ;
+    skos:prefLabel "use-case risk tiers"@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: risk tier 1 to 4" ] .
+pwm:Tier1 a skos:Concept ; skos:inScheme pwm:RiskTierScheme ; skos:topConceptOf pwm:RiskTierScheme ; skos:notation "1" ;
+    skos:prefLabel "tier 1"@en ; skos:definition "Research summarisation."@en .
+pwm:Tier2 a skos:Concept ; skos:inScheme pwm:RiskTierScheme ; skos:topConceptOf pwm:RiskTierScheme ; skos:notation "2" ;
+    skos:prefLabel "tier 2"@en ; skos:definition "Client intelligence and meeting preparation."@en .
+pwm:Tier3 a skos:Concept ; skos:inScheme pwm:RiskTierScheme ; skos:topConceptOf pwm:RiskTierScheme ; skos:notation "3" ;
+    skos:prefLabel "tier 3"@en ; skos:definition "KYC, suitability and recommendations."@en .
+pwm:Tier4 a skos:Concept ; skos:inScheme pwm:RiskTierScheme ; skos:topConceptOf pwm:RiskTierScheme ; skos:notation "4" ;
+    skos:prefLabel "tier 4"@en ; skos:definition "Financial execution."@en .
+
+pwm:RatingLevelScheme a skos:ConceptScheme ;
+    skos:prefLabel "rating levels"@en ;
+    skos:scopeNote "Used for impact, complexity, reliance, inherent and residual materiality, business criticality and capacity for loss."@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.MATERIALITY, BUSINESS_CRITICALITY" ] , [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.12" ] .
+pwm:RatingLow a skos:Concept ; skos:inScheme pwm:RatingLevelScheme ; skos:topConceptOf pwm:RatingLevelScheme ; skos:notation "1" ; skos:prefLabel "low"@en ; skos:definition "Low."@en .
+pwm:RatingMedium a skos:Concept ; skos:inScheme pwm:RatingLevelScheme ; skos:topConceptOf pwm:RatingLevelScheme ; skos:notation "2" ; skos:prefLabel "medium"@en ; skos:definition "Medium."@en .
+pwm:RatingHigh a skos:Concept ; skos:inScheme pwm:RatingLevelScheme ; skos:topConceptOf pwm:RatingLevelScheme ; skos:notation "3" ; skos:prefLabel "high"@en ; skos:definition "High; material."@en .
+pwm:RatingCritical a skos:Concept ; skos:inScheme pwm:RatingLevelScheme ; skos:topConceptOf pwm:RatingLevelScheme ; skos:notation "4" ; skos:prefLabel "critical"@en ; skos:definition "Critical; material."@en .
+
+pwm:ClientImpactClassScheme a skos:ConceptScheme ;
+    skos:prefLabel "client-impact classes"@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.CLIENT_IMPACT" ] , [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Naming collisions: client-impact class" ] .
+pwm:ImpactInternalProductivity a skos:Concept ; skos:inScheme pwm:ClientImpactClassScheme ; skos:topConceptOf pwm:ClientImpactClassScheme ; skos:notation "1" ; skos:prefLabel "internal productivity"@en ; skos:definition "Staff productivity with no client reach."@en .
+pwm:ImpactRMAssistance a skos:Concept ; skos:inScheme pwm:ClientImpactClassScheme ; skos:topConceptOf pwm:ClientImpactClassScheme ; skos:notation "2" ; skos:prefLabel "RM assistance"@en ; skos:definition "Helps a relationship manager prepare."@en .
+pwm:ImpactClientInfluence a skos:Concept ; skos:inScheme pwm:ClientImpactClassScheme ; skos:topConceptOf pwm:ClientImpactClassScheme ; skos:notation "3" ; skos:prefLabel "client influence"@en ; skos:definition "Shapes what a client is told or offered."@en .
+pwm:ImpactClientCommunication a skos:Concept ; skos:inScheme pwm:ClientImpactClassScheme ; skos:topConceptOf pwm:ClientImpactClassScheme ; skos:notation "4" ; skos:prefLabel "client communication"@en ; skos:definition "Produces content that reaches a client."@en .
+pwm:ImpactAdvice a skos:Concept ; skos:inScheme pwm:ClientImpactClassScheme ; skos:topConceptOf pwm:ClientImpactClassScheme ; skos:notation "5" ; skos:prefLabel "advice"@en ; skos:definition "Contributes to a personal recommendation."@en .
+pwm:ImpactExecution a skos:Concept ; skos:inScheme pwm:ClientImpactClassScheme ; skos:topConceptOf pwm:ClientImpactClassScheme ; skos:notation "6" ; skos:prefLabel "execution"@en ; skos:definition "Contributes to executing a transaction."@en .
+
+pwm:DecisionConsequenceScheme a skos:ConceptScheme ;
+    skos:prefLabel "decision consequences"@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.DECISION_CONSEQUENCE" ] .
+pwm:ConsequenceInformational a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "informational"@en ; skos:definition "Informs only."@en .
+pwm:ConsequenceOperational a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "operational"@en ; skos:definition "Changes an internal operation."@en .
+pwm:ConsequenceClientCommunication a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "client communication"@en ; skos:definition "Determines what reaches a client."@en .
+pwm:ConsequenceSuitability a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "suitability"@en ; skos:definition "Bears on whether advice is suitable."@en .
+pwm:ConsequenceFinancialAction a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "financial action"@en ; skos:definition "Moves value or changes a position."@en .
+
+pwm:AutonomyAxisScheme a skos:ConceptScheme ;
+    skos:prefLabel "use-case autonomy axis"@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.AUTONOMY_AXIS" ] .
+pwm:AutonomyNone a skos:Concept ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "none"@en ; skos:definition "No autonomous action."@en .
+pwm:AutonomyAssisted a skos:Concept ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "assisted"@en ; skos:definition "Assists a person who acts."@en .
+pwm:AutonomyConditional a skos:Concept ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "conditional"@en ; skos:definition "Acts under conditions or approval."@en .
+pwm:AutonomyHigh a skos:Concept ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "high"@en ; skos:definition "Acts with little human involvement."@en .
+
+pwm:PrimaryMetricScheme a skos:ConceptScheme ;
+    skos:prefLabel "primary outcome metrics"@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.PRIMARY_METRICS" ] , [ pwm:cites pwmref:EVOLVE ; pwm:locator "Measure what matters" ] .
+pwm:MetricCycleTime a skos:Concept ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "cycle time"@en ; skos:definition "Time to complete the workflow; breaches above target."@en .
+pwm:MetricDecisionQuality a skos:Concept ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "decision quality"@en ; skos:definition "Share of outputs meeting the standard; breaches below target."@en .
+pwm:MetricReliability a skos:Concept ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "reliability"@en ; skos:definition "Share of runs completing without failure; breaches below target."@en .
+pwm:MetricKnowledgeRetention a skos:Concept ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "knowledge retention"@en ;
+    skos:definition "Capability that remains when people leave. An EVOLVE measure; not a Kognita primary metric."@en .
+
+pwm:GovernanceRiskScheme a skos:ConceptScheme ;
+    skos:prefLabel "agentic governance risks"@en ;
+    skos:scopeNote "Five risks that sit on top of model risk when AI moves from assistance to action."@en ;
+    pwm:inModule pwm:ModuleGovernance ;
+    pwm:citation [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 02: five risks" ] .
+pwm:RiskAccess a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "access"@en ; skos:definition "An agent inherits whatever its tools can reach."@en .
+pwm:RiskEvidence a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "evidence"@en ; skos:definition "The chain of retrievals, judgements and actions is not kept."@en .
+pwm:RiskOperational a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "operational"@en ; skos:definition "Agents loop, stall, call the wrong tool or keep moving when they should stop."@en .
+pwm:RiskChange a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "change"@en ; skos:definition "Behaviour changes with a prompt, tool, source or silent model update."@en .
+pwm:RiskOwnership a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "ownership"@en ; skos:definition "No named person is accountable for what the agent did."@en .

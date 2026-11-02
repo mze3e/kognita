@@ -1,0 +1,454 @@
+# =============================================================================
+#  PWM 0.1 example data
+#
+#  Synthetic data for a fictional firm, Example Private Bank. No real client,
+#  person, firm or security appears here. Identifiers are well formed but
+#  invented. One client journey is traced end to end:
+#
+#    origination -> recommendation -> suitability assessment (risk profile in
+#    force, mandate, product risk rating) -> final decision by the RM ->
+#    client communication, with the AI use case, agent, delegation, policy
+#    decision and hash-chained evidence behind it.
+#
+#  Validate:  pyshacl -s pwm-shapes.ttl -e pwm.ttl -i rdfs examples/pwm-example.ttl
+# =============================================================================
+
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/> .
+@prefix fibo-fnd-aap-ppl: <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/> .
+@prefix fibo-sec-dbt-bnd: <https://spec.edmcouncil.org/fibo/ontology/SEC/Debt/Bonds/> .
+@prefix pwm:      <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix ex:       <https://example.org/pwm-example#> .
+
+<https://example.org/pwm-example> a owl:Ontology ;
+    dcterms:title "PWM 0.1 example data"@en ;
+    dcterms:description "Synthetic data for a fictional firm, Example Private Bank. No real client, person, firm or security."@en ;
+    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/shapes/0.1> ;
+    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
+
+# --- People (fictional) --------------------------------------------------------------------
+
+ex:PersonClient a fibo-fnd-aap-ppl:Person ; rdfs:label "Client 0001 (fictional person)"@en .
+ex:PersonRM a fibo-fnd-aap-ppl:Person ; rdfs:label "Relationship manager (fictional person)"@en .
+ex:PersonHeadOfAdvisory a fibo-fnd-aap-ppl:Person ; rdfs:label "Head of advisory (fictional person)"@en .
+ex:PersonHeadOfTechnology a fibo-fnd-aap-ppl:Person ; rdfs:label "Head of wealth technology (fictional person)"@en .
+ex:PersonChiefRiskOfficer a fibo-fnd-aap-ppl:Person ; rdfs:label "Chief risk officer (fictional person)"@en .
+ex:PersonCIO a fibo-fnd-aap-ppl:Person ; rdfs:label "Chief investment officer (fictional person)"@en .
+ex:PersonModelRisk a fibo-fnd-aap-ppl:Person ; rdfs:label "Head of model risk (fictional person)"@en .
+ex:PersonAIControl a fibo-fnd-aap-ppl:Person ; rdfs:label "Head of AI risk, second line (fictional person)"@en .
+
+# --- Firm, booking centre, client and coverage ------------------------------------------------
+
+ex:ExamplePrivateBank a pwm:PrivateBank ;
+    rdfs:label "Example Private Bank (fictional)"@en ;
+    pwm:legalEntityIdentifier "EXMP00PRIVATEBANK095" ;
+    pwm:jurisdictionCode "SG" .
+
+ex:BookingCentreSG a pwm:BookingCentre ;
+    rdfs:label "Example Private Bank, Singapore booking centre"@en ;
+    cmns-rlcmp:isPlayedBy ex:ExamplePrivateBank ;
+    pwm:jurisdictionCode "SG" .
+
+ex:Group a pwm:RelationshipGroup ;
+    rdfs:label "Family group 0001 (fictional)"@en .
+
+ex:Client a pwm:IndividualClient ;
+    rdfs:label "Client 0001 (fictional)"@en ;
+    cmns-rlcmp:isPlayedBy ex:PersonClient ;
+    pwm:inGroup ex:Group ;
+    pwm:residenceCountry "SG" ;
+    pwm:domicileCountry "SG" ;
+    pwm:nationalityCountry "SG" .
+
+ex:Relationship a pwm:ClientRelationship ;
+    rdfs:label "Relationship 0001 (fictional)"@en ;
+    pwm:hasClient ex:Client ;
+    pwm:hasProvider ex:ExamplePrivateBank ;
+    pwm:isBookedAt ex:BookingCentreSG ;
+    pwm:validFrom "2024-03-01T00:00:00+08:00"^^xsd:dateTime .
+
+ex:RM a pwm:RelationshipManager ;
+    rdfs:label "Relationship manager role"@en ;
+    cmns-rlcmp:isPlayedBy ex:PersonRM .
+
+ex:Coverage a pwm:CoverageAssignment ;
+    pwm:coversRelationship ex:Relationship ;
+    pwm:assignedRelationshipManager ex:RM ;
+    pwm:coverageRole pwm:CoveragePrimary .
+
+# --- Due diligence and tax ----------------------------------------------------------------------
+
+ex:CDD a pwm:CustomerDueDiligence ;
+    pwm:assesses ex:Client ;
+    pwm:validFrom "2024-02-20T00:00:00+08:00"^^xsd:dateTime ;
+    pwm:nextReviewDate "2027-02-20"^^xsd:date .
+
+ex:AMLRating a pwm:CustomerRiskRating ;
+    pwm:assesses ex:Client ;
+    pwm:amlRiskLevel pwm:AMLLow ;
+    pwm:validFrom "2024-02-20T00:00:00+08:00"^^xsd:dateTime .
+
+ex:TaxSelfCertification a pwm:TaxResidencySelfCertification ;
+    pwm:assesses ex:Client ;
+    pwm:taxResidenceCountry "SG" ;
+    pwm:validFrom "2024-02-20T00:00:00+08:00"^^xsd:dateTime .
+
+# --- Investor classification, risk profile and mandate --------------------------------------------
+
+ex:Classification a pwm:InvestorClassification ;
+    pwm:assesses ex:Client ;
+    pwm:investorCategory pwm:AccreditedInvestorSG ;
+    pwm:optStatus pwm:OptedIn ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:validFrom "2024-03-01T00:00:00+08:00"^^xsd:dateTime .
+
+ex:RiskProfileV1 a pwm:InvestorRiskProfile ;
+    rdfs:label "Risk profile, version 1"@en ;
+    pwm:assesses ex:Client ;
+    pwm:riskProfileLevel pwm:RP2 ;
+    pwm:validFrom "2024-03-01T00:00:00+08:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-03-15T00:00:00+08:00"^^xsd:dateTime ;
+    prov:wasAttributedTo ex:RM .
+
+ex:RiskProfileV2 a pwm:InvestorRiskProfile ;
+    rdfs:label "Risk profile, version 2"@en ;
+    pwm:assesses ex:Client ;
+    pwm:riskProfileLevel pwm:RP3 ;
+    pwm:investmentHorizonYears 7.0 ;
+    pwm:supersedes ex:RiskProfileV1 ;
+    pwm:validFrom "2026-03-15T00:00:00+08:00"^^xsd:dateTime ;
+    pwm:nextReviewDate "2027-03-15"^^xsd:date ;
+    prov:wasAttributedTo ex:RM .
+
+ex:Mandate a pwm:AdvisoryMandate ;
+    rdfs:label "Advisory mandate 0001 (fictional)"@en ;
+    pwm:hasRestriction ex:IssuerLimit ;
+    pwm:validFrom "2024-03-01T00:00:00+08:00"^^xsd:dateTime .
+
+ex:IssuerLimit a pwm:ConcentrationLimit ;
+    rdfs:label "Single-issuer limit"@en ;
+    pwm:limitValue 0.10 ;
+    pwm:limitBasis "Share of portfolio market value held in one issuer" .
+
+# --- Product, instrument and product risk ---------------------------------------------------------
+
+ex:Bond a fibo-sec-dbt-bnd:Bond ;
+    rdfs:label "Example Corp 3.5% 2031 bond (fictional)"@en ;
+    pwm:isin "XS00EXAMPLE1" ;
+    pwm:cfiCode "DBFUFR" ;
+    pwm:currency "SGD" .
+
+ex:Product a pwm:Product ;
+    rdfs:label "Example Corp 3.5% 2031 bond on the advisory shelf (fictional)"@en ;
+    pwm:hasUnderlyingInstrument ex:Bond ;
+    pwm:productComplexity pwm:NonComplexProduct ;
+    pwm:currency "SGD" .
+
+ex:ProductRating a pwm:ProductRiskRating ;
+    pwm:assesses ex:Product ;
+    pwm:productRiskLevel pwm:RP3 ;
+    pwm:validFrom "2026-06-01T00:00:00+08:00"^^xsd:dateTime .
+
+# --- Account, portfolio and a valuation from a registered service -----------------------------------
+
+ex:Holder a pwm:AccountHolder ;
+    cmns-rlcmp:isPlayedBy ex:PersonClient .
+
+ex:Account a pwm:InvestmentAccount ;
+    rdfs:label "Investment account 0001 (fictional)"@en ;
+    pwm:accountHeldBy ex:Holder ;
+    pwm:hasPortfolio ex:Portfolio ;
+    pwm:isBookedAt ex:BookingCentreSG ;
+    pwm:governedByMandate ex:Mandate ;
+    pwm:signingRule pwm:SignAnyOne ;
+    pwm:currency "SGD" .
+
+ex:Portfolio a pwm:Portfolio ;
+    pwm:hasHolding ex:MaturingHolding .
+
+ex:MaturingHolding a pwm:Holding ;
+    rdfs:label "Holding in a bond that matures in December 2026 (fictional)"@en .
+
+ex:ValuationService a pwm:CalculationService ;
+    rdfs:label "Portfolio valuation service (fictional)"@en .
+
+ex:PortfolioValuation a pwm:Valuation ;
+    pwm:valuationOf ex:Portfolio ;
+    pwm:amount 2500000.00 ;
+    pwm:currency "SGD" ;
+    pwm:asOf "2026-11-01T17:00:00+08:00"^^xsd:dateTime ;
+    pwm:calculatedBy ex:ValuationService .
+
+# --- Governed information: an approved source and a policy --------------------------------------------
+
+ex:HouseView a pwm:HouseView , pwm:ApprovedSource ;
+    rdfs:label "House view: SGD investment-grade credit, overweight (fictional)"@en ;
+    pwm:approvedForUseCase ex:UseCaseMeetingPrep ;
+    pwm:validFrom "2026-10-01T00:00:00+08:00"^^xsd:dateTime .
+
+ex:CommunicationPolicyV31 a pwm:GovernedInformationAsset ;
+    rdfs:label "Client communication policy, version 3.1 (fictional)"@en ;
+    pwm:informationOwner ex:BusinessOwner ;
+    pwm:approvalStatus pwm:AssetSuperseded ;
+    pwm:versionId "3.1" ;
+    pwm:contentHash "sha256:2411474079047729f80de850da3514ddec700c41958923cbd8b1fc13168a49d5" ;
+    pwm:validFrom "2025-01-01T00:00:00+08:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-01-01T00:00:00+08:00"^^xsd:dateTime ;
+    pwm:retentionUntil "2032-12-31"^^xsd:date .
+
+ex:CommunicationPolicy a pwm:GovernedInformationAsset ;
+    rdfs:label "Client communication policy, version 3.2 (fictional)"@en ;
+    pwm:informationOwner ex:BusinessOwner ;
+    pwm:approvalStatus pwm:AssetCurrent ;
+    pwm:versionId "3.2" ;
+    pwm:supersedes ex:CommunicationPolicyV31 ;
+    pwm:validFrom "2026-01-01T00:00:00+08:00"^^xsd:dateTime ;
+    pwm:retentionUntil "2033-12-31"^^xsd:date ;
+    pwm:hasSection ex:CommunicationPolicySection4 .
+
+ex:CommunicationPolicySection4 a pwm:DocumentSection ;
+    rdfs:label "Section 4: AI-assisted drafting"@en ;
+    pwm:classification pwm:C1 .
+
+# --- AI use case, accountability and materiality -------------------------------------------------------
+
+ex:PurposeMeetingPrep a pwm:Purpose ;
+    rdfs:label "Prepare client meetings and draft recommendations for RM review"@en .
+
+ex:BusinessOwner a pwm:BusinessOwner ; cmns-rlcmp:isPlayedBy ex:PersonHeadOfAdvisory .
+ex:TechnologyOwner a pwm:TechnologyOwner ; cmns-rlcmp:isPlayedBy ex:PersonHeadOfTechnology .
+ex:RiskOwner a pwm:RiskOwner ; cmns-rlcmp:isPlayedBy ex:PersonChiefRiskOfficer .
+ex:KnowledgeLead a pwm:KnowledgeLead ; cmns-rlcmp:isPlayedBy ex:PersonCIO .
+ex:Validator a pwm:IndependentValidator ; cmns-rlcmp:isPlayedBy ex:PersonModelRisk .
+ex:ControlFunction a pwm:DesignatedControlFunction ; cmns-rlcmp:isPlayedBy ex:PersonAIControl .
+
+ex:Provider a pwm:ModelProvider ;
+    rdfs:label "Model provider (fictional)"@en .
+
+ex:Model a pwm:AIModel ;
+    rdfs:label "General-purpose language model (fictional)"@en ;
+    pwm:providedBy ex:Provider ;
+    pwm:modelVersion "model-2026-09" .
+
+ex:UseCaseMeetingPrep a pwm:AIUseCase ;
+    rdfs:label "Client meeting preparation and draft recommendations"@en ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:approvedJurisdiction "SG" ;
+    pwm:modelType "Language model with retrieval from approved sources" ;
+    pwm:dependsOn ex:Model ;
+    pwm:usesDataClass pwm:C2 ;
+    pwm:lifecycleStatus pwm:StatusLive ;
+    pwm:riskTier pwm:Tier3 ;
+    pwm:isMediated true ;
+    pwm:nextReviewDate "2027-05-01"^^xsd:date ;
+    pwm:hasAccountabilityRole ex:BusinessOwner , ex:TechnologyOwner , ex:RiskOwner , ex:KnowledgeLead , ex:Validator ;
+    pwm:hasMaterialityAssessment ex:Materiality .
+
+ex:Materiality a pwm:RiskMaterialityAssessment ;
+    pwm:assesses ex:UseCaseMeetingPrep ;
+    pwm:impact pwm:RatingHigh ;
+    pwm:complexity pwm:RatingMedium ;
+    pwm:reliance pwm:RatingMedium ;
+    pwm:businessCriticality pwm:RatingHigh ;
+    pwm:clientImpactClass pwm:ImpactAdvice ;
+    pwm:decisionConsequence pwm:ConsequenceSuitability ;
+    pwm:autonomyAxis pwm:AutonomyAssisted ;
+    pwm:inherentMateriality pwm:RatingHigh ;
+    pwm:residualMateriality pwm:RatingMedium ;
+    pwm:rationale "Advice-level client impact. Every recommendation needs RM approval before it reaches the client, and claims are checked against approved sources, which brings residual materiality to medium." ;
+    pwm:approvedBy ex:ControlFunction ;
+    pwm:validFrom "2026-10-15T09:00:00+08:00"^^xsd:dateTime .
+
+# --- Agent, tools and delegated authority ------------------------------------------------------------
+
+ex:ToolPortfolioRead a pwm:Tool ;
+    rdfs:label "Read portfolio positions"@en ;
+    pwm:requiredAutonomyLevel pwm:L0Retrieve ;
+    pwm:actionVerb pwm:VerbRead .
+
+ex:ToolDraftNote a pwm:Tool ;
+    rdfs:label "Draft a client note"@en ;
+    pwm:requiredAutonomyLevel pwm:L3Draft ;
+    pwm:actionVerb pwm:VerbDraft .
+
+ex:Agent a pwm:AIAgent ;
+    rdfs:label "Meeting preparation agent"@en ;
+    pwm:agentIdentifier "AGENT-RM-PRECALL-01" ;
+    pwm:maxAutonomyLevel pwm:L3Draft ;
+    pwm:registeredForUseCase ex:UseCaseMeetingPrep ;
+    pwm:deploymentVersion "sha256:fe17d8288da18bb3cc7a178d050b9af718c402a10d4f5d338633dfe0af0e1787" ;
+    pwm:permittedTool ex:ToolPortfolioRead , ex:ToolDraftNote ;
+    pwm:nextReviewDate "2027-02-01"^^xsd:date .
+
+ex:Delegation a pwm:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    pwm:delegatedBy ex:PersonRM ;
+    pwm:delegatedTo ex:Agent ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:aboutClient ex:Client ;
+    pwm:actionVerb pwm:VerbRead , pwm:VerbDraft ;
+    pwm:permitsDataClass pwm:C2 ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:approvalThreshold "Any draft for the client needs RM approval" ;
+    pwm:validFrom "2026-11-02T08:00:00+08:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-02T18:00:00+08:00"^^xsd:dateTime ;
+    pwm:endsOnTaskCompletion true .
+
+# --- Facts and claims ------------------------------------------------------------------------------
+
+ex:SuitabilitySystem a prov:SoftwareAgent ;
+    rdfs:label "Suitability system of record (fictional)"@en .
+
+ex:FactRiskProfile a pwm:Fact ;
+    rdfs:label "Client 0001's risk profile in force is RP3"@en ;
+    pwm:aboutClient ex:Client ;
+    prov:wasDerivedFrom ex:RiskProfileV2 ;
+    prov:wasAttributedTo ex:SuitabilitySystem ;
+    pwm:asOf "2026-11-02T09:58:00+08:00"^^xsd:dateTime ;
+    pwm:freshnessThreshold "P1D"^^xsd:duration ;
+    pwm:staleAction pwm:StaleSuppress ;
+    pwm:classification pwm:C2 .
+
+ex:FactPortfolioValue a pwm:Fact ;
+    rdfs:label "Client 0001's portfolio value at the last close"@en ;
+    pwm:aboutClient ex:Client ;
+    prov:wasDerivedFrom ex:PortfolioValuation ;
+    pwm:calculatedBy ex:ValuationService ;
+    pwm:asOf "2026-11-01T17:00:00+08:00"^^xsd:dateTime ;
+    pwm:freshnessThreshold "P1D"^^xsd:duration ;
+    pwm:staleAction pwm:StaleWarn ;
+    pwm:classification pwm:C2 .
+
+ex:ClaimRiskProfile a pwm:Claim ;
+    rdfs:label "\"Your current risk profile is RP3.\""@en ;
+    pwm:aboutClient ex:Client ;
+    pwm:claimType pwm:VerifiedFact ;
+    pwm:citesSource ex:FactRiskProfile ;
+    pwm:validatorStatus pwm:ValidatorVerified ;
+    pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:modelVersion "model-2026-09" .
+
+ex:ClaimReinvestment a pwm:Claim ;
+    rdfs:label "\"The client may want to reinvest the December maturity in SGD credit.\""@en ;
+    pwm:aboutClient ex:Client ;
+    pwm:claimType pwm:Inference ;
+    pwm:citesSource ex:HouseView ;
+    pwm:validatorStatus pwm:ValidatorInferred ;
+    pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:modelVersion "model-2026-09" .
+
+# --- The client journey ------------------------------------------------------------------------------
+
+ex:Interaction a pwm:ClientInteraction ;
+    rdfs:label "Interaction 0001: reinvesting a maturing bond (fictional)"@en ;
+    pwm:withClient ex:Client ;
+    prov:startedAtTime "2026-11-02T09:55:00+08:00"^^xsd:dateTime .
+
+ex:Origination a pwm:Origination ;
+    pwm:partOfInteraction ex:Interaction ;
+    pwm:withClient ex:Client ;
+    pwm:originationTrigger pwm:OriginationEvent ;
+    pwm:rationale "A bond holding matures in December 2026, and the current house view is overweight SGD investment-grade credit." ;
+    prov:startedAtTime "2026-11-02T09:55:00+08:00"^^xsd:dateTime .
+
+ex:Recommendation a pwm:Recommendation ;
+    rdfs:label "Recommendation: SGD 100,000 of the Example Corp 3.5% 2031 bond (fictional)"@en ;
+    pwm:partOfInteraction ex:Interaction ;
+    pwm:originatedBy ex:Origination ;
+    pwm:withClient ex:Client ;
+    pwm:recommendsProduct ex:Product ;
+    pwm:citesSource ex:HouseView , ex:FactRiskProfile , ex:FactPortfolioValue ;
+    pwm:contentProvenance pwm:ProvenanceAI ;
+    pwm:rationale "Reinvest part of the December maturity in SGD investment-grade credit, in line with the house view, at 4% of portfolio value." ;
+    pwm:underUseCase ex:UseCaseMeetingPrep ;
+    prov:wasAttributedTo ex:Agent ;
+    prov:generatedAtTime "2026-11-02T10:01:00+08:00"^^xsd:dateTime .
+
+ex:Suitability a pwm:SuitabilityAssessment ;
+    pwm:assessesRecommendation ex:Recommendation ;
+    pwm:usesRiskProfile ex:RiskProfileV2 ;
+    pwm:usesMandate ex:Mandate ;
+    pwm:usesProductRiskRating ex:ProductRating ;
+    pwm:suitabilityOutcome pwm:Suitable ;
+    pwm:rationale "Product risk level RP3 matches the client's risk profile in force (RP3, version 2). The position would be 4% of portfolio value, inside the 10% single-issuer limit. The seven-year horizon covers the 2031 maturity." ;
+    prov:wasAttributedTo ex:RM ;
+    prov:generatedAtTime "2026-11-02T10:04:00+08:00"^^xsd:dateTime .
+
+ex:Decision a pwm:FinalDecision ;
+    pwm:decisionOn ex:Recommendation ;
+    pwm:decisionResult pwm:DecisionApprove ;
+    prov:wasDerivedFrom ex:Suitability ;
+    prov:wasAttributedTo ex:RM ;
+    prov:generatedAtTime "2026-11-02T10:12:00+08:00"^^xsd:dateTime .
+
+ex:SecurePortal a pwm:CommunicationChannel ;
+    rdfs:label "Secure client portal (fictional)"@en ;
+    pwm:isApprovedChannel true .
+
+ex:Communication a pwm:ClientCommunication ;
+    rdfs:label "Client note proposing the reinvestment (fictional)"@en ;
+    pwm:partOfInteraction ex:Interaction ;
+    pwm:withClient ex:Client ;
+    pwm:derivedFromDecision ex:Decision ;
+    pwm:communicationLevel pwm:CommProductRecommendation ;
+    pwm:contentProvenance pwm:ProvenanceAIHumanEdited ;
+    pwm:aiDisclosureGiven true ;
+    pwm:disclosureTrigger pwm:TriggerAIGeneratedContent ;
+    pwm:viaChannel ex:SecurePortal ;
+    pwm:contentHash "sha256:a31d9e3b6d17980928d9435f48751f4af20f8d43a3060e069768e454c23173c8" ;
+    prov:generatedAtTime "2026-11-02T10:20:00+08:00"^^xsd:dateTime .
+
+# --- Policy rules, the decision to release, and evidence ----------------------------------------------------
+
+ex:RuleClientCommunication a pwm:PolicyRule ;
+    rdfs:label "Releasing a client communication takes two signatures"@en ;
+    pwm:ruleCitation "Kognita private-banking pack, client-communication (ADR 0006)" ;
+    pwm:versionId "1.0" ;
+    pwm:validFrom "2026-01-01T00:00:00+08:00"^^xsd:dateTime .
+
+ex:RuleSolicitation a pwm:CrossBorderRule ;
+    rdfs:label "Solicitation of clients domiciled in HK from the SG booking centre is marked prohibited (illustrative)"@en ;
+    pwm:appliesToActivity pwm:ActivitySolicitation ;
+    pwm:permitted false ;
+    pwm:clientDomicileCode "HK" ;
+    pwm:bookingCentreCode "SG" ;
+    pwm:ruleCitation "Illustrative only. The firm's cross-border manual sets the boundary; the rule enforces the recorded flag (Kognita private-banking pack, cross-border-solicitation)." ;
+    pwm:versionId "1.0" ;
+    pwm:validFrom "2026-01-01T00:00:00+08:00"^^xsd:dateTime .
+
+ex:PolicyDecisionRelease a pwm:PolicyDecision ;
+    rdfs:label "Release of the client note routed to human approval"@en ;
+    pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ;
+    pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    prov:generatedAtTime "2026-11-02T10:05:00+08:00"^^xsd:dateTime .
+
+ex:Evidence1 a pwm:EvidenceRecord ;
+    pwm:eventType pwm:EventPolicyDecision ;
+    pwm:evidenceFor ex:PolicyDecisionRelease ;
+    pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:previousRecordHash "sha256:c140e13fed2c22a17ecd816f9abc01e038c2b1919166ed32aceb384c6331d4d1" ;
+    pwm:recordHash "sha256:3ba5c9c03fd8837278576b83f283e79962f9bea54eb1e016503e73dcaddbc583" ;
+    prov:generatedAtTime "2026-11-02T10:05:00+08:00"^^xsd:dateTime .
+
+ex:Evidence2 a pwm:EvidenceRecord ;
+    pwm:eventType pwm:EventFinalDecision ;
+    pwm:evidenceFor ex:Decision ;
+    pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:previousRecordHash "sha256:3ba5c9c03fd8837278576b83f283e79962f9bea54eb1e016503e73dcaddbc583" ;
+    pwm:recordHash "sha256:d31e7840f241e116b99a0fe72adf3f4ec3dd344067200992158ed5048114d54b" ;
+    prov:generatedAtTime "2026-11-02T10:12:00+08:00"^^xsd:dateTime .
+
+ex:Evidence3 a pwm:EvidenceRecord ;
+    pwm:eventType pwm:EventClientCommunication ;
+    pwm:evidenceFor ex:Communication ;
+    pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:previousRecordHash "sha256:d31e7840f241e116b99a0fe72adf3f4ec3dd344067200992158ed5048114d54b" ;
+    pwm:recordHash "sha256:be1a8668fcf9c8c98fcf2f9266e5505b58be5d034f9c8e8ffe335bd077a435d7" ;
+    prov:generatedAtTime "2026-11-02T10:20:00+08:00"^^xsd:dateTime .

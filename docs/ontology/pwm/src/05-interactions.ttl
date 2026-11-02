@@ -1,0 +1,285 @@
+
+# =============================================================================
+#  Module 7: Interactions, advice and communication
+# =============================================================================
+
+pwm:ClientInteraction a owl:Class ;
+    rdfs:label "client interaction"@en ;
+    skos:definition "One client journey, from its trigger through retrieval, recommendation, review and decision to any communication, recorded under a single identifier."@en ;
+    rdfs:subClassOf prov:Activity ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 9: interaction record" ] .
+
+pwm:Origination a owl:Class ;
+    rdfs:label "origination"@en ;
+    skos:definition "Step that selects a client or product for attention, recorded with its trigger, selection criteria, candidate set and reasons, before anything is shown to a relationship manager."@en ;
+    skos:scopeNote "An origination may conclude that no contact is recommended, with a reason."@en ;
+    rdfs:subClassOf prov:Activity ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 10: origination evidence; do not contact is a first-class outcome" ] .
+
+pwm:Recommendation a owl:Class ;
+    rdfs:label "recommendation"@en ;
+    skos:definition "Personal recommendation to a client about a product, transaction or allocation, with structured rationale and cited sources."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:contextSpeed pwm:MediumContext ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 4(1)(4): investment advice" ] , [ pwm:cites pwmref:MAS-FAA-N16 ; pwm:locator "Recommendations on investment products" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 10: rationale as structured fields with citations" ] .
+
+pwm:FinalDecision a owl:Class ;
+    rdfs:label "final decision"@en ;
+    skos:definition "Named person's decision on an AI-prepared recommendation or action, approving, modifying, rejecting or escalating it, with what they saw and what they changed."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11: RM review capture" ] ,
+                 [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ] .
+
+pwm:ClientCommunication a owl:Class ;
+    rdfs:label "client communication"@en ;
+    skos:definition "Message sent to a client through a channel, classified by communication level, carrying its content provenance and any AI disclosure, and traceable to the final decision it came from."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 12: governed client communication" ] ,
+                 [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.6: inform customers of AI use; channels for redress" ] ,
+                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-communication (two signatures), client-communication-content, client-ai-disclosure" ] .
+
+pwm:CommunicationChannel a owl:Class ;
+    rdfs:label "communication channel"@en ;
+    skos:definition "Means of reaching a client, registered as approved only if it meets archiving and supervision requirements."@en ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:contextSpeed pwm:SlowContext ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 12: approved-channel register" ] .
+
+pwm:Complaint a owl:Class ;
+    rdfs:label "complaint"@en ;
+    skos:definition "Expression of dissatisfaction by a client, linked to the interaction, output, model version and approver it concerns."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15: outcomes and near misses" ] ,
+                 [ pwm:cites pwmref:MAS-FAIR-DEALING ; pwm:locator "Fair dealing outcomes" ] .
+
+pwm:VulnerabilityIndicator a owl:Class ;
+    rdfs:label "vulnerability indicator"@en ;
+    skos:definition "Flag that a client may be vulnerable, raised for human review. AI may raise the flag; only a person may decide, and only a governed process may change treatment."@en ;
+    rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:defaultClassification pwm:C3 ;
+    pwm:citation [ pwm:cites pwmref:UK-FCA-FG21-1 ; pwm:locator "Fair treatment of vulnerable customers" ] ,
+                 [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 10: vulnerable-client safeguards" ] .
+
+pwm:Consent a owl:Class ;
+    rdfs:label "consent"@en ;
+    skos:definition "Record of a client's consent to a stated processing purpose, with its scope, date and withdrawal."@en ;
+    rdfs:subClassOf prov:Entity ;
+    skos:closeMatch dpv:Consent ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.4(f): consent for sensitive personal data used with AI" ] .
+
+pwm:withClient a owl:ObjectProperty ;
+    rdfs:label "with client"@en ;
+    skos:definition "Client an interaction, recommendation or communication concerns."@en ;
+    rdfs:range pwm:Client ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 9" ] .
+
+pwm:partOfInteraction a owl:ObjectProperty ;
+    rdfs:label "part of interaction"@en ;
+    skos:definition "Client interaction an origination, recommendation, decision, communication or evidence record belongs to."@en ;
+    rdfs:range pwm:ClientInteraction ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 9: one interaction_id spans a whole client journey" ] .
+
+pwm:originationTrigger a owl:ObjectProperty ;
+    rdfs:label "origination trigger"@en ;
+    skos:definition "What started an origination."@en ;
+    rdfs:domain pwm:Origination ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "origination.TRIGGERS" ] .
+
+pwm:doNotContactReason a owl:ObjectProperty ;
+    rdfs:label "do-not-contact reason"@en ;
+    skos:definition "Why an origination concluded that no contact is recommended."@en ;
+    rdfs:domain pwm:Origination ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "origination.DO_NOT_CONTACT_REASONS" ] .
+
+pwm:originatedBy a owl:ObjectProperty ;
+    rdfs:label "originated by"@en ;
+    skos:definition "Origination that proposed a recommendation."@en ;
+    rdfs:subPropertyOf prov:wasGeneratedBy ;
+    rdfs:domain pwm:Recommendation ; rdfs:range pwm:Origination ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 10" ] .
+
+pwm:recommendsProduct a owl:ObjectProperty ;
+    rdfs:label "recommends product"@en ;
+    skos:definition "Product a recommendation proposes."@en ;
+    rdfs:domain pwm:Recommendation ; rdfs:range pwm:Product ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 4(1)(4)" ] .
+
+pwm:decisionOn a owl:ObjectProperty ;
+    rdfs:label "decision on"@en ;
+    skos:definition "Recommendation or proposed action a final decision rules on."@en ;
+    rdfs:domain pwm:FinalDecision ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11" ] .
+
+pwm:decisionResult a owl:ObjectProperty ;
+    rdfs:label "decision result"@en ;
+    skos:definition "Approve, modify, reject or escalate."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11: outcomes are approve, modify, reject or escalate" ] .
+
+pwm:derivedFromDecision a owl:ObjectProperty ;
+    rdfs:label "derived from decision"@en ;
+    skos:definition "Final decision a client communication traces back to. A communication without one is refused."@en ;
+    rdfs:subPropertyOf prov:wasDerivedFrom ;
+    rdfs:domain pwm:ClientCommunication ; rdfs:range pwm:FinalDecision ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 12: a communication that does not trace back to a final decision is a DENY" ] .
+
+pwm:communicationLevel a owl:ObjectProperty ;
+    rdfs:label "communication level"@en ;
+    skos:definition "How consequential a communication is, which sets the controls it must pass."@en ;
+    rdfs:domain pwm:ClientCommunication ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.COMMUNICATION_LEVELS" ] .
+
+pwm:viaChannel a owl:ObjectProperty ;
+    rdfs:label "via channel"@en ;
+    skos:definition "Channel a communication was sent through."@en ;
+    rdfs:domain pwm:ClientCommunication ; rdfs:range pwm:CommunicationChannel ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 12" ] .
+
+pwm:isApprovedChannel a owl:DatatypeProperty ;
+    rdfs:label "is approved channel"@en ;
+    skos:definition "Whether a channel is registered as meeting archiving and supervision requirements."@en ;
+    rdfs:domain pwm:CommunicationChannel ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 12: approved-channel register" ] .
+
+pwm:contentProvenance a owl:ObjectProperty ;
+    rdfs:label "content provenance"@en ;
+    skos:definition "Who produced content: a person, AI, AI then edited by a person, or a person with AI assistance. The label survives edits."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11: content provenance label" ] .
+
+pwm:aiDisclosureGiven a owl:DatatypeProperty ;
+    rdfs:label "AI disclosure given"@en ;
+    skos:definition "Whether the communication told the client that AI was involved."@en ;
+    rdfs:domain pwm:ClientCommunication ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.6" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-ai-disclosure" ] .
+
+pwm:disclosureTrigger a owl:ObjectProperty ;
+    rdfs:label "disclosure trigger"@en ;
+    skos:definition "Reason a client must be told AI was involved."@en ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.DISCLOSURE_TRIGGERS" ] .
+
+pwm:contentHash a owl:DatatypeProperty ;
+    rdfs:label "content hash"@en ;
+    skos:definition "Cryptographic hash of content as rendered, sent or stored, so the content can be proved later without being copied into the record."@en ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 items 11, 12: hash of the content as sent" ] ,
+                 [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: version ID or content hash; keep the hash when content is deleted" ] .
+
+pwm:CommunicationLevelScheme a skos:ConceptScheme ;
+    skos:prefLabel "communication levels"@en ;
+    skos:scopeNote "Ordered least to most consequential. A higher level keeps every control of the levels below it."@en ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.COMMUNICATION_LEVELS" ] , [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 12" ] .
+pwm:CommGeneralInformation a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "1" ;
+    skos:prefLabel "general information"@en ; skos:definition "Information not specific to the client."@en .
+pwm:CommHouseView a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "2" ;
+    skos:prefLabel "house view"@en ; skos:definition "The institution's published view, unadapted."@en .
+pwm:CommContextualisedInsight a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "3" ;
+    skos:prefLabel "contextualised insight"@en ; skos:definition "Information related to the client's circumstances, without a recommendation."@en .
+pwm:CommInvestmentDiscussion a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "4" ;
+    skos:prefLabel "investment discussion"@en ; skos:definition "Discussion of options for the client's portfolio."@en .
+pwm:CommProductRecommendation a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "5" ;
+    skos:prefLabel "product recommendation"@en ; skos:definition "Personal recommendation of a product; triggers suitability checks and approval."@en .
+pwm:CommTransaction a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "6" ;
+    skos:prefLabel "transaction"@en ; skos:definition "Communication that confirms or effects a transaction."@en .
+
+pwm:ContentProvenanceScheme a skos:ConceptScheme ;
+    skos:prefLabel "content provenance labels"@en ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11" ] .
+pwm:ProvenanceHuman a skos:Concept ; skos:inScheme pwm:ContentProvenanceScheme ; skos:topConceptOf pwm:ContentProvenanceScheme ;
+    skos:prefLabel "human"@en ; skos:definition "Written by a person without AI."@en .
+pwm:ProvenanceAI a skos:Concept ; skos:inScheme pwm:ContentProvenanceScheme ; skos:topConceptOf pwm:ContentProvenanceScheme ;
+    skos:prefLabel "AI"@en ; skos:definition "Generated by AI."@en .
+pwm:ProvenanceAIHumanEdited a skos:Concept ; skos:inScheme pwm:ContentProvenanceScheme ; skos:topConceptOf pwm:ContentProvenanceScheme ;
+    skos:prefLabel "AI then human-edited"@en ; skos:definition "Generated by AI, then edited by a person; stays identifiable as AI-originated."@en .
+pwm:ProvenanceHumanAIAssisted a skos:Concept ; skos:inScheme pwm:ContentProvenanceScheme ; skos:topConceptOf pwm:ContentProvenanceScheme ;
+    skos:prefLabel "human with AI assistance"@en ; skos:definition "Written by a person with AI help."@en .
+
+pwm:DisclosureTriggerScheme a skos:ConceptScheme ;
+    skos:prefLabel "AI disclosure triggers"@en ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.DISCLOSURE_TRIGGERS" ] , [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.6" ] .
+pwm:TriggerAIGeneratedContent a skos:Concept ; skos:inScheme pwm:DisclosureTriggerScheme ; skos:topConceptOf pwm:DisclosureTriggerScheme ;
+    skos:prefLabel "AI generated content"@en ; skos:definition "The content was generated by AI."@en .
+pwm:TriggerAssistedAnalysis a skos:Concept ; skos:inScheme pwm:DisclosureTriggerScheme ; skos:topConceptOf pwm:DisclosureTriggerScheme ;
+    skos:prefLabel "assisted analysis"@en ; skos:definition "AI assisted the analysis behind the content."@en .
+pwm:TriggerPowersChatbot a skos:Concept ; skos:inScheme pwm:DisclosureTriggerScheme ; skos:topConceptOf pwm:DisclosureTriggerScheme ;
+    skos:prefLabel "powers a chatbot"@en ; skos:definition "The client is talking to an AI system."@en .
+pwm:TriggerMaterialContribution a skos:Concept ; skos:inScheme pwm:DisclosureTriggerScheme ; skos:topConceptOf pwm:DisclosureTriggerScheme ;
+    skos:prefLabel "materially contributed to a decision"@en ; skos:definition "AI materially contributed to a decision affecting the client."@en .
+
+pwm:OriginationTriggerScheme a skos:ConceptScheme ;
+    skos:prefLabel "origination triggers"@en ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "origination.TRIGGERS" ] .
+pwm:OriginationEvent a skos:Concept ; skos:inScheme pwm:OriginationTriggerScheme ; skos:topConceptOf pwm:OriginationTriggerScheme ;
+    skos:prefLabel "event"@en ; skos:definition "A client or market event, such as a maturity or a house-view change."@en .
+pwm:OriginationSchedule a skos:Concept ; skos:inScheme pwm:OriginationTriggerScheme ; skos:topConceptOf pwm:OriginationTriggerScheme ;
+    skos:prefLabel "schedule"@en ; skos:definition "A scheduled review."@en .
+pwm:OriginationRMRequest a skos:Concept ; skos:inScheme pwm:OriginationTriggerScheme ; skos:topConceptOf pwm:OriginationTriggerScheme ;
+    skos:prefLabel "RM request"@en ; skos:definition "A relationship manager asked for it."@en .
+
+pwm:DoNotContactReasonScheme a skos:ConceptScheme ;
+    skos:prefLabel "do-not-contact reasons"@en ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "origination.DO_NOT_CONTACT_REASONS" ] .
+pwm:DNCLowRelevance a skos:Concept ; skos:inScheme pwm:DoNotContactReasonScheme ; skos:topConceptOf pwm:DoNotContactReasonScheme ;
+    skos:prefLabel "low relevance"@en ; skos:definition "Not relevant enough to the client."@en .
+pwm:DNCPoorTiming a skos:Concept ; skos:inScheme pwm:DoNotContactReasonScheme ; skos:topConceptOf pwm:DoNotContactReasonScheme ;
+    skos:prefLabel "poor timing"@en ; skos:definition "Wrong moment for the client."@en .
+pwm:DNCVulnerability a skos:Concept ; skos:inScheme pwm:DoNotContactReasonScheme ; skos:topConceptOf pwm:DoNotContactReasonScheme ;
+    skos:prefLabel "vulnerability"@en ; skos:definition "A vulnerability indicator is open."@en .
+pwm:DNCExcessiveFrequency a skos:Concept ; skos:inScheme pwm:DoNotContactReasonScheme ; skos:topConceptOf pwm:DoNotContactReasonScheme ;
+    skos:prefLabel "excessive frequency"@en ; skos:definition "Contact-frequency limit reached."@en .
+pwm:DNCRecentRejection a skos:Concept ; skos:inScheme pwm:DoNotContactReasonScheme ; skos:topConceptOf pwm:DoNotContactReasonScheme ;
+    skos:prefLabel "a recent rejection"@en ; skos:definition "The client recently declined a similar proposal."@en .
+pwm:DNCRelationshipCircumstance a skos:Concept ; skos:inScheme pwm:DoNotContactReasonScheme ; skos:topConceptOf pwm:DoNotContactReasonScheme ;
+    skos:prefLabel "a relationship circumstance"@en ; skos:definition "A circumstance in the relationship makes contact inappropriate."@en .
+
+pwm:DecisionResultScheme a skos:ConceptScheme ;
+    skos:prefLabel "final decision results"@en ;
+    pwm:inModule pwm:ModuleInteractions ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11" ] .
+pwm:DecisionApprove a skos:Concept ; skos:inScheme pwm:DecisionResultScheme ; skos:topConceptOf pwm:DecisionResultScheme ;
+    skos:prefLabel "approve"@en ; skos:definition "Accepted as prepared."@en .
+pwm:DecisionModify a skos:Concept ; skos:inScheme pwm:DecisionResultScheme ; skos:topConceptOf pwm:DecisionResultScheme ;
+    skos:prefLabel "modify"@en ; skos:definition "Accepted with changes, recorded as a structured diff."@en .
+pwm:DecisionReject a skos:Concept ; skos:inScheme pwm:DecisionResultScheme ; skos:topConceptOf pwm:DecisionResultScheme ;
+    skos:prefLabel "reject"@en ; skos:definition "Not accepted."@en .
+pwm:DecisionEscalate a skos:Concept ; skos:inScheme pwm:DecisionResultScheme ; skos:topConceptOf pwm:DecisionResultScheme ;
+    skos:prefLabel "escalate"@en ; skos:definition "Referred to a more senior or specialist decision-maker."@en .

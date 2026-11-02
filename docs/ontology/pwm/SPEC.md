@@ -1,0 +1,2591 @@
+# Private Wealth Management Ontology (PWM) 0.1
+
+> Generated from the Turtle sources by `tools/build.py`. Do not edit by hand.
+
+| | |
+|---|---|
+| Version | 0.1 (draft), 2026-11-02 |
+| Ontology IRI | https://ahmedmuzammil.com/ontology/pwm |
+| Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.1 |
+| Namespace | `pwm:` https://ahmedmuzammil.com/ontology/pwm# |
+| Shapes | https://ahmedmuzammil.com/ontology/pwm/shapes (`pwm-shapes.ttl`) |
+| Licence | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
+| Author | Ahmed Muzammil |
+| Web page | https://ahmedmuzammil.com/ontology/pwm |
+
+## Abstract
+
+A generic ontology for private banking and wealth management. It models parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, client interactions, and the governance of AI that acts on them: use cases, agents, delegated authority, claims and evidence. Business concepts reuse or specialise the Financial Industry Business Ontology (FIBO) and the OMG Commons library. Governance concepts follow the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) and the Kognita roadmap. Every term cites the references it is grounded in. Institution-specific detail belongs in an extension that imports this ontology.
+
+## Status
+
+Draft for comment. Version 0.1 is the first public draft. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
+
+Size: 126 classes, 102 object properties, 44 datatype properties, 37 code lists with 188 codes, 28 data rules, 46 references and 454 citations. 37 FIBO terms are specialised or mapped.
+
+## Scope
+
+In scope:
+
+- Parties, roles and the client relationship, including trusts, foundations and other legal arrangements
+- Due diligence, risk rating, source of wealth and funds, screening and tax residency
+- Investor classification, risk profile, knowledge and experience, suitability and appropriateness
+- Mandates, investment restrictions and fees
+- Accounts, portfolios, holdings and valuations
+- The product shelf, product risk, target market, cross-border rules, offering documents and the house view
+- The client journey: origination, recommendation, final decision and client communication
+- AI governance: the use-case inventory, risk materiality, accountability, agents, tools, delegated authority and autonomy
+- Information governance, facts and claims, policy decisions and hash-chained evidence
+
+Not in 0.1:
+
+- Orders, execution and the trade lifecycle; corporate actions
+- Performance and attribution methods (only the provenance of figures is modelled)
+- Tax reporting detail (CRS and FATCA reporting records), lending beyond the Lombard facility
+- Sustainability preferences in suitability (planned for 0.2)
+- Any institution's thresholds, scales, product shelf or internal names: these belong in an extension
+
+## Design principles
+
+1. **Reuse before inventing.** Business terms specialise or map to FIBO first (Release before Provisional), then OMG Commons, W3C PROV-O and DPV. A term is defined here only when none fits, and it is marked NEW.
+2. **Declare, don't import.** External terms are declared with their label, source and FIBO maturity instead of importing whole ontologies, so the file loads on its own. Specialisation uses rdfs:subClassOf; looser alignment uses SKOS exact, close and related matches.
+3. **Every term cites its grounds.** Each class, property and code list carries at least one citation with a locator: an article, paragraph, roadmap item or slide. The reference register records how each source was checked.
+4. **Logic in OWL, codes in SKOS, rules in SHACL.** The ontology stays within OWL 2 DL with light axioms that an extension can build on. Code lists are SKOS concept schemes. Data rules are SHACL shapes kept in a separate file.
+5. **Context speed and classification.** Each class states how fast its facts change and the data classification it carries by default. Fast facts, such as positions and prices, are looked up live and are never cached or embedded for AI.
+6. **Accountability stays with people.** Accountability roles are played by named people. A shape rejects any record that names an AI agent in one.
+7. **Generic core, firm extension.** No institution's data, thresholds or names appear here. A firm adds them in its own ontology that imports PWM.
+
+## How references are marked
+
+Every term lists its citations. Each citation carries a mark for the kind of source, the source, and a locator inside it.
+
+| Mark | Source type | Meaning |
+|---|---|---|
+| **ONT** | standard ontology | Published ontology reused or specialised: FIBO, OMG Commons, W3C PROV-O, DPV. |
+| **ISO** | technical standard | ISO or ISO/IEC standard, used for identifiers, code formats and terminology. |
+| **REG** | regulation or supervisory guidance | Law, regulation, supervisory guideline, notice or international standard-setter recommendation. |
+| **KOG** | Kognita | Kognita roadmap, regulations library (control-frameworks.md), controlled vocabularies or policy packs. |
+| **AM** | author framework | EVOLVE framework, essays and talks by Ahmed Muzammil. |
+| **NEW** | practitioner definition | Defined in this ontology because no published standard term was found at the versions checked. |
+
+Each reference in the register has a verification status. **verified**: checked against the source file, official text or regulator page while drafting this version. **instrument-level**: cited from the published instrument; article and paragraph numbers are to be re-checked before formal use.
+
+FIBO terms show their maturity, Release or Provisional, as read from the FIBO file that defines them.
+
+Classes carry a context speed:
+
+- **slow**: Changes over weeks or months, such as policies, definitions and the house view. Curated, versioned and owned; safe to cache with an effective date.
+- **medium**: Changes over days or weeks, such as client profile, KYC status and mandate. Synchronised from the system of record and cached with an explicit as-of time.
+- **fast**: Changes in seconds or minutes, such as positions, prices, cash and orders. Looked up live from the system of record; never cached or embedded for AI.
+
+## Modules
+
+| # | Module | Covers | Classes | Properties | Code lists |
+|---|---|---|---|---|---|
+| 0 | [Core patterns](#ModuleCore) | Assessments, validity periods and supersession: the patterns every other module reuses. | 1 | 7 | 0 |
+| 1 | [Parties, roles and relationships](#ModuleParties) | Clients, related parties, legal arrangements, providers and the relationship that binds them. | 30 | 15 | 2 |
+| 2 | [Due diligence, financial crime and tax](#ModuleCompliance) | Customer due diligence, risk rating, source of wealth, screening and tax residency. | 8 | 4 | 2 |
+| 3 | [Investor profile and suitability](#ModuleSuitability) | Regulatory investor classification, risk profile, knowledge and experience, and suitability and appropriateness. | 9 | 10 | 4 |
+| 4 | [Mandates, restrictions and fees](#ModuleMandates) | The service model agreed with the client, its investment restrictions and its charges. | 11 | 7 | 1 |
+| 5 | [Accounts, portfolios and holdings](#ModuleAccounts) | Where assets are held, what is held, and how it is valued. | 11 | 9 | 1 |
+| 6 | [Products, distribution and research](#ModuleProducts) | The product shelf, product risk and target market, cross-border distribution rules, offering documents and the house view. | 9 | 11 | 2 |
+| 7 | [Interactions, advice and communication](#ModuleInteractions) | Why a client was approached, what was recommended, who decided, and what reached the client. | 9 | 16 | 6 |
+| 8 | [AI use cases, authority and accountability](#ModuleGovernance) | The AI inventory, risk materiality, agents, delegated authority, autonomy and the people accountable for them. | 24 | 40 | 11 |
+| 9 | [Information governance, claims and evidence](#ModuleEvidence) | Governed documents and definitions, facts and claims, policy decisions and the evidence that reconstructs them. | 14 | 27 | 8 |
+
+<a id="ModuleCore"></a>
+
+## Module 0: Core patterns
+
+Assessments, validity periods and supersession: the patterns every other module reuses.
+
+### Classes
+
+<a id="Assessment"></a>
+#### assessment (`pwm:Assessment`)
+
+Dated, attributable record of an evaluation of a party, product, portfolio or AI use case, valid for a period and replaceable by a later assessment.
+
+*Note:* Due diligence, investor classification, risk profile, suitability, product risk rating and AI risk materiality are all assessments. Who assessed it is recorded with prov:wasAttributedTo; when, with prov:generatedAtTime.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context
+- **Properties:** [`assesses`](#assesses)
+- **References:** **ONT** [PROV-O](#ref-W3C-PROV-O) prov:Entity, prov:wasAttributedTo, prov:generatedAtTime; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Shared pattern for dated evaluations
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="assesses"></a>`pwm:assesses` assesses | [assessment](#Assessment) → any | Thing an assessment evaluates. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Core pattern |
+| <a id="supersedes"></a>`pwm:supersedes` supersedes | any → any | Earlier version that this record, rule or document replaces. The earlier version stays readable for reconstruction but may no longer be used. Close match: [Replaces](http://purl.org/dc/terms/replaces) (DCMI). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 4: house-view change propagation; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: what it supersedes, as a minimum label |
+| <a id="approvedBy"></a>`pwm:approvedBy` approved by | any → [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons) | Role whose holder approved this record. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.13: control function approves materiality; 5.21: approval body |
+| <a id="validFrom"></a>`pwm:validFrom` valid from | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Start of the period in which a record, rule or document is in force. Close match: [Date Valid](http://purl.org/dc/terms/valid) (DCMI). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.3: policy rows effective-dated; 0.6 item 8: standards are effective-dated; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: effective date as a minimum label |
+| <a id="validUntil"></a>`pwm:validUntil` valid until | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | End of the period in which a record, rule or document is in force. Absent while it remains in force. Close match: [Date Valid](http://purl.org/dc/terms/valid) (DCMI). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: created, effective, superseded and expiry dates |
+| <a id="nextReviewDate"></a>`pwm:nextReviewDate` next review date | any → [date](http://www.w3.org/2001/XMLSchema#date) (XSD) | Date by which a record must be reviewed. Past this date the record is treated as expired. | **REG** [FATF Recommendations](#ref-FATF) R.10: ongoing due diligence; **REG** [MAS AIRG](#ref-MAS-AIRG) 4.11, 4.13: assessments regularly reviewed; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: past its review date, a use case is a DENY |
+| <a id="rationale"></a>`pwm:rationale` rationale | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Reasons for an assessment or decision, stated as facts and evidence rather than as a bare score. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 10: reasons, not scores |
+
+<a id="ModuleParties"></a>
+
+## Module 1: Parties, roles and relationships
+
+Clients, related parties, legal arrangements, providers and the relationship that binds them.
+
+### Classes
+
+<a id="Client"></a>
+#### client (`pwm:Client`)
+
+Role of a party that has, or is establishing, a business relationship with a wealth manager to receive investment, banking, advisory or fiduciary services.
+
+- **Specialises:** [client](https://spec.edmcouncil.org/fibo/ontology/FND/ProductsAndServices/ProductsAndServices/Client) (FIBO, Release)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`inGroup`](#inGroup)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.10: customer subject to due diligence
+
+<a id="IndividualClient"></a>
+#### individual client (`pwm:IndividualClient`)
+
+Client role played by a natural person.
+
+- **Specialises:** [client](#Client)
+- **Restriction:** [is played by](https://www.omg.org/spec/Commons/RolesAndCompositions/isPlayedBy) (OMG Commons) some [person](https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person) (FIBO, Release)
+- **Handling:** default classification C2
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.10
+
+<a id="EntityClient"></a>
+#### entity client (`pwm:EntityClient`)
+
+Client role played by a legal person or a legal arrangement, such as a company, foundation or trust.
+
+- **Specialises:** [client](#Client)
+- **Handling:** default classification C2
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.10, R.24, R.25
+
+<a id="Prospect"></a>
+#### prospect (`pwm:Prospect`)
+
+Role of a party a wealth manager is considering or approaching before any business relationship exists.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **Handling:** default classification C2
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 11: prospect scoring in fairness reporting; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Pre-relationship role
+
+<a id="ClientRelationship"></a>
+#### client relationship (`pwm:ClientRelationship`)
+
+Business relationship between a wealth manager and one or more clients, booked in a booking centre and covered by named relationship managers for a period.
+
+- **Specialises:** [situation](https://www.omg.org/spec/Commons/PartiesAndSituations/Situation) (OMG Commons)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`hasClient`](#hasClient), [`hasProvider`](#hasProvider)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.10: business relationship; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre, relationship-manager
+
+<a id="RelationshipGroup"></a>
+#### relationship group (`pwm:RelationshipGroup`)
+
+Set of related clients, such as a family, its holding structures and its trusts, managed and reported together.
+
+- **Also called:** family group, household
+- **Handling:** medium context, default classification C2
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Household and family-group view used in private banking
+
+<a id="RelationshipManager"></a>
+#### relationship manager (`pwm:RelationshipManager`)
+
+Person responsible for a client relationship on behalf of the wealth manager.
+
+- **Specialises:** [relationship manager](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/RelationshipManager) (FIBO, Release)
+- **Exact match:** [relationship manager](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/RelationshipManager) (FIBO, Release)
+- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) relationship-manager (acting principal equals the named RM); rm-location
+
+<a id="CoverageAssignment"></a>
+#### coverage assignment (`pwm:CoverageAssignment`)
+
+Assignment of a relationship manager or specialist to a client relationship, in a stated coverage role, for a period.
+
+- **Specialises:** [situation](https://www.omg.org/spec/Commons/PartiesAndSituations/Situation) (OMG Commons)
+- **Handling:** medium context
+- **Properties:** [`assignedRelationshipManager`](#assignedRelationshipManager), [`coversRelationship`](#coversRelationship), [`coverageRole`](#coverageRole)
+- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) relationship-manager; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Primary and secondary coverage
+
+<a id="InvestmentAdviser"></a>
+#### investment adviser (`pwm:InvestmentAdviser`)
+
+Role of a person who gives investment advice to clients under the wealth manager's licence or registration.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 4(1)(4): investment advice; **REG** [MAS FAA-N16](#ref-MAS-FAA-N16) Recommendations on investment products
+
+<a id="ExternalAssetManager"></a>
+#### external asset manager (`pwm:ExternalAssetManager`)
+
+Independent firm that manages a client's assets booked with the wealth manager, acting under a limited power of attorney granted by the client.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **Also called:** independent asset manager
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Intermediated private banking model
+
+<a id="AuthorisedSignatory"></a>
+#### authorised signatory (`pwm:AuthorisedSignatory`)
+
+Person authorised to give instructions on an account or for an entity client, within stated signing rules.
+
+- **Specialises:** [authorized individual](https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/Executives/AuthorizedIndividual) (FIBO, Release)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Account mandate and signing authority
+
+<a id="PowerOfAttorneyHolder"></a>
+#### power of attorney holder (`pwm:PowerOfAttorneyHolder`)
+
+Party authorised by a client, under a power of attorney, to act for the client within the scope that instrument grants.
+
+- **Specialises:** [authorized individual](https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/Executives/AuthorizedIndividual) (FIBO, Release)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) General and limited powers of attorney
+
+<a id="BeneficialOwner"></a>
+#### beneficial owner (`pwm:BeneficialOwner`)
+
+Natural person who ultimately owns or controls a client, or on whose behalf a transaction is conducted, including those exercising ultimate effective control over a legal person or arrangement.
+
+- **Specialises:** [beneficial owner](https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateOwnership/BeneficialOwner) (FIBO, Release)
+- **Handling:** default classification C2
+- **References:** **REG** [FATF Recommendations](#ref-FATF) Glossary: beneficial owner; R.24; R.25; **REG** [MAS Notice 626](#ref-MAS-626) Customer due diligence on beneficial owners
+
+<a id="ControllingPerson"></a>
+#### controlling person (`pwm:ControllingPerson`)
+
+Natural person who exercises control over an entity account holder for tax-reporting purposes; for a trust, the settlor, trustees, protector, beneficiaries and anyone with ultimate effective control.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **Close match:** [beneficial owner](#BeneficialOwner)
+- **Handling:** default classification C2
+- **References:** **REG** [OECD CRS](#ref-OECD-CRS) Section VIII(D)(6)
+
+<a id="PoliticallyExposedPerson"></a>
+#### politically exposed person (`pwm:PoliticallyExposedPerson`)
+
+Role of a person who is or has been entrusted with a prominent public function, or is a family member or close associate of such a person, attracting enhanced due diligence.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **Also called:** PEP
+- **Handling:** default classification C3
+- **Properties:** [`pepCategory`](#pepCategory)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.12; Glossary: politically exposed persons; **REG** [MAS Notice 626](#ref-MAS-626) Politically exposed persons
+
+<a id="ConnectedParty"></a>
+#### connected party (`pwm:ConnectedParty`)
+
+Party linked to a client by family, business or control, recorded for due diligence and conflict checks.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **Handling:** default classification C2
+- **Properties:** [`connectedTo`](#connectedTo)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.12: family members and close associates
+
+<a id="LegalArrangement"></a>
+#### legal arrangement (`pwm:LegalArrangement`)
+
+Express trust or similar arrangement through which assets are held and controlled, treated as a party to the relationship.
+
+- **Specialises:** [party](https://www.omg.org/spec/Commons/PartiesAndSituations/Party) (OMG Commons)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.25; Glossary: legal arrangements
+
+<a id="Trust"></a>
+#### trust (`pwm:Trust`)
+
+Arrangement in which a settlor places assets under the control of a trustee for the benefit of beneficiaries.
+
+- **Specialises:** [legal arrangement](#LegalArrangement), [trust](https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/Trust) (FIBO, Release)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.25
+
+<a id="Settlor"></a>
+#### settlor (`pwm:Settlor`)
+
+Party that establishes a trust and places assets into it.
+
+- **Specialises:** [trustor](https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/Trustor) (FIBO, Release)
+- **Exact match:** [trustor](https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/Trustor) (FIBO, Release)
+- **Also called:** trustor
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.25; **REG** [OECD CRS](#ref-OECD-CRS) Section VIII(D)(6)
+
+<a id="Trustee"></a>
+#### trustee (`pwm:Trustee`)
+
+Party that holds and manages trust assets for the beneficiaries.
+
+- **Specialises:** [trustee](https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/Trustee) (FIBO, Release)
+- **Exact match:** [trustee](https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/Trustee) (FIBO, Release)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.25
+
+<a id="TrustBeneficiary"></a>
+#### trust beneficiary (`pwm:TrustBeneficiary`)
+
+Party, or class of parties, for whose benefit a trust holds assets.
+
+- **Specialises:** [trust beneficiary](https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/TrustBeneficiary) (FIBO, Release)
+- **Exact match:** [trust beneficiary](https://spec.edmcouncil.org/fibo/ontology/BE/Trusts/Trusts/TrustBeneficiary) (FIBO, Release)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.25
+
+<a id="Protector"></a>
+#### protector (`pwm:Protector`)
+
+Party appointed under a trust instrument to oversee the trustee, often with powers of consent or removal.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.25; **REG** [OECD CRS](#ref-OECD-CRS) Section VIII(D)(6)
+
+<a id="Foundation"></a>
+#### private foundation (`pwm:Foundation`)
+
+Legal person, without shareholders, established to hold and administer assets for stated purposes or beneficiaries.
+
+- **Specialises:** [legal entity](https://www.omg.org/spec/Commons/Organizations/LegalEntity) (OMG Commons)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.24: legal persons; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) No FIBO class for foundations at the version checked
+
+<a id="PrivateInvestmentCompany"></a>
+#### private investment company (`pwm:PrivateInvestmentCompany`)
+
+Company formed to hold the investments of an individual or family, usually with no operating business.
+
+- **Specialises:** [legal entity](https://www.omg.org/spec/Commons/Organizations/LegalEntity) (OMG Commons)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.24; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Personal holding structure
+
+<a id="FamilyOffice"></a>
+#### family office (`pwm:FamilyOffice`)
+
+Organisation that administers and manages the affairs and wealth of one or more families.
+
+- **Specialises:** [family office](https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/FunctionalEntities/FamilyOffice) (FIBO, Release)
+- **Exact match:** [family office](https://spec.edmcouncil.org/fibo/ontology/BE/FunctionalEntities/FunctionalEntities/FamilyOffice) (FIBO, Release)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Client or intermediary
+
+<a id="WealthManager"></a>
+#### wealth manager (`pwm:WealthManager`)
+
+Financial service provider that delivers wealth management services: advice, portfolio management, custody, lending and planning.
+
+- **Specialises:** [financial service provider](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/FinancialProductsAndServices/FinancialServiceProvider) (FIBO, Release)
+- **References:** **ISO** [ISO 22222](#ref-ISO-22222) Scope of personal financial planning
+
+<a id="PrivateBank"></a>
+#### private bank (`pwm:PrivateBank`)
+
+Bank that delivers wealth management services to high-net-worth clients.
+
+- **Specialises:** [bank](https://spec.edmcouncil.org/fibo/ontology/FBC/FunctionalEntities/FinancialServicesEntities/Bank) (FIBO, Release), [wealth manager](#WealthManager)
+- **References:** **REG** [Banking Act (SG)](#ref-SG-BANKING-ACT) s47: customer information may be disclosed only as the Act provides
+
+<a id="WealthManagementService"></a>
+#### wealth management service (`pwm:WealthManagementService`)
+
+Service combining investment advice or portfolio management with planning, custody, credit and estate services for a client.
+
+- **Specialises:** [wealth management service](https://spec.edmcouncil.org/fibo/ontology/FBC/FunctionalEntities/FinancialServicesEntities/WealthManagementService) (FIBO, Release)
+- **Exact match:** [wealth management service](https://spec.edmcouncil.org/fibo/ontology/FBC/FunctionalEntities/FinancialServicesEntities/WealthManagementService) (FIBO, Release)
+- **References:** **ISO** [ISO 22222](#ref-ISO-22222) Personal financial planning process
+
+<a id="BookingCentre"></a>
+#### booking centre (`pwm:BookingCentre`)
+
+Role of a legal entity or branch of a wealth manager in which client accounts, contracts and assets are booked, and whose jurisdiction's rules apply to them.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **Handling:** slow context
+- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre: recognised booking centres; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Booking model
+
+<a id="Custodian"></a>
+#### custodian (`pwm:Custodian`)
+
+Financial institution that holds clients' securities for safekeeping.
+
+- **Specialises:** [custodian](https://spec.edmcouncil.org/fibo/ontology/SEC/Equities/EquityInstruments/Custodian) (FIBO, Release)
+- **Exact match:** [custodian](https://spec.edmcouncil.org/fibo/ontology/SEC/Equities/EquityInstruments/Custodian) (FIBO, Release)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Custody chain
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="hasClient"></a>`pwm:hasClient` has client | [client relationship](#ClientRelationship) → [client](#Client) | Client in a client relationship. | **REG** [FATF Recommendations](#ref-FATF) R.10 |
+| <a id="hasProvider"></a>`pwm:hasProvider` has provider | [client relationship](#ClientRelationship) → [wealth manager](#WealthManager) | Wealth manager in a client relationship. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Relationship pattern |
+| <a id="isBookedAt"></a>`pwm:isBookedAt` is booked at | any → [booking centre](#BookingCentre) | Booking centre in which a relationship, account or contract is booked. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre |
+| <a id="inGroup"></a>`pwm:inGroup` in group | [client](#Client) → [relationship group](#RelationshipGroup) | Relationship group a client belongs to. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Household view |
+| <a id="assignedRelationshipManager"></a>`pwm:assignedRelationshipManager` assigned relationship manager | [coverage assignment](#CoverageAssignment) → [relationship manager](#RelationshipManager) | Relationship manager named in a coverage assignment. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) relationship-manager |
+| <a id="coversRelationship"></a>`pwm:coversRelationship` covers relationship | [coverage assignment](#CoverageAssignment) → [client relationship](#ClientRelationship) | Client relationship that a coverage assignment covers. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) relationship-manager |
+| <a id="coverageRole"></a>`pwm:coverageRole` coverage role | [coverage assignment](#CoverageAssignment) → [coverage roles](#CoverageRoleScheme) | Role of the assignee in a coverage assignment: primary, secondary or specialist. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Coverage model |
+| <a id="hasBeneficialOwner"></a>`pwm:hasBeneficialOwner` has beneficial owner | any → [beneficial owner](#BeneficialOwner) | Beneficial owner of a client, entity or account. Close match: [has beneficial owner](https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateOwnership/hasBeneficialOwner) (FIBO, Release). | **REG** [FATF Recommendations](#ref-FATF) R.10, R.24, R.25 |
+| <a id="pepCategory"></a>`pwm:pepCategory` PEP category | [politically exposed person](#PoliticallyExposedPerson) → [politically exposed person categories](#PEPCategoryScheme) | Kind of politically exposed person. | **REG** [FATF Recommendations](#ref-FATF) R.12 |
+| <a id="connectedTo"></a>`pwm:connectedTo` connected to | [connected party](#ConnectedParty) → any | Client or party that a connected party is linked to. | **REG** [FATF Recommendations](#ref-FATF) R.12 |
+| <a id="residenceCountry"></a>`pwm:residenceCountry` residence country | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Country where a natural person resides, as an ISO 3166-1 alpha-2 code. | **ISO** [ISO 3166](#ref-ISO-3166) Alpha-2 codes; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-domicile |
+| <a id="domicileCountry"></a>`pwm:domicileCountry` domicile country | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Country of a party's domicile, as an ISO 3166-1 alpha-2 code. Drives cross-border rules. Close match: [is domiciled in](https://www.omg.org/spec/Commons/Organizations/isDomiciledIn) (OMG Commons). | **ISO** [ISO 3166](#ref-ISO-3166) Alpha-2 codes; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-domicile: recognised domiciles |
+| <a id="nationalityCountry"></a>`pwm:nationalityCountry` nationality country | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Country of a natural person's nationality, as an ISO 3166-1 alpha-2 code. | **ISO** [ISO 3166](#ref-ISO-3166) Alpha-2 codes |
+| <a id="jurisdictionCode"></a>`pwm:jurisdictionCode` jurisdiction code | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Jurisdiction of a booking centre, rule or use case, as an ISO 3166-1 alpha-2 code. Close match: [has jurisdiction](https://www.omg.org/spec/Commons/RegulatoryAgencies/hasJurisdiction) (OMG Commons). | **ISO** [ISO 3166](#ref-ISO-3166) Alpha-2 codes; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre, rm-location |
+| <a id="legalEntityIdentifier"></a>`pwm:legalEntityIdentifier` legal entity identifier | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Twenty-character ISO 17442 identifier of a legal entity. Close match: [legal entity identifier](https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LEIEntities/LegalEntityIdentifier) (FIBO, Release). | **ISO** [ISO 17442](#ref-ISO-17442) LEI code structure |
+
+### Code lists
+
+<a id="CoverageRoleScheme"></a>
+#### coverage roles (`pwm:CoverageRoleScheme`)
+
+
+
+Used by: [`coverageRole`](#coverageRole)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Coverage model
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="CoveragePrimary"></a>primary (`pwm:CoveragePrimary`) | Lead relationship manager, accountable for the relationship. |
+|  | <a id="CoverageSecondary"></a>secondary (`pwm:CoverageSecondary`) | Backup relationship manager. |
+|  | <a id="CoverageSpecialist"></a>specialist (`pwm:CoverageSpecialist`) | Product, credit, investment or planning specialist supporting the relationship. |
+
+<a id="PEPCategoryScheme"></a>
+#### politically exposed person categories (`pwm:PEPCategoryScheme`)
+
+
+
+Used by: [`pepCategory`](#pepCategory)
+
+References: **REG** [FATF Recommendations](#ref-FATF) R.12; Glossary
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="ForeignPEP"></a>foreign PEP (`pwm:ForeignPEP`) | Entrusted with a prominent public function by a foreign country. |
+|  | <a id="DomesticPEP"></a>domestic PEP (`pwm:DomesticPEP`) | Entrusted domestically with a prominent public function. |
+|  | <a id="InternationalOrganisationPEP"></a>international organisation PEP (`pwm:InternationalOrganisationPEP`) | Entrusted with a prominent function by an international organisation. |
+|  | <a id="PEPFamilyMember"></a>family member of a PEP (`pwm:PEPFamilyMember`) | Related to a PEP by blood or marriage. |
+|  | <a id="PEPCloseAssociate"></a>close associate of a PEP (`pwm:PEPCloseAssociate`) | Closely connected to a PEP, socially or professionally. |
+
+<a id="ModuleCompliance"></a>
+
+## Module 2: Due diligence, financial crime and tax
+
+Customer due diligence, risk rating, source of wealth, screening and tax residency.
+
+### Classes
+
+<a id="CustomerDueDiligence"></a>
+#### customer due diligence (`pwm:CustomerDueDiligence`)
+
+Assessment that identifies and verifies a client and its beneficial owners, and establishes the purpose and intended nature of the relationship.
+
+- **Specialises:** [assessment](#Assessment)
+- **Also called:** CDD, KYC
+- **Handling:** medium context, default classification C2
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.10; **REG** [MAS Notice 626](#ref-MAS-626) Customer due diligence; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) kyc-onboarding: prepared by the agent, approved by a person
+
+<a id="EnhancedDueDiligence"></a>
+#### enhanced due diligence (`pwm:EnhancedDueDiligence`)
+
+Customer due diligence with additional measures, applied where the client presents higher risk, such as a politically exposed person.
+
+- **Specialises:** [customer due diligence](#CustomerDueDiligence)
+- **Also called:** EDD
+- **Handling:** default classification C3
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.10, R.12; **REG** [MAS Notice 626](#ref-MAS-626) Enhanced customer due diligence
+
+<a id="PeriodicReview"></a>
+#### periodic review (`pwm:PeriodicReview`)
+
+Scheduled re-assessment of a client's due diligence, at a frequency set by the client's risk rating, or earlier on a trigger event.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** default classification C2
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.10: ongoing due diligence
+
+<a id="CustomerRiskRating"></a>
+#### customer risk rating (`pwm:CustomerRiskRating`)
+
+Assessment of the money-laundering and terrorist-financing risk a client presents, which sets due diligence depth and review frequency.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** default classification C3
+- **Properties:** [`amlRiskLevel`](#amlRiskLevel)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.1: risk-based approach; R.10; **REG** [MAS Notice 626](#ref-MAS-626) Risk assessment
+
+<a id="SourceOfWealthAssessment"></a>
+#### source of wealth assessment (`pwm:SourceOfWealthAssessment`)
+
+Assessment of how a client accumulated their total wealth, with the evidence relied on.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** default classification C3
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.12: establish the source of wealth; **REG** [MAS Notice 626](#ref-MAS-626) Source of wealth
+
+<a id="SourceOfFundsAssessment"></a>
+#### source of funds assessment (`pwm:SourceOfFundsAssessment`)
+
+Assessment of where specific funds or assets entering the relationship come from.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** default classification C3
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.12: establish the source of funds; **REG** [MAS Notice 626](#ref-MAS-626) Source of funds
+
+<a id="ScreeningResult"></a>
+#### screening result (`pwm:ScreeningResult`)
+
+Outcome of screening a party against sanctions, politically exposed person and adverse-media sources, with its disposition.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** default classification C3
+- **Properties:** [`screeningDisposition`](#screeningDisposition)
+- **References:** **REG** [FATF Recommendations](#ref-FATF) R.6, R.7: targeted financial sanctions; R.12
+
+<a id="TaxResidencySelfCertification"></a>
+#### tax residency self-certification (`pwm:TaxResidencySelfCertification`)
+
+Client's declaration of tax residence countries and taxpayer identification numbers, collected at account opening and on change of circumstances.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** default classification C2
+- **Properties:** [`taxResidenceCountry`](#taxResidenceCountry), [`hasTaxIdentifier`](#hasTaxIdentifier)
+- **References:** **REG** [OECD CRS](#ref-OECD-CRS) Sections IV and VI: self-certification for new accounts; Section VIII: definitions
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="amlRiskLevel"></a>`pwm:amlRiskLevel` AML risk level | [customer risk rating](#CustomerRiskRating) → [AML risk levels](#AMLRiskLevelScheme) | Level of a customer risk rating. | **REG** [FATF Recommendations](#ref-FATF) R.1 |
+| <a id="screeningDisposition"></a>`pwm:screeningDisposition` screening disposition | [screening result](#ScreeningResult) → [screening dispositions](#ScreeningDispositionScheme) | How a screening alert was resolved. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Alert disposition |
+| <a id="hasTaxIdentifier"></a>`pwm:hasTaxIdentifier` has tax identifier | [tax residency self-certification](#TaxResidencySelfCertification) → [tax identifier](https://spec.edmcouncil.org/fibo/ontology/FND/Parties/Parties/TaxIdentifier) (FIBO, Release) | Taxpayer identification number declared in a self-certification. | **REG** [OECD CRS](#ref-OECD-CRS) Section VIII: TIN |
+| <a id="taxResidenceCountry"></a>`pwm:taxResidenceCountry` tax residence country | [tax residency self-certification](#TaxResidencySelfCertification) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Country of tax residence declared in a self-certification, as an ISO 3166-1 alpha-2 code. | **ISO** [ISO 3166](#ref-ISO-3166) Alpha-2 codes; **REG** [OECD CRS](#ref-OECD-CRS) Section VIII |
+
+### Code lists
+
+<a id="AMLRiskLevelScheme"></a>
+#### AML risk levels (`pwm:AMLRiskLevelScheme`)
+
+
+
+Used by: [`amlRiskLevel`](#amlRiskLevel)
+
+References: **REG** [FATF Recommendations](#ref-FATF) R.1, R.10
+
+| Code | Concept | Definition |
+|---|---|---|
+| L | <a id="AMLLow"></a>low (`pwm:AMLLow`) | Simplified measures may apply where permitted. |
+| M | <a id="AMLMedium"></a>medium (`pwm:AMLMedium`) | Standard due diligence. |
+| H | <a id="AMLHigh"></a>high (`pwm:AMLHigh`) | Enhanced due diligence and senior approval. |
+| X | <a id="AMLOutsideAppetite"></a>outside risk appetite (`pwm:AMLOutsideAppetite`) | Relationship declined or exited. |
+
+<a id="ScreeningDispositionScheme"></a>
+#### screening dispositions (`pwm:ScreeningDispositionScheme`)
+
+
+
+Used by: [`screeningDisposition`](#screeningDisposition)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Alert disposition
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="ScreeningPending"></a>pending review (`pwm:ScreeningPending`) | Alert raised, not yet reviewed. |
+|  | <a id="ScreeningFalsePositive"></a>false positive (`pwm:ScreeningFalsePositive`) | Reviewed; not the listed party. |
+|  | <a id="ScreeningTrueMatch"></a>true match (`pwm:ScreeningTrueMatch`) | Reviewed; confirmed as the listed party. |
+|  | <a id="ScreeningEscalated"></a>escalated (`pwm:ScreeningEscalated`) | Referred to compliance for decision. |
+
+<a id="ModuleSuitability"></a>
+
+## Module 3: Investor profile and suitability
+
+Regulatory investor classification, risk profile, knowledge and experience, and suitability and appropriateness.
+
+### Classes
+
+<a id="InvestorClassification"></a>
+#### investor classification (`pwm:InvestorClassification`)
+
+Regulatory categorisation of a client under one jurisdiction's rules, such as retail, professional or accredited, with any opt-in or opt-out recorded.
+
+- **Specialises:** [assessment](#Assessment)
+- **Related match:** [qualified investor restriction](https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesRestrictions/QualifiedInvestorRestriction) (FIBO, Release)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`investorCategory`](#investorCategory), [`optStatus`](#optStatus)
+- **References:** **REG** [FinSA](#ref-CH-FINSA) Art. 4 (client segmentation), Art. 5 (opting out and opting in); **REG** [MiFID II](#ref-EU-MIFID2) Annex II (professional clients); Art. 30 (eligible counterparties); **REG** [HK Professional Investor Rules](#ref-HK-PI-RULES) Professional investor tests; **REG** [SFC Code of Conduct](#ref-HK-SFC-COC) para 15; **REG** [Securities and Futures Act (SG)](#ref-SG-SFA) s4A; opt-in regime for accredited investors; **REG** [FCA COBS](#ref-UK-FCA-COBS) COBS 3; **REG** [SEC Regulation D](#ref-US-REG-D) Rule 501(a)
+
+<a id="InvestorRiskProfile"></a>
+#### investor risk profile (`pwm:InvestorRiskProfile`)
+
+Versioned assessment of a client's risk tolerance, capacity for loss and investment horizon, expressed on the wealth manager's risk scale.
+
+*Note:* Each change produces a new version that supersedes the last. A suitability assessment cites the version in force at the time.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`riskProfileLevel`](#riskProfileLevel)
+- **References:** **ISO** [ISO 22222](#ref-ISO-22222) Gathering client information; **REG** [FinSA](#ref-CH-FINSA) Art. 10 to 14; **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(2): investment objectives including risk tolerance; **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 54; **REG** [SFC Code of Conduct](#ref-HK-SFC-COC) para 5.2; **REG** [MAS FAA-N16](#ref-MAS-FAA-N16) Know-your-customer information
+
+<a id="KnowledgeAndExperienceAssessment"></a>
+#### knowledge and experience assessment (`pwm:KnowledgeAndExperienceAssessment`)
+
+Assessment of whether a client understands the risks of a type of product or service, from education, work and past investments.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** default classification C2
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(2), 25(3); **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 55; **REG** [MAS FAA-N16](#ref-MAS-FAA-N16) Assessment of customer knowledge and experience for specified investment products; **REG** [MAS SFA 04-N12](#ref-MAS-SFA04-N12) Assessment of customer knowledge and experience for specified investment products
+
+<a id="FinancialSituationAssessment"></a>
+#### financial situation assessment (`pwm:FinancialSituationAssessment`)
+
+Assessment of a client's income, assets, liabilities and liquidity needs, including the ability to bear losses.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** default classification C2
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(2): financial situation including ability to bear losses; **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 54
+
+<a id="InvestmentObjective"></a>
+#### investment objective (`pwm:InvestmentObjective`)
+
+Financial objective a client states for their investments, used to judge whether an investment is appropriate for them.
+
+- **Specialises:** [investment objective](https://spec.edmcouncil.org/fibo/ontology/FND/GoalsAndObjectives/Objectives/InvestmentObjective) (FIBO, Release)
+- **Exact match:** [investment objective](https://spec.edmcouncil.org/fibo/ontology/FND/GoalsAndObjectives/Objectives/InvestmentObjective) (FIBO, Release)
+- **Handling:** default classification C2
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(2)
+
+<a id="SuitabilityAssessment"></a>
+#### suitability assessment (`pwm:SuitabilityAssessment`)
+
+Determination, before a recommendation or a discretionary decision, that a product or transaction fits the client's objectives, financial situation, and knowledge and experience, within the mandate.
+
+*Note:* Origination records why a client or product was proposed. Suitability records why it was permitted. Keep them separate.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`assessesRecommendation`](#assessesRecommendation), [`usesRiskProfile`](#usesRiskProfile), [`usesMandate`](#usesMandate), [`usesProductRiskRating`](#usesProductRiskRating)
+- **References:** **REG** [FinSA](#ref-CH-FINSA) Art. 10 to 14; **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(2); **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 54; **REG** [SFC Code of Conduct](#ref-HK-SFC-COC) para 5.2; **REG** [MAS FAA-N16](#ref-MAS-FAA-N16) Know-your-customer and suitability of recommendations; **REG** [SEC Regulation Best Interest](#ref-US-REG-BI) Care obligation; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) suitability: the pack requires the flag and does not compute suitability; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 10: origination says why proposed; suitability says why permitted
+
+<a id="AppropriatenessAssessment"></a>
+#### appropriateness assessment (`pwm:AppropriatenessAssessment`)
+
+Check, for services without advice, that a client has the knowledge and experience to understand the risks of the product.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** default classification C2
+- **References:** **REG** [FinSA](#ref-CH-FINSA) Art. 10 to 14; **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(3); **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 56; **REG** [FCA COBS](#ref-UK-FCA-COBS) COBS 10A
+
+<a id="SuitabilityReport"></a>
+#### suitability report (`pwm:SuitabilityReport`)
+
+Statement given to the client explaining how advice meets their preferences, objectives and other characteristics.
+
+- **Specialises:** [document](https://www.omg.org/spec/Commons/Documents/Document) (OMG Commons)
+- **Handling:** default classification C2
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(6); **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) suitability-report: a draft from a meeting transcript needs a person before use
+
+<a id="ClientAcknowledgement"></a>
+#### client acknowledgement (`pwm:ClientAcknowledgement`)
+
+Record that a client received, read or accepted a disclosure, risk warning or document, and when.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** default classification C2
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Evidence of disclosure
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="investorCategory"></a>`pwm:investorCategory` investor category | [investor classification](#InvestorClassification) → [investor categories](#InvestorCategoryScheme) | Category assigned by an investor classification. | **REG** [FinSA](#ref-CH-FINSA) Art. 4; **REG** [Securities and Futures Act (SG)](#ref-SG-SFA) s4A |
+| <a id="optStatus"></a>`pwm:optStatus` opt status | [investor classification](#InvestorClassification) → [opt statuses](#OptStatusScheme) | Whether the classification is the default, or results from the client opting in or out. | **REG** [FinSA](#ref-CH-FINSA) Art. 5; **REG** [Securities and Futures Act (SG)](#ref-SG-SFA) Opt-in regime |
+| <a id="riskProfileLevel"></a>`pwm:riskProfileLevel` risk profile level | [investor risk profile](#InvestorRiskProfile) → [illustrative risk scale](#IllustrativeRiskScale) | Point on the wealth manager's risk scale assigned by a risk profile. | **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 54 |
+| <a id="capacityForLoss"></a>`pwm:capacityForLoss` capacity for loss | any → [rating levels](#RatingLevelScheme) | Client's ability to bear losses without a material change to their standard of living or objectives. | **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(2): ability to bear losses |
+| <a id="suitabilityOutcome"></a>`pwm:suitabilityOutcome` suitability outcome | any → [suitability outcomes](#SuitabilityOutcomeScheme) | Result of a suitability or appropriateness assessment. | **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(2), 25(3) |
+| <a id="assessesRecommendation"></a>`pwm:assessesRecommendation` assesses recommendation | [suitability assessment](#SuitabilityAssessment) → [recommendation](#Recommendation) | Recommendation that a suitability assessment evaluates. Sub-property of [assesses](#assesses). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 10 |
+| <a id="usesRiskProfile"></a>`pwm:usesRiskProfile` uses risk profile | [suitability assessment](#SuitabilityAssessment) → [investor risk profile](#InvestorRiskProfile) | Version of the client's risk profile in force when the assessment was made. | **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 54 |
+| <a id="usesMandate"></a>`pwm:usesMandate` uses mandate | [suitability assessment](#SuitabilityAssessment) → [mandate](#Mandate) | Mandate whose terms and restrictions the assessment was checked against. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) mandate |
+| <a id="usesProductRiskRating"></a>`pwm:usesProductRiskRating` uses product risk rating | [suitability assessment](#SuitabilityAssessment) → [product risk rating](#ProductRiskRating) | Product risk rating in force when the assessment was made. | **REG** [MiFID II](#ref-EU-MIFID2) Art. 24(2) |
+| <a id="investmentHorizonYears"></a>`pwm:investmentHorizonYears` investment horizon (years) | any → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Length of time, in years, the client intends to hold the investments. | **REG** [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR) Art. 54 |
+
+### Code lists
+
+<a id="InvestorCategoryScheme"></a>
+#### investor categories (`pwm:InvestorCategoryScheme`)
+
+Two generic top concepts, retail and non-retail, with jurisdiction-specific categories beneath them. Thresholds stay in each jurisdiction's rules, not in the ontology.
+
+Used by: [`appliesToInvestorCategory`](#appliesToInvestorCategory), [`investorCategory`](#investorCategory)
+
+References: **REG** [FinSA](#ref-CH-FINSA) Art. 4; **REG** [MiFID II](#ref-EU-MIFID2) Annex II; Art. 30; **REG** [HK Professional Investor Rules](#ref-HK-PI-RULES) Professional investor; **REG** [Securities and Futures Act (SG)](#ref-SG-SFA) s4A; **REG** [FCA COBS](#ref-UK-FCA-COBS) COBS 3; **REG** [SEC Regulation D](#ref-US-REG-D) Rule 501(a)
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="RetailCategory"></a>retail (`pwm:RetailCategory`) | Client given the full protections of the jurisdiction's conduct rules. |
+|  | <a id="RetailInvestorSG"></a>↳ retail investor (SG) (`pwm:RetailInvestorSG`) | Not an accredited, expert or institutional investor under the Securities and Futures Act. |
+|  | <a id="PrivateClientCH"></a>↳ private client (CH) (`pwm:PrivateClientCH`) | Private client under FinSA Art. 4. |
+|  | <a id="RetailClientEU"></a>↳ retail client (EU) (`pwm:RetailClientEU`) | Client that is not a professional client under MiFID II. |
+|  | <a id="RetailClientUK"></a>↳ retail client (UK) (`pwm:RetailClientUK`) | Retail client under COBS 3. |
+|  | <a id="NonRetailCategory"></a>non-retail (`pwm:NonRetailCategory`) | Client treated as able to bear more risk, with some protections relaxed. |
+|  | <a id="AccreditedInvestorSG"></a>↳ accredited investor (SG) (`pwm:AccreditedInvestorSG`) | Accredited investor under s4A of the Securities and Futures Act, subject to the opt-in regime. |
+|  | <a id="ExpertInvestorSG"></a>↳ expert investor (SG) (`pwm:ExpertInvestorSG`) | Expert investor under s4A of the Securities and Futures Act. |
+|  | <a id="InstitutionalInvestorSG"></a>↳ institutional investor (SG) (`pwm:InstitutionalInvestorSG`) | Institutional investor under s4A of the Securities and Futures Act. |
+|  | <a id="ProfessionalInvestorHK"></a>↳ professional investor (HK) (`pwm:ProfessionalInvestorHK`) | Professional investor under the Securities and Futures Ordinance and the Professional Investor Rules. |
+|  | <a id="ProfessionalClientCH"></a>↳ professional client (CH) (`pwm:ProfessionalClientCH`) | Professional client under FinSA Art. 4. |
+|  | <a id="InstitutionalClientCH"></a>↳ institutional client (CH) (`pwm:InstitutionalClientCH`) | Institutional client under FinSA Art. 4. |
+|  | <a id="ProfessionalClientEU"></a>↳ professional client (EU) (`pwm:ProfessionalClientEU`) | Professional client under MiFID II Annex II, per se or on request. |
+|  | <a id="EligibleCounterpartyEU"></a>↳ eligible counterparty (EU) (`pwm:EligibleCounterpartyEU`) | Eligible counterparty under MiFID II Art. 30. |
+|  | <a id="ProfessionalClientUK"></a>↳ professional client (UK) (`pwm:ProfessionalClientUK`) | Professional client under COBS 3. |
+|  | <a id="AccreditedInvestorUS"></a>↳ accredited investor (US) (`pwm:AccreditedInvestorUS`) | Accredited investor under Regulation D, Rule 501(a). |
+
+<a id="OptStatusScheme"></a>
+#### opt statuses (`pwm:OptStatusScheme`)
+
+
+
+Used by: [`optStatus`](#optStatus)
+
+References: **REG** [FinSA](#ref-CH-FINSA) Art. 5; **REG** [Securities and Futures Act (SG)](#ref-SG-SFA) Opt-in regime
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="OptDefault"></a>default (`pwm:OptDefault`) | Category applies by default, with no election. |
+|  | <a id="OptedIn"></a>opted in (`pwm:OptedIn`) | Client elected into a less protected category. |
+|  | <a id="OptedOut"></a>opted out (`pwm:OptedOut`) | Client elected out of a category into a more protected one. |
+
+<a id="SuitabilityOutcomeScheme"></a>
+#### suitability outcomes (`pwm:SuitabilityOutcomeScheme`)
+
+
+
+Used by: [`suitabilityOutcome`](#suitabilityOutcome)
+
+References: **REG** [FinSA](#ref-CH-FINSA) Art. 10 to 14; **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(2), 25(3)
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="Suitable"></a>suitable (`pwm:Suitable`) | Fits the profile and mandate. |
+|  | <a id="SuitableWithConditions"></a>suitable with conditions (`pwm:SuitableWithConditions`) | Fits if stated conditions are met, such as a size limit. |
+|  | <a id="NotSuitable"></a>not suitable (`pwm:NotSuitable`) | Does not fit; may not be recommended. |
+|  | <a id="InsufficientInformation"></a>insufficient information (`pwm:InsufficientInformation`) | Cannot be assessed; no recommendation may be made. |
+
+<a id="IllustrativeRiskScale"></a>
+#### illustrative risk scale (`pwm:IllustrativeRiskScale`)
+
+Placeholder five-point scale. An institution replaces it with its own scale in its extension.
+
+Used by: [`productRiskLevel`](#productRiskLevel), [`riskProfileLevel`](#riskProfileLevel), [`targetRiskProfile`](#targetRiskProfile)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Illustrative only
+
+| Code | Concept | Definition |
+|---|---|---|
+| RP1 | <a id="RP1"></a>conservative (`pwm:RP1`) | Capital preservation first. |
+| RP2 | <a id="RP2"></a>moderately conservative (`pwm:RP2`) | Income with limited volatility. |
+| RP3 | <a id="RP3"></a>balanced (`pwm:RP3`) | Growth and income in balance. |
+| RP4 | <a id="RP4"></a>growth (`pwm:RP4`) | Growth with higher volatility. |
+| RP5 | <a id="RP5"></a>aggressive (`pwm:RP5`) | Maximum growth; accepts large drawdowns. |
+
+<a id="ModuleMandates"></a>
+
+## Module 4: Mandates, restrictions and fees
+
+The service model agreed with the client, its investment restrictions and its charges.
+
+### Classes
+
+<a id="Mandate"></a>
+#### mandate (`pwm:Mandate`)
+
+Written agreement under which a wealth manager serves a client on a stated service model, advisory, discretionary or execution-only, within investment restrictions.
+
+- **Specialises:** [written contract](https://spec.edmcouncil.org/fibo/ontology/FND/Agreements/Contracts/WrittenContract) (FIBO, Release)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`hasRestriction`](#hasRestriction)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 4(1)(4), 4(1)(8), 25(4); **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) mandate: the discussion must sit inside the recorded mandate
+
+<a id="AdvisoryMandate"></a>
+#### advisory mandate (`pwm:AdvisoryMandate`)
+
+Mandate under which the wealth manager makes personal recommendations and the client takes each investment decision.
+
+- **Specialises:** [mandate](#Mandate)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 4(1)(4): investment advice; **REG** [MAS FAA-N16](#ref-MAS-FAA-N16) Recommendations
+
+<a id="DiscretionaryMandate"></a>
+#### discretionary mandate (`pwm:DiscretionaryMandate`)
+
+Mandate under which the wealth manager takes investment decisions for the client within agreed guidelines.
+
+- **Specialises:** [mandate](#Mandate)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 4(1)(8): portfolio management
+
+<a id="ExecutionOnlyArrangement"></a>
+#### execution-only arrangement (`pwm:ExecutionOnlyArrangement`)
+
+Arrangement under which the wealth manager executes client instructions without advice.
+
+- **Specialises:** [mandate](#Mandate)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(4)
+
+<a id="CustodyOnlyArrangement"></a>
+#### custody-only arrangement (`pwm:CustodyOnlyArrangement`)
+
+Arrangement under which the wealth manager holds assets and services them, without advice or dealing.
+
+- **Specialises:** [mandate](#Mandate)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Custody-only service model
+
+<a id="InvestmentRestriction"></a>
+#### investment restriction (`pwm:InvestmentRestriction`)
+
+Provision of a mandate that limits what may be held or done: asset-class bands, concentration limits, excluded issuers or sectors, prohibited instruments, leverage limits.
+
+- **Specialises:** [contractual commitment](https://spec.edmcouncil.org/fibo/ontology/FND/Agreements/Contracts/ContractualCommitment) (FIBO, Release)
+- **Handling:** medium context
+- **Properties:** [`limitValue`](#limitValue), [`limitBasis`](#limitBasis)
+- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) mandate; concentration
+
+<a id="ConcentrationLimit"></a>
+#### concentration limit (`pwm:ConcentrationLimit`)
+
+Investment restriction capping exposure to one issuer, sector, country, currency or product type as a share of the portfolio.
+
+- **Specialises:** [investment restriction](#InvestmentRestriction)
+- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) concentration: inside the recorded concentration limit
+
+<a id="ModelPortfolio"></a>
+#### model portfolio (`pwm:ModelPortfolio`)
+
+Target allocation, for a risk profile or strategy, from which client portfolios are built and against which drift is measured.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C1
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Model-based portfolio management
+
+<a id="Benchmark"></a>
+#### benchmark (`pwm:Benchmark`)
+
+Index or composite against which a portfolio's performance is evaluated.
+
+- **Close match:** [portfolio benchmark](https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/CollectiveInvestmentVehicles/PortfolioBenchmark) (FIBO, Provisional)
+- **Handling:** slow context
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) FIBO's PortfolioBenchmark is Provisional, so it is matched, not specialised
+
+<a id="Fee"></a>
+#### fee (`pwm:Fee`)
+
+Charge for services under a mandate or account, of a stated type.
+
+- **Specialises:** [fee](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Fee) (FIBO, Release)
+- **Properties:** [`feeType`](#feeType)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 24(4): information on costs and charges
+
+<a id="ThirdPartyPayment"></a>
+#### third-party payment (`pwm:ThirdPartyPayment`)
+
+Fee or benefit the wealth manager receives from a third party, such as a product provider, in connection with a client service.
+
+- **Specialises:** [fee](#Fee)
+- **Also called:** inducement, retrocession
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 24(9)
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="governedByMandate"></a>`pwm:governedByMandate` governed by mandate | any → [mandate](#Mandate) | Mandate under which an account or portfolio is managed or advised. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) mandate |
+| <a id="hasRestriction"></a>`pwm:hasRestriction` has restriction | [mandate](#Mandate) → [investment restriction](#InvestmentRestriction) | Investment restriction that forms part of a mandate. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) mandate; concentration |
+| <a id="feeType"></a>`pwm:feeType` fee type | [fee](#Fee) → [fee types](#FeeTypeScheme) | Kind of fee. | **REG** [MiFID II](#ref-EU-MIFID2) Art. 24(4) |
+| <a id="targetRiskProfile"></a>`pwm:targetRiskProfile` target risk profile | any → [illustrative risk scale](#IllustrativeRiskScale) | Risk profile level a model portfolio or product is designed for. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Model portfolio design |
+| <a id="hasBenchmark"></a>`pwm:hasBenchmark` has benchmark | any → [benchmark](#Benchmark) | Benchmark a mandate or portfolio is measured against. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Performance measurement |
+| <a id="limitValue"></a>`pwm:limitValue` limit value | [investment restriction](#InvestmentRestriction) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Numeric limit of a restriction, read together with its limit basis. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) concentration |
+| <a id="limitBasis"></a>`pwm:limitBasis` limit basis | [investment restriction](#InvestmentRestriction) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | What the limit value is measured against, such as percent of portfolio market value. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Restriction definition |
+
+### Code lists
+
+<a id="FeeTypeScheme"></a>
+#### fee types (`pwm:FeeTypeScheme`)
+
+
+
+Used by: [`feeType`](#feeType)
+
+References: **REG** [MiFID II](#ref-EU-MIFID2) Art. 24(4)
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="FeeManagement"></a>management fee (`pwm:FeeManagement`) | For discretionary portfolio management. |
+|  | <a id="FeeAdvisory"></a>advisory fee (`pwm:FeeAdvisory`) | For advice under an advisory mandate. |
+|  | <a id="FeeCustody"></a>custody fee (`pwm:FeeCustody`) | For safekeeping and servicing of assets. |
+|  | <a id="FeeTransaction"></a>transaction fee (`pwm:FeeTransaction`) | Per transaction, such as brokerage. |
+|  | <a id="FeePerformance"></a>performance fee (`pwm:FeePerformance`) | Contingent on returns above a hurdle or high-water mark. |
+
+<a id="ModuleAccounts"></a>
+
+## Module 5: Accounts, portfolios and holdings
+
+Where assets are held, what is held, and how it is valued.
+
+### Classes
+
+<a id="Account"></a>
+#### account (`pwm:Account`)
+
+Record of a business arrangement between a client and a wealth manager, in which balances and transactions are kept.
+
+- **Specialises:** [account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Account) (FIBO, Release)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`accountHeldBy`](#accountHeldBy), [`hasPortfolio`](#hasPortfolio)
+- **References:** **REG** [Banking Act (SG)](#ref-SG-BANKING-ACT) s47: customer information includes particulars of an account
+
+<a id="InvestmentAccount"></a>
+#### investment account (`pwm:InvestmentAccount`)
+
+Account that records securities and cash held for investment.
+
+- **Specialises:** [account](#Account), [investment account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/InvestmentAccount) (FIBO, Release)
+- **Handling:** default classification C2
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Specialises FIBO InvestmentAccount within the PWM account hierarchy
+
+<a id="CustodyAccount"></a>
+#### custody account (`pwm:CustodyAccount`)
+
+Investment account in which the wealth manager holds a client's securities in safekeeping.
+
+- **Specialises:** [investment account](#InvestmentAccount)
+- **Also called:** securities account
+- **Handling:** default classification C2
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) No FIBO class for custody accounts at the version checked
+
+<a id="CashAccount"></a>
+#### cash account (`pwm:CashAccount`)
+
+Current or deposit account in a single currency, linked to a client's investment activity.
+
+- **Specialises:** [account](#Account), [customer account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/CustomerAccount) (FIBO, Release)
+- **Handling:** fast context, default classification C2
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Cash account
+
+<a id="JointAccount"></a>
+#### joint account (`pwm:JointAccount`)
+
+Account held by two or more holders, operated under a stated signing rule.
+
+- **Specialises:** [account](#Account)
+- **Handling:** default classification C2
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Joint holding and signing rules
+
+<a id="AccountHolder"></a>
+#### account holder (`pwm:AccountHolder`)
+
+Role of a party that owns an account.
+
+- **Specialises:** [account holder](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/AccountHolder) (FIBO, Release)
+- **Exact match:** [account holder](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/AccountHolder) (FIBO, Release)
+- **Handling:** default classification C2
+- **References:** **REG** [OECD CRS](#ref-OECD-CRS) Section VIII: account holder
+
+<a id="Portfolio"></a>
+#### portfolio (`pwm:Portfolio`)
+
+Collection of holdings managed or advised as a unit under one mandate.
+
+- **Specialises:** [portfolio](https://spec.edmcouncil.org/fibo/ontology/FND/OwnershipAndControl/Ownership/Portfolio) (FIBO, Release)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`hasHolding`](#hasHolding)
+- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) review_portfolio tool under contact-frequency
+
+<a id="Holding"></a>
+#### holding (`pwm:Holding`)
+
+Quantity of a financial instrument or other asset held in a portfolio or account at a point in time.
+
+- **Specialises:** [holding](https://spec.edmcouncil.org/fibo/ontology/FND/OwnershipAndControl/Ownership/Holding) (FIBO, Release)
+- **Handling:** fast context, default classification C2
+- **References:** **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 7: fast-moving facts are looked up live
+
+<a id="Position"></a>
+#### position (`pwm:Position`)
+
+Financial exposure from owning, borrowing, shorting or contracting, including derivatives and credit.
+
+- **Specialises:** [position](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/FinancialProductsAndServices/Position) (FIBO, Release)
+- **Handling:** fast context, default classification C2
+- **References:** **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 7
+
+<a id="Valuation"></a>
+#### valuation (`pwm:Valuation`)
+
+Monetary value of a portfolio, account or holding at a stated time, produced by a registered calculation service.
+
+*Note:* A figure presented as authoritative must cite its calculation service. A model may explain a valuation; it may not produce one.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`valuationOf`](#valuationOf)
+- **References:** **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 8: deterministic financial calculations; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 6: calculation provenance
+
+<a id="LombardFacility"></a>
+#### Lombard facility (`pwm:LombardFacility`)
+
+Credit extended to a client against a pledged portfolio of financial assets, with an advance rate per asset.
+
+- **Specialises:** [collateralized loan](https://spec.edmcouncil.org/fibo/ontology/LOAN/LoansGeneral/Loans/CollateralizedLoan) (FIBO, Release)
+- **Also called:** securities-backed loan
+- **Handling:** fast context, default classification C2
+- **Properties:** [`securedBy`](#securedBy)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Portfolio-backed lending
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="accountHeldBy"></a>`pwm:accountHeldBy` account held by | [account](#Account) → [account holder](#AccountHolder) | Account holder of an account. | **REG** [OECD CRS](#ref-OECD-CRS) Section VIII |
+| <a id="hasPortfolio"></a>`pwm:hasPortfolio` has portfolio | [account](#Account) → [portfolio](#Portfolio) | Portfolio recorded in an account. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Account and portfolio |
+| <a id="hasHolding"></a>`pwm:hasHolding` has holding | [portfolio](#Portfolio) → [holding](#Holding) | Holding that forms part of a portfolio. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Portfolio composition |
+| <a id="inInstrument"></a>`pwm:inInstrument` in instrument | any → [financial instrument](https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/FinancialInstrument) (FIBO, Release) | Financial instrument a holding or position is in. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Holding to instrument |
+| <a id="valuationOf"></a>`pwm:valuationOf` valuation of | [valuation](#Valuation) → any | Portfolio, account or holding a valuation measures. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 6 |
+| <a id="signingRule"></a>`pwm:signingRule` signing rule | any → [signing rules](#SigningRuleScheme) | Rule for who must sign instructions on a joint account or for an entity. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Signing authority |
+| <a id="securedBy"></a>`pwm:securedBy` secured by | [Lombard facility](#LombardFacility) → [portfolio](#Portfolio) | Portfolio pledged as collateral for a credit facility. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Pledge |
+| <a id="amount"></a>`pwm:amount` amount | any → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Numeric amount, read together with its currency. Close match: [has amount](https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasAmount) (FIBO, Release). | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Amount and currency pattern |
+| <a id="currency"></a>`pwm:currency` currency | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Currency of an amount, as an ISO 4217 alphabetic code. Close match: [has currency](https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasCurrency) (FIBO, Release). | **ISO** [ISO 4217](#ref-ISO-4217) Alphabetic codes |
+
+### Code lists
+
+<a id="SigningRuleScheme"></a>
+#### signing rules (`pwm:SigningRuleScheme`)
+
+
+
+Used by: [`signingRule`](#signingRule)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Signing authority
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="SignAnyOne"></a>any one to sign (`pwm:SignAnyOne`) | Any single authorised signatory may instruct. |
+|  | <a id="SignTwoJointly"></a>two to sign (`pwm:SignTwoJointly`) | Any two authorised signatories together. |
+|  | <a id="SignAllJointly"></a>all to sign (`pwm:SignAllJointly`) | Every holder or signatory must sign. |
+
+<a id="ModuleProducts"></a>
+
+## Module 6: Products, distribution and research
+
+The product shelf, product risk and target market, cross-border distribution rules, offering documents and the house view.
+
+### Classes
+
+<a id="Product"></a>
+#### product (`pwm:Product`)
+
+Financial product on the wealth manager's shelf, such as a fund, structured note, bond, deposit or credit facility, linked to the instruments that underlie it.
+
+- **Specialises:** [financial product](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/FinancialProductsAndServices/FinancialProduct) (FIBO, Release)
+- **Handling:** slow context, default classification C1
+- **Properties:** [`hasUnderlyingInstrument`](#hasUnderlyingInstrument), [`productComplexity`](#productComplexity)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Product shelf
+
+<a id="ProductRiskRating"></a>
+#### product risk rating (`pwm:ProductRiskRating`)
+
+Wealth manager's assessment of a product's risk on its own scale, used to match products to client risk profiles.
+
+- **Specialises:** [assessment](#Assessment)
+- **Related match:** [risk level](https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/CollectiveInvestmentVehicles/RiskLevel) (FIBO, Provisional)
+- **Handling:** slow context, default classification C1
+- **Properties:** [`productRiskLevel`](#productRiskLevel)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 16(3), 24(2): product governance
+
+<a id="TargetMarket"></a>
+#### target market (`pwm:TargetMarket`)
+
+Description of the clients a product is designed for, and those it is not, by category, knowledge, risk and objectives.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C1
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 16(3), 24(2)
+
+<a id="ApprovedProductList"></a>
+#### approved product list (`pwm:ApprovedProductList`)
+
+Versioned list of products approved for distribution from a booking centre.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Also called:** product shelf
+- **Handling:** slow context, default classification C1
+- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) product-eligibility; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Shelf governance
+
+<a id="CrossBorderRule"></a>
+#### cross-border rule (`pwm:CrossBorderRule`)
+
+Deterministic rule stating whether an activity, such as solicitation, advice or research distribution, is permitted for a client domicile, booking centre, investor category and product.
+
+*Note:* A rule table evaluated outside the model. It is not AI under MAS AIRG para 1.3 unless a model takes part in the decision.
+
+- **Specialises:** [policy rule](#PolicyRule)
+- **Related match:** [investors' domicile restriction](https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesRestrictions/InvestorsDomicileRestriction) (FIBO, Release)
+- **Related match:** [qualified investor restriction](https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesRestrictions/QualifiedInvestorRestriction) (FIBO, Release)
+- **Handling:** slow context, default classification C1
+- **Properties:** [`appliesToActivity`](#appliesToActivity), [`clientDomicileCode`](#clientDomicileCode), [`bookingCentreCode`](#bookingCentreCode), [`permitted`](#permitted)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.3, fn 6: rule-based tools are not AI; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-domicile, booking-centre, rm-location, cross-border-solicitation, research-distribution
+
+<a id="ProductTermSheet"></a>
+#### product term sheet (`pwm:ProductTermSheet`)
+
+Offering document summarising a product's terms, payoff, risks and costs.
+
+- **Specialises:** [offering document](https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesIssuance/OfferingDocument) (FIBO, Release)
+- **Handling:** slow context, default classification C0
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Product documentation
+
+<a id="KeyInformationDocument"></a>
+#### key information document (`pwm:KeyInformationDocument`)
+
+Short standardised disclosure of a packaged product's nature, risks, costs and potential returns.
+
+- **Specialises:** [offering document](https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesIssuance/OfferingDocument) (FIBO, Release)
+- **Close match:** [key investor information document](https://spec.edmcouncil.org/fibo/ontology/SEC/Funds/CollectiveInvestmentVehicles/KeyInvestorInformationDocument) (FIBO, Provisional)
+- **Also called:** KID
+- **Handling:** slow context, default classification C0
+- **References:** **REG** [PRIIPs Regulation](#ref-EU-PRIIPS) Key information document
+
+<a id="ResearchPublication"></a>
+#### research publication (`pwm:ResearchPublication`)
+
+Authored, dated and versioned investment research, with effective, last-reviewed, superseded and expiry dates and any distribution restrictions.
+
+- **Specialises:** [document](https://www.omg.org/spec/Commons/Documents/Document) (OMG Commons)
+- **Handling:** slow context, default classification C1
+- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) research-distribution; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: research provenance and lifecycle
+
+<a id="HouseView"></a>
+#### house view (`pwm:HouseView`)
+
+Wealth manager's current official view on markets and asset allocation. When it changes, recommendations that depend on it are invalidated.
+
+- **Specialises:** [research publication](#ResearchPublication)
+- **Also called:** CIO view
+- **Handling:** slow context, default classification C1
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 4: house-view change propagation; **AM** [EVOLVE](#ref-EVOLVE) Define truth once: one source for policies
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="productRiskLevel"></a>`pwm:productRiskLevel` product risk level | [product risk rating](#ProductRiskRating) → [illustrative risk scale](#IllustrativeRiskScale) | Level a product risk rating assigns, on a scale that can be compared with client risk profile levels. *Use the same scale as the risk profile, or a published mapping between the two, so a suitability check can compare them.* | **REG** [MiFID II](#ref-EU-MIFID2) Art. 16(3), 24(2): product governance; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) suitability |
+| <a id="hasUnderlyingInstrument"></a>`pwm:hasUnderlyingInstrument` has underlying instrument | [product](#Product) → [financial instrument](https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/FinancialInstrument) (FIBO, Release) | Financial instrument a product consists of or refers to. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Product to instrument |
+| <a id="productComplexity"></a>`pwm:productComplexity` product complexity | [product](#Product) → [product complexity classes](#ProductComplexityScheme) | Regulatory complexity class of a product. | **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(4); **REG** [MAS SFA 04-N12](#ref-MAS-SFA04-N12) Specified and excluded investment products |
+| <a id="appliesToActivity"></a>`pwm:appliesToActivity` applies to activity | [cross-border rule](#CrossBorderRule) → [cross-border activities](#CrossBorderActivityScheme) | Activity a cross-border rule decides on. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) cross-border-solicitation, research-distribution |
+| <a id="appliesToProduct"></a>`pwm:appliesToProduct` applies to product | any → [product](#Product) | Product a rule covers. Absent when the rule covers all products. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) product-eligibility |
+| <a id="appliesToInvestorCategory"></a>`pwm:appliesToInvestorCategory` applies to investor category | any → [investor categories](#InvestorCategoryScheme) | Investor category a rule covers. | **REG** [MiFID II](#ref-EU-MIFID2) Art. 16(3): target market |
+| <a id="isin"></a>`pwm:isin` ISIN | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Twelve-character ISO 6166 international securities identification number. | **ISO** [ISO 6166](#ref-ISO-6166) ISIN structure |
+| <a id="cfiCode"></a>`pwm:cfiCode` CFI code | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Six-letter ISO 10962 classification of financial instruments code. Close match: [financial instrument classification code](https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesClassification/FinancialInstrumentClassificationCode) (FIBO, Release). | **ISO** [ISO 10962](#ref-ISO-10962) CFI code |
+| <a id="clientDomicileCode"></a>`pwm:clientDomicileCode` client domicile code | [cross-border rule](#CrossBorderRule) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Client domicile a rule covers, as an ISO 3166-1 alpha-2 code. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-domicile |
+| <a id="bookingCentreCode"></a>`pwm:bookingCentreCode` booking centre code | [cross-border rule](#CrossBorderRule) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Booking centre jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre |
+| <a id="permitted"></a>`pwm:permitted` permitted | [cross-border rule](#CrossBorderRule) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the activity is permitted under the rule. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) cross-border-solicitation: the pack enforces the flag the bank recorded |
+
+### Code lists
+
+<a id="ProductComplexityScheme"></a>
+#### product complexity classes (`pwm:ProductComplexityScheme`)
+
+
+
+Used by: [`productComplexity`](#productComplexity)
+
+References: **REG** [MiFID II](#ref-EU-MIFID2) Art. 25(4); **REG** [MAS SFA 04-N12](#ref-MAS-SFA04-N12) Specified investment products
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="ComplexProduct"></a>complex (`pwm:ComplexProduct`) | Requires an assessment of knowledge and experience before sale. |
+|  | <a id="SpecifiedInvestmentProductSG"></a>↳ specified investment product (SG) (`pwm:SpecifiedInvestmentProductSG`) | Product that MAS requires a customer knowledge or account assessment for before sale to retail customers. |
+|  | <a id="NonComplexProduct"></a>non-complex (`pwm:NonComplexProduct`) | May be sold without an appropriateness check where the rules allow. |
+|  | <a id="ExcludedInvestmentProductSG"></a>↳ excluded investment product (SG) (`pwm:ExcludedInvestmentProductSG`) | Product outside the specified-investment-product regime. |
+
+<a id="CrossBorderActivityScheme"></a>
+#### cross-border activities (`pwm:CrossBorderActivityScheme`)
+
+
+
+Used by: [`appliesToActivity`](#appliesToActivity)
+
+References: **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) cross-border-solicitation, research-distribution
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="ActivitySolicitation"></a>solicitation (`pwm:ActivitySolicitation`) | Approaching a client or prospect unprompted. |
+|  | <a id="ActivityReverseEnquiry"></a>reverse enquiry (`pwm:ActivityReverseEnquiry`) | Responding to a request the client initiated. |
+|  | <a id="ActivityAdvice"></a>advice (`pwm:ActivityAdvice`) | Giving a personal recommendation. |
+|  | <a id="ActivityExecution"></a>execution (`pwm:ActivityExecution`) | Executing a client instruction. |
+|  | <a id="ActivityMarketing"></a>marketing (`pwm:ActivityMarketing`) | Promoting a product or service. |
+|  | <a id="ActivityResearchDistribution"></a>research distribution (`pwm:ActivityResearchDistribution`) | Sending research to a client. |
+
+<a id="ModuleInteractions"></a>
+
+## Module 7: Interactions, advice and communication
+
+Why a client was approached, what was recommended, who decided, and what reached the client.
+
+### Classes
+
+<a id="ClientInteraction"></a>
+#### client interaction (`pwm:ClientInteraction`)
+
+One client journey, from its trigger through retrieval, recommendation, review and decision to any communication, recorded under a single identifier.
+
+- **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 9: interaction record
+
+<a id="Origination"></a>
+#### origination (`pwm:Origination`)
+
+Step that selects a client or product for attention, recorded with its trigger, selection criteria, candidate set and reasons, before anything is shown to a relationship manager.
+
+*Note:* An origination may conclude that no contact is recommended, with a reason.
+
+- **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
+- **Handling:** default classification C2
+- **Properties:** [`originationTrigger`](#originationTrigger), [`doNotContactReason`](#doNotContactReason)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 10: origination evidence; do not contact is a first-class outcome
+
+<a id="Recommendation"></a>
+#### recommendation (`pwm:Recommendation`)
+
+Personal recommendation to a client about a product, transaction or allocation, with structured rationale and cited sources.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`originatedBy`](#originatedBy), [`recommendsProduct`](#recommendsProduct)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2) Art. 4(1)(4): investment advice; **REG** [MAS FAA-N16](#ref-MAS-FAA-N16) Recommendations on investment products; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 10: rationale as structured fields with citations
+
+<a id="FinalDecision"></a>
+#### final decision (`pwm:FinalDecision`)
+
+Named person's decision on an AI-prepared recommendation or action, approving, modifying, rejecting or escalating it, with what they saw and what they changed.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** default classification C2
+- **Properties:** [`decisionOn`](#decisionOn)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11: RM review capture
+
+<a id="ClientCommunication"></a>
+#### client communication (`pwm:ClientCommunication`)
+
+Message sent to a client through a channel, classified by communication level, carrying its content provenance and any AI disclosure, and traceable to the final decision it came from.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** default classification C2
+- **Properties:** [`derivedFromDecision`](#derivedFromDecision), [`communicationLevel`](#communicationLevel), [`viaChannel`](#viaChannel), [`aiDisclosureGiven`](#aiDisclosureGiven)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.6: inform customers of AI use; channels for redress; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-communication (two signatures), client-communication-content, client-ai-disclosure; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 12: governed client communication
+
+<a id="CommunicationChannel"></a>
+#### communication channel (`pwm:CommunicationChannel`)
+
+Means of reaching a client, registered as approved only if it meets archiving and supervision requirements.
+
+- **Handling:** slow context
+- **Properties:** [`isApprovedChannel`](#isApprovedChannel)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 12: approved-channel register
+
+<a id="Complaint"></a>
+#### complaint (`pwm:Complaint`)
+
+Expression of dissatisfaction by a client, linked to the interaction, output, model version and approver it concerns.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** default classification C2
+- **References:** **REG** [MAS Fair Dealing Guidelines](#ref-MAS-FAIR-DEALING) Fair dealing outcomes; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 15: outcomes and near misses
+
+<a id="VulnerabilityIndicator"></a>
+#### vulnerability indicator (`pwm:VulnerabilityIndicator`)
+
+Flag that a client may be vulnerable, raised for human review. AI may raise the flag; only a person may decide, and only a governed process may change treatment.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** default classification C3
+- **References:** **REG** [FCA FG21/1](#ref-UK-FCA-FG21-1) Fair treatment of vulnerable customers; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 10: vulnerable-client safeguards
+
+<a id="Consent"></a>
+#### consent (`pwm:Consent`)
+
+Record of a client's consent to a stated processing purpose, with its scope, date and withdrawal.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Close match:** [Consent](https://w3id.org/dpv#Consent) (DPV)
+- **Handling:** default classification C2
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.4(f): consent for sensitive personal data used with AI
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="withClient"></a>`pwm:withClient` with client | any → [client](#Client) | Client an interaction, recommendation or communication concerns. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 9 |
+| <a id="partOfInteraction"></a>`pwm:partOfInteraction` part of interaction | any → [client interaction](#ClientInteraction) | Client interaction an origination, recommendation, decision, communication or evidence record belongs to. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 9: one interaction_id spans a whole client journey |
+| <a id="originationTrigger"></a>`pwm:originationTrigger` origination trigger | [origination](#Origination) → [origination triggers](#OriginationTriggerScheme) | What started an origination. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) origination.TRIGGERS |
+| <a id="doNotContactReason"></a>`pwm:doNotContactReason` do-not-contact reason | [origination](#Origination) → [do-not-contact reasons](#DoNotContactReasonScheme) | Why an origination concluded that no contact is recommended. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) origination.DO_NOT_CONTACT_REASONS |
+| <a id="originatedBy"></a>`pwm:originatedBy` originated by | [recommendation](#Recommendation) → [origination](#Origination) | Origination that proposed a recommendation. Sub-property of [wasGeneratedBy](http://www.w3.org/ns/prov#wasGeneratedBy) (PROV-O). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 10 |
+| <a id="recommendsProduct"></a>`pwm:recommendsProduct` recommends product | [recommendation](#Recommendation) → [product](#Product) | Product a recommendation proposes. | **REG** [MiFID II](#ref-EU-MIFID2) Art. 4(1)(4) |
+| <a id="decisionOn"></a>`pwm:decisionOn` decision on | [final decision](#FinalDecision) → any | Recommendation or proposed action a final decision rules on. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11 |
+| <a id="decisionResult"></a>`pwm:decisionResult` decision result | any → [final decision results](#DecisionResultScheme) | Approve, modify, reject or escalate. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11: outcomes are approve, modify, reject or escalate |
+| <a id="derivedFromDecision"></a>`pwm:derivedFromDecision` derived from decision | [client communication](#ClientCommunication) → [final decision](#FinalDecision) | Final decision a client communication traces back to. A communication without one is refused. Sub-property of [wasDerivedFrom](http://www.w3.org/ns/prov#wasDerivedFrom) (PROV-O). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 12: a communication that does not trace back to a final decision is a DENY |
+| <a id="communicationLevel"></a>`pwm:communicationLevel` communication level | [client communication](#ClientCommunication) → [communication levels](#CommunicationLevelScheme) | How consequential a communication is, which sets the controls it must pass. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.COMMUNICATION_LEVELS |
+| <a id="viaChannel"></a>`pwm:viaChannel` via channel | [client communication](#ClientCommunication) → [communication channel](#CommunicationChannel) | Channel a communication was sent through. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 12 |
+| <a id="contentProvenance"></a>`pwm:contentProvenance` content provenance | any → [content provenance labels](#ContentProvenanceScheme) | Who produced content: a person, AI, AI then edited by a person, or a person with AI assistance. The label survives edits. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11: content provenance label |
+| <a id="disclosureTrigger"></a>`pwm:disclosureTrigger` disclosure trigger | any → [AI disclosure triggers](#DisclosureTriggerScheme) | Reason a client must be told AI was involved. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.DISCLOSURE_TRIGGERS |
+| <a id="isApprovedChannel"></a>`pwm:isApprovedChannel` is approved channel | [communication channel](#CommunicationChannel) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether a channel is registered as meeting archiving and supervision requirements. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 12: approved-channel register |
+| <a id="aiDisclosureGiven"></a>`pwm:aiDisclosureGiven` AI disclosure given | [client communication](#ClientCommunication) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the communication told the client that AI was involved. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.6; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-ai-disclosure |
+| <a id="contentHash"></a>`pwm:contentHash` content hash | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Cryptographic hash of content as rendered, sent or stored, so the content can be proved later without being copied into the record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 items 11, 12: hash of the content as sent; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: version ID or content hash; keep the hash when content is deleted |
+
+### Code lists
+
+<a id="CommunicationLevelScheme"></a>
+#### communication levels (`pwm:CommunicationLevelScheme`)
+
+Ordered least to most consequential. A higher level keeps every control of the levels below it.
+
+Used by: [`communicationLevel`](#communicationLevel)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 12; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.COMMUNICATION_LEVELS
+
+| Code | Concept | Definition |
+|---|---|---|
+| 1 | <a id="CommGeneralInformation"></a>general information (`pwm:CommGeneralInformation`) | Information not specific to the client. |
+| 2 | <a id="CommHouseView"></a>house view (`pwm:CommHouseView`) | The institution's published view, unadapted. |
+| 3 | <a id="CommContextualisedInsight"></a>contextualised insight (`pwm:CommContextualisedInsight`) | Information related to the client's circumstances, without a recommendation. |
+| 4 | <a id="CommInvestmentDiscussion"></a>investment discussion (`pwm:CommInvestmentDiscussion`) | Discussion of options for the client's portfolio. |
+| 5 | <a id="CommProductRecommendation"></a>product recommendation (`pwm:CommProductRecommendation`) | Personal recommendation of a product; triggers suitability checks and approval. |
+| 6 | <a id="CommTransaction"></a>transaction (`pwm:CommTransaction`) | Communication that confirms or effects a transaction. |
+
+<a id="ContentProvenanceScheme"></a>
+#### content provenance labels (`pwm:ContentProvenanceScheme`)
+
+
+
+Used by: [`contentProvenance`](#contentProvenance)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="ProvenanceHuman"></a>human (`pwm:ProvenanceHuman`) | Written by a person without AI. |
+|  | <a id="ProvenanceAI"></a>AI (`pwm:ProvenanceAI`) | Generated by AI. |
+|  | <a id="ProvenanceAIHumanEdited"></a>AI then human-edited (`pwm:ProvenanceAIHumanEdited`) | Generated by AI, then edited by a person; stays identifiable as AI-originated. |
+|  | <a id="ProvenanceHumanAIAssisted"></a>human with AI assistance (`pwm:ProvenanceHumanAIAssisted`) | Written by a person with AI help. |
+
+<a id="DisclosureTriggerScheme"></a>
+#### AI disclosure triggers (`pwm:DisclosureTriggerScheme`)
+
+
+
+Used by: [`disclosureTrigger`](#disclosureTrigger)
+
+References: **REG** [MAS AIRG](#ref-MAS-AIRG) 5.6; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.DISCLOSURE_TRIGGERS
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="TriggerAIGeneratedContent"></a>AI generated content (`pwm:TriggerAIGeneratedContent`) | The content was generated by AI. |
+|  | <a id="TriggerAssistedAnalysis"></a>assisted analysis (`pwm:TriggerAssistedAnalysis`) | AI assisted the analysis behind the content. |
+|  | <a id="TriggerPowersChatbot"></a>powers a chatbot (`pwm:TriggerPowersChatbot`) | The client is talking to an AI system. |
+|  | <a id="TriggerMaterialContribution"></a>materially contributed to a decision (`pwm:TriggerMaterialContribution`) | AI materially contributed to a decision affecting the client. |
+
+<a id="OriginationTriggerScheme"></a>
+#### origination triggers (`pwm:OriginationTriggerScheme`)
+
+
+
+Used by: [`originationTrigger`](#originationTrigger)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) origination.TRIGGERS
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="OriginationEvent"></a>event (`pwm:OriginationEvent`) | A client or market event, such as a maturity or a house-view change. |
+|  | <a id="OriginationSchedule"></a>schedule (`pwm:OriginationSchedule`) | A scheduled review. |
+|  | <a id="OriginationRMRequest"></a>RM request (`pwm:OriginationRMRequest`) | A relationship manager asked for it. |
+
+<a id="DoNotContactReasonScheme"></a>
+#### do-not-contact reasons (`pwm:DoNotContactReasonScheme`)
+
+
+
+Used by: [`doNotContactReason`](#doNotContactReason)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) origination.DO_NOT_CONTACT_REASONS
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="DNCLowRelevance"></a>low relevance (`pwm:DNCLowRelevance`) | Not relevant enough to the client. |
+|  | <a id="DNCPoorTiming"></a>poor timing (`pwm:DNCPoorTiming`) | Wrong moment for the client. |
+|  | <a id="DNCVulnerability"></a>vulnerability (`pwm:DNCVulnerability`) | A vulnerability indicator is open. |
+|  | <a id="DNCExcessiveFrequency"></a>excessive frequency (`pwm:DNCExcessiveFrequency`) | Contact-frequency limit reached. |
+|  | <a id="DNCRecentRejection"></a>a recent rejection (`pwm:DNCRecentRejection`) | The client recently declined a similar proposal. |
+|  | <a id="DNCRelationshipCircumstance"></a>a relationship circumstance (`pwm:DNCRelationshipCircumstance`) | A circumstance in the relationship makes contact inappropriate. |
+
+<a id="DecisionResultScheme"></a>
+#### final decision results (`pwm:DecisionResultScheme`)
+
+
+
+Used by: [`decisionResult`](#decisionResult)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="DecisionApprove"></a>approve (`pwm:DecisionApprove`) | Accepted as prepared. |
+|  | <a id="DecisionModify"></a>modify (`pwm:DecisionModify`) | Accepted with changes, recorded as a structured diff. |
+|  | <a id="DecisionReject"></a>reject (`pwm:DecisionReject`) | Not accepted. |
+|  | <a id="DecisionEscalate"></a>escalate (`pwm:DecisionEscalate`) | Referred to a more senior or specialist decision-maker. |
+
+<a id="ModuleGovernance"></a>
+
+## Module 8: AI use cases, authority and accountability
+
+The AI inventory, risk materiality, agents, delegated authority, autonomy and the people accountable for them.
+
+### Classes
+
+<a id="AIUseCase"></a>
+#### AI use case (`pwm:AIUseCase`)
+
+Specific real-world context that an AI model or system is applied to, registered as a versioned inventory entry with its purpose, approved scope including jurisdiction, data, dependencies, lifecycle status, risk materiality, review status and accountable people.
+
+*Note:* The use case, not the model, is the unit of risk assessment. Every policy decision cites the use case it was taken under; an unregistered or retired use case is refused.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C1
+- **Properties:** [`approvedJurisdiction`](#approvedJurisdiction), [`modelType`](#modelType), [`lifecycleStatus`](#lifecycleStatus), [`isMediated`](#isMediated), [`riskTier`](#riskTier), [`hasMaterialityAssessment`](#hasMaterialityAssessment)
+- **References:** **ISO** [ISO/IEC 42001](#ref-ISO-IEC-42001) AI management system; **REG** [MAS AIRG](#ref-MAS-AIRG) 1.4(c) use case; 4.5 to 4.9 inventory; 4.7 attributes; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: use-case register; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 19: an unregistered use case is refused
+
+<a id="AISystem"></a>
+#### AI system (`pwm:AISystem`)
+
+Machine-based system of one or more models and other components that derives outputs, such as predictions, content, recommendations or decisions, from learned premises.
+
+*Note:* Tools whose outputs are fully determined by manually specified rules, and robotic process automation without learning, are not AI for this purpose.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Close match:** [AI System](https://w3id.org/dpv/ai#AISystem) (DPV-AI)
+- **Handling:** slow context
+- **References:** **ISO** [ISO/IEC 22989](#ref-ISO-IEC-22989) AI system; **REG** [EU AI Act](#ref-EU-AI-ACT) Art. 3(1); **REG** [MAS AIRG](#ref-MAS-AIRG) 1.3 and fn 6 (definition and exclusions); 1.4(b) system
+
+<a id="AIModel"></a>
+#### AI model (`pwm:AIModel`)
+
+Method that converts assumptions and input data into outputs such as estimates, decisions or recommendations, pinned to a provider and version.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Close match:** [Model](https://w3id.org/dpv/ai#Model) (DPV-AI)
+- **Handling:** slow context
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.4(a) model; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.3: pinned provider model version per call
+
+<a id="AIAgent"></a>
+#### AI agent (`pwm:AIAgent`)
+
+Software agent that plans and takes actions with tools on behalf of a person, holding its own credentials, a maximum autonomy level, a tool allow-list, guardrails and a deployment version that covers prompt, tools, permissions and data.
+
+*Note:* An agent can never hold an accountability role. Its entitlements are always narrower than those of the person it acts for.
+
+- **Specialises:** [SoftwareAgent](http://www.w3.org/ns/prov#SoftwareAgent) (PROV-O), [software agent](https://www.omg.org/spec/Commons/PartiesAndSituations/SoftwareAgent) (OMG Commons)
+- **Close match:** [AI Agent](https://w3id.org/dpv/ai#AIAgent) (DPV-AI)
+- **Handling:** slow context
+- **Properties:** [`registeredForUseCase`](#registeredForUseCase), [`agentIdentifier`](#agentIdentifier), [`deploymentVersion`](#deploymentVersion), [`maxAutonomyLevel`](#maxAutonomyLevel), [`permittedTool`](#permittedTool)
+- **References:** **REG** [IMDA agentic AI framework](#ref-IMDA-MGF-AGENTIC) Agentic AI governance; **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 (agent risks); fn 25 (agent identifiers, tools, components, guardrails); **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 1: agent identity
+
+<a id="ThirdPartyAI"></a>
+#### third-party AI (`pwm:ThirdPartyAI`)
+
+AI system, model, or service using AI, that an external party develops, owns, operates or provides and the institution procures, accesses or relies on, including AI embedded in software services.
+
+- **Specialises:** [AI system](#AISystem)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) fn 10 (definition); 4.2 and fn 21 (embedded AI); 5.10, 5.11 (management)
+
+<a id="ModelProvider"></a>
+#### model provider (`pwm:ModelProvider`)
+
+Organisation that supplies AI models or AI services, tracked for concentration, change notification and exit.
+
+- **Specialises:** [service provider](https://www.omg.org/spec/Commons/Organizations/ServiceProvider) (OMG Commons)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.11(c) concentration; 5.11(d) change management; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.7: model-provider register
+
+<a id="ModelCard"></a>
+#### model card (`pwm:ModelCard`)
+
+Record of an approved model: provider, name and version, intended use, known limitations, the evaluation relied on, approval date and approver.
+
+- **Specialises:** [document](https://www.omg.org/spec/Commons/Documents/Document) (OMG Commons)
+- **Handling:** slow context
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.10: documentation of how third-party AI was tested; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: model card per approved model
+
+<a id="Tool"></a>
+#### tool (`pwm:Tool`)
+
+Capability an agent can invoke, such as an MCP tool or API, declaring the action verb it performs, the autonomy level it requires and a maximum duration.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context
+- **Properties:** [`requiredAutonomyLevel`](#requiredAutonomyLevel)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.16(c): govern plugins and APIs; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3 (per-verb permissions), item 5 (allow-lists), item 16 (maximum duration)
+
+<a id="RiskMaterialityAssessment"></a>
+#### risk materiality assessment (`pwm:RiskMaterialityAssessment`)
+
+Assessment of an AI use case on impact, complexity and reliance, including the autonomy granted, recorded before controls (inherent) and after them (residual), and approved by the designated control function.
+
+*Note:* Residual materiality must be within risk appetite before deployment. Kognita's six axes (business criticality, client-impact class, decision consequence, data sensitivity, autonomy, complexity) roll up into the three MAS dimensions.
+
+- **Specialises:** [assessment](#Assessment)
+- **Handling:** slow context
+- **Properties:** [`impact`](#impact), [`complexity`](#complexity), [`reliance`](#reliance), [`inherentMateriality`](#inherentMateriality), [`residualMateriality`](#residualMateriality), [`businessCriticality`](#businessCriticality), [`clientImpactClass`](#clientImpactClass), [`decisionConsequence`](#decisionConsequence), [`autonomyAxis`](#autonomyAxis)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 4.10 to 4.13; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Gaps 3 and 4; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: six axes; inherent and residual materiality
+
+<a id="AIRiskAppetite"></a>
+#### AI risk appetite (`pwm:AIRiskAppetite`)
+
+Board-approved statement of the AI uses the institution will and will not accept, with quantitative measures such as AI incident counts, material use cases depending on one provider, and use cases breaching performance thresholds.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 3.4(b) and fn 18; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: AI risk appetite as top-level policy; quantitative measures
+
+<a id="AccountabilityRole"></a>
+#### accountability role (`pwm:AccountabilityRole`)
+
+Role of a named person accountable for an AI use case. Accountability can be supported by functions but cannot be delegated to an agent.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 3.5(d): clear roles and responsibilities; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: an agent can never be named in an owner role; **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 05: a name, not a forum
+
+<a id="BusinessOwner"></a>
+#### business owner (`pwm:BusinessOwner`)
+
+Accountability role answerable for an AI use case's business outcome and residual risk acceptance. Every decision under the use case cites this person.
+
+- **Specialises:** [accountability role](#AccountabilityRole)
+- **Also called:** accountable owner
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(c): accountable person for monitoring and incidents; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: a use case with no current owner is a DENY
+
+<a id="TechnologyOwner"></a>
+#### technology owner (`pwm:TechnologyOwner`)
+
+Accountability role for the technology that delivers an AI use case.
+
+- **Specialises:** [accountability role](#AccountabilityRole)
+- **References:** **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases._OWNER_ROLES
+
+<a id="RiskOwner"></a>
+#### risk owner (`pwm:RiskOwner`)
+
+Accountability role for an AI use case's residual risk; receives fairness and drift findings.
+
+- **Specialises:** [accountability role](#AccountabilityRole)
+- **References:** **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases._OWNER_ROLES
+
+<a id="ModelOwner"></a>
+#### model owner (`pwm:ModelOwner`)
+
+Accountability role for the models an AI use case relies on.
+
+- **Specialises:** [accountability role](#AccountabilityRole)
+- **References:** **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases._OWNER_ROLES
+
+<a id="KnowledgeLead"></a>
+#### Knowledge Lead (`pwm:KnowledgeLead`)
+
+Named owner of an AI workflow's quality standard: defines the standard and primary metric, approves consequential outputs, receives escalations of ambiguity and exceptions, and approves changes to the standard, including those learned from operations.
+
+- **Specialises:** [accountability role](#AccountabilityRole)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: a tier 2+ use case with no current Knowledge Lead is a DENY; **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 05: named owner; **AM** [EVOLVE](#ref-EVOLVE) Stage 4: every AI-powered workflow needs a named Knowledge Lead
+
+<a id="DesignatedControlFunction"></a>
+#### designated control function (`pwm:DesignatedControlFunction`)
+
+Control function, independent of a use case's business and technology owners, that is final arbiter of whether a use constitutes AI, owns inventory policy, and approves risk materiality ratings.
+
+- **Specialises:** [accountability role](#AccountabilityRole)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 4.3, 4.9, 4.13; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Gap 2
+
+<a id="IndependentValidator"></a>
+#### independent validator (`pwm:IndependentValidator`)
+
+Person or function, independent of development and deployment, that validates a high-materiality AI use case before deployment and periodically afterwards.
+
+- **Specialises:** [accountability role](#AccountabilityRole)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.18 to 5.21 (pre-deployment review); 5.24 (re-validation); **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: independent validation as separation of duties
+
+<a id="DelegatedAuthority"></a>
+#### delegated authority (`pwm:DelegatedAuthority`)
+
+Authorisation that binds a person, an agent, a purpose, a client, permitted actions, permitted data, a period and limits. Specific, temporary, revocable, and ended by task completion as well as by time.
+
+*Note:* A request is allowed only if the person holds the entitlement and the agent holds a live delegation for it.
+
+- **Specialises:** [authorization](https://www.omg.org/spec/Commons/BusinessAuthorizations/Authorization) (OMG Commons)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`delegatedBy`](#delegatedBy), [`delegatedTo`](#delegatedTo), [`permitsDataClass`](#permitsDataClass), [`endsOnTaskCompletion`](#endsOnTaskCompletion), [`approvalThreshold`](#approvalThreshold)
+- **References:** **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 2: explicit delegated authority; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: delegated authority
+
+<a id="AutonomyPromotionGate"></a>
+#### autonomy promotion gate (`pwm:AutonomyPromotionGate`)
+
+Evidence thresholds an agent must meet over a minimum sample and window before its autonomy level may rise, and below which it steps down automatically.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context
+- **Properties:** [`qualityThreshold`](#qualityThreshold), [`exceptionRateThreshold`](#exceptionRateThreshold), [`requiresFullTraceability`](#requiresFullTraceability)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3: evidence gates for promotion; automatic step-down; **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 04: autonomy is a licence, not a launch setting; **AM** [EVOLVE](#ref-EVOLVE) Stage 4: allow more autonomy only when quality metrics improve
+
+<a id="OutcomeMetric"></a>
+#### outcome metric (`pwm:OutcomeMetric`)
+
+Primary metric of an AI use case, cycle time, decision quality or reliability, with a baseline and target computed from the institution's own records.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Properties:** [`primaryMetric`](#primaryMetric), [`baselineValue`](#baselineValue), [`targetValue`](#targetValue)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 7; item 8; **AM** [EVOLVE](#ref-EVOLVE) Measure what matters
+
+<a id="Purpose"></a>
+#### purpose (`pwm:Purpose`)
+
+Declared reason for processing data or invoking AI. Access is bound to it; a request without a registered purpose is refused.
+
+- **Close match:** [Purpose](https://w3id.org/dpv#Purpose) (DPV)
+- **Handling:** slow context
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7: purpose and description; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 3: purpose-bound access; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 11: who, why, what, where before retrieval
+
+<a id="KillSwitch"></a>
+#### kill switch (`pwm:KillSwitch`)
+
+Mechanism that deactivates an AI system expeditiously when it exceeds risk tolerances, effective on the next decision, with a tested activation protocol and fallback.
+
+- **Handling:** fast context
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.3 and fn 29; 5.23(b); **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 12
+
+<a id="KillSwitchDrill"></a>
+#### kill-switch drill (`pwm:KillSwitchDrill`)
+
+Test activation of a kill switch, recording who activated it, how long until the next decision was denied, and how the fallback was reached.
+
+- **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.3: activation protocols tested regularly; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Gap 7
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="hasPurpose"></a>`pwm:hasPurpose` has purpose | any → [purpose](#Purpose) | Registered purpose of a use case, delegation or request. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7 |
+| <a id="usesDataClass"></a>`pwm:usesDataClass` uses data class | any → [data classifications](#DataClassificationScheme) | Data classification a use case is permitted to process. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7: data used; 5.4(d): data classification |
+| <a id="dependsOn"></a>`pwm:dependsOn` depends on | any → any | AI system, model, provider or other use case that a use case relies on. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7: dependencies; fn 26 |
+| <a id="lifecycleStatus"></a>`pwm:lifecycleStatus` lifecycle status | [AI use case](#AIUseCase) → [use-case lifecycle statuses](#UseCaseStatusScheme) | Lifecycle status of a use case: pilot, live, suspended or retired. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7: lifecycle status; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.STATUSES |
+| <a id="riskTier"></a>`pwm:riskTier` risk tier | [AI use case](#AIUseCase) → [use-case risk tiers](#RiskTierScheme) | Risk tier derived from a use case's classification, which sets its minimum controls and maximum autonomy. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: risk tier 1 to 4 |
+| <a id="hasMaterialityAssessment"></a>`pwm:hasMaterialityAssessment` has materiality assessment | [AI use case](#AIUseCase) → [risk materiality assessment](#RiskMaterialityAssessment) | Risk materiality assessment of a use case. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.10 |
+| <a id="impact"></a>`pwm:impact` impact | [risk materiality assessment](#RiskMaterialityAssessment) → [rating levels](#RatingLevelScheme) | Impact rating: consequence of failure or poor performance for the institution, its customers and stakeholders, including the sensitivity of the data processed. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.12(a) |
+| <a id="complexity"></a>`pwm:complexity` complexity | [risk materiality assessment](#RiskMaterialityAssessment) → [rating levels](#RatingLevelScheme) | Complexity rating: from the technology, novelty, data and explainability, and for third-party AI the visibility into it. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.12(b) |
+| <a id="reliance"></a>`pwm:reliance` reliance | [risk materiality assessment](#RiskMaterialityAssessment) → [rating levels](#RatingLevelScheme) | Reliance rating: how far the decision or output rests on AI, including the autonomy granted and the degree of human oversight. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.12(c) |
+| <a id="inherentMateriality"></a>`pwm:inherentMateriality` inherent materiality | [risk materiality assessment](#RiskMaterialityAssessment) → [rating levels](#RatingLevelScheme) | Materiality before controls are applied. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.11 |
+| <a id="residualMateriality"></a>`pwm:residualMateriality` residual materiality | [risk materiality assessment](#RiskMaterialityAssessment) → [rating levels](#RatingLevelScheme) | Materiality after controls; must be within risk appetite before deployment. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.11 |
+| <a id="businessCriticality"></a>`pwm:businessCriticality` business criticality | [risk materiality assessment](#RiskMaterialityAssessment) → [rating levels](#RatingLevelScheme) | Kognita classification axis: how critical the use case is to the business. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.BUSINESS_CRITICALITY |
+| <a id="clientImpactClass"></a>`pwm:clientImpactClass` client-impact class | [risk materiality assessment](#RiskMaterialityAssessment) → [client-impact classes](#ClientImpactClassScheme) | Kognita classification axis: how directly the use case reaches clients. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.CLIENT_IMPACT |
+| <a id="decisionConsequence"></a>`pwm:decisionConsequence` decision consequence | [risk materiality assessment](#RiskMaterialityAssessment) → [decision consequences](#DecisionConsequenceScheme) | Kognita classification axis: the kind of decision the use case informs or takes. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.DECISION_CONSEQUENCE |
+| <a id="autonomyAxis"></a>`pwm:autonomyAxis` autonomy axis | [risk materiality assessment](#RiskMaterialityAssessment) → [use-case autonomy axis](#AutonomyAxisScheme) | Kognita classification axis: autonomy granted to the use case. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.AUTONOMY_AXIS |
+| <a id="hasAccountabilityRole"></a>`pwm:hasAccountabilityRole` has accountability role | any → [accountability role](#AccountabilityRole) | Accountability role held for a use case or agent. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: owner roles; accountability matrix |
+| <a id="registeredForUseCase"></a>`pwm:registeredForUseCase` registered for use case | [AI agent](#AIAgent) → [AI use case](#AIUseCase) | Use case an agent is registered to act under. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 1: linked use cases |
+| <a id="maxAutonomyLevel"></a>`pwm:maxAutonomyLevel` maximum autonomy level | [AI agent](#AIAgent) → [agent autonomy levels](#AutonomyLevelScheme) | Highest autonomy level an agent may operate at, capped by its use case's risk tier. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3 |
+| <a id="requiredAutonomyLevel"></a>`pwm:requiredAutonomyLevel` required autonomy level | [tool](#Tool) → [agent autonomy levels](#AutonomyLevelScheme) | Autonomy level a tool requires. A call above the agent's level is refused; a call at L4 routes to human approval. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3 |
+| <a id="actionVerb"></a>`pwm:actionVerb` action verb | any → [action verbs](#ActionVerbScheme) | Action a tool performs, or a delegation permits. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3: action permissions are per verb |
+| <a id="permittedTool"></a>`pwm:permittedTool` permitted tool | [AI agent](#AIAgent) → [tool](#Tool) | Tool on an agent's allow-list. | **REG** [MAS AIRG](#ref-MAS-AIRG) fn 25: tools and systems the agent can access; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 5 |
+| <a id="boundaryTier"></a>`pwm:boundaryTier` boundary tier | any → [boundary tiers](#BoundaryTierScheme) | Whether an action is always permitted, needs asking first, or is never permitted for an agent. | **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 03: three-tier boundaries; **AM** [EVOLVE](#ref-EVOLVE) Stage 4: the three-tier boundary system |
+| <a id="delegatedBy"></a>`pwm:delegatedBy` delegated by | [delegated authority](#DelegatedAuthority) → any | Person who grants a delegated authority. They must hold the entitlement themselves. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: dual check |
+| <a id="delegatedTo"></a>`pwm:delegatedTo` delegated to | [delegated authority](#DelegatedAuthority) → [AI agent](#AIAgent) | Agent that receives a delegated authority. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2 |
+| <a id="aboutClient"></a>`pwm:aboutClient` about client | any → [client](#Client) | Client a delegation, claim or fact is about. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2; 0.6 item 1 |
+| <a id="permitsDataClass"></a>`pwm:permitsDataClass` permits data class | [delegated authority](#DelegatedAuthority) → [data classifications](#DataClassificationScheme) | Highest data classification a delegation permits the agent to access. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: allowed data |
+| <a id="primaryMetric"></a>`pwm:primaryMetric` primary metric | [outcome metric](#OutcomeMetric) → [primary outcome metrics](#PrimaryMetricScheme) | Kind of an outcome metric. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.PRIMARY_METRICS |
+| <a id="providedBy"></a>`pwm:providedBy` provided by | any → [model provider](#ModelProvider) | Model provider that supplies a model or AI service. Close match: [is provided by](https://www.omg.org/spec/Commons/Organizations/isProvidedBy) (OMG Commons). | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.11 |
+| <a id="approvedJurisdiction"></a>`pwm:approvedJurisdiction` approved jurisdiction | [AI use case](#AIUseCase) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Jurisdiction in which a use case is approved for use, as an ISO 3166-1 alpha-2 code. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7: approved scope of use (e.g., jurisdiction) |
+| <a id="modelType"></a>`pwm:modelType` model type | [AI use case](#AIUseCase) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Kind of model a use case relies on, such as a classifier, ranking model or large language model. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7 |
+| <a id="isMediated"></a>`pwm:isMediated` is mediated | [AI use case](#AIUseCase) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether a use case runs through the institution's AI control plane. Unmediated entries record the assurance gap and compensating control. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.2, 4.4: AI in third-party services and shadow AI; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Gap 1 |
+| <a id="agentIdentifier"></a>`pwm:agentIdentifier` agent identifier | [AI agent](#AIAgent) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Readable, unique identifier of an agent, such as AGENT-RM-PRECALL-01. | **REG** [MAS AIRG](#ref-MAS-AIRG) fn 25: agent-specific identifiers; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 1 |
+| <a id="deploymentVersion"></a>`pwm:deploymentVersion` deployment version | [AI agent](#AIAgent) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash over an agent's system prompt, instructions, tools, permissions, data sources, orchestration and memory behaviour. Any change needs re-approval before the agent can act. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.25: change management; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 1: deployment version covers behaviour |
+| <a id="endsOnTaskCompletion"></a>`pwm:endsOnTaskCompletion` ends on task completion | [delegated authority](#DelegatedAuthority) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether a delegation is revoked when its task completes, not only when its period ends. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: authority ends when the task does |
+| <a id="approvalThreshold"></a>`pwm:approvalThreshold` approval threshold | [delegated authority](#DelegatedAuthority) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Statement of which actions under a delegation require human approval. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2 |
+| <a id="qualityThreshold"></a>`pwm:qualityThreshold` quality threshold | [autonomy promotion gate](#AutonomyPromotionGate) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Minimum share of outputs meeting the agreed standard, as a fraction from 0 to 1. | **AM** [EVOLVE](#ref-EVOLVE) Quality at least 95 percent |
+| <a id="exceptionRateThreshold"></a>`pwm:exceptionRateThreshold` exception rate threshold | [autonomy promotion gate](#AutonomyPromotionGate) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Maximum share of runs that leave the always-do path, as a fraction from 0 to 1. | **AM** [EVOLVE](#ref-EVOLVE) Exception rate below 5 percent |
+| <a id="requiresFullTraceability"></a>`pwm:requiresFullTraceability` requires full traceability | [autonomy promotion gate](#AutonomyPromotionGate) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether every action in the evaluation window must be reconstructable for the gate to pass. | **AM** [EVOLVE](#ref-EVOLVE) Evidence fully traceable |
+| <a id="baselineValue"></a>`pwm:baselineValue` baseline value | [outcome metric](#OutcomeMetric) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Measured value of an outcome metric before the use case. | **AM** [EVOLVE](#ref-EVOLVE) Outcome baselines |
+| <a id="targetValue"></a>`pwm:targetValue` target value | [outcome metric](#OutcomeMetric) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Agreed target for an outcome metric. | **AM** [EVOLVE](#ref-EVOLVE) Targets agreed with the process owner |
+
+### Code lists
+
+<a id="AutonomyLevelScheme"></a>
+#### agent autonomy levels (`pwm:AutonomyLevelScheme`)
+
+Early private-banking deployments are expected at L1 to L4. Raising a level is a governed change needing the accountable owner and independent validation. The four-step gate in the Filing Cabinet talk (suggest, draft, act with approval, act alone) corresponds to L2, L3, L4 and L5 or above.
+
+Used by: [`maxAutonomyLevel`](#maxAutonomyLevel), [`requiredAutonomyLevel`](#requiredAutonomyLevel)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3: autonomy levels; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 12: reading is not the same as acting
+
+| Code | Concept | Definition |
+|---|---|---|
+| L0 | <a id="L0Retrieve"></a>retrieve (`pwm:L0Retrieve`) | Fetch authorised information. |
+| L1 | <a id="L1Explain"></a>explain (`pwm:L1Explain`) | Summarise or explain retrieved information. |
+| L2 | <a id="L2Recommend"></a>recommend (`pwm:L2Recommend`) | Propose an option. Recommending never implies permission to execute. |
+| L3 | <a id="L3Draft"></a>draft (`pwm:L3Draft`) | Prepare an artefact a person reviews before use. |
+| L4 | <a id="L4ActAfterApproval"></a>act after approval (`pwm:L4ActAfterApproval`) | Take an action once a named person, not the requester, has approved that exact action. |
+| L5 | <a id="L5BoundedAutonomy"></a>bounded autonomous action (`pwm:L5BoundedAutonomy`) | Act without per-action approval inside explicit limits. |
+| L6 | <a id="L6BroadAutonomy"></a>broad autonomy (`pwm:L6BroadAutonomy`) | Act across tasks with broad discretion. |
+
+<a id="BoundaryTierScheme"></a>
+#### boundary tiers (`pwm:BoundaryTierScheme`)
+
+Set per action for each agent, independently of the autonomy-level scale. As a rule of thumb, internal work at L0 to L3 sits in always do, and L4 in ask first.
+
+Used by: [`boundaryTier`](#boundaryTier)
+
+References: **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 03; **AM** [EVOLVE](#ref-EVOLVE) Stage 4: the three-tier boundary system
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="AlwaysDo"></a>always do (`pwm:AlwaysDo`) | Safe, reversible, inside the mandate and already authorised, such as retrieving authorised data or drafting an internal briefing. |
+|  | <a id="AskFirst"></a>ask first (`pwm:AskFirst`) | Consequential or client-facing; the agent prepares and a person decides. |
+|  | <a id="NeverDo"></a>never do (`pwm:NeverDo`) | Permanently outside scope, such as executing transactions, changing permissions or sending client communications, enforced in permissions. |
+
+<a id="ActionVerbScheme"></a>
+#### action verbs (`pwm:ActionVerbScheme`)
+
+
+
+Used by: [`actionVerb`](#actionVerb)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3: read, analyse, recommend, draft, queue, send and execute
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="VerbRead"></a>read (`pwm:VerbRead`) | Read information. |
+|  | <a id="VerbAnalyse"></a>analyse (`pwm:VerbAnalyse`) | Derive insight from information. |
+|  | <a id="VerbRecommend"></a>recommend (`pwm:VerbRecommend`) | Propose an option. |
+|  | <a id="VerbDraft"></a>draft (`pwm:VerbDraft`) | Prepare an artefact. |
+|  | <a id="VerbQueue"></a>queue (`pwm:VerbQueue`) | Place an artefact for release by a person. |
+|  | <a id="VerbSend"></a>send (`pwm:VerbSend`) | Release an artefact outside the institution. |
+|  | <a id="VerbExecute"></a>execute (`pwm:VerbExecute`) | Change a system of record or move value. |
+
+<a id="UseCaseStatusScheme"></a>
+#### use-case lifecycle statuses (`pwm:UseCaseStatusScheme`)
+
+
+
+Used by: [`lifecycleStatus`](#lifecycleStatus)
+
+References: **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7; 5.2 fn 28 (pilots); 5.26 (decommissioning); **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.STATUSES
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="StatusPilot"></a>pilot (`pwm:StatusPilot`) | Limited by end date, named users and success criteria. Close match: [Deployment Stage](https://w3id.org/dpv/ai#DeploymentStage) (DPV-AI). |
+|  | <a id="StatusLive"></a>live (`pwm:StatusLive`) | In production use. Close match: [Operation Stage](https://w3id.org/dpv/ai#OperationStage) (DPV-AI). |
+|  | <a id="StatusSuspended"></a>suspended (`pwm:StatusSuspended`) | Stopped pending review; decisions are refused. |
+|  | <a id="StatusRetired"></a>retired (`pwm:StatusRetired`) | Decommissioned; its agents are stopped and retention applies. Close match: [Decommission Stage](https://w3id.org/dpv/ai#DecommissionStage) (DPV-AI). |
+
+<a id="RiskTierScheme"></a>
+#### use-case risk tiers (`pwm:RiskTierScheme`)
+
+
+
+Used by: [`riskTier`](#riskTier)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: risk tier 1 to 4
+
+| Code | Concept | Definition |
+|---|---|---|
+| 1 | <a id="Tier1"></a>tier 1 (`pwm:Tier1`) | Research summarisation. |
+| 2 | <a id="Tier2"></a>tier 2 (`pwm:Tier2`) | Client intelligence and meeting preparation. |
+| 3 | <a id="Tier3"></a>tier 3 (`pwm:Tier3`) | KYC, suitability and recommendations. |
+| 4 | <a id="Tier4"></a>tier 4 (`pwm:Tier4`) | Financial execution. |
+
+<a id="RatingLevelScheme"></a>
+#### rating levels (`pwm:RatingLevelScheme`)
+
+Used for impact, complexity, reliance, inherent and residual materiality, business criticality and capacity for loss.
+
+Used by: [`businessCriticality`](#businessCriticality), [`capacityForLoss`](#capacityForLoss), [`complexity`](#complexity), [`impact`](#impact), [`inherentMateriality`](#inherentMateriality), [`reliance`](#reliance), [`residualMateriality`](#residualMateriality)
+
+References: **REG** [MAS AIRG](#ref-MAS-AIRG) 4.12; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.MATERIALITY, BUSINESS_CRITICALITY
+
+| Code | Concept | Definition |
+|---|---|---|
+| 1 | <a id="RatingLow"></a>low (`pwm:RatingLow`) | Low. |
+| 2 | <a id="RatingMedium"></a>medium (`pwm:RatingMedium`) | Medium. |
+| 3 | <a id="RatingHigh"></a>high (`pwm:RatingHigh`) | High; material. |
+| 4 | <a id="RatingCritical"></a>critical (`pwm:RatingCritical`) | Critical; material. |
+
+<a id="ClientImpactClassScheme"></a>
+#### client-impact classes (`pwm:ClientImpactClassScheme`)
+
+
+
+Used by: [`clientImpactClass`](#clientImpactClass)
+
+References: **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Naming collisions: client-impact class; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.CLIENT_IMPACT
+
+| Code | Concept | Definition |
+|---|---|---|
+| 1 | <a id="ImpactInternalProductivity"></a>internal productivity (`pwm:ImpactInternalProductivity`) | Staff productivity with no client reach. |
+| 2 | <a id="ImpactRMAssistance"></a>RM assistance (`pwm:ImpactRMAssistance`) | Helps a relationship manager prepare. |
+| 3 | <a id="ImpactClientInfluence"></a>client influence (`pwm:ImpactClientInfluence`) | Shapes what a client is told or offered. |
+| 4 | <a id="ImpactClientCommunication"></a>client communication (`pwm:ImpactClientCommunication`) | Produces content that reaches a client. |
+| 5 | <a id="ImpactAdvice"></a>advice (`pwm:ImpactAdvice`) | Contributes to a personal recommendation. |
+| 6 | <a id="ImpactExecution"></a>execution (`pwm:ImpactExecution`) | Contributes to executing a transaction. |
+
+<a id="DecisionConsequenceScheme"></a>
+#### decision consequences (`pwm:DecisionConsequenceScheme`)
+
+
+
+Used by: [`decisionConsequence`](#decisionConsequence)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.DECISION_CONSEQUENCE
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="ConsequenceInformational"></a>informational (`pwm:ConsequenceInformational`) | Informs only. |
+|  | <a id="ConsequenceOperational"></a>operational (`pwm:ConsequenceOperational`) | Changes an internal operation. |
+|  | <a id="ConsequenceClientCommunication"></a>client communication (`pwm:ConsequenceClientCommunication`) | Determines what reaches a client. |
+|  | <a id="ConsequenceSuitability"></a>suitability (`pwm:ConsequenceSuitability`) | Bears on whether advice is suitable. |
+|  | <a id="ConsequenceFinancialAction"></a>financial action (`pwm:ConsequenceFinancialAction`) | Moves value or changes a position. |
+
+<a id="AutonomyAxisScheme"></a>
+#### use-case autonomy axis (`pwm:AutonomyAxisScheme`)
+
+
+
+Used by: [`autonomyAxis`](#autonomyAxis)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.AUTONOMY_AXIS
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="AutonomyNone"></a>none (`pwm:AutonomyNone`) | No autonomous action. |
+|  | <a id="AutonomyAssisted"></a>assisted (`pwm:AutonomyAssisted`) | Assists a person who acts. |
+|  | <a id="AutonomyConditional"></a>conditional (`pwm:AutonomyConditional`) | Acts under conditions or approval. |
+|  | <a id="AutonomyHigh"></a>high (`pwm:AutonomyHigh`) | Acts with little human involvement. |
+
+<a id="PrimaryMetricScheme"></a>
+#### primary outcome metrics (`pwm:PrimaryMetricScheme`)
+
+
+
+Used by: [`primaryMetric`](#primaryMetric)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.PRIMARY_METRICS; **AM** [EVOLVE](#ref-EVOLVE) Measure what matters
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="MetricCycleTime"></a>cycle time (`pwm:MetricCycleTime`) | Time to complete the workflow; breaches above target. |
+|  | <a id="MetricDecisionQuality"></a>decision quality (`pwm:MetricDecisionQuality`) | Share of outputs meeting the standard; breaches below target. |
+|  | <a id="MetricReliability"></a>reliability (`pwm:MetricReliability`) | Share of runs completing without failure; breaches below target. |
+|  | <a id="MetricKnowledgeRetention"></a>knowledge retention (`pwm:MetricKnowledgeRetention`) | Capability that remains when people leave. An EVOLVE measure; not a Kognita primary metric. |
+
+<a id="GovernanceRiskScheme"></a>
+#### agentic governance risks (`pwm:GovernanceRiskScheme`)
+
+Five risks that sit on top of model risk when AI moves from assistance to action.
+
+References: **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 02: five risks
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="RiskAccess"></a>access (`pwm:RiskAccess`) | An agent inherits whatever its tools can reach. |
+|  | <a id="RiskEvidence"></a>evidence (`pwm:RiskEvidence`) | The chain of retrievals, judgements and actions is not kept. |
+|  | <a id="RiskOperational"></a>operational (`pwm:RiskOperational`) | Agents loop, stall, call the wrong tool or keep moving when they should stop. |
+|  | <a id="RiskChange"></a>change (`pwm:RiskChange`) | Behaviour changes with a prompt, tool, source or silent model update. |
+|  | <a id="RiskOwnership"></a>ownership (`pwm:RiskOwnership`) | No named person is accountable for what the agent did. |
+
+<a id="ModuleEvidence"></a>
+
+## Module 9: Information governance, claims and evidence
+
+Governed documents and definitions, facts and claims, policy decisions and the evidence that reconstructs them.
+
+### Classes
+
+<a id="GovernedInformationAsset"></a>
+#### governed information asset (`pwm:GovernedInformationAsset`)
+
+Document, record or dataset carrying the minimum governance labels that make it safe to give to AI: owner, approval status, effective date, what it supersedes, classification per section, version identifier or content hash, and retention date.
+
+*Note:* When content is deleted, keep its hash and record the deletion.
+
+- **Specialises:** [document](https://www.omg.org/spec/Commons/Documents/Document) (OMG Commons)
+- **Handling:** slow context
+- **Properties:** [`hasSection`](#hasSection)
+- **References:** **ONT** [DCMI Terms](#ref-DCMI-TERMS) dcterms:valid, dcterms:replaces; **ISO** [ISO 15489](#ref-ISO-15489) Records: authenticity, reliability, integrity, usability; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: minimum labels
+
+<a id="DocumentSection"></a>
+#### document section (`pwm:DocumentSection`)
+
+Section of a governed information asset with its own classification, so entitlements apply per section rather than per document.
+
+- **Specialises:** [document](https://www.omg.org/spec/Commons/Documents/Document) (OMG Commons)
+- **Handling:** slow context
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 1: per-section classification at ingestion; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: classification per section, not per document
+
+<a id="ApprovedSource"></a>
+#### approved source (`pwm:ApprovedSource`)
+
+Source registered as approved for a use case's regulated claims, such as CIO research, product documentation, permitted market data or policy. A model's own knowledge is never an approved source.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context
+- **Properties:** [`approvedForUseCase`](#approvedForUseCase)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 3: approved-source grounding
+
+<a id="GovernedDefinition"></a>
+#### governed definition (`pwm:GovernedDefinition`)
+
+Authoritative, versioned definition of a business term, such as assets under management, net new money or concentration, with an owner. Figures using the term must cite it.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C1
+- **Properties:** [`definesTerm`](#definesTerm)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 12: governed business definitions; **AM** [EVOLVE](#ref-EVOLVE) Stage 5: define truth once (one definition of AUM)
+
+<a id="CalculationService"></a>
+#### calculation service (`pwm:CalculationService`)
+
+Registered service that produces authoritative figures, such as performance, valuation, concentration, exposure or suitability scores. A model may explain a calculation; it may not invent one.
+
+- **Specialises:** [SoftwareAgent](http://www.w3.org/ns/prov#SoftwareAgent) (PROV-O)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 6: calculation provenance
+
+<a id="Fact"></a>
+#### fact (`pwm:Fact`)
+
+Authoritative value from a system of record, carrying its source, owner, as-of time, classification, entitlement and freshness threshold. Stale facts are refreshed, suppressed or flagged, never silently used.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`freshnessThreshold`](#freshnessThreshold)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: fact contract and freshness
+
+<a id="Claim"></a>
+#### claim (`pwm:Claim`)
+
+Material statement an agent produces for a person or client, typed as verified fact, inference, conversation hypothesis or possible provider capability, with its sources, calculation method, model and prompt versions and validator status.
+
+*Note:* Unlabelled claims cannot be shown. An inference cannot be relabelled as fact without a cited source and verification.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`validatorStatus`](#validatorStatus)
+- **References:** **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiables 6 and 7; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 items 1, 5, 7: claim provenance, claim types, verification gate
+
+<a id="PolicyRule"></a>
+#### policy rule (`pwm:PolicyRule`)
+
+Effective-dated, citable rule evaluated outside the model before data moves or an action runs. Rules are versioned, never edited in place.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C1
+- **Properties:** [`ruleCitation`](#ruleCitation)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.25(b): change control and version control; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Design rule: never rely on the LLM to enforce a control that can be enforced outside it
+
+<a id="PolicyDecision"></a>
+#### policy decision (`pwm:PolicyDecision`)
+
+Deterministic outcome of evaluating every applicable rule for a request, allow, deny, escalate or hold for human approval, citing the deciding rule and its version, the use case and any delegation relied on. One failing rule denies.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C1
+- **Properties:** [`decisionOutcome`](#decisionOutcome), [`decidedByRule`](#decidedByRule)
+- **References:** **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 9: runtime policy enforcement outside the LLM; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.Outcome, OUTCOME_PRECEDENCE; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 14: the AI answer receipt, for approvals and denials
+
+<a id="EvidenceRecord"></a>
+#### evidence record (`pwm:EvidenceRecord`)
+
+Append-only, hash-chained record of an event, such as a policy decision, model call, tool call, retrieval, approval or communication, holding hashes and references rather than content, from which an interaction can be reconstructed.
+
+*Note:* Record a model refusal separately from a policy denial. Otherwise the evidence shows only that the model usually behaves, not that the controls work.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C1
+- **Properties:** [`eventType`](#eventType), [`evidenceFor`](#evidenceFor), [`recordHash`](#recordHash), [`previousRecordHash`](#previousRecordHash)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): logging of prompts, responses, model versions; 5.17 reproducibility; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 12: complete action audit trail; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 15: append-only, tamper-evident; log refusals and blocks separately
+
+<a id="HumanReview"></a>
+#### human review (`pwm:HumanReview`)
+
+Review of AI output or a proposed action by a competent person with authority to intervene, given a complete packet of action, reason, evidence, risks, alternatives and checks run.
+
+- **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; automation bias and decision fatigue; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11 (approval packet); item 13 (risk-based review)
+
+<a id="AIIncident"></a>
+#### AI incident (`pwm:AIIncident`)
+
+Incident involving a failure, malfunction or poor performance of an AI system or model, escalated, tracked and linked to the clients affected.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** default classification C2
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) fn 20 (definition); 3.5(e) escalation; 5.23(b) incident management; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14 (affected-client query); 0.7 (incident evidence and report)
+
+<a id="NearMiss"></a>
+#### near miss (`pwm:NearMiss`)
+
+Event where harm was avoided, such as a blocked action, a verifier block, a reviewer rejection, an unsafe draft or unusual agent behaviour, aggregated to find weak controls before harm occurs.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** default classification C1
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(d): review incidents and near misses; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 15: near-miss register
+
+<a id="MemoryRecord"></a>
+#### memory record (`pwm:MemoryRecord`)
+
+Item an agent retains beyond a single step, scoped as working, relationship or institutional memory and typed like a claim, with retention, a correction path and expiry.
+
+*Note:* An inference becomes a relationship record only after verification by a person. Client data never enters institutional memory.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`memoryScope`](#memoryScope)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 8: memory governance; **AM** [EVOLVE](#ref-EVOLVE) Closed-loop learning; human expertise becomes institutional capability
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="informationOwner"></a>`pwm:informationOwner` information owner | any → [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons) | Role accountable for a governed information asset or definition. | **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: owner |
+| <a id="approvalStatus"></a>`pwm:approvalStatus` approval status | any → [information asset statuses](#AssetStatusScheme) | Approval status of a governed information asset: draft, current, superseded or withdrawn. | **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slides 8 and 9: approval status |
+| <a id="hasSection"></a>`pwm:hasSection` has section | [governed information asset](#GovernedInformationAsset) → [document section](#DocumentSection) | Section of a governed information asset. | **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8 |
+| <a id="classification"></a>`pwm:classification` classification | any → [data classifications](#DataClassificationScheme) | Data classification of an asset, section, fact or record. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.4(d); **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.Classification |
+| <a id="approvedForUseCase"></a>`pwm:approvedForUseCase` approved for use case | [approved source](#ApprovedSource) → [AI use case](#AIUseCase) | Use case for which a source is approved. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 3: each use case has a register of approved sources |
+| <a id="claimType"></a>`pwm:claimType` claim type | any → [claim types](#ClaimTypeScheme) | Epistemic type of a claim or memory record. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) claims: VERIFIED_FACT, INFERENCE, CONVERSATION_HYPOTHESIS, POSSIBLE_BANK_CAPABILITY |
+| <a id="validatorStatus"></a>`pwm:validatorStatus` validator status | [claim](#Claim) → [validator statuses](#ValidatorStatusScheme) | Verdict of an independent verifier on a claim. Policy decides what each status may reach. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 7: verification gate |
+| <a id="citesSource"></a>`pwm:citesSource` cites source | any → any | Approved source, governed asset or fact a claim relies on. Sub-property of [wasDerivedFrom](http://www.w3.org/ns/prov#wasDerivedFrom) (PROV-O). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 items 1, 3 |
+| <a id="usesDefinition"></a>`pwm:usesDefinition` uses definition | any → [governed definition](#GovernedDefinition) | Governed definition, at a version, that a claim or figure uses. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 12 |
+| <a id="calculatedBy"></a>`pwm:calculatedBy` calculated by | any → [calculation service](#CalculationService) | Calculation service that produced a figure. Sub-property of [wasAttributedTo](http://www.w3.org/ns/prov#wasAttributedTo) (PROV-O). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 6: calculation_method |
+| <a id="staleAction"></a>`pwm:staleAction` stale action | any → [stale-data actions](#StaleActionScheme) | What happens when a fact is older than its threshold. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.StaleAction |
+| <a id="decisionOutcome"></a>`pwm:decisionOutcome` decision outcome | [policy decision](#PolicyDecision) → [policy decision outcomes](#DecisionOutcomeScheme) | Outcome of a policy decision. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.Outcome |
+| <a id="decidedByRule"></a>`pwm:decidedByRule` decided by rule | [policy decision](#PolicyDecision) → [policy rule](#PolicyRule) | Rule, at its version, that determined a policy decision. | **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 14: the rule and rule version that decided it |
+| <a id="underUseCase"></a>`pwm:underUseCase` under use case | any → [AI use case](#AIUseCase) | Registered use case a decision, claim or event was produced under. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: every decision must reference a registered use case |
+| <a id="reliesOnDelegation"></a>`pwm:reliesOnDelegation` relies on delegation | any → [delegated authority](#DelegatedAuthority) | Delegated authority a decision or action relied on. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: every decision references the delegation it relied on |
+| <a id="eventType"></a>`pwm:eventType` event type | [evidence record](#EvidenceRecord) → [evidence event types](#EvidenceEventTypeScheme) | Kind of event an evidence record captures. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.EventType |
+| <a id="evidenceFor"></a>`pwm:evidenceFor` evidence for | [evidence record](#EvidenceRecord) → any | Decision, action, communication or other record that an evidence record documents. The record points to it by identifier and hash and does not copy its content. Sub-property of [References](http://purl.org/dc/terms/references) (DCMI). | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d); **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
+| <a id="memoryScope"></a>`pwm:memoryScope` memory scope | [memory record](#MemoryRecord) → [memory scopes](#MemoryScopeScheme) | Scope of a memory record. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) memory.MemoryScope |
+| <a id="versionId"></a>`pwm:versionId` version identifier | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Version identifier of an asset, definition, rule, model or deployment. | **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: version ID or content hash |
+| <a id="retentionUntil"></a>`pwm:retentionUntil` retention until | any → [date](http://www.w3.org/2001/XMLSchema#date) (XSD) | Date until which a record must be kept. An AI record never expires before the regulatory record it supports. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.7: retention by record class; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: retention date |
+| <a id="definesTerm"></a>`pwm:definesTerm` defines term | [governed definition](#GovernedDefinition) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Business term a governed definition defines. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 12 |
+| <a id="asOf"></a>`pwm:asOf` as of | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Time at which a fact or valuation was true in its system of record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: as-of date |
+| <a id="freshnessThreshold"></a>`pwm:freshnessThreshold` freshness threshold | [fact](#Fact) → [duration](http://www.w3.org/2001/XMLSchema#duration) (XSD) | Maximum age at which a fact may still be used, as an xsd:duration. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: freshness thresholds per data type |
+| <a id="ruleCitation"></a>`pwm:ruleCitation` rule citation | [policy rule](#PolicyRule) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Text citing the policy, regulation or standard a rule implements. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Every decision citable to policy |
+| <a id="recordHash"></a>`pwm:recordHash` record hash | [evidence record](#EvidenceRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of an evidence record, chained to the previous record so deletion or alteration is detectable. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
+| <a id="previousRecordHash"></a>`pwm:previousRecordHash` previous record hash | [evidence record](#EvidenceRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of the record that precedes this one in the chain. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
+| <a id="modelVersion"></a>`pwm:modelVersion` model version | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Provider model version as served for a model call, claim or evaluation. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): applicable model versions |
+
+### Code lists
+
+<a id="DataClassificationScheme"></a>
+#### data classifications (`pwm:DataClassificationScheme`)
+
+Ordered by sensitivity. Compare by rank, never by label: entitlement filtering and egress control depend on the order.
+
+Used by: [`classification`](#classification), [`permitsDataClass`](#permitsDataClass), [`usesDataClass`](#usesDataClass)
+
+References: **REG** [MAS AIRG](#ref-MAS-AIRG) 5.4(d); **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.Classification
+
+| Code | Concept | Definition |
+|---|---|---|
+| C0 | <a id="C0"></a>public (`pwm:C0`) | Approved for public release. |
+| C1 | <a id="C1"></a>internal (`pwm:C1`) | For staff; no client identity. |
+| C2 | <a id="C2"></a>confidential (`pwm:C2`) | Identifies a client; within banking secrecy where it applies. Also: client-identifying. Close match: [Personal Data](https://w3id.org/dpv#PersonalData) (DPV). |
+| C3 | <a id="C3"></a>restricted (`pwm:C3`) | Need-to-know only, such as screening hits, investigations, special-category data and material non-public information. Also: highly sensitive, need-to-know. Close match: [Special Category Personal Data](https://w3id.org/dpv#SpecialCategoryPersonalData) (DPV). |
+
+<a id="DecisionOutcomeScheme"></a>
+#### policy decision outcomes (`pwm:DecisionOutcomeScheme`)
+
+Resolution is fail-closed: the most severe outcome present decides, in the order deny, escalate, human approval, allow.
+
+Used by: [`decisionOutcome`](#decisionOutcome)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.Outcome, OUTCOME_PRECEDENCE
+
+| Code | Concept | Definition |
+|---|---|---|
+| DENY | <a id="OutcomeDeny"></a>deny (`pwm:OutcomeDeny`) | Refused; nothing moves. |
+| ESCALATE | <a id="OutcomeEscalate"></a>escalate (`pwm:OutcomeEscalate`) | Uncertain; referred to a person. |
+| HUMAN_APPROVAL | <a id="OutcomeHumanApproval"></a>human approval (`pwm:OutcomeHumanApproval`) | Held until a named person approves this exact action. |
+| ALLOW | <a id="OutcomeAllow"></a>allow (`pwm:OutcomeAllow`) | Every rule passed. |
+| OBSERVE | <a id="OutcomeObserve"></a>observe (`pwm:OutcomeObserve`) | Recorded without gating, in monitor-only deployments. |
+
+<a id="ClaimTypeScheme"></a>
+#### claim types (`pwm:ClaimTypeScheme`)
+
+
+
+Used by: [`claimType`](#claimType)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 5; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) claims.ClaimType
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="VerifiedFact"></a>verified fact (`pwm:VerifiedFact`) | Backed by a cited source and verification. |
+|  | <a id="Inference"></a>inference (`pwm:Inference`) | Reasoned from facts; not itself verified. |
+|  | <a id="ConversationHypothesis"></a>conversation hypothesis (`pwm:ConversationHypothesis`) | Something worth raising with the client, to be tested in conversation. |
+|  | <a id="PossibleProviderCapability"></a>possible provider capability (`pwm:PossibleProviderCapability`) | Something the institution might be able to offer, not yet confirmed. Also: possible bank capability. |
+
+<a id="ValidatorStatusScheme"></a>
+#### validator statuses (`pwm:ValidatorStatusScheme`)
+
+
+
+Used by: [`validatorStatus`](#validatorStatus)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 7; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) claims.ValidatorStatus
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="ValidatorVerified"></a>verified (`pwm:ValidatorVerified`) | Verifier confirmed it. |
+|  | <a id="ValidatorInferred"></a>inferred (`pwm:ValidatorInferred`) | Supported only by inference. |
+|  | <a id="ValidatorUnverified"></a>unverified (`pwm:ValidatorUnverified`) | Not yet checked. |
+|  | <a id="ValidatorConflicting"></a>conflicting (`pwm:ValidatorConflicting`) | Sources disagree. |
+|  | <a id="ValidatorStale"></a>stale (`pwm:ValidatorStale`) | Relies on data past its freshness threshold. |
+|  | <a id="ValidatorBlocked"></a>blocked (`pwm:ValidatorBlocked`) | May not be released. |
+
+<a id="AssetStatusScheme"></a>
+#### information asset statuses (`pwm:AssetStatusScheme`)
+
+
+
+Used by: [`approvalStatus`](#approvalStatus)
+
+References: **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 9: superseded, current, draft
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="AssetDraft"></a>draft (`pwm:AssetDraft`) | Not approved; never given to AI as authoritative. |
+|  | <a id="AssetCurrent"></a>current (`pwm:AssetCurrent`) | Approved and in force. |
+|  | <a id="AssetSuperseded"></a>superseded (`pwm:AssetSuperseded`) | Replaced by a later version; kept for reconstruction only. |
+|  | <a id="AssetWithdrawn"></a>withdrawn (`pwm:AssetWithdrawn`) | Withdrawn without replacement. |
+
+<a id="StaleActionScheme"></a>
+#### stale-data actions (`pwm:StaleActionScheme`)
+
+
+
+Used by: [`staleAction`](#staleAction)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.StaleAction
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="StaleRefresh"></a>refresh (`pwm:StaleRefresh`) | Fetch a current value before use. |
+|  | <a id="StaleSuppress"></a>suppress (`pwm:StaleSuppress`) | Do not use the value. |
+|  | <a id="StaleWarn"></a>warn (`pwm:StaleWarn`) | Use with a visible staleness warning. |
+
+<a id="MemoryScopeScheme"></a>
+#### memory scopes (`pwm:MemoryScopeScheme`)
+
+
+
+Used by: [`memoryScope`](#memoryScope)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) memory.MemoryScope
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="MemoryWorking"></a>working (`pwm:MemoryWorking`) | Temporary context; expires with the run. |
+|  | <a id="MemoryRelationship"></a>relationship (`pwm:MemoryRelationship`) | Durable client information, governed like any bank record. |
+|  | <a id="MemoryInstitutional"></a>institutional (`pwm:MemoryInstitutional`) | What the organisation learns across clients; no client data. |
+
+<a id="EvidenceEventTypeScheme"></a>
+#### evidence event types (`pwm:EvidenceEventTypeScheme`)
+
+Notations match Kognita EventType values. Model refusal is added from the Filing Cabinet talk so refusals and policy denials are logged apart.
+
+Used by: [`eventType`](#eventType)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.EventType; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 15
+
+| Code | Concept | Definition |
+|---|---|---|
+| POLICY_DECISION | <a id="EventPolicyDecision"></a>policy decision (`pwm:EventPolicyDecision`) | A decision was taken. |
+| MODEL_CALL | <a id="EventModelCall"></a>model call (`pwm:EventModelCall`) | A model was called; provider, version and prompt and response hashes recorded. |
+| TOOL_CALL | <a id="EventToolCall"></a>tool call (`pwm:EventToolCall`) | A tool was invoked; arguments recorded as hashes. |
+| RETRIEVAL | <a id="EventRetrieval"></a>retrieval (`pwm:EventRetrieval`) | Content was retrieved, with item hashes. |
+| APPROVAL | <a id="EventApproval"></a>approval (`pwm:EventApproval`) | A person signed an approval. |
+| EGRESS | <a id="EventEgress"></a>egress (`pwm:EventEgress`) | Data left for a provider, allowed, redacted or denied. |
+| POLICY_CHANGE | <a id="EventPolicyChange"></a>policy change (`pwm:EventPolicyChange`) | A rule or register entry changed. |
+| ORIGINATION | <a id="EventOrigination"></a>origination (`pwm:EventOrigination`) | A client or product was selected. |
+| FINAL_DECISION | <a id="EventFinalDecision"></a>final decision (`pwm:EventFinalDecision`) | A person decided. |
+| CLIENT_COMMUNICATION | <a id="EventClientCommunication"></a>client communication (`pwm:EventClientCommunication`) | Something was sent to a client. |
+| INTERVENTION | <a id="EventIntervention"></a>intervention (`pwm:EventIntervention`) | A person paused, overrode, restricted, revoked or recovered a live run. |
+| OUTCOME | <a id="EventOutcome"></a>outcome (`pwm:EventOutcome`) | A complaint, correction or other outcome was linked to the interaction. |
+| NEAR_MISS | <a id="EventNearMiss"></a>near miss (`pwm:EventNearMiss`) | A near miss was recorded. |
+| CLAIM | <a id="EventClaim"></a>claim (`pwm:EventClaim`) | A claim was recorded. |
+| INCIDENT_OPENED | <a id="EventIncidentOpened"></a>incident opened (`pwm:EventIncidentOpened`) | An AI incident was opened. |
+| ERASURE | <a id="EventErasure"></a>erasure (`pwm:EventErasure`) | Content was erased; the chain stays verifiable. |
+| MODEL_REFUSAL | <a id="EventModelRefusal"></a>model refusal (`pwm:EventModelRefusal`) | The model declined, as distinct from a policy denial. |
+
+<a id="rules"></a>
+
+## Data rules (SHACL)
+
+`pwm-shapes.ttl` holds the rules below. Validate data together with `pwm.ttl` and RDFS inference:
+
+```sh
+pyshacl -s pwm-shapes.ttl -e pwm.ttl -i rdfs your-data.ttl
+```
+
+A firm can switch a rule off in its own shapes graph with `sh:deactivated true`, and add its own thresholds there.
+
+<a id="AccountabilityRoleShape"></a>
+### Accountability role
+
+Applies to [accountability role](#AccountabilityRole). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- An accountability role must be held by a named person (Kognita 0.4 item 8; MAS AIRG 4.7 key roles).
+- An AI agent can never be named in an accountability role (Kognita 0.4 item 8).
+
+<a id="AIUseCaseShape"></a>
+### AI use case
+
+Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- A use case records its purpose (MAS AIRG 4.7).
+- A use case records its approved jurisdiction as an ISO 3166-1 alpha-2 code (MAS AIRG 4.7 approved scope of use).
+- A use case has one lifecycle status: pilot, live, suspended or retired (MAS AIRG 4.7; Kognita 0.4 item 8).
+- A use case has one risk tier, 1 to 4 (Kognita 0.4 item 8).
+- A use case states whether the control plane mediates it. Embedded vendor AI is registered too, marked unmediated (Kognita 0.4 item 8; MAS AIRG 4.2).
+- A use case carries a review date set by its tier; past it, the use case is refused (Kognita 0.4 item 8).
+- A use case with no business owner is refused (Kognita 0.4 item 8; MAS AIRG 4.7).
+- A use case at tier 2 or above with no named Knowledge Lead is refused (Kognita 0.4 item 8).
+
+<a id="LiveUseCaseShape"></a>
+### Live use case
+
+Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- A live use case needs a materiality assessment with inherent and residual ratings, approved by the designated control function (MAS AIRG 4.11, 4.13; Kognita 0.4 item 8).
+
+<a id="ControlFunctionSeparationShape"></a>
+### Control function separation
+
+Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- The person who approves a use case's materiality rating for the control function cannot also be its business or technology owner (Kognita 0.4 item 8; MAS AIRG 4.13 independent oversight).
+
+<a id="RiskMaterialityAssessmentShape"></a>
+### Risk materiality assessment
+
+Applies to [risk materiality assessment](#RiskMaterialityAssessment). Sources: [MAS AIRG](#ref-MAS-AIRG).
+
+- Rate impact, low to critical (MAS AIRG 4.12(a)).
+- Rate complexity, low to critical (MAS AIRG 4.12(b)).
+- Rate reliance, including the autonomy granted, low to critical (MAS AIRG 4.12(c)).
+- Record materiality before controls (MAS AIRG 4.11).
+- Record materiality after controls (MAS AIRG 4.11).
+
+<a id="AIAgentShape"></a>
+### AI agent
+
+Applies to [AI agent](#AIAgent). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- An agent has one identifier (MAS AIRG footnote 25; Kognita 0.5 item 1).
+- An agent carries one maximum autonomy level, L0 to L6 (Kognita 0.5 item 3).
+- An agent is linked to at least one registered use case (Kognita 0.5 item 1).
+- An agent's deployment version covers prompt, tools, permissions and data sources, not only code (Kognita 0.5 item 1; MAS AIRG 5.25(b)).
+- An agent past its review date is refused, so it needs one (Kognita 0.5 item 1).
+
+<a id="AgentToolLevelShape"></a>
+### Agent tool level
+
+Applies to [AI agent](#AIAgent). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- An agent is permitted a tool that needs a higher autonomy level than the agent's maximum. A call above the agent's level is refused (Kognita 0.5 item 3).
+
+<a id="ToolShape"></a>
+### Tool
+
+Applies to [tool](#Tool). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Every tool declares the autonomy level it requires (Kognita 0.5 item 3).
+- A tool declares the verbs it performs, because action permissions are per verb (Kognita 0.5 item 3).
+
+<a id="DelegatedAuthorityShape"></a>
+### Delegated authority
+
+Applies to [delegated authority](#DelegatedAuthority). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- A delegation is granted by one named person (Kognita 0.5 item 2).
+- A delegation is granted to one registered agent (Kognita 0.5 item 2).
+- A delegation is bound to a purpose (Kognita 0.5 item 2).
+- A delegation names the actions it allows (Kognita 0.5 item 2).
+- A delegation is temporary: it has an end time, or ends when its task completes (Kognita 0.5 item 2).
+
+<a id="ClientCommunicationShape"></a>
+### Client communication
+
+Applies to [client communication](#ClientCommunication). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- A communication that does not trace back to a final decision is refused (Kognita 0.4 item 12).
+- Every communication is classified by communication level (Kognita 0.4 item 12).
+- Every communication carries its content provenance label (Kognita 0.4 item 11).
+- Client communication goes only through a registered, approved channel (Kognita 0.4 item 12).
+
+<a id="AIDisclosureShape"></a>
+### AI disclosure
+
+Applies to [client communication](#ClientCommunication). Sources: [Kognita private-banking pack](#ref-KOG-PB-PACK), [MAS AIRG](#ref-MAS-AIRG).
+
+- When AI generated the content, the client communication must say so (Kognita private-banking pack, client-ai-disclosure; MAS AIRG 5.6).
+
+*Kognita's private-banking pack applies this rule in SG, HK, CH and AE. Where no disclosure rule applies, a firm can switch the shape off in its own shapes graph with sh:deactivated true.*
+
+<a id="ClaimShape"></a>
+### Claim
+
+Applies to [claim](#Claim). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Unlabelled claims cannot be shown to an RM or sent to a client (Kognita 0.6 item 5).
+- validator status: at most 1
+- A claim typed as verified fact must cite a source. The model's own knowledge is never a source (Kognita 0.6 items 3 and 5).
+
+<a id="FactShape"></a>
+### Fact
+
+Applies to [fact](#Fact). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- A fact carries its as-of time (Kognita 0.6 item 2).
+- A fact carries a freshness threshold (Kognita 0.6 item 2).
+- A fact carries its classification (Kognita 0.6 item 2).
+- A fact names its source system (Kognita 0.6 item 2).
+
+<a id="ValuationShape"></a>
+### Valuation
+
+Applies to [valuation](#Valuation). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- amount: exactly one, of type decimal
+- currency: exactly one
+- as of: at least 1, of type dateTime
+- A figure presented as authoritative must cite a registered calculation service (Kognita 0.6 item 6).
+
+<a id="SuitabilityAssessmentShape"></a>
+### Suitability assessment
+
+Applies to [suitability assessment](#SuitabilityAssessment). Sources: [MiFID II](#ref-EU-MIFID2), [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR), [Kognita private-banking pack](#ref-KOG-PB-PACK).
+
+- Name the recommendation being assessed.
+- Cite the one risk profile in force when the assessment was made (MiFID II Art. 25(2); Delegated Regulation (EU) 2017/565 Art. 54).
+- Check the recommendation against the recorded mandate (Kognita private-banking pack, mandate).
+- suitability outcome: exactly one, one of suitable, suitable with conditions, not suitable, insufficient information
+- Record how the recommendation meets the client's objectives and characteristics, not a bare score (MiFID II Art. 25(6)).
+- Record who made the assessment.
+
+<a id="InvestorRiskProfileShape"></a>
+### Investor risk profile
+
+Applies to [investor risk profile](#InvestorRiskProfile). Sources: [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR).
+
+- risk profile level: exactly one
+- valid from: at least 1, of type dateTime
+- wasAttributedTo: at least 1
+
+<a id="InvestorClassificationShape"></a>
+### Investor classification
+
+Applies to [investor classification](#InvestorClassification). Sources: [FinSA](#ref-CH-FINSA), [MiFID II](#ref-EU-MIFID2), [Securities and Futures Act (SG)](#ref-SG-SFA).
+
+- investor category: exactly one
+- A classification is made under one jurisdiction's rules.
+- opt status: at most 1
+
+<a id="GovernedInformationAssetShape"></a>
+### Governed information asset
+
+Applies to [governed information asset](#GovernedInformationAsset). Sources: [Filing Cabinet talk](#ref-AM-FILING-CABINET).
+
+- Minimum label: owner (Filing Cabinet, slide 8).
+- Minimum label: approval status (Filing Cabinet, slide 8).
+- Minimum label: effective date (Filing Cabinet, slide 8).
+- Minimum label: retention date (Filing Cabinet, slide 8).
+- Minimum label: version identifier or content hash (Filing Cabinet, slide 8).
+
+<a id="DocumentSectionShape"></a>
+### Document section
+
+Applies to [document section](#DocumentSection). Sources: [Filing Cabinet talk](#ref-AM-FILING-CABINET).
+
+- Classify per section, not per document (Filing Cabinet, slide 8).
+
+<a id="PolicyRuleShape"></a>
+### Policy rule
+
+Applies to [policy rule](#PolicyRule). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Every rule carries a citation to what it implements (Kognita 0.4 item 3).
+- Rules are effective-dated (Kognita 0.3 item 7).
+- A change to a rule is a new version, never an edit in place (Kognita 0.3 item 7).
+
+<a id="CrossBorderRuleShape"></a>
+### Cross-border rule
+
+Applies to [cross-border rule](#CrossBorderRule). Sources: [Kognita private-banking pack](#ref-KOG-PB-PACK).
+
+- applies to activity: at least 1
+- permitted: exactly one, of type boolean
+- Client domicile is an ISO 3166-1 alpha-2 code.
+- Booking centre is an ISO 3166-1 alpha-2 code.
+
+<a id="PolicyDecisionShape"></a>
+### Policy decision
+
+Applies to [policy decision](#PolicyDecision). Sources: [Filing Cabinet talk](#ref-AM-FILING-CABINET), [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- decision outcome: exactly one, one of deny, escalate, human approval, allow, observe
+- Every decision names the rule and rule version that decided it (Filing Cabinet, slide 14).
+- Every decision references a registered use case (Kognita 0.4 item 8).
+
+<a id="EvidenceRecordShape"></a>
+### Evidence record
+
+Applies to [evidence record](#EvidenceRecord). Sources: [Kognita regulations library](#ref-KOG-CONTROLS), [MAS AIRG](#ref-MAS-AIRG).
+
+- event type: exactly one
+- Evidence records are hash-chained (Kognita control frameworks).
+- An evidence record states when the event happened (MAS AIRG 5.23(d)).
+
+<a id="CurrencyCodeShape"></a>
+### Currency code
+
+Applies to subjects of [currency](#currency). Sources: [ISO 4217](#ref-ISO-4217).
+
+- Currency is an ISO 4217 alphabetic code, such as SGD.
+
+<a id="CountryCodeShape"></a>
+### Country code
+
+Applies to subjects of [residence country](#residenceCountry), subjects of [domicile country](#domicileCountry), subjects of [nationality country](#nationalityCountry), subjects of [jurisdiction code](#jurisdictionCode), subjects of [tax residence country](#taxResidenceCountry). Sources: [ISO 3166](#ref-ISO-3166).
+
+- Residence is an ISO 3166-1 alpha-2 code, such as SG.
+- Domicile is an ISO 3166-1 alpha-2 code, such as SG.
+- Nationality is an ISO 3166-1 alpha-2 code, such as SG.
+- Jurisdiction is an ISO 3166-1 alpha-2 code, such as SG.
+- Tax residence is an ISO 3166-1 alpha-2 code, such as SG.
+
+<a id="LEIShape"></a>
+### Legal Entity Identifier
+
+Applies to subjects of [legal entity identifier](#legalEntityIdentifier). Sources: [ISO 17442](#ref-ISO-17442).
+
+- An LEI is 18 letters or digits followed by two check digits (ISO 17442).
+
+<a id="ISINShape"></a>
+### ISIN
+
+Applies to subjects of [ISIN](#isin). Sources: [ISO 6166](#ref-ISO-6166).
+
+- An ISIN is a two-letter prefix, nine letters or digits and a check digit (ISO 6166).
+
+<a id="CFIShape"></a>
+### CFI code
+
+Applies to subjects of [CFI code](#cfiCode). Sources: [ISO 10962](#ref-ISO-10962).
+
+- A CFI code is six letters (ISO 10962).
+
+## Extending PWM for an institution
+
+Keep institution detail in a separate ontology that imports PWM by its version IRI, which resolves to the Turtle file. Specialise PWM classes, add the firm's code lists, and bind coded properties to them with `pwm:valuesFrom`. Keep confidential content out of public repositories.
+
+```turtle
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix pwm:  <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix firm: <https://example.org/firm/ontology#> .
+
+<https://example.org/firm/ontology> a owl:Ontology ;
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.1> .
+
+# The firm's own risk scale, in place of the illustrative one
+firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
+firm:R1 a skos:Concept ; skos:inScheme firm:RiskScale ; skos:notation "R1" ;
+    skos:prefLabel "capital preservation"@en .
+
+# A firm product type specialising a PWM class
+firm:StructuredNote a owl:Class ;
+    rdfs:subClassOf pwm:Product ;
+    rdfs:label "structured note"@en .
+```
+
+<a id="references"></a>
+
+## Reference register
+
+| Ref | Mark | Title | Publisher | Date | Jurisdiction | Status | Note |
+|---|---|---|---|---|---|---|---|
+| <a id="ref-FIBO"></a>FIBO | ONT | [Financial Industry Business Ontology (FIBO)](https://github.com/edmcouncil/fibo) | EDM Council and Object Management Group | 2026-10-27 | Global | verified | Every FIBO IRI used here was checked against the ontology files at GitHub commit 33a92cd (27 October 2026). Each term's maturity level, Release or Provisional, is taken from the file that defines it. |
+| <a id="ref-OMG-COMMONS"></a>OMG Commons | ONT | [Commons Ontology Library](https://www.omg.org/spec/Commons/) | Object Management Group | 2025-08-01 | Global | verified | PartiesAndSituations and Organizations were read at version 20250801. Jurisdiction, RegulatoryAgency, Authorization, isPlayedBy and Document are referenced by FIBO production ontologies; their module files were not opened. |
+| <a id="ref-W3C-PROV-O"></a>PROV-O | ONT | [PROV-O: The PROV Ontology](https://www.w3.org/TR/prov-o/) | W3C | 2013-04-30 | Global | instrument-level |  |
+| <a id="ref-W3C-SKOS"></a>SKOS | ONT | [SKOS Simple Knowledge Organization System Reference](https://www.w3.org/TR/skos-reference/) | W3C | 2009-08-18 | Global | instrument-level |  |
+| <a id="ref-DCMI-TERMS"></a>DCMI Terms | ONT | [DCMI Metadata Terms](https://www.dublincore.org/specifications/dublin-core/dcmi-terms/) | Dublin Core Metadata Initiative |  | Global | instrument-level |  |
+| <a id="ref-W3C-DPV"></a>DPV | ONT | [Data Privacy Vocabulary (DPV) 2.3, with the AI extension](https://w3id.org/dpv) | W3C Data Privacy Vocabularies and Controls Community Group |  | Global | verified | Concept IRIs checked against the DPV 2.3 Turtle files (dpv and ai) in the w3c-cg/dpv repository. |
+| <a id="ref-ISO-17442"></a>ISO 17442 | ISO | [ISO 17442-1 Financial services: Legal entity identifier (LEI)](https://www.gleif.org/en/about-lei/iso-17442-the-lei-code-structure) | ISO |  | Global | instrument-level |  |
+| <a id="ref-ISO-6166"></a>ISO 6166 | ISO | ISO 6166 Securities: International securities identification number (ISIN) | ISO |  | Global | instrument-level |  |
+| <a id="ref-ISO-10962"></a>ISO 10962 | ISO | ISO 10962 Securities: Classification of financial instruments (CFI) | ISO |  | Global | instrument-level |  |
+| <a id="ref-ISO-4217"></a>ISO 4217 | ISO | ISO 4217 Codes for the representation of currencies | ISO |  | Global | instrument-level |  |
+| <a id="ref-ISO-3166"></a>ISO 3166 | ISO | ISO 3166-1 Codes for the representation of names of countries | ISO |  | Global | instrument-level |  |
+| <a id="ref-ISO-20022"></a>ISO 20022 | ISO | [ISO 20022 Universal financial industry message scheme](https://www.iso20022.org/) | ISO |  | Global | instrument-level |  |
+| <a id="ref-ISO-22222"></a>ISO 22222 | ISO | [ISO 22222:2005 Personal financial planning: Requirements for personal financial planners](https://www.iso.org/standard/43033.html) | ISO | 2005 | Global | verified | Listed as current; confirmed at review in 2023. |
+| <a id="ref-ISO-IEC-22989"></a>ISO/IEC 22989 | ISO | ISO/IEC 22989:2022 Artificial intelligence concepts and terminology | ISO/IEC |  | Global | instrument-level | Cited by the MAS AI Risk Management Guidelines (footnote 27) for the AI life cycle. |
+| <a id="ref-ISO-IEC-42001"></a>ISO/IEC 42001 | ISO | ISO/IEC 42001:2023 Artificial intelligence management system | ISO/IEC |  | Global | instrument-level |  |
+| <a id="ref-ISO-15489"></a>ISO 15489 | ISO | ISO 15489-1:2016 Records management: Concepts and principles | ISO |  | Global | instrument-level |  |
+| <a id="ref-FATF"></a>FATF Recommendations | REG | [International Standards on Combating Money Laundering and the Financing of Terrorism and Proliferation (the FATF Recommendations)](https://www.fatf-gafi.org/en/publications/Fatfrecommendations/Fatf-recommendations.html) | Financial Action Task Force | 2012, as updated | Global | instrument-level | Recommendation 12 (politically exposed persons, including source of wealth and source of funds) was checked; other Recommendation numbers are cited from the published text. |
+| <a id="ref-OECD-CRS"></a>OECD CRS | REG | [Standard for Automatic Exchange of Financial Account Information in Tax Matters: Common Reporting Standard](https://www.oecd.org/tax/automatic-exchange/common-reporting-standard/) | OECD |  | Global | verified | Controlling Persons is defined in Section VIII(D)(6). |
+| <a id="ref-IMDA-MGF-AGENTIC"></a>IMDA agentic AI framework | REG | [Model AI Governance Framework for Agentic AI](https://www.imda.gov.sg/-/media/imda/files/about/emerging-tech-and-research/artificial-intelligence/mgf-for-agentic-ai.pdf) | Infocomm Media Development Authority (Singapore) |  | SG | instrument-level | Referenced by the MAS AI Risk Management Guidelines, footnote 11. |
+| <a id="ref-MAS-AIRG"></a>MAS AIRG | REG | [Guidelines on Artificial Intelligence Risk Management](https://www.mas.gov.sg/-/media/mas-media-library/regulation/guidelines/bd/guidelines-on-artificial-intelligence-risk-management-for-financial-institutions/guidelines-on-artificial-intelligence-risk-management.pdf) | Monetary Authority of Singapore | 2026-10-07 | SG | verified | Read in full from the MAS PDF. Effective 7 October 2027: Sections 3 and 4 from that date; Sections 5 and 6 by 7 October 2028 (para 1.8). MAS intends to consult in 2027 on further guidance for agentic AI. |
+| <a id="ref-MAS-FEAT"></a>MAS FEAT | REG | [Principles to Promote Fairness, Ethics, Accountability and Transparency (FEAT) in the Use of AI and Data Analytics in Singapore's Financial Sector](https://www.mas.gov.sg/publications/monographs-or-information-paper/2018/feat) | Monetary Authority of Singapore | 2018 | SG | verified |  |
+| <a id="ref-MAS-FAA-N16"></a>MAS FAA-N16 | REG | [Notice FAA-N16 Recommendations on Investment Products](https://www.mas.gov.sg/regulation/notices/notice-faa-n16) | Monetary Authority of Singapore |  | SG | verified |  |
+| <a id="ref-MAS-SFA04-N12"></a>MAS SFA 04-N12 | REG | [Notice SFA 04-N12 Sale of Investment Products](https://www.mas.gov.sg/regulation/notices/notice-sfa-04-n12) | Monetary Authority of Singapore |  | SG | verified |  |
+| <a id="ref-MAS-626"></a>MAS Notice 626 | REG | [Notice 626 Prevention of Money Laundering and Countering the Financing of Terrorism: Banks](https://www.mas.gov.sg/regulation/notices/notice-626) | Monetary Authority of Singapore |  | SG | verified |  |
+| <a id="ref-SG-SFA"></a>Securities and Futures Act (SG) | REG | [Securities and Futures Act 2001, section 4A (accredited, expert and institutional investors), with the opt-in regime for accredited investors](https://sso.agc.gov.sg/Act/SFA2001) | Singapore Parliament; Monetary Authority of Singapore |  | SG | verified |  |
+| <a id="ref-SG-BANKING-ACT"></a>Banking Act (SG) | REG | [Banking Act 1970, section 47 (banking secrecy) and the Third Schedule](https://sso.agc.gov.sg/Act/BA1970) | Singapore Parliament |  | SG | instrument-level |  |
+| <a id="ref-MAS-FAIR-DEALING"></a>MAS Fair Dealing Guidelines | REG | Guidelines on Fair Dealing: Board and Senior Management Responsibilities for Delivering Fair Dealing Outcomes to Customers | Monetary Authority of Singapore |  | SG | instrument-level | Cited by the MAS AI Risk Management Guidelines, footnote 15. |
+| <a id="ref-EU-MIFID2"></a>MiFID II | REG | [Directive 2014/65/EU on markets in financial instruments (MiFID II)](https://eur-lex.europa.eu/eli/dir/2014/65/oj) | European Parliament and Council | 2014-05-15 | EU | instrument-level |  |
+| <a id="ref-EU-MIFID2-DR"></a>MiFID II Delegated Regulation | REG | [Commission Delegated Regulation (EU) 2017/565 supplementing MiFID II (organisational requirements and operating conditions)](https://eur-lex.europa.eu/eli/reg_del/2017/565/oj) | European Commission |  | EU | instrument-level |  |
+| <a id="ref-EU-PRIIPS"></a>PRIIPs Regulation | REG | [Regulation (EU) No 1286/2014 on key information documents for packaged retail and insurance-based investment products (PRIIPs)](https://eur-lex.europa.eu/eli/reg/2014/1286/oj) | European Parliament and Council |  | EU | instrument-level |  |
+| <a id="ref-EU-AI-ACT"></a>EU AI Act | REG | [Regulation (EU) 2024/1689 laying down harmonised rules on artificial intelligence (AI Act)](https://eur-lex.europa.eu/eli/reg/2024/1689/oj) | European Parliament and Council |  | EU | instrument-level |  |
+| <a id="ref-UK-FCA-COBS"></a>FCA COBS | REG | [FCA Handbook, Conduct of Business Sourcebook (COBS 3 client categorisation; COBS 9A suitability; COBS 10A appropriateness)](https://www.handbook.fca.org.uk/handbook/COBS/) | Financial Conduct Authority |  | GB | instrument-level |  |
+| <a id="ref-UK-FCA-FG21-1"></a>FCA FG21/1 | REG | [FG21/1 Guidance for firms on the fair treatment of vulnerable customers](https://www.fca.org.uk/publication/finalised-guidance/fg21-1.pdf) | Financial Conduct Authority | 2021 | GB | instrument-level |  |
+| <a id="ref-HK-SFC-COC"></a>SFC Code of Conduct | REG | [Code of Conduct for Persons Licensed by or Registered with the Securities and Futures Commission (para 5.2 suitability; para 15 professional investors)](https://www.sfc.hk/en/Rules-and-standards/Suitability-requirement) | Securities and Futures Commission |  | HK | verified | Paragraph 5.2 (suitability) checked. Paragraph 15 cited from the published Code. |
+| <a id="ref-HK-PI-RULES"></a>HK Professional Investor Rules | REG | [Securities and Futures (Professional Investor) Rules (Cap. 571D)](https://www.elegislation.gov.hk/hk/cap571D) | Hong Kong SAR Government |  | HK | instrument-level |  |
+| <a id="ref-CH-FINSA"></a>FinSA | REG | [Federal Act on Financial Services (FinSA), SR 950.1](https://www.fedlex.admin.ch/eli/cc/2019/758/en) | Swiss Confederation |  | CH | verified | Article 4 (client segmentation) and Article 5 (opting out and opting in) checked. Articles 10 to 14 (suitability and appropriateness) cited as a range. |
+| <a id="ref-US-REG-D"></a>SEC Regulation D | REG | [SEC Regulation D, Rule 501(a) definition of accredited investor (17 CFR 230.501)](https://www.ecfr.gov/current/title-17/section-230.501) | US Securities and Exchange Commission |  | US | instrument-level |  |
+| <a id="ref-US-REG-BI"></a>SEC Regulation Best Interest | REG | [SEC Regulation Best Interest (17 CFR 240.15l-1)](https://www.ecfr.gov/current/title-17/section-240.15l-1) | US Securities and Exchange Commission |  | US | instrument-level |  |
+| <a id="ref-KOG-ROADMAP"></a>Kognita roadmap | KOG | [Kognita Roadmap: From Governance Engine to Agent Harness (docs/ROADMAP.md)](https://github.com/mze3e/kognita/blob/main/docs/ROADMAP.md) | Kognita (open source, MIT) | 2026-09, at release 0.7.0 | Global | verified | Read at commit 9303769 (release 0.7.0). Locators name the release and roadmap item, for example 0.4 item 8. |
+| <a id="ref-KOG-CONTROLS"></a>Kognita regulations library | KOG | [AI Control Frameworks: Wealth Management and Agentic AI Coverage (docs/control-frameworks.md), the Kognita regulations library](https://github.com/mze3e/kognita/blob/main/docs/control-frameworks.md) | Kognita (open source, MIT) | 2026-10-12 | Global | verified | Consolidates the 40-domain bank-grade framework, the 70-control wealth management framework (MAS, PDPC, SFC, FCA, Bank of England, APRA, ASIC, CSBS, BIS/FSI, ESMA), a paragraph map of the MAS AI Risk Management Guidelines, and the trust-architecture principles. |
+| <a id="ref-KOG-VOCAB"></a>Kognita vocabularies | KOG | [Kognita controlled vocabularies (src/kognita/vocabulary.py, usecases.py, claims.py, memory.py, origination.py)](https://github.com/mze3e/kognita/blob/main/src/kognita/vocabulary.py) | Kognita (open source, MIT) | release 0.7.0 | Global | verified |  |
+| <a id="ref-KOG-PB-PACK"></a>Kognita private-banking pack | KOG | [Kognita private-banking policy pack 1.0.0 (src/kognita/packs/data/private-banking)](https://github.com/mze3e/kognita/tree/main/src/kognita/packs/data/private-banking) | Kognita (open source, MIT) |  | Global | verified |  |
+| <a id="ref-EVOLVE"></a>EVOLVE | AM | [EVOLVE: Building the AI-Native Enterprise (organisational maturity model for AI)](https://ahmedmuzammil.com/frameworks/evolve) | Ahmed Muzammil |  | Global | verified |  |
+| <a id="ref-AM-GOVERNING-AGENTIC-AI"></a>Governing agentic AI (essay) | AM | [Governing agentic AI inside a regulated bank](https://ahmedmuzammil.com/ideas/governing-agentic-ai) | Ahmed Muzammil | 2026-09-21 | Global | verified |  |
+| <a id="ref-AM-FILING-CABINET"></a>Filing Cabinet talk | AM | [Your AI Is Only as Good as Your Filing Cabinet (AIIM ASEAN Forum, Singapore)](https://ahmedmuzammil.com/speaking) | Ahmed Muzammil | 2026-10-22 | Global | verified |  |
+| <a id="ref-PWM-PRACTICE"></a>PWM practitioner definition | NEW | Practitioner definition in this ontology | Ahmed Muzammil |  | Global | verified | Used where no term was found in FIBO, OMG Commons or DPV at the versions checked. Each use is a candidate for proposal to the relevant standard. |
+
+## Annotation vocabulary
+
+| Term | Kind | Definition |
+|---|---|---|
+| <a id="Module"></a>`pwm:Module` | class | Thematic grouping of PWM terms used to organise this specification. |
+| <a id="Reference"></a>`pwm:Reference` | class | Published source that a PWM term is grounded in: a standard, an ontology, a regulation or supervisory guideline, or a Kognita or EVOLVE document. |
+| <a id="Citation"></a>`pwm:Citation` | class | Pointer from a PWM term to a reference, with a locator inside that reference. |
+| <a id="SourceType"></a>`pwm:SourceType` | class | Kind of reference, used to mark how a term is grounded. |
+| <a id="ContextSpeed"></a>`pwm:ContextSpeed` | class | How quickly facts of a given kind change, which decides how an AI context layer may hold them. |
+| <a id="inModule"></a>`pwm:inModule` | annotation property | Module of this specification that a term belongs to. |
+| <a id="moduleOrder"></a>`pwm:moduleOrder` | annotation property | Position of a module in the specification. |
+| <a id="citation"></a>`pwm:citation` | annotation property | Links a term to a citation node naming a reference and a locator. |
+| <a id="cites"></a>`pwm:cites` | annotation property | Reference that a citation points at. |
+| <a id="locator"></a>`pwm:locator` | annotation property | Article, paragraph, section or item inside the cited reference. |
+| <a id="sourceType"></a>`pwm:sourceType` | annotation property | Kind of a reference. |
+| <a id="jurisdiction"></a>`pwm:jurisdiction` | annotation property | Jurisdiction a reference applies in, as an ISO 3166-1 alpha-2 code, EU, or Global. |
+| <a id="verificationStatus"></a>`pwm:verificationStatus` | annotation property | How the reference was checked while drafting this version. |
+| <a id="valuesFrom"></a>`pwm:valuesFrom` | annotation property | Code list (SKOS concept scheme) that a coded property takes its values from. |
+| <a id="contextSpeed"></a>`pwm:contextSpeed` | annotation property | How quickly facts of this kind change. Fast facts are looked up live at the moment of use and are never cached or embedded for AI. |
+| <a id="defaultClassification"></a>`pwm:defaultClassification` | annotation property | Data classification that instances of this class carry unless a more restrictive one applies. |
+| <a id="reusedIn"></a>`pwm:reusedIn` | annotation property | Marks an external term that PWM reuses without change, and the module that uses it. |
+| <a id="fiboMaturity"></a>`pwm:fiboMaturity` | annotation property | Maturity level of a FIBO term, Release or Provisional, read from the FIBO source file that defines it. |
+
+## Change log
+
+| Version | Date | Change |
+|---|---|---|
+| 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
