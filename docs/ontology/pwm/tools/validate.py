@@ -30,6 +30,10 @@ EX = "https://example.org/pwm-example#"
 # for node-level constraints (sh:or, sh:sparql).
 # 0.3 fixtures, followed by inherited 0.2 fixtures.
 EXPECTED = Counter([
+    ("BadLiveStatusDate", "AuthorityLiveStatusShape", "asOf"),
+    ("BadRevokedAllow", "LiveDelegationDecisionShape", None),
+    ("BadEngagedAllow", "LiveKillSwitchDecisionShape", None),
+    ("Bad04PastReviewDecisionShape", "LiveKillSwitchDecisionShape", None),
     ('BadPinnedDecision', 'PinnedDecisionShape', 'hasCheck'),
     ('BadSuspendedApproval', 'SuspendedApprovalShape', None),
     ('BadRun', 'RunShape', 'hasBudget'),
@@ -202,7 +206,7 @@ EXPECTED.update([('Bad05ActionStopShape', 'ActionStopShape', 'stopOutcome'),
  ('Bad05LiveEntitlementCoverage', 'LiveAuthorityDecisionShape', None),
 ])
 
-EXPECTED.update([('BadLiveStatus', 'AuthorityLiveStatusShape', None),
+EXPECTED.update([('BadLiveStatus', 'LegacyAuthorityLiveStatusShape', None),
  ('BadLimitApproval', 'RiskControlApprovalShape', 'riskControlApproval'),
  ('BadGateApproval', 'RiskControlApprovalShape', 'riskControlApproval'),
  ('BadApprover', 'RiskControlApprovalRecordShape', 'approverRole'),
@@ -219,11 +223,12 @@ EXPECTED.update([
     ('BadLateApprovalCall', 'IrreversibleApprovalShape', None),
     ('BadMissingLimitObservation', 'BlastRadiusDecisionShape', None),
     ('BadRankChild', 'SubDelegationShape', None),
+    ('BadRankChild', 'DelegationScopeShape', None),
     ('BadRestrictedEntitlement', 'DelegationScopeShape', None),
     ('BadRestrictedEntitlementCall', 'LiveAuthorityDecisionShape', None),
     ('BadStepUpOtherDecision', 'InstructionAssuranceShape', None),
     ('BadUnrelatedLimitObservation', 'BlastRadiusDecisionShape', None),
-    ('LateRequest', 'SuspendedApprovalShape', None),
+    ('BadStepUpOtherDecision', 'LiveDelegationDecisionShape', None),
 ])
 
 def local(term):

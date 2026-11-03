@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| Version | 0.5 (draft), 2026-11-03 |
+| Version | 0.5 (draft), 2026-11-04 |
 | Ontology IRI | https://ahmedmuzammil.com/ontology/pwm |
 | Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.5 |
 | Namespace | `pwm:` https://ahmedmuzammil.com/ontology/pwm# |
@@ -22,7 +22,7 @@ A generic ontology for private banking and wealth management. It models parties 
 
 Draft for comment. Version 0.5 aligns with roadmap milestone 0.5: agents, authority and fleets. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
 
-Size: 193 classes, 219 object properties, 188 datatype properties, 48 code lists with 235 codes, 126 data rules plus 66 generated code-list rules, 47 references and 1334 citations. 39 FIBO terms are specialised or mapped.
+Size: 193 classes, 221 object properties, 190 datatype properties, 48 code lists with 235 codes, 129 data rules plus 66 generated code-list rules, 47 references and 1347 citations. 39 FIBO terms are specialised or mapped.
 
 ## Scope
 
@@ -72,11 +72,15 @@ Each reference in the register has a verification status. **verified**: checked 
 
 FIBO terms show their maturity, Release or Provisional, as read from the FIBO file that defines them.
 
+## Context
+
 Classes carry a context speed:
 
 - **slow**: Changes over weeks or months, such as policies, definitions and the house view. Curated, versioned and owned; safe to cache with an effective date.
 - **medium**: Changes over days or weeks, such as client profile, KYC status and mandate. Synchronised from the system of record and cached with an explicit as-of time.
-- **fast**: Changes in seconds or minutes, such as positions, prices, cash and orders. Looked up live from the system of record; never cached or embedded for AI.
+- **fast**: Changes in seconds or minutes, such as positions, prices, cash, orders and live authority or kill-switch state. Looked up live from the system of record; never cached or embedded for AI.
+
+DelegatedAuthority and KillSwitch definitions are cached policy/config in SlowContext. Live revocation and kill-switch state must be read from AuthorityLiveStatus (FastContext) at decision time, never from cache. Use the latest asOf observation at or before the decision time; conflicting observations fail closed. Runtime must obtain fresh observations; SHACL validates the recorded state only (KOG roadmap 0.4 item 14; 0.3 item 2; MAS AIRG 5.9).
 
 ## Modules
 
@@ -90,10 +94,10 @@ Classes carry a context speed:
 | 5 | [Accounts, portfolios and holdings](#ModuleAccounts) | Where assets are held, what is held, and how it is valued. | 11 | 9 | 1 |
 | 6 | [Products, distribution and research](#ModuleProducts) | The product shelf, product risk and target market, cross-border distribution rules, offering documents and the house view. | 9 | 11 | 2 |
 | 7 | [Interactions, advice and communication](#ModuleInteractions) | Why a client was approached, what was recommended, who decided, and what reached the client. | 9 | 16 | 6 |
-| 8 | [AI use cases, authority and accountability](#ModuleGovernance) | The AI inventory, risk materiality, agents, delegated authority, autonomy and the people accountable for them. | 24 | 40 | 11 |
+| 8 | [AI use cases, authority and accountability](#ModuleGovernance) | The AI inventory, risk materiality, agents, delegated authority, autonomy and the people accountable for them. | 25 | 44 | 11 |
 | 9 | [Information governance, claims and evidence](#ModuleEvidence) | Governed documents and definitions, facts and claims, policy decisions and the evidence that reconstructs them. | 37 | 98 | 14 |
 | 10 | [Ingestion, policy and lifecycle controls](#ModuleLifecycle) | Structured ingestion and the missing policy, review and monitoring records for milestone 0.4. | 17 | 68 | 2 |
-| 11 | [Agents, authority and fleets](#ModuleAgents) | Workload identities, scoped human authority, autonomy evidence, containment and fleet controls. | 26 | 116 | 2 |
+| 11 | [Agents, authority and fleets](#ModuleAgents) | Workload identities, scoped human authority, autonomy evidence, containment and fleet controls. | 25 | 116 | 2 |
 
 <a id="ModuleCore"></a>
 
@@ -1697,6 +1701,18 @@ Test activation of a kill switch, recording who activated it, how long until the
 - **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.3: activation protocols tested regularly; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Gap 7
 
+<a id="AuthorityLiveStatus"></a>
+#### authority live status (`pwm:AuthorityLiveStatus`)
+
+Live observation of the revocation state of a DelegatedAuthority or the engaged state of a KillSwitch, effective from asOf until superseded. Read from the system of record at decision time, never from cache.
+
+*Note:* For each subject, use the latest observation at or before the decision time. Conflicting observations at that time fail closed. SHACL checks recorded observations; runtime must obtain fresh state.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`statusOf`](#statusOf), [`observedBy`](#observedBy), [`revoked`](#revoked), [`engaged`](#engaged), [`liveStatusSubject`](#liveStatusSubject), [`liveStatusValue`](#liveStatusValue), [`observedAt`](#observedAt)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified
+
 ### Properties
 
 | Property | Domain → range | Definition | References |
@@ -1729,6 +1745,8 @@ Test activation of a kill switch, recording who activated it, how long until the
 | <a id="permitsDataClass"></a>`pwm:permitsDataClass` permits data class | [delegated authority](#DelegatedAuthority) → [data classifications](#DataClassificationScheme) | Highest data classification a delegation permits the agent to access. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: allowed data |
 | <a id="primaryMetric"></a>`pwm:primaryMetric` primary metric | [outcome metric](#OutcomeMetric) → [primary outcome metrics](#PrimaryMetricScheme) | Kind of an outcome metric. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.PRIMARY_METRICS |
 | <a id="providedBy"></a>`pwm:providedBy` provided by | any → [model provider](#ModelProvider) | Model provider that supplies a model or AI service. Close match: [is provided by](https://www.omg.org/spec/Commons/Organizations/isProvidedBy) (OMG Commons). | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.11; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7: pinned evidence |
+| <a id="statusOf"></a>`pwm:statusOf` status of | [authority live status](#AuthorityLiveStatus) → [nc5873a97730747cf9696a21faea06c89b415](nc5873a97730747cf9696a21faea06c89b415) | Authority or kill switch whose live state is observed. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
+| <a id="observedBy"></a>`pwm:observedBy` observed by | [authority live status](#AuthorityLiveStatus) → [Agent](http://www.w3.org/ns/prov#Agent) (PROV-O) | Agent that obtained the live observation from the system of record. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 | <a id="approvedJurisdiction"></a>`pwm:approvedJurisdiction` approved jurisdiction | [AI use case](#AIUseCase) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Jurisdiction in which a use case is approved for use, as an ISO 3166-1 alpha-2 code. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7: approved scope of use (e.g., jurisdiction) |
 | <a id="modelType"></a>`pwm:modelType` model type | [AI use case](#AIUseCase) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Kind of model a use case relies on, such as a classifier, ranking model or large language model. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7 |
 | <a id="isMediated"></a>`pwm:isMediated` is mediated | [AI use case](#AIUseCase) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether a use case runs through the institution's AI control plane. Unmediated entries record the assurance gap and compensating control. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.2, 4.4: AI in third-party services and shadow AI; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Gap 1 |
@@ -1741,6 +1759,8 @@ Test activation of a kill switch, recording who activated it, how long until the
 | <a id="requiresFullTraceability"></a>`pwm:requiresFullTraceability` requires full traceability | [autonomy promotion gate](#AutonomyPromotionGate) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether every action in the evaluation window must be reconstructable for the gate to pass. | **AM** [EVOLVE](#ref-EVOLVE) Evidence fully traceable |
 | <a id="baselineValue"></a>`pwm:baselineValue` baseline value | [outcome metric](#OutcomeMetric) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Measured value of an outcome metric before the use case. | **AM** [EVOLVE](#ref-EVOLVE) Outcome baselines |
 | <a id="targetValue"></a>`pwm:targetValue` target value | [outcome metric](#OutcomeMetric) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Agreed target for an outcome metric. | **AM** [EVOLVE](#ref-EVOLVE) Targets agreed with the process owner |
+| <a id="revoked"></a>`pwm:revoked` revoked | [authority live status](#AuthorityLiveStatus) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the delegated authority is currently revoked. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
+| <a id="engaged"></a>`pwm:engaged` engaged | [authority live status](#AuthorityLiveStatus) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the kill switch is currently engaged. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 
 ### Code lists
 
@@ -2364,7 +2384,7 @@ Listed authenticated system identity admitted for calls without an agent; still 
 | <a id="versionId"></a>`pwm:versionId` version identifier | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Version identifier of an asset, definition, rule, model or deployment. | **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: version ID or content hash |
 | <a id="retentionUntil"></a>`pwm:retentionUntil` retention until | any → [date](http://www.w3.org/2001/XMLSchema#date) (XSD) | Date until which a record must be kept. An AI record never expires before the regulatory record it supports. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.7: retention by record class; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: retention date |
 | <a id="definesTerm"></a>`pwm:definesTerm` defines term | [governed definition](#GovernedDefinition) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Business term a governed definition defines. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 12 |
-| <a id="asOf"></a>`pwm:asOf` as of | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Time at which a fact or valuation was true in its system of record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: as-of date |
+| <a id="asOf"></a>`pwm:asOf` as of | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Time at which a fact, valuation or live authority status was true in its system of record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: as-of date |
 | <a id="freshnessThreshold"></a>`pwm:freshnessThreshold` freshness threshold | [fact](#Fact) → [duration](http://www.w3.org/2001/XMLSchema#duration) (XSD) | Maximum age at which a fact may still be used, as an xsd:duration. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: freshness thresholds per data type |
 | <a id="ruleCitation"></a>`pwm:ruleCitation` rule citation | [policy rule](#PolicyRule) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Text citing the policy, regulation or standard a rule implements. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Every decision citable to policy |
 | <a id="recordHash"></a>`pwm:recordHash` record hash | [evidence record](#EvidenceRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of an evidence record, chained to the previous record so deletion or alteration is detectable. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
@@ -3128,16 +3148,6 @@ Recorded stop or cancellation request for an in-flight tool call with outcome ca
 - **Properties:** [`stoppedCall`](#stoppedCall), [`stopOutcome`](#stopOutcome), [`stopReason`](#stopReason)
 - **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
 
-<a id="AuthorityLiveStatus"></a>
-#### authority live status (`pwm:AuthorityLiveStatus`)
-
-Live observation of delegation revocation or kill-switch state, retrieved at decision time rather than cached. The durable authority and kill-switch definitions remain SlowContext.
-
-- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
-- **Properties:** [`liveStatusSubject`](#liveStatusSubject), [`liveStatusValue`](#liveStatusValue), [`observedAt`](#observedAt)
-- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; 5.9 autonomy oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
-
 <a id="ApprovingAuthorityRole"></a>
 #### approving authority role (`pwm:ApprovingAuthorityRole`)
 
@@ -3242,7 +3252,7 @@ Recorded approval of a firm-specific blast-radius limit or autonomy promotion ga
 | <a id="deploymentEnvironment"></a>`pwm:deploymentEnvironment` deployment environment | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Environment in which a workload or agent is deployed. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
 | <a id="deploymentDate"></a>`pwm:deploymentDate` deployment date | [AI agent](#AIAgent) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Time of the owner-approved deployment. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
 | <a id="approvedDeploymentVersion"></a>`pwm:approvedDeploymentVersion` approved deployment version | [AI agent](#AIAgent) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Exact deployment hash approved by the owner. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
-| <a id="scopeField"></a>`pwm:scopeField` scope field | [authority scope](#AuthorityScope) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Field name permitted within a scope; whole-record access is never implicit. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="scopeField"></a>`pwm:scopeField` scope field | [authority scope](#AuthorityScope) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Exact field name permitted for reading or writing through the scoped tools, systems and products, for the scoped clients, purposes, action verbs and jurisdictions. Each requestedField must be explicitly listed as scopeField; permission for one field grants no access to other fields or the whole record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
 | <a id="scopeSystem"></a>`pwm:scopeSystem` scope system | [authority scope](#AuthorityScope) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | System identifier permitted within a scope. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
 | <a id="revokedAt"></a>`pwm:revokedAt` revoked at | [authority revocation](#AuthorityRevocation) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Effective revocation time, including completion of the authorized task. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
 | <a id="delegationDepth"></a>`pwm:delegationDepth` delegation depth | [delegated authority](#DelegatedAuthority) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Depth from root human authorization, zero at the root. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 9; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
@@ -3458,7 +3468,7 @@ Applies to [client communication](#ClientCommunication). Sources: [Kognita priva
 Applies to [claim](#Claim). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 - Unlabelled claims cannot be shown to an RM or sent to a client (Kognita 0.6 item 5).
-- validator status: at most 1
+- validatorStatus: maximum count 1.
 - A claim typed as verified fact must cite a source and carry the validator status verified. The model's own knowledge is never a source, and an inference cannot become a fact without verification (Kognita 0.6 items 3, 5 and 7).
 
 <a id="FactShape"></a>
@@ -3476,9 +3486,9 @@ Applies to [fact](#Fact). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 Applies to [valuation](#Valuation). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- amount: exactly one, of type decimal
-- currency: exactly one
-- as of: at least 1, of type dateTime
+- amount: minimum count 1; maximum count 1; datatype decimal.
+- currency: minimum count 1; maximum count 1.
+- asOf: minimum count 1; datatype dateTime.
 - A figure presented as authoritative must cite a registered calculation service (Kognita 0.6 item 6).
 
 <a id="SuitabilityAssessmentShape"></a>
@@ -3489,7 +3499,7 @@ Applies to [suitability assessment](#SuitabilityAssessment). Sources: [MiFID II]
 - Name the recommendation being assessed.
 - Cite the one risk profile in force when the assessment was made (MiFID II Art. 25(2); Delegated Regulation (EU) 2017/565 Art. 54).
 - Check the recommendation against the recorded mandate (Kognita private-banking pack, mandate).
-- suitability outcome: exactly one, one of suitable, suitable with conditions, not suitable, insufficient information
+- suitabilityOutcome: minimum count 1; maximum count 1; allowed values Suitable, SuitableWithConditions, NotSuitable, InsufficientInformation.
 - Record how the recommendation meets the client's objectives and characteristics, not a bare score (MiFID II Art. 25(6)).
 - Record who made the assessment.
 
@@ -3498,18 +3508,18 @@ Applies to [suitability assessment](#SuitabilityAssessment). Sources: [MiFID II]
 
 Applies to [investor risk profile](#InvestorRiskProfile). Sources: [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR).
 
-- risk profile level: exactly one
-- valid from: at least 1, of type dateTime
-- wasAttributedTo: at least 1
+- riskProfileLevel: minimum count 1; maximum count 1.
+- validFrom: minimum count 1; datatype dateTime.
+- wasAttributedTo: minimum count 1.
 
 <a id="InvestorClassificationShape"></a>
 ### Investor classification
 
 Applies to [investor classification](#InvestorClassification). Sources: [FinSA](#ref-CH-FINSA), [MiFID II](#ref-EU-MIFID2), [Securities and Futures Act (SG)](#ref-SG-SFA).
 
-- investor category: exactly one
+- investorCategory: minimum count 1; maximum count 1.
 - A classification is made under one jurisdiction's rules.
-- opt status: at most 1
+- optStatus: maximum count 1.
 
 <a id="GovernedInformationAssetShape"></a>
 ### Governed information asset
@@ -3543,8 +3553,8 @@ Applies to [policy rule](#PolicyRule). Sources: [Kognita roadmap](#ref-KOG-ROADM
 
 Applies to [cross-border rule](#CrossBorderRule). Sources: [Kognita private-banking pack](#ref-KOG-PB-PACK).
 
-- applies to activity: at least 1
-- permitted: exactly one, of type boolean
+- appliesToActivity: minimum count 1.
+- permitted: minimum count 1; maximum count 1; datatype boolean.
 - Client domicile is an ISO 3166-1 alpha-2 code.
 - Booking centre is an ISO 3166-1 alpha-2 code.
 
@@ -3554,7 +3564,7 @@ Applies to [cross-border rule](#CrossBorderRule). Sources: [Kognita private-bank
 Applies to [policy decision](#PolicyDecision). Sources: [Filing Cabinet talk](#ref-AM-FILING-CABINET), [Kognita roadmap](#ref-KOG-ROADMAP).
 
 - Record exactly one decision timestamp.
-- decision outcome: exactly one, one of deny, escalate, human approval, allow, observe
+- decisionOutcome: minimum count 1; maximum count 1; allowed values OutcomeDeny, OutcomeEscalate, OutcomeHumanApproval, OutcomeAllow, OutcomeObserve.
 - Every decision names the rule and rule version that decided it (Filing Cabinet, slide 14).
 - Every decision references a registered use case (Kognita 0.4 item 8).
 
@@ -3563,10 +3573,10 @@ Applies to [policy decision](#PolicyDecision). Sources: [Filing Cabinet talk](#r
 
 Applies to [evidence record](#EvidenceRecord). Sources: [Kognita regulations library](#ref-KOG-CONTROLS), [MAS AIRG](#ref-MAS-AIRG).
 
-- event type: exactly one
+- eventType: minimum count 1; maximum count 1.
 - Evidence records are hash-chained (Kognita control frameworks).
 - An evidence record states when the event happened (MAS AIRG 5.23(d)).
-- previous record hash: at most 1
+- previousRecordHash: maximum count 1.
 - Every evidence record names the hash of the record before it, except the first record of a chain, which is marked chain start (Kognita control frameworks: hash-chained evidence).
 
 <a id="CurrencyCodeShape"></a>
@@ -3620,10 +3630,10 @@ Applies to [suitability assessment](#SuitabilityAssessment). Sources: [MiFID sus
 
 Applies to [sustainability preference](#SustainabilityPreference). Sources: [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY).
 
-- sustainability preference kind: at least 1
-- minimum taxonomy aligned proportion: at most 1, of type decimal
-- minimum SFDR sustainable proportion: at most 1, of type decimal
-- PAI consideration elements: of type string
+- sustainabilityPreferenceKind: minimum count 1.
+- minimumTaxonomyAlignedProportion: maximum count 1; datatype decimal; minimum inclusive 0.0; maximum inclusive 1.0.
+- minimumSFDRSustainableProportion: maximum count 1; datatype decimal; minimum inclusive 0.0; maximum inclusive 1.0.
+- paiConsiderationElements: datatype string.
 - Record the minimum proportion for each selected category and client-determined PAI elements; no preference is exclusive and has no category details (2017/565 Art. 2(7)(a)-(c)).
 
 <a id="RunShape"></a>
@@ -3661,7 +3671,7 @@ Applies to [budget exceeded denial](#BudgetExceededDenial). Sources: [Kognita ro
 
 - Record exceededBudget (roadmap milestone 0.3).
 - Record budgetDimension (roadmap milestone 0.3).
-- decision outcome: checked
+- decisionOutcome: required value OutcomeDeny.
 
 *Roadmap milestone 0.3 item 1.*
 
@@ -3692,8 +3702,8 @@ Applies to [approval resolution](#ApprovalResolution). Sources: [Kognita roadmap
 
 - Record resolvesApproval (roadmap milestone 0.3).
 - Record approvalResolution (roadmap milestone 0.3).
-- wasAttributedTo: exactly one, an instance of Person
-- generated at time: exactly one, of type dateTime
+- wasAttributedTo: minimum count 1; maximum count 1; class Person.
+- generatedAtTime: minimum count 1; maximum count 1; datatype dateTime.
 
 *Roadmap milestone 0.3 item 2.*
 
@@ -3776,7 +3786,7 @@ Applies to [envelope attribute](#EnvelopeAttribute). Sources: [Kognita roadmap](
 
 Applies to subjects of [has attribute](#hasAttribute), subjects of [escalation threshold](#escalationThreshold). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- escalation threshold: at most 1, of type decimal
+- escalationThreshold: maximum count 1; datatype decimal; minimum inclusive 0.0; maximum inclusive 1.0.
 - Below-threshold or missing-threshold classifier evidence cannot yield ALLOW (0.3 item 4).
 - Classifier fills gaps only; a typed attribute remains authoritative (0.3 item 4).
 
@@ -3809,7 +3819,7 @@ Applies to [retention entry](#RetentionEntry). Sources: [Kognita roadmap](#ref-K
 
 - Record contentHash (roadmap milestone 0.3).
 - Record underUseCase (roadmap milestone 0.3).
-- store locator: at most 1, of type anyURI
+- storeLocator: maximum count 1; datatype anyURI.
 
 *Roadmap milestone 0.3 item 7.*
 
@@ -3874,7 +3884,7 @@ Applies to [reconstruction finding](#ReconstructionFinding). Sources: [Kognita r
 Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 - Record gatewayFailureMode (roadmap milestone 0.3).
-- retention policy: exactly one, an instance of RetentionPolicy
+- retentionPolicy: minimum count 1; maximum count 1; class RetentionPolicy.
 
 *Roadmap milestone 0.3 item 9.*
 
@@ -3883,8 +3893,8 @@ Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMA
 
 Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
 
-- call agent: at most 1
-- system trigger: at most 1
+- callAgent: maximum count 1.
+- systemTrigger: maximum count 1.
 - Record inRun (roadmap milestone 0.3).
 - Record governedByDecision (roadmap milestone 0.3).
 - Record clientConfiguration (roadmap milestone 0.3).
@@ -4033,35 +4043,35 @@ Applies to [interaction outcome](#InteractionOutcome). Sources: [Kognita roadmap
 
 Applies to [circuit breaker trip](#CircuitBreakerTrip), [circuit breaker](#CircuitBreaker), [affected client query](#AffectedClientQuery). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- BreakerScopeShape: denied or incomplete record (Kognita 0.4 item 14).
+- A breaker, trip or affected-client query requires a use-case, model, policy or prompt-version scope (Kognita 0.4 item 14).
 
 <a id="TwoSignatureShape"></a>
 ### TwoSignatureShape
 
 Applies to subjects of [requires two signatures](#requiresTwoSignatures). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- TwoSignatureShape: denied or incomplete record (Kognita 0.4 item 12).
+- A communication requiring two signatures must name two distinct human signers (Kognita 0.4 item 12).
 
 <a id="PastReviewDecisionShape"></a>
 ### PastReviewDecisionShape
 
 Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- PastReviewDecisionShape: denied or incomplete record (Kognita 0.4 item 8).
+- A decision made after the use-case review date expires must be DENY (Kognita 0.4 item 8).
 
 <a id="RiskAppetiteDecisionShape"></a>
 ### RiskAppetiteDecisionShape
 
 Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- RiskAppetiteDecisionShape: denied or incomplete record (Kognita 0.4 item 8).
+- A decision outside the recorded risk appetite must be DENY (Kognita 0.4 item 8).
 
 <a id="CoverageCountsShape"></a>
 ### CoverageCountsShape
 
 Applies to [review coverage report](#ReviewCoverageReport). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- CoverageCountsShape: denied or incomplete record (Kognita 0.4 item 13).
+- Coverage counts must satisfy reviewed <= queued <= screened <= eligible (Kognita 0.4 item 13).
 
 <a id="CircuitBreakerConfigurationShape"></a>
 ### CircuitBreakerConfigurationShape
@@ -4193,7 +4203,7 @@ Applies to [authority scope](#AuthorityScope). Sources: [Kognita roadmap](#ref-K
 - pwm:scopeTool: minimum count 1, class pwm:Tool.
 - pwm:scopeField: minimum count 1, datatype xsd:string.
 - pwm:jurisdictionCode: minimum count 1, datatype xsd:string.
-- scope autonomy level: exactly one
+- scopeAutonomyLevel: minimum count 1; maximum count 1.
 
 *Roadmap milestone 0.5 item 2. Checks recorded evidence; runtime enforcement remains external.*
 
@@ -4249,7 +4259,7 @@ Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-R
 
 Applies to subjects of [parent delegation](#parentDelegation). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- parent delegation: at most 1, an instance of DelegatedAuthority
+- parentDelegation: maximum count 1; class DelegatedAuthority.
 - Sub-delegation must be acyclic, narrow every explicit scope set and period, and respect depth (Kognita 0.5 item 9).
 
 *Roadmap milestone 0.5 item 9. Checks recorded evidence; runtime enforcement remains external.*
@@ -4395,7 +4405,7 @@ Applies to [authenticated instruction](#AuthenticatedInstruction). Sources: [Kog
 
 Applies to subjects of [requires step up](#requiresStepUp). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- High-risk instructions require step-up workflow evidence and independent authorization, never channel identity alone (Kognita 0.5 item 7).
+- Allowed high-risk instructions require signed step-up evidence and a completed approval of a held decision in the same run, strictly before the allowed decision (Kognita 0.5 item 7).
 
 *Roadmap milestone 0.5 item 7. Checks recorded evidence; runtime enforcement remains external.*
 
@@ -4504,7 +4514,7 @@ Applies to [tool](#Tool). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 Applies to [tool call](#ToolCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- High-autonomy irreversible action requires human approval whose ApprovalRequest requests this call's governing decision in the same run (Kognita 0.5 item 13).
+- High-autonomy irreversible action requires human approval resolving a held HUMAN_APPROVAL decision at a suspended checkpoint in the call's run, strictly before the call (Kognita 0.5 item 13).
 
 *Roadmap milestone 0.5 item 13. Checks recorded evidence; runtime enforcement remains external.*
 
@@ -4633,10 +4643,10 @@ Applies to [AI agent](#AIAgent). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 *Roadmap milestone 0.5 item 1: credentials are never shared between agents.*
 
-<a id="AuthorityLiveStatusShape"></a>
-### AuthorityLiveStatusShape
+<a id="LegacyAuthorityLiveStatusShape"></a>
+### Legacy authority live status
 
-Applies to [authority live status](#AuthorityLiveStatus). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+Applies to subjects of [live status value](#liveStatusValue). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
 
 - Record exactly one liveStatusSubject, a DelegatedAuthority or KillSwitch.
 - pwm:observedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
@@ -4663,6 +4673,34 @@ Applies to [risk control approval](#RiskControlApproval). Sources: [Kognita road
 - pwm:approvedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
 
 *Approval records identify a permitted firm approving role and approval time (Ahmed, 3 Nov 2026).*
+
+<a id="AuthorityLiveStatusShape"></a>
+### Live authority status
+
+Applies to [authority live status](#AuthorityLiveStatus). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- statusOf: minimum count 1; maximum count 1; one of classes DelegatedAuthority, KillSwitch.
+- asOf: minimum count 1; maximum count 1; datatype dateTime.
+- observedBy: minimum count 1; class Agent.
+- revoked: maximum count 1; datatype boolean.
+- engaged: maximum count 1; datatype boolean.
+- Record the matching live boolean, subject, xsd:dateTime asOf and observer (KOG 0.4 item 14; 0.3 item 2; MAS AIRG 5.9).
+
+<a id="LiveDelegationDecisionShape"></a>
+### Live delegation at decision time
+
+Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- An ALLOW relying on delegated authority requires a live status and must not have a latest status showing it revoked as of decision time (KOG 0.4 item 14; 0.3 item 2; MAS AIRG 5.9).
+
+<a id="LiveKillSwitchDecisionShape"></a>
+### Live kill switch at decision time
+
+Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- A decision made while a covering kill switch status is engaged must not be ALLOW (KOG 0.4 item 14: circuit breaker; MAS AIRG 5.9).
+
+*A switch covers a decision if any declared scope dimension matches its use case, policy, model or prompt, including governed calls. Unscoped switches cover all decisions. Latest observations at or before the decision apply; tied engaged observations fail closed.*
 
 <a id="CodeListShapes"></a>
 ### Code lists
@@ -4817,7 +4855,7 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 | Version | Date | Change |
 |---|---|---|
-| 0.5 | 2026-11-03 | Aligned to roadmap milestone 0.5: workload identity, explicit scoped and expiring human authority, autonomy evidence and step-down, blast-radius caps, content trust, instruction assurance, anomaly records, narrowing delegation chains, capability grants, fleets, sandbox output, reversibility, adversarial tests, enforcement attestations and stopping in-flight calls. Existing governance terms are reused. Configuration/grants are SlowContext; execution evidence and sandbox decision output are MediumContext. AuthorityLiveStatus uses FastContext for delegation revocation and kill-switch state; firm limits and promotion gates require dated approval by a risk committee, data governance committee or chief risk officer. Authority checks bind approval to the governing decision, compare call classification by rank, cover every tool verb and require live entitlement scope coverage. Review fixes reject duplicate credential references on distinct workload identities, apply maximum autonomy as fallback for irreversible approval, and clarify that grant checks apply only when a call relies on a grant. |
+| 0.5 | 2026-11-04 | Merged the 0.4 live authority observations and evidence-chain build check. Corrected delegation rank direction, typed review expiry, resolved held approvals before allowed actions, explicit field scope and PROV prefixes; refined constraint messages. Aligned to roadmap milestone 0.5: workload identity, explicit scoped and expiring human authority, autonomy evidence and step-down, blast-radius caps, content trust, instruction assurance, anomaly records, narrowing delegation chains, capability grants, fleets, sandbox output, reversibility, adversarial tests, enforcement attestations and stopping in-flight calls. Existing governance terms are reused. Configuration/grants are SlowContext; execution evidence and sandbox decision output are MediumContext. AuthorityLiveStatus uses FastContext for delegation revocation and kill-switch state; firm limits and promotion gates require dated approval by a risk committee, data governance committee or chief risk officer. Authority checks bind completed approval to the governing policy, use case and run, compare call classification by rank, cover every tool verb and require live entitlement scope coverage. Review fixes reject duplicate credential references on distinct workload identities, apply maximum autonomy as fallback for irreversible approval, and clarify that grant checks apply only when a call relies on a grant. |
 | 0.4 | 2026-11-03 | Context review: durable execution evidence, snapshots and checkpoints use MediumContext; DelegatedAuthority and KillSwitch use SlowContext; FastContext is reserved for live financial state. Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
 | 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
@@ -4842,7 +4880,7 @@ Compared with the inherited PWM 0.3 vocabulary and shapes before adding terms. P
 | 11 | HumanReview, FinalDecision, decision results, contentHash and contentProvenance | RMReviewEdit, reviewEdit, beforeHash, afterHash and editDiffHash preserve rendered input, approved output and structured diff. Hashes identify edit content. Required diffLocator supports retention/retrieval of the structured diff; retention is established separately. |
 | 12 | ClientCommunication, channel, recipient, content hash, final-decision lineage, communication levels, approved-channel flag and disclosure; written approved-channel and missing-decision constraints | requiresTwoSignatures and communicationSigner with distinct-human constraint. Existing channel and lineage constraints are reused without duplicates. |
 | 13 | HumanReview, classifier evidence, use-case tier | ReviewQueue, ReviewQueueEntry, low-risk sampling fraction, reason and timing, delivery boundary, ReviewCoverageReport with counts, reporting window and latency. Counts permit coverage fractions per use case and its risk tier; impossible count order is rejected. |
-| 14 | KillSwitch, KillSwitchDrill, AIIncident, versioned models/rules and evidence | CircuitBreaker configuration and CircuitBreakerTrip incident with scoped use case, exact model, prompt or policy, threshold, window, flags and prohibiting rule. AffectedClientQuery and explicit AffectedClientResult retain recipients and communications with a checked distinct-client count, including zero results. |
+| 14 | KillSwitch, KillSwitchDrill, AIIncident, versioned models/rules and evidence | NEW AuthorityLiveStatus (FastContext) records live revocation or engagement with statusOf, revoked/engaged, xsd:dateTime-only asOf and observedBy. DelegatedAuthority and KillSwitch definitions remain cached SlowContext; live state is read at decision time, never from cache. Written SHACL rules reject ALLOW for revoked authority or an engaged covering switch at that time (also 0.3 item 2 policy evaluation boundaries; MAS AIRG 5.9). CircuitBreaker configuration and CircuitBreakerTrip incident with scoped use case, exact model, prompt or policy, threshold, window, flags and prohibiting rule. AffectedClientQuery and explicit AffectedClientResult retain recipients and communications with a checked distinct-client count, including zero results. |
 | 15 | Complaint, AIIncident, NearMiss and outcome/near-miss evidence event codes | InteractionOutcome with seven outcome classes as codes, and five near-miss classification codes. Exact output, implicated model and approver links support trace-back without inferring that outcomes are model calls. |
 
 Item 2, the graph extra, was removed under ADR 0008. PWM 0.4 models nothing for it. Item 6 concerns framework adapters and adds no domain terms.
@@ -4899,13 +4937,13 @@ Classification comparisons use the DataClassificationScheme sensitivity rank. Ch
 
 New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGrant (OMG Commons Authorization), AdversarialTestCase (PolicyTestCase, itself a prov:Entity), and ApprovingAuthorityRole (OMG Commons PartyRole) with RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer subclasses. AuthorityRevocation, FleetHalt and ActionStop are records about interventions, not prov:Activity. AIAgent retains prov:SoftwareAgent and OMG SoftwareAgent. Existing Run, governed calls and Replay retain their activity parents. No new external matches are asserted. All new datatype-property ranges use OWL 2 datatype-map datatypes.
 
-There are 193 node shapes: 126 written targeted shapes, 66 generated targeted shapes and one untargeted helper.
+There are 196 node shapes: 129 written targeted shapes, 66 generated targeted shapes and one untargeted helper.
 
-The positive example contains 186 typed records. The negative fixture contains 236 typed records. There are 164 typed violating records, 72 typed supporting records and 4 untyped violating subjects, yielding 184 expected violations across 168 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 191 typed records. The negative fixture contains 249 typed records. There are 166 typed violating records, 83 typed supporting records and 4 untyped violating subjects, yielding 189 expected violations across 170 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
 The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 
-All 126 written rules have negative fixtures. Two generated code-list rules are exercised there; all 66 generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. Review dates remain valid through the end of that day; absent timezones are interpreted as UTC. A decision on an expired use case must be DENY.
+All 129 written rules have negative fixtures. Two generated code-list rules are exercised there; all 66 generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. Review dates remain valid through the end of that day; absent timezones are interpreted as UTC. A decision on an expired use case must be DENY.
 
 New 0.4 PROV specialisations: IngestedDocument, DeclarativePolicy, PolicyChange, PolicyTestCase, PolicyPack, FlightRecorderSession, RMReviewEdit, ReviewQueue, ReviewQueueEntry, ReviewCoverageReport, AffectedClientQuery, AffectedClientResult and InteractionOutcome specialise prov:Entity. Replay specialises prov:Activity. DocumentElement specialises existing DocumentSection (OMG Commons Document); CircuitBreaker specialises KillSwitch; CircuitBreakerTrip specialises AIIncident (prov:Entity). No PROV activity parent is asserted for recorder manifests, edits or trips.
 

@@ -158,7 +158,7 @@ pwm:scopeTool a owl:ObjectProperty ; rdfs:label "scope tool"@en ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 2" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
 
 pwm:scopeField a owl:DatatypeProperty ; rdfs:label "scope field"@en ;
-    skos:definition "Field name permitted within a scope; whole-record access is never implicit."@en ; rdfs:domain pwm:AuthorityScope ; rdfs:range xsd:string ;
+    skos:definition "Exact field name permitted for reading or writing through the scoped tools, systems and products, for the scoped clients, purposes, action verbs and jurisdictions. Each requestedField must be explicitly listed as scopeField; permission for one field grants no access to other fields or the whole record."@en ; rdfs:domain pwm:AuthorityScope ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 5" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
 
 pwm:scopeSystem a owl:DatatypeProperty ; rdfs:label "scope system"@en ;
@@ -570,8 +570,7 @@ pwm:EnforcementAttestation pwm:citation [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-
 
 # Live operational state and firm approval of risk controls.
 
-pwm:AuthorityLiveStatus a owl:Class ; rdfs:label "authority live status"@en ; skos:definition "Live observation of delegation revocation or kill-switch state, retrieved at decision time rather than cached. The durable authority and kill-switch definitions remain SlowContext."@en ; rdfs:subClassOf prov:Entity ;
-    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+pwm:AuthorityLiveStatus pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2 and 16; Ahmed design decisions 3 Nov 2026" ] .
 
 pwm:ApprovingAuthorityRole a owl:Class ; rdfs:label "approving authority role"@en ; skos:definition "Firm role empowered to set and approve blast-radius limits and autonomy promotion gates."@en ; rdfs:subClassOf cmns-pts:PartyRole ;
     pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .

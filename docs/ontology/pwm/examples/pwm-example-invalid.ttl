@@ -988,6 +988,13 @@ ex:BadEmptyDiffLocator a ns1:RMReviewEdit ;
     ns1:diffLocator ""^^xsd:anyURI ;
     ns1:editDiffHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
 
+ex:BadEngagedAllow a ns1:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T23:01:00+08:00"^^xsd:dateTime ;
+    ns1:decidedByRule ex:RuleClientCommunication ;
+    ns1:decisionOutcome ns1:OutcomeAllow ;
+    ns1:hasCheck ex:Check ;
+    ns1:underUseCase ex:UseCaseMeetingPrep .
+
 ex:BadErasure a ns1:ErasureEvent ;
     ns1:contentHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ;
     ns1:erasedEntry ex:RetainedPrompt .
@@ -1045,9 +1052,19 @@ ex:BadLimitApproval a ns1:BlastRadiusLimit ;
     ns1:limitWindowBasis "minute" .
 
 ex:BadLiveStatus a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
     ns1:liveStatusSubject ex:Delegation ;
     ns1:liveStatusValue "armed" ;
-    ns1:observedAt "2026-11-03T02:00:00+00:00"^^xsd:dateTime .
+    ns1:observedAt "2026-11-03T02:00:00+00:00"^^xsd:dateTime ;
+    ns1:observedBy ex:Agent ;
+    ns1:revoked false ;
+    ns1:statusOf ex:Delegation .
+
+ex:BadLiveStatusDate a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03"^^xsd:date ;
+    ns1:observedBy ex:LiveObserver ;
+    ns1:revoked false ;
+    ns1:statusOf ex:Delegation .
 
 ex:BadLowConfidence a ns1:PolicyDecision ;
     prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime ;
@@ -1260,23 +1277,31 @@ ex:BadResolution a ns1:ApprovalResolution ;
     ns1:approvalResolution ns1:ApprovalApproved ;
     ns1:resolvesApproval ex:Approval .
 
-ex:BadRestrictedEntitlement a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+ex:BadRestrictedEntitlementCall a ns1:MCPProxiedCall ;
+    prov:generatedAtTime "2026-11-03T01:58:30+00:00"^^xsd:dateTime ;
     ns1:aboutClient ex:Client ;
-    ns1:actionVerb ns1:VerbDraft,
-        ns1:VerbRead ;
-    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
-    ns1:authorityScope ex:Scope ;
-    ns1:delegatedBy ex:RestrictedHuman ;
-    ns1:delegatedTo ex:Agent ;
-    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
-    ns1:endsOnTaskCompletion true ;
-    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:callAgent ex:Agent ;
+    ns1:callDurationSeconds 2.0 ;
+    ns1:classification ns1:C2 ;
+    ns1:clientConfiguration ex:GatewayClient ;
+    ns1:governedByDecision ex:RestrictedEntitlementDecision ;
+    ns1:inRun ex:Run ;
+    ns1:inputContent ex:ExternalResearch ;
+    ns1:invokedTool ex:ToolPortfolioRead ;
     ns1:jurisdictionCode "SG" ;
-    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
-    ns1:permitsDataClass ns1:C2 ;
-    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
-    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
+    ns1:mcpBackend "portfolio-local" ;
+    ns1:reliesOnDelegation ex:BadRestrictedEntitlement ;
+    ns1:reliesOnGrant ex:Grant ;
+    ns1:requestedField "riskProfile" ;
+    ns1:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    ns1:retainedIn ex:RetainedToolResponse ;
+    ns1:workloadIdentity ex:Workload .
+
+ex:BadRestrictedEntitlementLiveBeforeDecision a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
+    ns1:observedBy ex:Agent ;
+    ns1:revoked false ;
+    ns1:statusOf ex:BadRestrictedEntitlement .
 
 ex:BadResumption a ns1:RunResumption ;
     ns1:inRun ex:Run ;
@@ -1289,6 +1314,14 @@ ex:BadRetentionPolicy a ns1:RetentionPolicy .
 
 ex:BadRetrievedItem a ns1:RetrievedItem ;
     ns1:contentHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+
+ex:BadRevokedAllow a ns1:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T10:03:00+08:00"^^xsd:dateTime ;
+    ns1:decidedByRule ex:RuleClientCommunication ;
+    ns1:decisionOutcome ns1:OutcomeAllow ;
+    ns1:hasCheck ex:Check ;
+    ns1:reliesOnDelegation ex:Delegation ;
+    ns1:underUseCase ex:UseCaseMeetingPrep .
 
 ex:BadRiskProfileNoLevel a ns1:InvestorRiskProfile ;
     prov:wasAttributedTo ex:RM ;
@@ -1379,6 +1412,12 @@ ex:BadValuation a ns1:Valuation ;
     ns1:currency "SGD" ;
     ns1:valuationOf ex:Portfolio .
 
+ex:CoverageDelegationLiveBeforeDecision a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
+    ns1:observedBy ex:Agent ;
+    ns1:revoked false ;
+    ns1:statusOf ex:CoverageDelegation .
+
 ex:CoverageRevocation a ns1:AuthorityRevocation ;
     ns1:rationale "Covering entitlement revoked before decision" ;
     ns1:revokedAt "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
@@ -1389,6 +1428,12 @@ ex:CrossRunCallResolution a ns1:ApprovalResolution ;
     prov:wasAttributedTo ex:PersonRM ;
     ns1:approvalResolution ns1:ApprovalApproved ;
     ns1:resolvesApproval ex:CrossRunCallRequest .
+
+ex:DelegationLiveBeforeDecision a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
+    ns1:observedBy ex:Agent ;
+    ns1:revoked false ;
+    ns1:statusOf ex:Delegation .
 
 ex:DeniedCallResolution a ns1:ApprovalResolution ;
     prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime ;
@@ -1412,6 +1457,30 @@ ex:EarlyHalt a ns1:FleetHalt ;
     prov:generatedAtTime "2026-11-03T01:00:00+00:00"^^xsd:dateTime ;
     ns1:haltScope ex:StoppedFleet ;
     ns1:rationale "Containment drill" .
+
+ex:EngagedLive a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T23:00:00+08:00"^^xsd:dateTime ;
+    ns1:engaged true ;
+    ns1:observedBy ex:LiveObserver ;
+    ns1:statusOf ex:LiveSwitch .
+
+ex:HighDelegationLiveBeforeDecision a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
+    ns1:observedBy ex:Agent ;
+    ns1:revoked false ;
+    ns1:statusOf ex:HighDelegation .
+
+ex:LateDelegationLiveBeforeDecision a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
+    ns1:observedBy ex:Agent ;
+    ns1:revoked false ;
+    ns1:statusOf ex:LateDelegation .
+
+ex:MaxOnlyDelegationLiveBeforeDecision a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
+    ns1:observedBy ex:Agent ;
+    ns1:revoked false ;
+    ns1:statusOf ex:MaxOnlyDelegation .
 
 ex:MissingLimitCall a ns1:ModelCall ;
     ns1:callAgent ex:Agent ;
@@ -1442,9 +1511,21 @@ ex:MultiRunCallResolution a ns1:ApprovalResolution ;
     ns1:approvalResolution ns1:ApprovalApproved ;
     ns1:resolvesApproval ex:MultiRunCallRequest .
 
+ex:MultiVerbDelegationLiveBeforeDecision a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
+    ns1:observedBy ex:Agent ;
+    ns1:revoked false ;
+    ns1:statusOf ex:MultiVerbDelegation .
+
 ex:PendingCallRequest a ns1:ApprovalRequest ;
     ns1:atCheckpoint ex:Checkpoint ;
     ns1:requestsDecision ex:PendingCallDecision .
+
+ex:RevokedLive a ns1:AuthorityLiveStatus ;
+    ns1:asOf "2026-11-03T10:02:00+08:00"^^xsd:dateTime ;
+    ns1:observedBy ex:LiveObserver ;
+    ns1:revoked true ;
+    ns1:statusOf ex:Delegation .
 
 ex:SharedAgentA a ns1:AIAgent ;
     ns1:agentIdentifier "SharedAgentA" ;
@@ -1750,6 +1831,20 @@ ex:HighLevelTool a ns1:Tool ;
     ns1:reversibilityClass ns1:Irreversible ;
     ns1:supportsCancellation true .
 
+ex:LateApprovalDecision a ns1:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:58:00+00:00"^^xsd:dateTime ;
+    ns1:decidedByRule ex:RuleModelAccess ;
+    ns1:decisionOutcome ns1:OutcomeAllow ;
+    ns1:escalationThreshold 0.90 ;
+    ns1:hasCheck ex:ModelAccessCheck ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:humanApproval ex:LateResolution ;
+    ns1:inRun ex:Run ;
+    ns1:limitObservation ex:Observation ;
+    ns1:reliesOnDelegation ex:LateDelegation ;
+    ns1:sandboxConstraints ex:Sandbox ;
+    ns1:underUseCase ex:UseCaseMeetingPrep .
+
 ex:LateClient a ns1:AuthenticatedClientConfiguration ;
     ns1:boundAgent ex:LateApprovalAgent ;
     ns1:listedTrigger ex:ScheduledTrigger .
@@ -1758,9 +1853,22 @@ ex:LateEntitlement ns1:authorityScope ex:LateScope ;
     ns1:validFrom "2026-01-01T00:00:00+00:00"^^xsd:dateTime ;
     ns1:validUntil "2027-01-01T00:00:00+00:00"^^xsd:dateTime .
 
+ex:LateHeldDecision a ns1:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:58:00+00:00"^^xsd:dateTime ;
+    ns1:decidedByRule ex:RuleModelAccess ;
+    ns1:decisionOutcome ns1:OutcomeHumanApproval ;
+    ns1:escalationThreshold 0.90 ;
+    ns1:hasCheck ex:ModelAccessCheck ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:inRun ex:Run ;
+    ns1:limitObservation ex:Observation ;
+    ns1:reliesOnDelegation ex:LateDelegation ;
+    ns1:sandboxConstraints ex:Sandbox ;
+    ns1:underUseCase ex:UseCaseMeetingPrep .
+
 ex:LateRequest a ns1:ApprovalRequest ;
     ns1:atCheckpoint ex:Checkpoint ;
-    ns1:requestsDecision ex:LateApprovalDecision .
+    ns1:requestsDecision ex:LateHeldDecision .
 
 ex:LateResolution prov:generatedAtTime "2026-11-03T03:00:00+00:00"^^xsd:dateTime ;
     prov:wasAttributedTo ex:PersonRM ;
@@ -1851,12 +1959,25 @@ ex:RestrictedEntitlement ns1:authorityScope ex:RestrictedEntitlementScope ;
     ns1:validFrom "2026-01-01T00:00:00+00:00"^^xsd:dateTime ;
     ns1:validUntil "2027-01-01T00:00:00+00:00"^^xsd:dateTime .
 
+ex:RestrictedEntitlementDecision a ns1:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:58:00+00:00"^^xsd:dateTime ;
+    ns1:decidedByRule ex:RuleModelAccess ;
+    ns1:decisionOutcome ns1:OutcomeAllow ;
+    ns1:escalationThreshold 0.90 ;
+    ns1:hasCheck ex:ModelAccessCheck ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:inRun ex:Run ;
+    ns1:limitObservation ex:Observation ;
+    ns1:reliesOnDelegation ex:BadRestrictedEntitlement ;
+    ns1:sandboxConstraints ex:Sandbox ;
+    ns1:underUseCase ex:UseCaseMeetingPrep .
+
 ex:RestrictedEntitlementScope a ns1:AuthorityScope ;
     ns1:aboutClient ex:Client ;
     ns1:accessEvent "Meeting within 24 hours" ;
     ns1:actionVerb ns1:VerbDraft,
         ns1:VerbRead ;
-    ns1:classification ns1:C3 ;
+    ns1:classification ns1:C1 ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:jurisdictionCode "SG" ;
     ns1:scopeAutonomyLevel ns1:L3Draft ;
@@ -1935,24 +2056,6 @@ ex:WrongCheckpoint a ns1:RunCheckpoint ;
     ns1:inRun ex:Run ;
     ns1:runState ns1:RunReady .
 
-ex:CoverageDelegation a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
-    ns1:aboutClient ex:Client ;
-    ns1:actionVerb ns1:VerbDraft,
-        ns1:VerbRead ;
-    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
-    ns1:authorityScope ex:Scope ;
-    ns1:delegatedBy ex:CoverageHuman ;
-    ns1:delegatedTo ex:Agent ;
-    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
-    ns1:endsOnTaskCompletion true ;
-    ns1:hasPurpose ex:PurposeMeetingPrep ;
-    ns1:jurisdictionCode "SG" ;
-    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
-    ns1:permitsDataClass ns1:C2 ;
-    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
-    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
-
 ex:CrossRunCallDecision a ns1:PolicyDecision ;
     prov:generatedAtTime "2026-11-03T01:58:00+00:00"^^xsd:dateTime ;
     ns1:decidedByRule ex:RuleClientCommunication ;
@@ -1973,60 +2076,11 @@ ex:DeniedCallDecision a ns1:PolicyDecision ;
     ns1:reliesOnDelegation ex:Delegation ;
     ns1:underUseCase ex:UseCaseMeetingPrep .
 
-ex:HighDelegation a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
-    ns1:aboutClient ex:Client ;
-    ns1:actionVerb ns1:VerbDraft,
-        ns1:VerbRead ;
-    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
-    ns1:authorityScope ex:Scope ;
-    ns1:delegatedBy ex:PersonRM ;
-    ns1:delegatedTo ex:HighAgent ;
-    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
-    ns1:endsOnTaskCompletion true ;
-    ns1:hasPurpose ex:PurposeMeetingPrep ;
-    ns1:jurisdictionCode "SG" ;
-    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
-    ns1:permitsDataClass ns1:C2 ;
-    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
-    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
-
 ex:HighIdentity a ns1:WorkloadIdentity ;
     ns1:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ;
     ns1:credentialReference "urn:synthetic:high"^^xsd:anyURI ;
     ns1:deploymentEnvironment "production" ;
     ns1:workloadSubject "agent-high-05" .
-
-ex:LateApprovalDecision a ns1:PolicyDecision ;
-    prov:generatedAtTime "2026-11-03T01:58:00+00:00"^^xsd:dateTime ;
-    ns1:decidedByRule ex:RuleModelAccess ;
-    ns1:decisionOutcome ns1:OutcomeAllow ;
-    ns1:escalationThreshold 0.90 ;
-    ns1:hasCheck ex:ModelAccessCheck ;
-    ns1:hasPurpose ex:PurposeMeetingPrep ;
-    ns1:humanApproval ex:LateResolution ;
-    ns1:inRun ex:Run ;
-    ns1:limitObservation ex:Observation ;
-    ns1:reliesOnDelegation ex:LateDelegation ;
-    ns1:sandboxConstraints ex:Sandbox ;
-    ns1:underUseCase ex:UseCaseMeetingPrep .
-
-ex:LateDelegation rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
-    ns1:aboutClient ex:Client ;
-    ns1:actionVerb ns1:VerbDraft,
-        ns1:VerbRead ;
-    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
-    ns1:authorityScope ex:LateScope ;
-    ns1:delegatedBy ex:PersonRM ;
-    ns1:delegatedTo ex:LateApprovalAgent ;
-    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
-    ns1:endsOnTaskCompletion true ;
-    ns1:hasPurpose ex:PurposeMeetingPrep ;
-    ns1:jurisdictionCode "SG" ;
-    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
-    ns1:permitsDataClass ns1:C2 ;
-    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
-    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
 
 ex:LateScope a ns1:AuthorityScope ;
     ns1:aboutClient ex:Client ;
@@ -2060,24 +2114,6 @@ ex:MultiRunCallDecision a ns1:PolicyDecision ;
         ex:Run ;
     ns1:reliesOnDelegation ex:Delegation ;
     ns1:underUseCase ex:UseCaseMeetingPrep .
-
-ex:MultiVerbDelegation a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
-    ns1:aboutClient ex:Client ;
-    ns1:actionVerb ns1:VerbDraft,
-        ns1:VerbRead ;
-    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
-    ns1:authorityScope ex:MultiVerbScope ;
-    ns1:delegatedBy ex:PersonRM ;
-    ns1:delegatedTo ex:Agent ;
-    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
-    ns1:endsOnTaskCompletion true ;
-    ns1:hasPurpose ex:PurposeMeetingPrep ;
-    ns1:jurisdictionCode "SG" ;
-    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
-    ns1:permitsDataClass ns1:C2 ;
-    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
-    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
 
 ex:MultiVerbScope a ns1:AuthorityScope ;
     ns1:aboutClient ex:Client ;
@@ -2176,6 +2212,60 @@ ex:TimezoneReviewUseCase a ns1:AIUseCase ;
     ns1:riskTier ns1:Tier3 ;
     ns1:usesDataClass ns1:C2 .
 
+ex:BadRestrictedEntitlement a ns1:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    ns1:aboutClient ex:Client ;
+    ns1:actionVerb ns1:VerbDraft,
+        ns1:VerbRead ;
+    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
+    ns1:authorityScope ex:Scope ;
+    ns1:delegatedBy ex:RestrictedHuman ;
+    ns1:delegatedTo ex:Agent ;
+    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    ns1:endsOnTaskCompletion true ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:jurisdictionCode "SG" ;
+    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    ns1:permitsDataClass ns1:C2 ;
+    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
+
+ex:CoverageDelegation a ns1:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    ns1:aboutClient ex:Client ;
+    ns1:actionVerb ns1:VerbDraft,
+        ns1:VerbRead ;
+    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
+    ns1:authorityScope ex:Scope ;
+    ns1:delegatedBy ex:CoverageHuman ;
+    ns1:delegatedTo ex:Agent ;
+    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    ns1:endsOnTaskCompletion true ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:jurisdictionCode "SG" ;
+    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    ns1:permitsDataClass ns1:C2 ;
+    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
+
+ex:HighDelegation a ns1:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    ns1:aboutClient ex:Client ;
+    ns1:actionVerb ns1:VerbDraft,
+        ns1:VerbRead ;
+    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
+    ns1:authorityScope ex:Scope ;
+    ns1:delegatedBy ex:PersonRM ;
+    ns1:delegatedTo ex:HighAgent ;
+    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    ns1:endsOnTaskCompletion true ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:jurisdictionCode "SG" ;
+    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    ns1:permitsDataClass ns1:C2 ;
+    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
+
 ex:LateApprovalAgent a ns1:AIAgent ;
     rdfs:label "Meeting preparation agent"@en ;
     ns1:agentIdentifier "AGENT-RM-PRECALL-01" ;
@@ -2203,6 +2293,24 @@ ex:MaxOnlyIdentity a ns1:WorkloadIdentity ;
     ns1:credentialReference "urn:synthetic:max-only"^^xsd:anyURI ;
     ns1:deploymentEnvironment "production" ;
     ns1:workloadSubject "agent-max-only-05" .
+
+ex:MultiVerbDelegation a ns1:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    ns1:aboutClient ex:Client ;
+    ns1:actionVerb ns1:VerbDraft,
+        ns1:VerbRead ;
+    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
+    ns1:authorityScope ex:MultiVerbScope ;
+    ns1:delegatedBy ex:PersonRM ;
+    ns1:delegatedTo ex:Agent ;
+    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    ns1:endsOnTaskCompletion true ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:jurisdictionCode "SG" ;
+    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    ns1:permitsDataClass ns1:C2 ;
+    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
 
 ex:MultiVerbTool a ns1:Tool ;
     rdfs:label "Read portfolio positions"@en ;
@@ -2240,6 +2348,23 @@ ex:HighAgent a ns1:AIAgent ;
         ex:ToolPortfolioRead ;
     ns1:registeredForUseCase ex:UseCaseMeetingPrep ;
     ns1:workloadIdentity ex:HighIdentity .
+
+ex:LateDelegation rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    ns1:aboutClient ex:Client ;
+    ns1:actionVerb ns1:VerbDraft,
+        ns1:VerbRead ;
+    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
+    ns1:authorityScope ex:LateScope ;
+    ns1:delegatedBy ex:PersonRM ;
+    ns1:delegatedTo ex:LateApprovalAgent ;
+    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    ns1:endsOnTaskCompletion true ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:jurisdictionCode "SG" ;
+    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    ns1:permitsDataClass ns1:C2 ;
+    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
 
 ex:MaxOnlyAgent a ns1:AIAgent ;
     rdfs:label "Meeting preparation agent"@en ;
@@ -2289,41 +2414,3 @@ ex:GatewayClient ns1:boundAgent ex:HighAgent,
         ex:MaxOnlyAgent .
 
 ex:Agent ns1:permittedTool ex:MultiVerbTool .
-
-
-@prefix ns1: <https://ahmedmuzammil.com/ontology/pwm#> .
-@prefix prov: <http://www.w3.org/ns/prov#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-
-<https://example.org/pwm-example#BadRestrictedEntitlementCall> a ns1:MCPProxiedCall ;
-    prov:generatedAtTime "2026-11-03T01:58:30+00:00"^^xsd:dateTime ;
-    ns1:aboutClient <https://example.org/pwm-example#Client> ;
-    ns1:callAgent <https://example.org/pwm-example#Agent> ;
-    ns1:callDurationSeconds 2.0 ;
-    ns1:classification ns1:C2 ;
-    ns1:clientConfiguration <https://example.org/pwm-example#GatewayClient> ;
-    ns1:governedByDecision <https://example.org/pwm-example#RestrictedEntitlementDecision> ;
-    ns1:inRun <https://example.org/pwm-example#Run> ;
-    ns1:inputContent <https://example.org/pwm-example#ExternalResearch> ;
-    ns1:invokedTool <https://example.org/pwm-example#ToolPortfolioRead> ;
-    ns1:jurisdictionCode "SG" ;
-    ns1:mcpBackend "portfolio-local" ;
-    ns1:reliesOnDelegation <https://example.org/pwm-example#BadRestrictedEntitlement> ;
-    ns1:reliesOnGrant <https://example.org/pwm-example#Grant> ;
-    ns1:requestedField "riskProfile" ;
-    ns1:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
-    ns1:retainedIn <https://example.org/pwm-example#RetainedToolResponse> ;
-    ns1:workloadIdentity <https://example.org/pwm-example#Workload> .
-
-<https://example.org/pwm-example#RestrictedEntitlementDecision> a ns1:PolicyDecision ;
-    prov:generatedAtTime "2026-11-03T01:58:00+00:00"^^xsd:dateTime ;
-    ns1:decidedByRule <https://example.org/pwm-example#RuleModelAccess> ;
-    ns1:decisionOutcome ns1:OutcomeAllow ;
-    ns1:escalationThreshold 0.90 ;
-    ns1:hasCheck <https://example.org/pwm-example#ModelAccessCheck> ;
-    ns1:hasPurpose <https://example.org/pwm-example#PurposeMeetingPrep> ;
-    ns1:inRun <https://example.org/pwm-example#Run> ;
-    ns1:limitObservation <https://example.org/pwm-example#Observation> ;
-    ns1:reliesOnDelegation <https://example.org/pwm-example#BadRestrictedEntitlement> ;
-    ns1:sandboxConstraints <https://example.org/pwm-example#Sandbox> ;
-    ns1:underUseCase <https://example.org/pwm-example#UseCaseMeetingPrep> .

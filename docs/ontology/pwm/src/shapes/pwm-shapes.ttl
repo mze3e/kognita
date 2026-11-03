@@ -29,12 +29,13 @@
     owl:versionInfo "0.5 (draft)" ;
     owl:priorVersion <https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl> ;
     dcterms:created "2026-11-02"^^xsd:date ;
-    dcterms:modified "2026-11-03"^^xsd:date ;
+    dcterms:modified "2026-11-04"^^xsd:date ;
     dcterms:title "Private Wealth Management Ontology: SHACL shapes"@en ;
     dcterms:description "Data rules for the Private Wealth Management Ontology 0.5. Shapes stay generic; a firm adds its own thresholds and jurisdiction rules in a separate shapes graph."@en ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
     dcterms:requires <https://ahmedmuzammil.com/ontology/pwm/0.5> ;
+    sh:declare [ sh:prefix "prov" ; sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] ;
     sh:declare
         [ sh:prefix "xsd" ; sh:namespace "http://www.w3.org/2001/XMLSchema#"^^xsd:anyURI ] ,
         [ sh:prefix "pwm" ; sh:namespace "https://ahmedmuzammil.com/ontology/pwm#"^^xsd:anyURI ] ,
@@ -83,9 +84,9 @@ pwmsh:AIUseCaseShape a sh:NodeShape ;
         sh:qualifiedValueShape [ sh:class pwm:BusinessOwner ] ; sh:qualifiedMinCount 1 ;
         sh:message "A use case with no business owner is refused (Kognita 0.4 item 8; MAS AIRG 4.7)." ] ;
     sh:or (
-        [ sh:property [ sh:path pwm:riskTier ; sh:hasValue pwm:Tier1 ] ]
+        [ sh:property [ sh:path pwm:riskTier ; sh:hasValue pwm:Tier1  ; sh:message "riskTier: required value Tier1." ] ]
         [ sh:property [ sh:path pwm:hasAccountabilityRole ;
-            sh:qualifiedValueShape [ sh:class pwm:KnowledgeLead ] ; sh:qualifiedMinCount 1 ] ]
+            sh:qualifiedValueShape [ sh:class pwm:KnowledgeLead ] ; sh:qualifiedMinCount 1  ; sh:message "hasAccountabilityRole: satisfy the stated field restrictions." ] ]
     ) ;
     sh:message "A use case at tier 2 or above with no named Knowledge Lead is refused (Kognita 0.4 item 8)." .
 
@@ -94,18 +95,18 @@ pwmsh:LiveUseCaseShape a sh:NodeShape ;
     sh:targetClass pwm:AIUseCase ;
     dcterms:source pwmref:MAS-AIRG , pwmref:KOG-ROADMAP ;
     sh:or (
-        [ sh:not [ sh:property [ sh:path pwm:lifecycleStatus ; sh:hasValue pwm:StatusLive ] ] ]
+        [ sh:not [ sh:property [ sh:path pwm:lifecycleStatus ; sh:hasValue pwm:StatusLive  ; sh:message "lifecycleStatus: required value StatusLive." ] ] ]
         [ sh:property [ sh:path pwm:hasMaterialityAssessment ;
-            sh:qualifiedValueShape pwmsh:ApprovedMaterialityShape ; sh:qualifiedMinCount 1 ] ]
+            sh:qualifiedValueShape pwmsh:ApprovedMaterialityShape ; sh:qualifiedMinCount 1  ; sh:message "hasMaterialityAssessment: satisfy the stated field restrictions." ] ]
     ) ;
     sh:message "A live use case needs a materiality assessment with inherent and residual ratings, approved by the designated control function (MAS AIRG 4.11, 4.13; Kognita 0.4 item 8)." .
 
 pwmsh:ApprovedMaterialityShape a sh:NodeShape ;
     rdfs:label "Approved materiality assessment"@en ;
     rdfs:comment "Used inside LiveUseCaseShape. Has no target of its own."@en ;
-    sh:property [ sh:path pwm:approvedBy ; sh:minCount 1 ; sh:class pwm:DesignatedControlFunction ] ;
-    sh:property [ sh:path pwm:inherentMateriality ; sh:minCount 1 ] ;
-    sh:property [ sh:path pwm:residualMateriality ; sh:minCount 1 ] .
+    sh:property [ sh:path pwm:approvedBy ; sh:minCount 1 ; sh:class pwm:DesignatedControlFunction  ; sh:message "approvedBy: minimum count 1; class DesignatedControlFunction." ] ;
+    sh:property [ sh:path pwm:inherentMateriality ; sh:minCount 1  ; sh:message "inherentMateriality: minimum count 1." ] ;
+    sh:property [ sh:path pwm:residualMateriality ; sh:minCount 1  ; sh:message "residualMateriality: minimum count 1." ] .
 
 pwmsh:ControlFunctionSeparationShape a sh:NodeShape ;
     rdfs:label "Control function separation"@en ;
@@ -225,7 +226,7 @@ pwmsh:ClientCommunicationShape a sh:NodeShape ;
     sh:property [ sh:path pwm:contentProvenance ; sh:minCount 1 ; sh:maxCount 1 ;
         sh:message "Every communication carries its content provenance label (Kognita 0.4 item 11)." ] ;
     sh:property [ sh:path pwm:viaChannel ; sh:minCount 1 ;
-        sh:node [ sh:property [ sh:path pwm:isApprovedChannel ; sh:hasValue true ] ] ;
+        sh:node [ sh:property [ sh:path pwm:isApprovedChannel ; sh:hasValue true  ; sh:message "isApprovedChannel: required value true." ] ] ;
         sh:message "Client communication goes only through a registered, approved channel (Kognita 0.4 item 12)." ] .
 
 pwmsh:AIDisclosureShape a sh:NodeShape ;
@@ -234,8 +235,8 @@ pwmsh:AIDisclosureShape a sh:NodeShape ;
     sh:targetClass pwm:ClientCommunication ;
     dcterms:source pwmref:KOG-PB-PACK , pwmref:MAS-AIRG ;
     sh:or (
-        [ sh:property [ sh:path pwm:contentProvenance ; sh:in ( pwm:ProvenanceHuman pwm:ProvenanceHumanAIAssisted ) ] ]
-        [ sh:property [ sh:path pwm:aiDisclosureGiven ; sh:hasValue true ] ]
+        [ sh:property [ sh:path pwm:contentProvenance ; sh:in ( pwm:ProvenanceHuman pwm:ProvenanceHumanAIAssisted )  ; sh:message "contentProvenance: allowed values ProvenanceHuman, ProvenanceHumanAIAssisted." ] ]
+        [ sh:property [ sh:path pwm:aiDisclosureGiven ; sh:hasValue true  ; sh:message "aiDisclosureGiven: required value true." ] ]
     ) ;
     sh:message "When AI generated the content, the client communication must say so (Kognita private-banking pack, client-ai-disclosure; MAS AIRG 5.6)." .
 
@@ -247,11 +248,11 @@ pwmsh:ClaimShape a sh:NodeShape ;
     dcterms:source pwmref:KOG-ROADMAP ;
     sh:property [ sh:path pwm:claimType ; sh:minCount 1 ; sh:maxCount 1 ;
         sh:message "Unlabelled claims cannot be shown to an RM or sent to a client (Kognita 0.6 item 5)." ] ;
-    sh:property [ sh:path pwm:validatorStatus ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:validatorStatus ; sh:maxCount 1  ; sh:message "validatorStatus: maximum count 1." ] ;
     sh:or (
-        [ sh:not [ sh:property [ sh:path pwm:claimType ; sh:hasValue pwm:VerifiedFact ] ] ]
-        [ sh:property [ sh:path pwm:citesSource ; sh:minCount 1 ] ;
-          sh:property [ sh:path pwm:validatorStatus ; sh:hasValue pwm:ValidatorVerified ] ]
+        [ sh:not [ sh:property [ sh:path pwm:claimType ; sh:hasValue pwm:VerifiedFact  ; sh:message "claimType: required value VerifiedFact." ] ] ]
+        [ sh:property [ sh:path pwm:citesSource ; sh:minCount 1  ; sh:message "citesSource: minimum count 1." ] ;
+          sh:property [ sh:path pwm:validatorStatus ; sh:hasValue pwm:ValidatorVerified  ; sh:message "validatorStatus: required value ValidatorVerified." ] ]
     ) ;
     sh:message "A claim typed as verified fact must cite a source and carry the validator status verified. The model's own knowledge is never a source, and an inference cannot become a fact without verification (Kognita 0.6 items 3, 5 and 7)." .
 
@@ -272,9 +273,9 @@ pwmsh:ValuationShape a sh:NodeShape ;
     rdfs:label "Valuation"@en ;
     sh:targetClass pwm:Valuation ;
     dcterms:source pwmref:KOG-ROADMAP ;
-    sh:property [ sh:path pwm:amount ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ] ;
-    sh:property [ sh:path pwm:currency ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path pwm:asOf ; sh:minCount 1 ; sh:datatype xsd:dateTime ] ;
+    sh:property [ sh:path pwm:amount ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal  ; sh:message "amount: minimum count 1; maximum count 1; datatype decimal." ] ;
+    sh:property [ sh:path pwm:currency ; sh:minCount 1 ; sh:maxCount 1  ; sh:message "currency: minimum count 1; maximum count 1." ] ;
+    sh:property [ sh:path pwm:asOf ; sh:minCount 1 ; sh:datatype xsd:dateTime  ; sh:message "asOf: minimum count 1; datatype dateTime." ] ;
     sh:property [ sh:path pwm:calculatedBy ; sh:minCount 1 ;
         sh:message "A figure presented as authoritative must cite a registered calculation service (Kognita 0.6 item 6)." ] .
 
@@ -291,7 +292,7 @@ pwmsh:SuitabilityAssessmentShape a sh:NodeShape ;
     sh:property [ sh:path pwm:usesMandate ; sh:minCount 1 ;
         sh:message "Check the recommendation against the recorded mandate (Kognita private-banking pack, mandate)." ] ;
     sh:property [ sh:path pwm:suitabilityOutcome ; sh:minCount 1 ; sh:maxCount 1 ;
-        sh:in ( pwm:Suitable pwm:SuitableWithConditions pwm:NotSuitable pwm:InsufficientInformation ) ] ;
+        sh:in ( pwm:Suitable pwm:SuitableWithConditions pwm:NotSuitable pwm:InsufficientInformation )  ; sh:message "suitabilityOutcome: minimum count 1; maximum count 1; allowed values Suitable, SuitableWithConditions, NotSuitable, InsufficientInformation." ] ;
     sh:property [ sh:path pwm:rationale ; sh:minCount 1 ;
         sh:message "Record how the recommendation meets the client's objectives and characteristics, not a bare score (MiFID II Art. 25(6))." ] ;
     sh:property [ sh:path prov:wasAttributedTo ; sh:minCount 1 ;
@@ -301,18 +302,18 @@ pwmsh:InvestorRiskProfileShape a sh:NodeShape ;
     rdfs:label "Investor risk profile"@en ;
     sh:targetClass pwm:InvestorRiskProfile ;
     dcterms:source pwmref:EU-MIFID2-DR ;
-    sh:property [ sh:path pwm:riskProfileLevel ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path pwm:validFrom ; sh:minCount 1 ; sh:datatype xsd:dateTime ] ;
-    sh:property [ sh:path prov:wasAttributedTo ; sh:minCount 1 ] .
+    sh:property [ sh:path pwm:riskProfileLevel ; sh:minCount 1 ; sh:maxCount 1  ; sh:message "riskProfileLevel: minimum count 1; maximum count 1." ] ;
+    sh:property [ sh:path pwm:validFrom ; sh:minCount 1 ; sh:datatype xsd:dateTime  ; sh:message "validFrom: minimum count 1; datatype dateTime." ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:minCount 1  ; sh:message "wasAttributedTo: minimum count 1." ] .
 
 pwmsh:InvestorClassificationShape a sh:NodeShape ;
     rdfs:label "Investor classification"@en ;
     sh:targetClass pwm:InvestorClassification ;
     dcterms:source pwmref:SG-SFA , pwmref:CH-FINSA , pwmref:EU-MIFID2 ;
-    sh:property [ sh:path pwm:investorCategory ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:investorCategory ; sh:minCount 1 ; sh:maxCount 1  ; sh:message "investorCategory: minimum count 1; maximum count 1." ] ;
     sh:property [ sh:path pwm:jurisdictionCode ; sh:minCount 1 ; sh:maxCount 1 ;
         sh:message "A classification is made under one jurisdiction's rules." ] ;
-    sh:property [ sh:path pwm:optStatus ; sh:maxCount 1 ] .
+    sh:property [ sh:path pwm:optStatus ; sh:maxCount 1  ; sh:message "optStatus: maximum count 1." ] .
 
 # --- Information governance and evidence ---------------------------------------------------
 
@@ -325,8 +326,8 @@ pwmsh:GovernedInformationAssetShape a sh:NodeShape ;
     sh:property [ sh:path pwm:validFrom ; sh:minCount 1 ; sh:message "Minimum label: effective date (Filing Cabinet, slide 8)." ] ;
     sh:property [ sh:path pwm:retentionUntil ; sh:minCount 1 ; sh:message "Minimum label: retention date (Filing Cabinet, slide 8)." ] ;
     sh:or (
-        [ sh:property [ sh:path pwm:versionId ; sh:minCount 1 ] ]
-        [ sh:property [ sh:path pwm:contentHash ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path pwm:versionId ; sh:minCount 1  ; sh:message "versionId: minimum count 1." ] ]
+        [ sh:property [ sh:path pwm:contentHash ; sh:minCount 1  ; sh:message "contentHash: minimum count 1." ] ]
     ) ;
     sh:message "Minimum label: version identifier or content hash (Filing Cabinet, slide 8)." .
 
@@ -352,8 +353,8 @@ pwmsh:CrossBorderRuleShape a sh:NodeShape ;
     rdfs:label "Cross-border rule"@en ;
     sh:targetClass pwm:CrossBorderRule ;
     dcterms:source pwmref:KOG-PB-PACK ;
-    sh:property [ sh:path pwm:appliesToActivity ; sh:minCount 1 ] ;
-    sh:property [ sh:path pwm:permitted ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
+    sh:property [ sh:path pwm:appliesToActivity ; sh:minCount 1  ; sh:message "appliesToActivity: minimum count 1." ] ;
+    sh:property [ sh:path pwm:permitted ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean  ; sh:message "permitted: minimum count 1; maximum count 1; datatype boolean." ] ;
     sh:property [ sh:path pwm:clientDomicileCode ; sh:minCount 1 ; sh:pattern "^[A-Z]{2}$" ;
         sh:message "Client domicile is an ISO 3166-1 alpha-2 code." ] ;
     sh:property [ sh:path pwm:bookingCentreCode ; sh:minCount 1 ; sh:pattern "^[A-Z]{2}$" ;
@@ -365,7 +366,7 @@ pwmsh:PolicyDecisionShape a sh:NodeShape ;
     sh:property [ sh:path prov:generatedAtTime ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:message "Record exactly one decision timestamp." ] ;
     dcterms:source pwmref:KOG-ROADMAP , pwmref:AM-FILING-CABINET ;
     sh:property [ sh:path pwm:decisionOutcome ; sh:minCount 1 ; sh:maxCount 1 ;
-        sh:in ( pwm:OutcomeDeny pwm:OutcomeEscalate pwm:OutcomeHumanApproval pwm:OutcomeAllow pwm:OutcomeObserve ) ] ;
+        sh:in ( pwm:OutcomeDeny pwm:OutcomeEscalate pwm:OutcomeHumanApproval pwm:OutcomeAllow pwm:OutcomeObserve )  ; sh:message "decisionOutcome: minimum count 1; maximum count 1; allowed values OutcomeDeny, OutcomeEscalate, OutcomeHumanApproval, OutcomeAllow, OutcomeObserve." ] ;
     sh:property [ sh:path pwm:decidedByRule ; sh:minCount 1 ;
         sh:message "Every decision names the rule and rule version that decided it (Filing Cabinet, slide 14)." ] ;
     sh:property [ sh:path pwm:underUseCase ; sh:minCount 1 ;
@@ -375,15 +376,15 @@ pwmsh:EvidenceRecordShape a sh:NodeShape ;
     rdfs:label "Evidence record"@en ;
     sh:targetClass pwm:EvidenceRecord ;
     dcterms:source pwmref:KOG-CONTROLS , pwmref:MAS-AIRG ;
-    sh:property [ sh:path pwm:eventType ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:eventType ; sh:minCount 1 ; sh:maxCount 1  ; sh:message "eventType: minimum count 1; maximum count 1." ] ;
     sh:property [ sh:path pwm:recordHash ; sh:minCount 1 ; sh:maxCount 1 ;
         sh:message "Evidence records are hash-chained (Kognita control frameworks)." ] ;
     sh:property [ sh:path prov:generatedAtTime ; sh:minCount 1 ; sh:datatype xsd:dateTime ;
         sh:message "An evidence record states when the event happened (MAS AIRG 5.23(d))." ] ;
-    sh:property [ sh:path pwm:previousRecordHash ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:previousRecordHash ; sh:maxCount 1  ; sh:message "previousRecordHash: maximum count 1." ] ;
     sh:xone (
-        [ sh:property [ sh:path pwm:previousRecordHash ; sh:minCount 1 ] ]
-        [ sh:property [ sh:path pwm:chainStart ; sh:hasValue true ] ]
+        [ sh:property [ sh:path pwm:previousRecordHash ; sh:minCount 1  ; sh:message "previousRecordHash: minimum count 1." ] ]
+        [ sh:property [ sh:path pwm:chainStart ; sh:hasValue true  ; sh:message "chainStart: required value true." ] ]
     ) ;
     sh:message "Every evidence record names the hash of the record before it, except the first record of a chain, which is marked chain start (Kognita control frameworks: hash-chained evidence)." .
 
@@ -434,9 +435,9 @@ pwmsh:EUSustainabilityAssessmentShape a sh:NodeShape ;
     sh:targetClass pwm:SuitabilityAssessment ;
     dcterms:source pwmref:EU-SUSTAINABILITY ;
     sh:or (
-        [ sh:not [ sh:property [ sh:path pwm:jurisdictionCode ; sh:hasValue "EU" ] ] ]
+        [ sh:not [ sh:property [ sh:path pwm:jurisdictionCode ; sh:hasValue "EU"  ; sh:message "jurisdictionCode: required value EU." ] ] ]
         [ sh:property [ sh:path pwm:usesSustainabilityPreference ; sh:minCount 1 ; sh:maxCount 1 ;
-            sh:class pwm:SustainabilityPreference ] ]
+            sh:class pwm:SustainabilityPreference  ; sh:message "usesSustainabilityPreference: minimum count 1; maximum count 1; class SustainabilityPreference." ] ]
     ) ;
     sh:message "EU suitability cites one recorded sustainability preference, including explicit no preference (2017/565 Art. 54(2)(a), (5), as amended by 2021/1253 Art. 1(6))." .
 
@@ -444,12 +445,12 @@ pwmsh:SustainabilityPreferenceShape a sh:NodeShape ;
     rdfs:label "Sustainability preference"@en ;
     sh:targetClass pwm:SustainabilityPreference ;
     dcterms:source pwmref:EU-SUSTAINABILITY ;
-    sh:property [ sh:path pwm:sustainabilityPreferenceKind ; sh:minCount 1 ] ;
+    sh:property [ sh:path pwm:sustainabilityPreferenceKind ; sh:minCount 1  ; sh:message "sustainabilityPreferenceKind: minimum count 1." ] ;
     sh:property [ sh:path pwm:minimumTaxonomyAlignedProportion ; sh:maxCount 1 ;
-        sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0 ] ;
+        sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0  ; sh:message "minimumTaxonomyAlignedProportion: maximum count 1; datatype decimal; minimum inclusive 0.0; maximum inclusive 1.0." ] ;
     sh:property [ sh:path pwm:minimumSFDRSustainableProportion ; sh:maxCount 1 ;
-        sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0 ] ;
-    sh:property [ sh:path pwm:paiConsiderationElements ; sh:datatype xsd:string ; sh:minLength 1 ] ;
+        sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0  ; sh:message "minimumSFDRSustainableProportion: maximum count 1; datatype decimal; minimum inclusive 0.0; maximum inclusive 1.0." ] ;
+    sh:property [ sh:path pwm:paiConsiderationElements ; sh:datatype xsd:string ; sh:minLength 1  ; sh:message "paiConsiderationElements: datatype string." ] ;
     sh:sparql [
         a sh:SPARQLConstraint ;
         sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
@@ -492,7 +493,7 @@ pwmsh:RunBudgetShape a sh:NodeShape ; rdfs:label "RunBudgetShape"@en ; sh:target
 
 pwmsh:BudgetExceededDenialShape a sh:NodeShape ; rdfs:label "BudgetExceededDenialShape"@en ; sh:targetClass pwm:BudgetExceededDenial ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 1."@en ;
-    sh:property [ sh:path pwm:exceededBudget ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RunBudget ; sh:message "Record exceededBudget (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:budgetDimension ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record budgetDimension (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:decisionOutcome ; sh:hasValue pwm:OutcomeDeny ] .
+    sh:property [ sh:path pwm:exceededBudget ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RunBudget ; sh:message "Record exceededBudget (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:budgetDimension ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record budgetDimension (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:decisionOutcome ; sh:hasValue pwm:OutcomeDeny  ; sh:message "decisionOutcome: required value OutcomeDeny." ] .
 
 
 pwmsh:CheckpointShape a sh:NodeShape ; rdfs:label "CheckpointShape"@en ; sh:targetClass pwm:RunCheckpoint ;
@@ -507,7 +508,7 @@ pwmsh:ApprovalRequestShape a sh:NodeShape ; rdfs:label "ApprovalRequestShape"@en
 
 pwmsh:ApprovalResolutionShape a sh:NodeShape ; rdfs:label "ApprovalResolutionShape"@en ; sh:targetClass pwm:ApprovalResolution ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 2."@en ;
-    sh:property [ sh:path pwm:resolvesApproval ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:ApprovalRequest ; sh:message "Record resolvesApproval (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:approvalResolution ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record approvalResolution (roadmap milestone 0.3)." ] ; sh:property [ sh:path prov:wasAttributedTo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class fibo-fnd-aap-ppl:Person ] ; sh:property [ sh:path prov:generatedAtTime ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ] .
+    sh:property [ sh:path pwm:resolvesApproval ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:ApprovalRequest ; sh:message "Record resolvesApproval (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:approvalResolution ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record approvalResolution (roadmap milestone 0.3)." ] ; sh:property [ sh:path prov:wasAttributedTo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class fibo-fnd-aap-ppl:Person  ; sh:message "wasAttributedTo: minimum count 1; maximum count 1; class Person." ] ; sh:property [ sh:path prov:generatedAtTime ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime  ; sh:message "generatedAtTime: minimum count 1; maximum count 1; datatype dateTime." ] .
 
 
 pwmsh:RunResumptionShape a sh:NodeShape ; rdfs:label "RunResumptionShape"@en ; sh:targetClass pwm:RunResumption ;
@@ -546,7 +547,7 @@ pwmsh:EnvelopeAttributeShape a sh:NodeShape ; rdfs:label "EnvelopeAttributeShape
 
 pwmsh:ClassifierThresholdShape a sh:NodeShape ; rdfs:label "ClassifierThresholdShape"@en ; sh:targetSubjectsOf pwm:hasAttribute , pwm:escalationThreshold ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 4."@en ;
-    sh:property [ sh:path pwm:escalationThreshold ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0 ] ;
+    sh:property [ sh:path pwm:escalationThreshold ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0  ; sh:message "escalationThreshold: maximum count 1; datatype decimal; minimum inclusive 0.0; maximum inclusive 1.0." ] ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Below-threshold or missing-threshold classifier evidence cannot yield ALLOW (0.3 item 4)." ; sh:select """SELECT DISTINCT $this WHERE { { $this pwm:decisionOutcome pwm:OutcomeAllow . BIND($this AS ?decision) } UNION { $this pwm:governedByDecision ?decision . ?decision pwm:decisionOutcome pwm:OutcomeAllow } $this pwm:hasAttribute ?a . ?a pwm:attributeSource pwm:AttributeClassifierDerived ; pwm:derivedFromClassifier ?c . ?c pwm:confidence ?confidence . FILTER NOT EXISTS { ?decision pwm:escalationThreshold ?t . FILTER (?confidence >= ?t) } }""" ] ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
       sh:message "Classifier fills gaps only; a typed attribute remains authoritative (0.3 item 4)." ;
@@ -568,7 +569,7 @@ pwmsh:RetrievedItemShape a sh:NodeShape ; rdfs:label "RetrievedItemShape"@en ; s
 
 pwmsh:RetentionEntryShape a sh:NodeShape ; rdfs:label "RetentionEntryShape"@en ; sh:targetClass pwm:RetentionEntry ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
-    sh:property [ sh:path pwm:contentHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record contentHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:underUseCase ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AIUseCase ; sh:message "Record underUseCase (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:storeLocator ; sh:maxCount 1 ; sh:datatype xsd:anyURI ] .
+    sh:property [ sh:path pwm:contentHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record contentHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:underUseCase ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AIUseCase ; sh:message "Record underUseCase (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:storeLocator ; sh:maxCount 1 ; sh:datatype xsd:anyURI  ; sh:message "storeLocator: maximum count 1; datatype anyURI." ] .
 
 
 pwmsh:RetentionPolicyShape a sh:NodeShape ; rdfs:label "RetentionPolicyShape"@en ; sh:targetClass pwm:RetentionPolicy ;
@@ -598,14 +599,14 @@ pwmsh:ReconstructionFindingShape a sh:NodeShape ; rdfs:label "ReconstructionFind
 
 pwmsh:GatewayConfigurationShape a sh:NodeShape ; rdfs:label "GatewayConfigurationShape"@en ; sh:targetClass pwm:AIUseCase ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 9."@en ;
-    sh:property [ sh:path pwm:gatewayFailureMode ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record gatewayFailureMode (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:retentionPolicy ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RetentionPolicy ] .
+    sh:property [ sh:path pwm:gatewayFailureMode ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record gatewayFailureMode (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:retentionPolicy ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RetentionPolicy  ; sh:message "retentionPolicy: minimum count 1; maximum count 1; class RetentionPolicy." ] .
 
 
 pwmsh:GovernedCallShape a sh:NodeShape ; rdfs:label "GovernedCallShape"@en ; sh:targetClass pwm:GovernedCall ;
     dcterms:source pwmref:KOG-ROADMAP , pwmref:MAS-AIRG ;
     rdfs:comment "Roadmap milestone 0.3 items 2 and 3; MAS AIRG 5.9 human oversight."@en ;
-    sh:property [ sh:path pwm:callAgent ; sh:maxCount 1 ] ;
-    sh:property [ sh:path pwm:systemTrigger ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:callAgent ; sh:maxCount 1  ; sh:message "callAgent: maximum count 1." ] ;
+    sh:property [ sh:path pwm:systemTrigger ; sh:maxCount 1  ; sh:message "systemTrigger: maximum count 1." ] ;
     sh:property [ sh:path pwm:inRun ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:Run ; sh:message "Record inRun (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:governedByDecision ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:PolicyDecision ; sh:message "Record governedByDecision (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:clientConfiguration ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AuthenticatedClientConfiguration ; sh:message "Record clientConfiguration (roadmap milestone 0.3)." ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Call identity must be an agent bound to the authenticated client or a listed system trigger (0.3 Tier 0)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:clientConfiguration ?config . FILTER NOT EXISTS { { $this pwm:callAgent ?agent . ?config pwm:boundAgent ?agent . FILTER NOT EXISTS { $this pwm:systemTrigger ?trigger } } UNION { $this pwm:systemTrigger ?trigger . ?config pwm:listedTrigger ?trigger . FILTER NOT EXISTS { $this pwm:callAgent ?agent } } } }""" ] ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
         sh:message "A call governed by a held decision requires that decision in the same run and an ApprovalRequest at a checkpoint in the call's run with an ApprovalApproved resolution (KOG roadmap 0.3 item 2; MAS AIRG 5.9)." ;
@@ -715,9 +716,9 @@ pwmsh:InteractionOutcomeShape a sh:NodeShape ; rdfs:label "InteractionOutcomeSha
     sh:property [ sh:path pwm:implicatedModel ; sh:minCount 1 ; sh:class pwm:AIModel ; sh:message "Record implicatedModel (Kognita 0.4 item 15)." ] ;
     sh:property [ sh:path pwm:outcomeApprover ; sh:minCount 1 ; sh:class fibo-fnd-aap-ppl:Person ; sh:message "Record outcomeApprover (Kognita 0.4 item 15)." ] .
 
-pwmsh:BreakerScopeShape a sh:NodeShape ; rdfs:label "BreakerScopeShape"@en ; sh:targetClass pwm:CircuitBreakerTrip ; sh:targetClass pwm:CircuitBreaker ; sh:targetClass pwm:AffectedClientQuery ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "BreakerScopeShape: denied or incomplete record (Kognita 0.4 item 14)." ; sh:select """SELECT DISTINCT $this WHERE { FILTER NOT EXISTS { $this (pwm:scopeUseCase|pwm:scopeModel|pwm:scopePolicy|pwm:scopePromptVersion) ?scope } }""" ] .
+pwmsh:BreakerScopeShape a sh:NodeShape ; rdfs:label "BreakerScopeShape"@en ; sh:targetClass pwm:CircuitBreakerTrip ; sh:targetClass pwm:CircuitBreaker ; sh:targetClass pwm:AffectedClientQuery ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "A breaker, trip or affected-client query requires a use-case, model, policy or prompt-version scope (Kognita 0.4 item 14)." ; sh:select """SELECT DISTINCT $this WHERE { FILTER NOT EXISTS { $this (pwm:scopeUseCase|pwm:scopeModel|pwm:scopePolicy|pwm:scopePromptVersion) ?scope } }""" ] .
 
-pwmsh:TwoSignatureShape a sh:NodeShape ; rdfs:label "TwoSignatureShape"@en ; sh:targetSubjectsOf pwm:requiresTwoSignatures ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "TwoSignatureShape: denied or incomplete record (Kognita 0.4 item 12)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:requiresTwoSignatures true . FILTER NOT EXISTS { $this pwm:communicationSigner ?a, ?b . ?a a <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person> . ?b a <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person> . FILTER (?a != ?b) } }""" ] .
+pwmsh:TwoSignatureShape a sh:NodeShape ; rdfs:label "TwoSignatureShape"@en ; sh:targetSubjectsOf pwm:requiresTwoSignatures ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "A communication requiring two signatures must name two distinct human signers (Kognita 0.4 item 12)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:requiresTwoSignatures true . FILTER NOT EXISTS { $this pwm:communicationSigner ?a, ?b . ?a a <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person> . ?b a <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person> . FILTER (?a != ?b) } }""" ] .
 
 # The review date remains valid through its final day. Normalize unspecified
 # timezones to UTC before typed comparisons; preserve explicit offsets.
@@ -727,7 +728,7 @@ pwmsh:PastReviewDecisionShape a sh:NodeShape ;
     dcterms:source pwmref:KOG-ROADMAP ;
     sh:sparql [
         sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
-        sh:message "PastReviewDecisionShape: denied or incomplete record (Kognita 0.4 item 8)." ;
+        sh:message "A decision made after the use-case review date expires must be DENY (Kognita 0.4 item 8)." ;
         sh:select """
             SELECT DISTINCT $this WHERE {
                 $this pwm:underUseCase ?uc ; pwm:decisionOutcome ?out ;
@@ -746,9 +747,9 @@ pwmsh:PastReviewDecisionShape a sh:NodeShape ;
         """
     ] .
 
-pwmsh:RiskAppetiteDecisionShape a sh:NodeShape ; rdfs:label "RiskAppetiteDecisionShape"@en ; sh:targetClass pwm:PolicyDecision ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "RiskAppetiteDecisionShape: denied or incomplete record (Kognita 0.4 item 8)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:underUseCase ?uc ; pwm:decisionOutcome ?out . ?uc pwm:appetitePermits false . FILTER (?out != pwm:OutcomeDeny) }""" ] .
+pwmsh:RiskAppetiteDecisionShape a sh:NodeShape ; rdfs:label "RiskAppetiteDecisionShape"@en ; sh:targetClass pwm:PolicyDecision ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "A decision outside the recorded risk appetite must be DENY (Kognita 0.4 item 8)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:underUseCase ?uc ; pwm:decisionOutcome ?out . ?uc pwm:appetitePermits false . FILTER (?out != pwm:OutcomeDeny) }""" ] .
 
-pwmsh:CoverageCountsShape a sh:NodeShape ; rdfs:label "CoverageCountsShape"@en ; sh:targetClass pwm:ReviewCoverageReport ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "CoverageCountsShape: denied or incomplete record (Kognita 0.4 item 13)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:eligibleCount ?e ; pwm:screenedCount ?s ; pwm:queuedCount ?q ; pwm:reviewedCount ?r . FILTER (?s > ?e || ?q > ?s || ?r > ?q) }""" ] .
+pwmsh:CoverageCountsShape a sh:NodeShape ; rdfs:label "CoverageCountsShape"@en ; sh:targetClass pwm:ReviewCoverageReport ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Coverage counts must satisfy reviewed <= queued <= screened <= eligible (Kognita 0.4 item 13)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:eligibleCount ?e ; pwm:screenedCount ?s ; pwm:queuedCount ?q ; pwm:reviewedCount ?r . FILTER (?s > ?e || ?q > ?s || ?r > ?q) }""" ] .
 
 pwmsh:CircuitBreakerConfigurationShape a sh:NodeShape ; rdfs:label "CircuitBreakerConfigurationShape"@en ; sh:targetClass pwm:CircuitBreaker ; dcterms:source pwmref:KOG-ROADMAP ; sh:property [ sh:path pwm:flagThreshold ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:positiveInteger ; sh:message "Record flagThreshold (Kognita 0.4 item 14)." ] ; sh:property [ sh:path pwm:windowStart ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:lessThan pwm:windowEnd ; sh:message "Record windowStart (Kognita 0.4 item 14)." ] ; sh:property [ sh:path pwm:windowEnd ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:message "Record windowEnd (Kognita 0.4 item 14)." ] .
 
@@ -806,7 +807,10 @@ pwmsh:AgentDecisionShape a sh:NodeShape ; rdfs:label "AgentDecisionShape"@en ; s
         sh:select """SELECT DISTINCT $this WHERE { $this pwm:callAgent ?agent ; pwm:governedByDecision ?decision . ?decision pwm:decisionOutcome ?out . FILTER (?out != pwm:OutcomeDeny)
  FILTER NOT EXISTS { ?agent pwm:deploymentVersion ?v ; pwm:approvedDeploymentVersion ?v ; pwm:agentStatus pwm:StatusLive ; pwm:nextReviewDate ?due ; pwm:workloadIdentity ?identity .
  $this pwm:workloadIdentity ?identity . ?decision <http://www.w3.org/ns/prov#generatedAtTime> ?at .
- FILTER(STR(?due) >= SUBSTR(STR(?at),1,10))
+ BIND(IF(REGEX(STR(?due), "(Z|[+-][0-9]{2}:[0-9]{2})$"), STR(?due), CONCAT(STR(?due), "Z")) AS ?dueZone)
+ BIND(xsd:dateTime(REPLACE(?dueZone, "^([0-9]{4}-[0-9]{2}-[0-9]{2})(.*)$", "$1T00:00:00$2")) + "P1D"^^xsd:dayTimeDuration AS ?expires)
+ BIND(xsd:dateTime(IF(REGEX(STR(?at), "(Z|[+-][0-9]{2}:[0-9]{2})$"), STR(?at), CONCAT(STR(?at), "Z"))) AS ?decisionAt)
+ FILTER(?decisionAt < ?expires)
  FILTER NOT EXISTS { ?rev pwm:revokedAuthority ?identity ; pwm:revokedAt ?rt . FILTER(?rt <= ?at) } } }""" ] .
 
 pwmsh:AuthorityScopeShape a sh:NodeShape ; rdfs:label "AuthorityScopeShape"@en ; sh:targetClass pwm:AuthorityScope ;
@@ -818,7 +822,7 @@ pwmsh:AuthorityScopeShape a sh:NodeShape ; rdfs:label "AuthorityScopeShape"@en ;
     sh:property [ sh:path pwm:scopeTool ; sh:minCount 1 ; sh:class pwm:Tool ; sh:message "pwm:scopeTool: minimum count 1, class pwm:Tool." ] ;
     sh:property [ sh:path pwm:scopeField ; sh:minCount 1 ; sh:datatype xsd:string ; sh:message "pwm:scopeField: minimum count 1, datatype xsd:string." ] ;
     sh:property [ sh:path pwm:jurisdictionCode ; sh:minCount 1 ; sh:datatype xsd:string ; sh:message "pwm:jurisdictionCode: minimum count 1, datatype xsd:string." ]  ;
-    sh:property [ sh:path pwm:scopeAutonomyLevel ; sh:minCount 1 ; sh:maxCount 1 ] .
+    sh:property [ sh:path pwm:scopeAutonomyLevel ; sh:minCount 1 ; sh:maxCount 1  ; sh:message "scopeAutonomyLevel: minimum count 1; maximum count 1." ] .
 
 pwmsh:HumanEntitlementShape a sh:NodeShape ; rdfs:label "HumanEntitlementShape"@en ; sh:targetClass pwm:HumanEntitlement ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 2. Checks recorded evidence; runtime enforcement remains external."@en ;
@@ -842,7 +846,7 @@ pwmsh:DelegationScopeShape a sh:NodeShape ; rdfs:label "DelegationScopeShape"@en
  ?scope pwm:classification ?childClass . ?hs pwm:classification ?parentClass .
  BIND(IF(?childClass = pwm:C0,0,IF(?childClass = pwm:C1,1,IF(?childClass = pwm:C2,2,3))) AS ?childRank)
  BIND(IF(?parentClass = pwm:C0,0,IF(?parentClass = pwm:C1,1,IF(?parentClass = pwm:C2,2,3))) AS ?parentRank)
- FILTER(?parentRank <= ?childRank)
+ FILTER(?childRank <= ?parentRank)
  FILTER NOT EXISTS { ?scope ?dim ?value . FILTER (?dim IN (pwm:aboutClient,pwm:hasPurpose,pwm:actionVerb,pwm:scopeTool,pwm:scopeField,pwm:scopeSystem,pwm:scopeProduct,pwm:jurisdictionCode)) FILTER NOT EXISTS { ?hs ?dim ?value } }
  } }""" ] .
 
@@ -864,7 +868,7 @@ pwmsh:LiveAuthorityDecisionShape a sh:NodeShape ; rdfs:label "LiveAuthorityDecis
  ?s pwm:classification ?childClass . ?hs pwm:classification ?parentClass .
  BIND(IF(?childClass = pwm:C0,0,IF(?childClass = pwm:C1,1,IF(?childClass = pwm:C2,2,3))) AS ?childRank)
  BIND(IF(?parentClass = pwm:C0,0,IF(?parentClass = pwm:C1,1,IF(?parentClass = pwm:C2,2,3))) AS ?parentRank)
- FILTER(?parentRank <= ?childRank)
+ FILTER(?childRank <= ?parentRank)
  FILTER NOT EXISTS { ?s ?dim ?v . FILTER (?dim IN (pwm:aboutClient,pwm:hasPurpose,pwm:actionVerb,pwm:scopeTool,pwm:scopeField,pwm:scopeSystem,pwm:scopeProduct,pwm:jurisdictionCode)) FILTER NOT EXISTS { ?hs ?dim ?v } }
  FILTER NOT EXISTS { ?rev pwm:revokedAuthority ?e ; pwm:revokedAt ?et . FILTER(?et <= ?at) }
  FILTER NOT EXISTS { ?auth pwm:parentDelegation* ?ancestor . ?rev pwm:revokedAuthority ?ancestor ; pwm:revokedAt ?rt . FILTER(?rt <= ?at) }
@@ -886,7 +890,7 @@ pwmsh:SubDelegationShape a sh:NodeShape ; rdfs:label "SubDelegationShape"@en ; s
  FILTER(?childRank <= ?parentRank)
  FILTER NOT EXISTS { ?s ?dim ?v . FILTER (?dim IN (pwm:aboutClient,pwm:hasPurpose,pwm:actionVerb,pwm:scopeTool,pwm:scopeField,pwm:scopeSystem,pwm:scopeProduct,pwm:jurisdictionCode)) FILTER NOT EXISTS { ?ps ?dim ?v } }
  }) }""" ]  ;
-    sh:property [ sh:path pwm:parentDelegation ; sh:maxCount 1 ; sh:class pwm:DelegatedAuthority ] .
+    sh:property [ sh:path pwm:parentDelegation ; sh:maxCount 1 ; sh:class pwm:DelegatedAuthority  ; sh:message "parentDelegation: maximum count 1; class DelegatedAuthority." ] .
 
 pwmsh:PromotionGateShape a sh:NodeShape ; rdfs:label "PromotionGateShape"@en ; sh:targetClass pwm:AutonomyPromotionGate ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 3. Checks recorded evidence; runtime enforcement remains external."@en ;
@@ -996,8 +1000,8 @@ pwmsh:AuthenticatedInstructionShape a sh:NodeShape ; rdfs:label "AuthenticatedIn
 
 pwmsh:InstructionAssuranceShape a sh:NodeShape ; rdfs:label "InstructionAssuranceShape"@en ; sh:targetSubjectsOf pwm:requiresStepUp ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 7. Checks recorded evidence; runtime enforcement remains external."@en ;
-    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "High-risk instructions require step-up workflow evidence and independent authorization, never channel identity alone (Kognita 0.5 item 7)." ;
-        sh:select """SELECT DISTINCT $this WHERE { $this pwm:requiresStepUp true ; pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { $this pwm:instructionEvidence ?i ; pwm:humanApproval ?approval . ?i pwm:assuranceLevel "step-up" ; pwm:signatureReference ?signature . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval ?request . ?request a pwm:ApprovalRequest ; pwm:requestsDecision $this ; pwm:atCheckpoint/pwm:inRun ?run . $this pwm:inRun ?run . } }""" ] .
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Allowed high-risk instructions require signed step-up evidence and a completed approval of a held decision in the same run, strictly before the allowed decision (Kognita 0.5 item 7)." ;
+        sh:select """SELECT DISTINCT $this WHERE { $this pwm:requiresStepUp true ; pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { $this pwm:instructionEvidence ?i ; pwm:humanApproval ?approval . ?i pwm:assuranceLevel "step-up" ; pwm:signatureReference ?signature . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval ?request . ?request a pwm:ApprovalRequest ; pwm:requestsDecision ?held ; pwm:atCheckpoint ?checkpoint . ?held pwm:decisionOutcome pwm:OutcomeHumanApproval ; pwm:inRun ?run ; pwm:underUseCase ?approvalUseCase ; pwm:decidedByRule ?approvalRule . ?checkpoint pwm:inRun ?run ; pwm:runState pwm:RunSuspended . $this pwm:inRun ?run ; pwm:underUseCase ?approvalUseCase ; pwm:decidedByRule ?approvalRule ; prov:generatedAtTime ?decisionAt . ?approval prov:generatedAtTime ?approvedAt . FILTER(?approvedAt < ?decisionAt) } }""" ] .
 
 pwmsh:BehaviourBaselineShape a sh:NodeShape ; rdfs:label "BehaviourBaselineShape"@en ; sh:targetClass pwm:BehaviourBaseline ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 8. Checks recorded evidence; runtime enforcement remains external."@en ;
@@ -1064,8 +1068,8 @@ pwmsh:ReversibilityShape a sh:NodeShape ; rdfs:label "ReversibilityShape"@en ; s
 
 pwmsh:IrreversibleApprovalShape a sh:NodeShape ; rdfs:label "IrreversibleApprovalShape"@en ; sh:targetClass pwm:ToolCall ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 13. Checks recorded evidence; runtime enforcement remains external."@en ;
-    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "High-autonomy irreversible action requires human approval whose ApprovalRequest requests this call's governing decision in the same run (Kognita 0.5 item 13)." ;
-        sh:select """SELECT DISTINCT $this WHERE { $this pwm:invokedTool ?t ; pwm:callAgent ?a ; pwm:governedByDecision ?d . ?t pwm:reversibilityClass pwm:Irreversible . ?a pwm:maxAutonomyLevel ?max . OPTIONAL { ?a pwm:effectiveAutonomyLevel ?effective } BIND(COALESCE(?effective, ?max) AS ?l) FILTER(?l IN (pwm:L5BoundedAutonomy,pwm:L6BroadAutonomy)) ?d pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { ?d pwm:humanApproval ?approval . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval/pwm:requestsDecision ?d . ?d pwm:inRun ?run . $this pwm:inRun ?run . ?approval prov:generatedAtTime ?approvedAt . $this prov:generatedAtTime ?calledAt . FILTER(?approvedAt < ?calledAt) } }""" ] .
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "High-autonomy irreversible action requires human approval resolving a held HUMAN_APPROVAL decision at a suspended checkpoint in the call's run, strictly before the call (Kognita 0.5 item 13)." ;
+        sh:select """SELECT DISTINCT $this WHERE { $this pwm:invokedTool ?t ; pwm:callAgent ?a ; pwm:governedByDecision ?d . ?t pwm:reversibilityClass pwm:Irreversible . ?a pwm:maxAutonomyLevel ?max . OPTIONAL { ?a pwm:effectiveAutonomyLevel ?effective } BIND(COALESCE(?effective, ?max) AS ?l) FILTER(?l IN (pwm:L5BoundedAutonomy,pwm:L6BroadAutonomy)) ?d pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { ?d pwm:humanApproval ?approval . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval ?request . ?request a pwm:ApprovalRequest ; pwm:requestsDecision ?held ; pwm:atCheckpoint ?checkpoint . ?held pwm:decisionOutcome pwm:OutcomeHumanApproval ; pwm:inRun ?run ; pwm:underUseCase ?approvalUseCase ; pwm:decidedByRule ?approvalRule . ?checkpoint pwm:inRun ?run ; pwm:runState pwm:RunSuspended . ?d pwm:inRun ?run ; pwm:underUseCase ?approvalUseCase ; pwm:decidedByRule ?approvalRule . $this pwm:inRun ?run . ?approval prov:generatedAtTime ?approvedAt . $this prov:generatedAtTime ?calledAt . FILTER(?approvedAt < ?calledAt) } }""" ] .
 
 pwmsh:AdversarialTestShape a sh:NodeShape ; rdfs:label "AdversarialTestShape"@en ; sh:targetClass pwm:AdversarialTestCase ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 14. Checks recorded evidence; runtime enforcement remains external."@en ;
@@ -1159,8 +1163,8 @@ pwmsh:ExclusiveWorkloadShape a sh:NodeShape ; rdfs:label "Exclusive workload ide
         sh:select """SELECT DISTINCT $this WHERE { $this pwm:workloadIdentity ?i . ?other a pwm:AIAgent ; pwm:workloadIdentity ?i . FILTER(?other != $this) }""" ] .
 
 # Ahmed design decisions, 3 Nov 2026.
-pwmsh:AuthorityLiveStatusShape a sh:NodeShape ; rdfs:label "AuthorityLiveStatusShape"@en ;
-    sh:targetClass pwm:AuthorityLiveStatus ; dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;
+pwmsh:LegacyAuthorityLiveStatusShape a sh:NodeShape ; rdfs:label "Legacy authority live status"@en ;
+    sh:targetSubjectsOf pwm:liveStatusValue ; dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;
     rdfs:comment "Kognita 0.5 live revocation and kill-switch observations; durable definitions remain SlowContext."@en ;
     sh:property [ sh:path pwm:liveStatusSubject ; sh:minCount 1 ; sh:maxCount 1 ; sh:or ( [ sh:class pwm:DelegatedAuthority ] [ sh:class pwm:KillSwitch ] ) ; sh:message "Record exactly one liveStatusSubject, a DelegatedAuthority or KillSwitch." ] ;
     sh:property [ sh:path pwm:observedAt ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:message "pwm:observedAt: minimum count 1, maximum count 1, datatype xsd:dateTime." ] ;
@@ -1181,3 +1185,48 @@ pwmsh:RiskControlApprovalRecordShape a sh:NodeShape ; rdfs:label "RiskControlApp
 
 # BEGIN GENERATED CODE-LIST SHAPES
 # END GENERATED CODE-LIST SHAPES
+pwmsh:AuthorityLiveStatusShape a sh:NodeShape ;
+    rdfs:label "Live authority status"@en ; sh:targetClass pwm:AuthorityLiveStatus ;
+    dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;
+    sh:property [ sh:path pwm:statusOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:or ( [ sh:class pwm:DelegatedAuthority ] [ sh:class pwm:KillSwitch ] )  ; sh:message "statusOf: minimum count 1; maximum count 1; one of classes DelegatedAuthority, KillSwitch." ] ;
+    sh:property [ sh:path pwm:asOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime  ; sh:message "asOf: minimum count 1; maximum count 1; datatype dateTime." ] ;
+    sh:property [ sh:path pwm:observedBy ; sh:minCount 1 ; sh:class prov:Agent  ; sh:message "observedBy: minimum count 1; class Agent." ] ;
+    sh:property [ sh:path pwm:revoked ; sh:maxCount 1 ; sh:datatype xsd:boolean  ; sh:message "revoked: maximum count 1; datatype boolean." ] ;
+    sh:property [ sh:path pwm:engaged ; sh:maxCount 1 ; sh:datatype xsd:boolean  ; sh:message "engaged: maximum count 1; datatype boolean." ] ;
+    sh:or (
+      [ sh:property [ sh:path pwm:statusOf ; sh:class pwm:DelegatedAuthority  ; sh:message "statusOf: class DelegatedAuthority." ] ; sh:property [ sh:path pwm:revoked ; sh:minCount 1  ; sh:message "revoked: minimum count 1." ] ; sh:property [ sh:path pwm:engaged ; sh:maxCount 0  ; sh:message "engaged: maximum count 0." ] ]
+      [ sh:property [ sh:path pwm:statusOf ; sh:class pwm:KillSwitch  ; sh:message "statusOf: class KillSwitch." ] ; sh:property [ sh:path pwm:engaged ; sh:minCount 1  ; sh:message "engaged: minimum count 1." ] ; sh:property [ sh:path pwm:revoked ; sh:maxCount 0  ; sh:message "revoked: maximum count 0." ] ]
+    ) ;
+    sh:message "Record the matching live boolean, subject, xsd:dateTime asOf and observer (KOG 0.4 item 14; 0.3 item 2; MAS AIRG 5.9)." .
+
+pwmsh:LiveDelegationDecisionShape a sh:NodeShape ;
+    rdfs:label "Live delegation at decision time"@en ; sh:targetClass pwm:PolicyDecision ;
+    dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+      sh:message "An ALLOW relying on delegated authority requires a live status and must not have a latest status showing it revoked as of decision time (KOG 0.4 item 14; 0.3 item 2; MAS AIRG 5.9)." ;
+      sh:select """SELECT DISTINCT $this WHERE {
+        $this pwm:decisionOutcome pwm:OutcomeAllow ; pwm:reliesOnDelegation ?authority ; prov:generatedAtTime ?time .
+        FILTER (NOT EXISTS { ?s a pwm:AuthorityLiveStatus ; pwm:statusOf ?authority ; pwm:asOf ?at . FILTER (?at <= ?time) }
+          || EXISTS {
+            ?s a pwm:AuthorityLiveStatus ; pwm:statusOf ?authority ; pwm:revoked true ; pwm:asOf ?at . FILTER (?at <= ?time)
+            FILTER NOT EXISTS { ?later a pwm:AuthorityLiveStatus ; pwm:statusOf ?authority ; pwm:asOf ?after . FILTER (?after > ?at && ?after <= ?time) }
+          })
+      }""" ] .
+
+pwmsh:LiveKillSwitchDecisionShape a sh:NodeShape ;
+    rdfs:label "Live kill switch at decision time"@en ; sh:targetClass pwm:PolicyDecision ;
+    dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;
+    rdfs:comment "A switch covers a decision if any declared scope dimension matches its use case, policy, model or prompt, including governed calls. Unscoped switches cover all decisions. Latest observations at or before the decision apply; tied engaged observations fail closed."@en ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+      sh:message "A decision made while a covering kill switch status is engaged must not be ALLOW (KOG 0.4 item 14: circuit breaker; MAS AIRG 5.9)." ;
+      sh:select """SELECT DISTINCT $this WHERE {
+        $this pwm:decisionOutcome pwm:OutcomeAllow ; prov:generatedAtTime ?time .
+        ?s a pwm:AuthorityLiveStatus ; pwm:statusOf ?switch ; pwm:engaged true ; pwm:asOf ?at .
+        ?switch a pwm:KillSwitch . FILTER (?at <= ?time)
+        FILTER NOT EXISTS { ?later a pwm:AuthorityLiveStatus ; pwm:statusOf ?switch ; pwm:asOf ?after . FILTER (?after > ?at && ?after <= ?time) }
+        FILTER (NOT EXISTS { ?switch (pwm:scopeUseCase|pwm:scopePolicy|pwm:scopeModel|pwm:scopePromptVersion) ?scope }
+          || EXISTS { ?switch pwm:scopeUseCase ?uc . $this pwm:underUseCase ?uc }
+          || EXISTS { ?switch pwm:scopePolicy ?rule . $this pwm:decidedByRule ?rule }
+          || EXISTS { ?switch pwm:scopeModel ?model . $this (pwm:usesModel|^pwm:governedByDecision/pwm:usesModel) ?model }
+          || EXISTS { ?switch pwm:scopePromptVersion ?prompt . $this (pwm:promptTemplateVersion|^pwm:governedByDecision/pwm:promptTemplateVersion) ?prompt })
+      }""" ] .

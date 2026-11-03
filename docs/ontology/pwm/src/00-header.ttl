@@ -82,7 +82,7 @@
     dcterms:description """A generic ontology for private banking and wealth management. It models parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, client interactions, and the governance of AI that acts on them: use cases, agents, delegated authority, claims and evidence. Business concepts reuse or specialise the Financial Industry Business Ontology (FIBO) and the OMG Commons library. Governance concepts follow the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) and the Kognita roadmap. Every term cites the references it is grounded in. Institution-specific detail belongs in an extension that imports this ontology."""@en ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:created "2026-11-02"^^xsd:date ;
-    dcterms:modified "2026-11-03"^^xsd:date ;
+    dcterms:modified "2026-11-04"^^xsd:date ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
     dcterms:source <https://github.com/edmcouncil/fibo> , <https://github.com/mze3e/kognita> ;
     vann:preferredNamespacePrefix "pwm" ;
@@ -262,4 +262,4 @@ pwm:SlowContext a pwm:ContextSpeed ; rdfs:label "slow"@en ;
 pwm:MediumContext a pwm:ContextSpeed ; rdfs:label "medium"@en ;
     skos:definition "Changes over days or weeks, such as client profile, KYC status and mandate. Synchronised from the system of record and cached with an explicit as-of time."@en .
 pwm:FastContext a pwm:ContextSpeed ; rdfs:label "fast"@en ;
-    skos:definition "Changes in seconds or minutes, such as positions, prices, cash and orders. Looked up live from the system of record; never cached or embedded for AI."@en .
+    skos:definition "Changes in seconds or minutes, such as positions, prices, cash, orders and live authority or kill-switch state. Looked up live from the system of record; never cached or embedded for AI."@en .

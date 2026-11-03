@@ -234,7 +234,7 @@ pwm:calculatedBy a owl:ObjectProperty ;
 
 pwm:asOf a owl:DatatypeProperty ;
     rdfs:label "as of"@en ;
-    skos:definition "Time at which a fact or valuation was true in its system of record."@en ;
+    skos:definition "Time at which a fact, valuation or live authority status was true in its system of record."@en ;
     rdfs:range xsd:dateTime ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: as-of date" ] .

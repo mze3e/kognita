@@ -82,7 +82,7 @@
     dcterms:description """A generic ontology for private banking and wealth management. It models parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, client interactions, and the governance of AI that acts on them: use cases, agents, delegated authority, claims and evidence. Business concepts reuse or specialise the Financial Industry Business Ontology (FIBO) and the OMG Commons library. Governance concepts follow the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) and the Kognita roadmap. Every term cites the references it is grounded in. Institution-specific detail belongs in an extension that imports this ontology."""@en ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:created "2026-11-02"^^xsd:date ;
-    dcterms:modified "2026-11-03"^^xsd:date ;
+    dcterms:modified "2026-11-04"^^xsd:date ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
     dcterms:source <https://github.com/edmcouncil/fibo> , <https://github.com/mze3e/kognita> ;
     vann:preferredNamespacePrefix "pwm" ;
@@ -262,7 +262,7 @@ pwm:SlowContext a pwm:ContextSpeed ; rdfs:label "slow"@en ;
 pwm:MediumContext a pwm:ContextSpeed ; rdfs:label "medium"@en ;
     skos:definition "Changes over days or weeks, such as client profile, KYC status and mandate. Synchronised from the system of record and cached with an explicit as-of time."@en .
 pwm:FastContext a pwm:ContextSpeed ; rdfs:label "fast"@en ;
-    skos:definition "Changes in seconds or minutes, such as positions, prices, cash and orders. Looked up live from the system of record; never cached or embedded for AI."@en .
+    skos:definition "Changes in seconds or minutes, such as positions, prices, cash, orders and live authority or kill-switch state. Looked up live from the system of record; never cached or embedded for AI."@en .
 
 # -----------------------------------------------------------------------------
 #  Reference register
@@ -3048,6 +3048,22 @@ pwm:RiskOperational a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; sk
 pwm:RiskChange a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "change"@en ; skos:definition "Behaviour changes with a prompt, tool, source or silent model update."@en .
 pwm:RiskOwnership a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "ownership"@en ; skos:definition "No named person is accountable for what the agent did."@en .
 
+# Live control state is separate from cached governance configuration.
+pwm:AuthorityLiveStatus a owl:Class ;
+    rdfs:label "authority live status"@en ;
+    skos:definition "Live observation of the revocation state of a DelegatedAuthority or the engaged state of a KillSwitch, effective from asOf until superseded. Read from the system of record at decision time, never from cache."@en ;
+    skos:scopeNote "For each subject, use the latest observation at or before the decision time. Conflicting observations at that time fail closed. SHACL checks recorded observations; runtime must obtain fresh state."@en ;
+    rdfs:subClassOf prov:Entity ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:statusOf a owl:ObjectProperty ; rdfs:label "status of"@en ; skos:definition "Authority or kill switch whose live state is observed."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range [ a owl:Class ; owl:unionOf ( pwm:DelegatedAuthority pwm:KillSwitch ) ] ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:observedBy a owl:ObjectProperty ; rdfs:label "observed by"@en ; skos:definition "Agent that obtained the live observation from the system of record."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range prov:Agent ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:revoked a owl:DatatypeProperty ; rdfs:label "revoked"@en ; skos:definition "Whether the delegated authority is currently revoked."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:boolean ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:engaged a owl:DatatypeProperty ; rdfs:label "engaged"@en ; skos:definition "Whether the kill switch is currently engaged."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:boolean ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
 # =============================================================================
 #  Module 9: Information governance, claims and evidence
 # =============================================================================
@@ -3283,7 +3299,7 @@ pwm:calculatedBy a owl:ObjectProperty ;
 
 pwm:asOf a owl:DatatypeProperty ;
     rdfs:label "as of"@en ;
-    skos:definition "Time at which a fact or valuation was true in its system of record."@en ;
+    skos:definition "Time at which a fact, valuation or live authority status was true in its system of record."@en ;
     rdfs:range xsd:dateTime ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: as-of date" ] .
@@ -4604,7 +4620,7 @@ pwm:scopeTool a owl:ObjectProperty ; rdfs:label "scope tool"@en ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 2" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
 
 pwm:scopeField a owl:DatatypeProperty ; rdfs:label "scope field"@en ;
-    skos:definition "Field name permitted within a scope; whole-record access is never implicit."@en ; rdfs:domain pwm:AuthorityScope ; rdfs:range xsd:string ;
+    skos:definition "Exact field name permitted for reading or writing through the scoped tools, systems and products, for the scoped clients, purposes, action verbs and jurisdictions. Each requestedField must be explicitly listed as scopeField; permission for one field grants no access to other fields or the whole record."@en ; rdfs:domain pwm:AuthorityScope ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 5" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
 
 pwm:scopeSystem a owl:DatatypeProperty ; rdfs:label "scope system"@en ;
@@ -5016,8 +5032,7 @@ pwm:EnforcementAttestation pwm:citation [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-
 
 # Live operational state and firm approval of risk controls.
 
-pwm:AuthorityLiveStatus a owl:Class ; rdfs:label "authority live status"@en ; skos:definition "Live observation of delegation revocation or kill-switch state, retrieved at decision time rather than cached. The durable authority and kill-switch definitions remain SlowContext."@en ; rdfs:subClassOf prov:Entity ;
-    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+pwm:AuthorityLiveStatus pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2 and 16; Ahmed design decisions 3 Nov 2026" ] .
 
 pwm:ApprovingAuthorityRole a owl:Class ; rdfs:label "approving authority role"@en ; skos:definition "Firm role empowered to set and approve blast-radius limits and autonomy promotion gates."@en ; rdfs:subClassOf cmns-pts:PartyRole ;
     pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .

@@ -738,3 +738,45 @@ ex:TimedOutCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
 ex:LowerClassificationCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
 
 ex:PolicyDecisionRelease pwm:humanApproval ex:Resolution .
+
+# Canonical live authority observations retained from the 0.4 merge.
+@prefix ex: <https://example.org/pwm-example#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix pwm: <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:DelegationLive pwm:asOf "2026-11-03T02:00:00+00:00"^^xsd:dateTime ;
+    pwm:observedBy ex:Agent,
+        ex:LiveObserver ;
+    pwm:revoked false ;
+    pwm:statusOf ex:Delegation .
+
+ex:DelegationLiveBeforeDecision a pwm:AuthorityLiveStatus ;
+    pwm:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
+    pwm:observedBy ex:Agent ;
+    pwm:revoked false ;
+    pwm:statusOf ex:Delegation .
+
+ex:KillSwitchLive pwm:asOf "2026-11-03T02:00:00+00:00"^^xsd:dateTime ;
+    pwm:engaged false ;
+    pwm:observedBy ex:Agent ;
+    pwm:statusOf ex:Breaker .
+
+ex:LiveAuthorityAllow a pwm:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T10:01:00+08:00"^^xsd:dateTime ;
+    pwm:decidedByRule ex:RuleClientCommunication ;
+    pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:hasCheck ex:Check ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:SwitchLive a pwm:AuthorityLiveStatus ;
+    pwm:asOf "2026-11-03T10:00:00+08:00"^^xsd:dateTime ;
+    pwm:engaged false ;
+    pwm:observedBy ex:LiveObserver ;
+    pwm:statusOf ex:LiveSwitch .
+
+ex:LiveSwitch a pwm:KillSwitch ;
+    pwm:scopeUseCase ex:UseCaseMeetingPrep .
+
+ex:LiveObserver a prov:Agent .

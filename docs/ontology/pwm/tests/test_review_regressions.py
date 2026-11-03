@@ -115,8 +115,8 @@ def test_version_and_counts(tmp_path):
     assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.4')
     assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.4/pwm-shapes.ttl')
     assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 235
-    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 193
-    assert len(set(example().subjects(RDF.type, None))) == 186
+    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 196
+    assert len(set(example().subjects(RDF.type, None))) == 191
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
@@ -124,9 +124,9 @@ def test_version_and_counts(tmp_path):
     shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 219, 188, 48, 126, 66)
-    assert sum(validator.EXPECTED.values()) == 184
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 236
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 221, 190, 48, 129, 66)
+    assert sum(validator.EXPECTED.values()) == 189
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 249
     assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
     negative_count = len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None)))
     assert f'negative fixture contains {negative_count} typed records' in (tmp_path / 'SPEC.md').read_text()
@@ -529,7 +529,7 @@ def test_05_approval_repairs_and_combined_taint():
     g.add((E('PolicyDecisionModelAllow'), P('humanApproval'), E('Resolution')))
     # Approval of a different held decision in the same run is insufficient.
     assert not validate_05(g, ['IrreversibleApprovalShape'])
-    g.set((E('Approval'), P('requestsDecision'), E('PolicyDecisionModelAllow')))
+    prepare_held_approval(g, 'PolicyDecisionModelAllow')
     g.set((E('Resolution'), URIRef('http://www.w3.org/ns/prov#generatedAtTime'), Literal('2026-11-03T01:58:01Z', datatype=XSD.dateTime)))
     assert validate_05(g, ['IrreversibleApprovalShape'])
     # Both external and client-data taint may apply to the same content.
@@ -616,7 +616,7 @@ def test_05_irreversible_approval_with_maximum_autonomy_only():
     assert not validate_05(g, ['IrreversibleApprovalShape'])
     g.set((E('MaxOnlyDecision'), P('humanApproval'), E('Resolution')))
     assert not validate_05(g, ['IrreversibleApprovalShape'])
-    g.set((E('Approval'), P('requestsDecision'), E('MaxOnlyDecision')))
+    prepare_held_approval(g, 'MaxOnlyDecision')
     at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
     g.set((E('Resolution'), at, Literal('2026-11-03T01:58:01Z', datatype=XSD.dateTime)))
     g.set((E('Bad05IrreversibleMaxOnly'), at, Literal('2026-11-03T02:00:00Z', datatype=XSD.dateTime)))
@@ -656,9 +656,9 @@ def test_05_live_authority_status(subject, state):
     g = example()
     g.set((E('DelegationLive'), P('liveStatusSubject'), E(subject)))
     g.set((E('DelegationLive'), P('liveStatusValue'), Literal(state)))
-    assert validate_05(g, ['AuthorityLiveStatusShape'])
+    assert validate_05(g, ['LegacyAuthorityLiveStatusShape'])
     g.remove((E('DelegationLive'), P('observedAt'), None))
-    assert not validate_05(g, ['AuthorityLiveStatusShape'])
+    assert not validate_05(g, ['LegacyAuthorityLiveStatusShape'])
 @pytest.mark.parametrize('timestamp,expired', [
     ('2026-11-03T23:30:00-02:00', True),
     ('2026-11-04T00:30:00+02:00', False),
@@ -695,8 +695,8 @@ def test_review_rank_narrowing_and_entitlement_direction():
     assert not validate_05(g, ['SubDelegationShape'])
     g = example()
     g.remove((E('PersonRM'), P('holdsEntitlement'), E('ReadEntitlement')))
-    g.set((E('Scope'), P('classification'), P('C3')))
-    # Give delegation an independent C2 scope, leaving its backing entitlement C3.
+    g.set((E('Scope'), P('classification'), P('C1')))
+    # A C1 entitlement cannot authorize a C2 delegation.
     for pred, value in list(g.predicate_objects(E('Scope'))):
         g.add((E('DelegationScopeC2'), pred, value))
     g.set((E('DelegationScopeC2'), P('classification'), P('C2')))
@@ -707,8 +707,8 @@ def test_review_rank_narrowing_and_entitlement_direction():
 def test_review_step_up_binds_exact_decision_and_run():
     g = example()
     g.set((E('PolicyDecisionRelease'), P('decisionOutcome'), P('OutcomeAllow')))
-    assert validate_05(g, ['InstructionAssuranceShape'])
-    g.set((E('Approval'), P('requestsDecision'), E('PolicyDecisionModelAllow')))
+    assert not validate_05(g, ['InstructionAssuranceShape'])
+    prepare_held_approval(g, 'PolicyDecisionModelAllow')
     assert not validate_05(g, ['InstructionAssuranceShape'])
     g = example()
     g.set((E('PolicyDecisionRelease'), P('decisionOutcome'), P('OutcomeAllow')))
@@ -744,3 +744,164 @@ def test_positive_decisions_precede_every_governed_call():
     at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
     for call, decision in g.subject_objects(P('governedByDecision')):
         assert g.value(decision, at).toPython() < g.value(call, at).toPython()
+def test_build_rejects_broken_evidence_chain(tmp_path):
+    import shutil
+    shutil.copytree(BASE / 'src', tmp_path / 'src')
+    shutil.copytree(BASE / 'examples', tmp_path / 'examples')
+    shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
+    g = example()
+    g.set((E('Evidence2'), P('previousRecordHash'), Literal('sha256:' + '0' * 64)))
+    g.serialize(tmp_path / 'examples/pwm-example.ttl', format='turtle')
+    with pytest.raises(ValueError, match='Broken example evidence chain'):
+        builder.build(tmp_path, None)
+
+
+@pytest.mark.parametrize('kind', ['delegation', 'switch'])
+@pytest.mark.parametrize('case,allowed', [
+    ('active', False), ('future', True), ('reset', True),
+    ('tied', False), ('unrelated', True), ('absent', True),
+])
+def test_live_status_at_decision_time(kind, case, allowed):
+    from pyshacl import validate
+    g = Graph()
+    decision, subject = E('Decision'), E('Authority')
+    time = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    g.add((decision, RDF.type, P('PolicyDecision')))
+    g.add((decision, P('decisionOutcome'), P('OutcomeAllow')))
+    g.add((decision, time, Literal('2026-11-03T10:00:00Z', datatype=XSD.dateTime)))
+    if kind == 'delegation':
+        g.add((subject, RDF.type, P('DelegatedAuthority')))
+        g.add((decision, P('reliesOnDelegation'), subject))
+        flag, shape = 'revoked', 'LiveDelegationDecisionShape'
+        # Missing decision-time authority observations fail closed too.
+        if case in ('future', 'absent', 'unrelated'):
+            allowed = False
+    else:
+        g.add((subject, RDF.type, P('KillSwitch')))
+        g.add((subject, P('scopeUseCase'), E('UseCase')))
+        g.add((decision, P('underUseCase'), E('UseCase')))
+        flag, shape = 'engaged', 'LiveKillSwitchDecisionShape'
+    def status(name, value, at, target=subject):
+        g.add((E(name), RDF.type, P('AuthorityLiveStatus')))
+        g.add((E(name), P('statusOf'), target))
+        g.add((E(name), P(flag), Literal(value)))
+        g.add((E(name), P('asOf'), Literal(at, datatype=XSD.dateTime)))
+    if case != 'absent':
+        status('On', True, '2026-11-03T10:00:01Z' if case == 'future' else '2026-11-03T10:00:00Z',
+               E('Other') if case == 'unrelated' else subject)
+    if case == 'reset':
+        g.set((E('On'), P('asOf'), Literal('2026-11-03T09:00:00Z', datatype=XSD.dateTime)))
+        status('Off', False, '2026-11-03T10:00:00Z')
+    if case == 'tied':
+        status('Off', False, '2026-11-03T10:00:00Z')
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    for node in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if node != URIRef(validator.PWMSH + shape):
+            shapes.add((node, validator.SH.deactivated, Literal(True)))
+    assert validate(g, shacl_graph=shapes)[0] == allowed
+
+
+@pytest.mark.parametrize('dimension', ['scopeUseCase', 'scopePolicy', 'scopeModel', 'scopePromptVersion', 'global'])
+def test_engaged_switch_scope(dimension):
+    from pyshacl import validate
+    g = Graph()
+    decision, switch, call = E('Decision'), E('Switch'), E('Call')
+    g.add((decision, RDF.type, P('PolicyDecision')))
+    g.add((decision, P('decisionOutcome'), P('OutcomeAllow')))
+    g.add((decision, URIRef('http://www.w3.org/ns/prov#generatedAtTime'), Literal('2026-11-03T10:00:00Z', datatype=XSD.dateTime)))
+    g.add((switch, RDF.type, P('KillSwitch')))
+    g.add((E('Status'), RDF.type, P('AuthorityLiveStatus')))
+    for prop, value in [('statusOf', switch), ('engaged', Literal(True)), ('asOf', Literal('2026-11-03T10:00:00Z', datatype=XSD.dateTime))]:
+        g.add((E('Status'), P(prop), value))
+    if dimension != 'global':
+        prop = {'scopeUseCase': 'underUseCase', 'scopePolicy': 'decidedByRule', 'scopeModel': 'usesModel', 'scopePromptVersion': 'promptTemplateVersion'}[dimension]
+        scope = Literal('v1') if dimension == 'scopePromptVersion' else E('Scope')
+        g.add((switch, P(dimension), scope))
+        target = call if dimension in ('scopeModel', 'scopePromptVersion') else decision
+        g.add((call, P('governedByDecision'), decision))
+        g.add((target, P(prop), scope))
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    for node in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if node != URIRef(validator.PWMSH + 'LiveKillSwitchDecisionShape'):
+            shapes.add((node, validator.SH.deactivated, Literal(True)))
+    assert not validate(g, shacl_graph=shapes)[0]
+    if dimension != 'global':
+        g.remove((switch, P(dimension), None))
+        g.add((switch, P(dimension), Literal('other') if dimension == 'scopePromptVersion' else E('Other')))
+        assert validate(g, shacl_graph=shapes)[0]
+
+
+def prepare_held_approval(g, decision):
+    """Resolve a separate held decision under the same policy, use case and run."""
+    held = E('HeldFor' + decision)
+    for predicate, value in list(g.predicate_objects(E(decision))):
+        g.add((held, predicate, value))
+    g.set((held, P('decisionOutcome'), P('OutcomeHumanApproval')))
+    g.remove((held, P('humanApproval'), None))
+    g.set((E('Approval'), P('requestsDecision'), held))
+
+
+@pytest.mark.parametrize('timestamp,allowed', [
+    ('2026-11-04T00:30:00+02:00', True),
+    ('2026-11-03T23:30:00-02:00', False),
+    ('2026-11-03T23:59:59Z', True),
+    ('2026-11-04T00:00:00Z', False),
+    ('2026-11-03T23:59:59', True),
+])
+def test_agent_review_uses_typed_utc_instants(timestamp, allowed):
+    g = example()
+    g.set((E('Agent'), P('nextReviewDate'), Literal('2026-11-03', datatype=XSD.date)))
+    g.set((E('PolicyDecisionModelAllow'), URIRef('http://www.w3.org/ns/prov#generatedAtTime'),
+           Literal(timestamp, datatype=XSD.dateTime)))
+    assert validate_05(g, ['AgentDecisionShape']) == allowed
+
+
+@pytest.mark.parametrize('entitlement,delegation,allowed', [('C1', 'C2', False), ('C3', 'C2', True), ('C2', 'C2', True)])
+def test_entitlement_classification_rank(entitlement, delegation, allowed):
+    g = example()
+    g.remove((E('PersonRM'), P('holdsEntitlement'), E('ReadEntitlement')))
+    for pred, value in list(g.predicate_objects(E('Scope'))):
+        g.add((E('IndependentScope'), pred, value))
+    g.set((E('IndependentScope'), P('classification'), P(delegation)))
+    g.set((E('Scope'), P('classification'), P(entitlement)))
+    g.set((E('Delegation'), P('authorityScope'), E('IndependentScope')))
+    for shape in ['DelegationScopeShape', 'LiveAuthorityDecisionShape']:
+        assert validate_05(g, [shape]) == allowed
+
+
+def test_completed_approval_and_suspended_request_are_consistent():
+    g = example()
+    allowed = E('StepUpAllowed')
+    for predicate, value in list(g.predicate_objects(E('PolicyDecisionRelease'))):
+        g.add((allowed, predicate, value))
+    g.set((allowed, P('decisionOutcome'), P('OutcomeAllow')))
+    at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    g.set((allowed, at, Literal('2026-11-03T02:07:00Z', datatype=XSD.dateTime)))
+    assert validate_05(g, ['InstructionAssuranceShape', 'SuspendedApprovalShape'])
+    g.set((E('Resolution'), P('approvalResolution'), P('ApprovalPending')))
+    assert not validate_05(g, ['InstructionAssuranceShape'])
+    assert validate_05(g, ['SuspendedApprovalShape'])
+
+
+def test_prov_constraints_declare_their_prefix():
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    sh = validator.SH
+    for constraint, query in shapes.subject_objects(sh.select):
+        if 'prov:' in str(query):
+            tables = list(shapes.objects(constraint, sh.prefixes))
+            assert any(str(shapes.value(d, sh.prefix)) == 'prov'
+                       for table in tables for d in shapes.objects(table, sh.declare))
+
+
+def test_irreversible_approval_coexists_with_suspended_checkpoint():
+    g = example()
+    g.set((E('Agent'), P('effectiveAutonomyLevel'), P('L5BoundedAutonomy')))
+    g.set((E('Agent'), P('maxAutonomyLevel'), P('L5BoundedAutonomy')))
+    g.add((E('PolicyDecisionModelAllow'), P('humanApproval'), E('Resolution')))
+    prepare_held_approval(g, 'PolicyDecisionModelAllow')
+    at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    g.set((E('Resolution'), at, Literal('2026-11-03T01:58:01Z', datatype=XSD.dateTime)))
+    assert validate_05(g, ['IrreversibleApprovalShape', 'SuspendedApprovalShape'])
+    g.remove((E('Resolution'), P('approvalResolution'), None))
+    assert not validate_05(g, ['IrreversibleApprovalShape'])
+    assert validate_05(g, ['SuspendedApprovalShape'])
