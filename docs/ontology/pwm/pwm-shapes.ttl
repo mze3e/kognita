@@ -36,6 +36,7 @@
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
     dcterms:requires <https://ahmedmuzammil.com/ontology/pwm/0.4> ;
     sh:declare
+        [ sh:prefix "xsd" ; sh:namespace "http://www.w3.org/2001/XMLSchema#"^^xsd:anyURI ] ,
         [ sh:prefix "pwm" ; sh:namespace "https://ahmedmuzammil.com/ontology/pwm#"^^xsd:anyURI ] ,
         [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ,
         [ sh:prefix "cmns-rlcmp" ; sh:namespace "https://www.omg.org/spec/Commons/RolesAndCompositions/"^^xsd:anyURI ] .
@@ -364,6 +365,7 @@ pwmsh:CrossBorderRuleShape a sh:NodeShape ;
 pwmsh:PolicyDecisionShape a sh:NodeShape ;
     rdfs:label "Policy decision"@en ;
     sh:targetClass pwm:PolicyDecision ;
+    sh:property [ sh:path prov:generatedAtTime ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:message "Record exactly one decision timestamp." ] ;
     dcterms:source pwmref:KOG-ROADMAP , pwmref:AM-FILING-CABINET ;
     sh:property [ sh:path pwm:decisionOutcome ; sh:minCount 1 ; sh:maxCount 1 ;
         sh:in ( pwm:OutcomeDeny pwm:OutcomeEscalate pwm:OutcomeHumanApproval pwm:OutcomeAllow pwm:OutcomeObserve ) ] ;
@@ -932,7 +934,7 @@ pwmsh:RunResumptionShape a sh:NodeShape ; rdfs:label "RunResumptionShape"@en ; s
 
 
 pwmsh:ModelCallShape a sh:NodeShape ; rdfs:label "ModelCallShape"@en ; sh:targetClass pwm:ModelCall ;
-    sh:property [ sh:path pwm:usesModel ; sh:minCount 1 ; sh:class pwm:AIModel ; sh:message "Record usesModel (Kognita 0.4 item 8)." ] ;
+    sh:property [ sh:path pwm:usesModel ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AIModel ; sh:message "Record usesModel (Kognita 0.4 item 8)." ] ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
     sh:property [ sh:path pwm:modelName ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record modelName (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:modelVersion ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record modelVersion (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:promptTemplateVersion ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record promptTemplateVersion (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:promptHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record promptHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:responseHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record responseHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:providedBy ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:ModelProvider ; sh:message "Record providedBy (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:inputTokens ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record inputTokens (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:outputTokens ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record outputTokens (roadmap milestone 0.3)." ] .
 
@@ -1090,7 +1092,7 @@ pwmsh:PolicyPackShape a sh:NodeShape ; rdfs:label "PolicyPackShape"@en ; sh:targ
     sh:property [ sh:path pwm:fixtureLocator ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:anyURI ; sh:message "Record fixtureLocator (Kognita 0.4 item 5)." ] .
 
 pwmsh:RMReviewEditShape a sh:NodeShape ; rdfs:label "RMReviewEditShape"@en ; sh:targetClass pwm:RMReviewEdit ; dcterms:source pwmref:KOG-ROADMAP ;
-    sh:property [ sh:path pwm:diffLocator ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:anyURI ; sh:message "Record diffLocator (Kognita 0.4 item 11)." ] ;
+    sh:property [ sh:path pwm:diffLocator ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:anyURI ; sh:message "Record diffLocator (Kognita 0.4 item 11)." ] ;
     sh:property [ sh:path pwm:beforeHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^sha256:[0-9a-f]{64}$" ; sh:message "Record beforeHash (Kognita 0.4 item 11)." ] ;
     sh:property [ sh:path pwm:afterHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^sha256:[0-9a-f]{64}$" ; sh:message "Record afterHash (Kognita 0.4 item 11)." ] ;
     sh:property [ sh:path pwm:editDiffHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^sha256:[0-9a-f]{64}$" ; sh:message "Record editDiffHash (Kognita 0.4 item 11)." ] .
@@ -1135,7 +1137,32 @@ pwmsh:BreakerScopeShape a sh:NodeShape ; rdfs:label "BreakerScopeShape"@en ; sh:
 
 pwmsh:TwoSignatureShape a sh:NodeShape ; rdfs:label "TwoSignatureShape"@en ; sh:targetSubjectsOf pwm:requiresTwoSignatures ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "TwoSignatureShape: denied or incomplete record (Kognita 0.4 item 12)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:requiresTwoSignatures true . FILTER NOT EXISTS { $this pwm:communicationSigner ?a, ?b . ?a a <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person> . ?b a <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person> . FILTER (?a != ?b) } }""" ] .
 
-pwmsh:PastReviewDecisionShape a sh:NodeShape ; rdfs:label "PastReviewDecisionShape"@en ; sh:targetClass pwm:PolicyDecision ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "PastReviewDecisionShape: denied or incomplete record (Kognita 0.4 item 8)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:underUseCase ?uc ; pwm:decisionOutcome ?out . ?uc pwm:nextReviewDate ?due . $this <http://www.w3.org/ns/prov#generatedAtTime> ?at . FILTER(STR(?due) < SUBSTR(STR(?at),1,10) && ?out != pwm:OutcomeDeny) }""" ] .
+# The review date remains valid through its final day. Normalize unspecified
+# timezones to UTC before typed comparisons; preserve explicit offsets.
+pwmsh:PastReviewDecisionShape a sh:NodeShape ;
+    rdfs:label "PastReviewDecisionShape"@en ;
+    sh:targetClass pwm:PolicyDecision ;
+    dcterms:source pwmref:KOG-ROADMAP ;
+    sh:sparql [
+        sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+        sh:message "PastReviewDecisionShape: denied or incomplete record (Kognita 0.4 item 8)." ;
+        sh:select """
+            SELECT DISTINCT $this WHERE {
+                $this pwm:underUseCase ?uc ; pwm:decisionOutcome ?out ;
+                    <http://www.w3.org/ns/prov#generatedAtTime> ?at .
+                ?uc pwm:nextReviewDate ?due .
+                FILTER(DATATYPE(?at) = xsd:dateTime && DATATYPE(?due) = xsd:date)
+                BIND(IF(REGEX(STR(?due), "(Z|[+-][0-9]{2}:[0-9]{2})$"),
+                    STR(?due), CONCAT(STR(?due), "Z")) AS ?dueWithZone)
+                BIND(xsd:dateTime(REPLACE(?dueWithZone,
+                    "^([0-9]{4}-[0-9]{2}-[0-9]{2})(.*)$", "$1T00:00:00$2"))
+                    + "P1D"^^xsd:dayTimeDuration AS ?expires)
+                BIND(xsd:dateTime(IF(REGEX(STR(?at), "(Z|[+-][0-9]{2}:[0-9]{2})$"),
+                    STR(?at), CONCAT(STR(?at), "Z"))) AS ?decisionAt)
+                FILTER(?decisionAt >= ?expires && ?out != pwm:OutcomeDeny)
+            }
+        """
+    ] .
 
 pwmsh:RiskAppetiteDecisionShape a sh:NodeShape ; rdfs:label "RiskAppetiteDecisionShape"@en ; sh:targetClass pwm:PolicyDecision ; dcterms:source pwmref:KOG-ROADMAP ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "RiskAppetiteDecisionShape: denied or incomplete record (Kognita 0.4 item 8)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:underUseCase ?uc ; pwm:decisionOutcome ?out . ?uc pwm:appetitePermits false . FILTER (?out != pwm:OutcomeDeny) }""" ] .
 

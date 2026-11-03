@@ -505,3 +505,89 @@ ex:RecipientlessCommunication <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> 
     <https://ahmedmuzammil.com/ontology/pwm#communicationSigner> <https://example.org/pwm-example#PersonRM> ;
     <https://ahmedmuzammil.com/ontology/pwm#communicationSigner> <https://example.org/pwm-example#PersonModelRisk> ;
     <https://ahmedmuzammil.com/ontology/pwm#underUseCase> <https://example.org/pwm-example#UseCaseMeetingPrep> .
+
+# Review regression fixtures.
+<https://example.org/pwm-example#BadMultipleModels> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#ModelCall> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#inRun> <https://example.org/pwm-example#Run> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#governedByDecision> <https://example.org/pwm-example#PolicyDecisionModelAllow> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#clientConfiguration> <https://example.org/pwm-example#GatewayClient> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#callAgent> <https://example.org/pwm-example#Agent> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#usesModel> <https://example.org/pwm-example#Model> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#providedBy> <https://example.org/pwm-example#Provider> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#modelName> "fictional-meeting-model" .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#modelVersion> "model-2026-09" .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#promptTemplateVersion> "meeting-v3" .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#promptHash> "sha256:7dc7222a66cbd84f39d0f9aa418ddb550b82b80785e9183ec67339831773ccfc" .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#responseHash> "sha256:813776e604662a411b5febca6cd96d4f5917400024609a219f07cec53b472101" .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#inputTokens> "100"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#outputTokens> "20"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#hasAttribute> <https://example.org/pwm-example#Attribute> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#hasAttribute> <https://example.org/pwm-example#ResponseAttribute> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#retrievedItem> <https://example.org/pwm-example#Snapshot> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#retainedIn> <https://example.org/pwm-example#RetainedPrompt> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#retainedIn> <https://example.org/pwm-example#RetainedResponse> .
+<https://example.org/pwm-example#BadMultipleModels> <https://ahmedmuzammil.com/ontology/pwm#hasModelCard> <https://example.org/pwm-example#ModelCard> .
+ex:BadMultipleModels pwm:usesModel ex:SecondModel .
+<https://example.org/pwm-example#BadEmptyDiffLocator> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#RMReviewEdit> .
+<https://example.org/pwm-example#BadEmptyDiffLocator> <https://ahmedmuzammil.com/ontology/pwm#beforeHash> "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
+<https://example.org/pwm-example#BadEmptyDiffLocator> <https://ahmedmuzammil.com/ontology/pwm#afterHash> "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
+<https://example.org/pwm-example#BadEmptyDiffLocator> <https://ahmedmuzammil.com/ontology/pwm#editDiffHash> "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
+ex:BadEmptyDiffLocator pwm:diffLocator ""^^xsd:anyURI .
+<https://example.org/pwm-example#BadMissingDecisionTime> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#PolicyDecision> .
+<https://example.org/pwm-example#BadMissingDecisionTime> <https://ahmedmuzammil.com/ontology/pwm#decisionOutcome> <https://ahmedmuzammil.com/ontology/pwm#OutcomeAllow> .
+<https://example.org/pwm-example#BadMissingDecisionTime> <https://ahmedmuzammil.com/ontology/pwm#decidedByRule> <https://example.org/pwm-example#RuleModelAccess> .
+<https://example.org/pwm-example#BadMissingDecisionTime> <https://ahmedmuzammil.com/ontology/pwm#hasCheck> <https://example.org/pwm-example#ModelAccessCheck> .
+<https://example.org/pwm-example#BadMissingDecisionTime> <https://ahmedmuzammil.com/ontology/pwm#underUseCase> <https://example.org/pwm-example#UseCaseMeetingPrep> .
+<https://example.org/pwm-example#BadMissingDecisionTime> <https://ahmedmuzammil.com/ontology/pwm#inRun> <https://example.org/pwm-example#Run> .
+<https://example.org/pwm-example#BadMissingDecisionTime> <https://ahmedmuzammil.com/ontology/pwm#escalationThreshold> "0.90"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<https://example.org/pwm-example#BadDecisionTimeType> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#PolicyDecision> .
+<https://example.org/pwm-example#BadDecisionTimeType> <https://ahmedmuzammil.com/ontology/pwm#decisionOutcome> <https://ahmedmuzammil.com/ontology/pwm#OutcomeAllow> .
+<https://example.org/pwm-example#BadDecisionTimeType> <https://ahmedmuzammil.com/ontology/pwm#decidedByRule> <https://example.org/pwm-example#RuleModelAccess> .
+<https://example.org/pwm-example#BadDecisionTimeType> <https://ahmedmuzammil.com/ontology/pwm#hasCheck> <https://example.org/pwm-example#ModelAccessCheck> .
+<https://example.org/pwm-example#BadDecisionTimeType> <https://ahmedmuzammil.com/ontology/pwm#underUseCase> <https://example.org/pwm-example#UseCaseMeetingPrep> .
+<https://example.org/pwm-example#BadDecisionTimeType> <https://ahmedmuzammil.com/ontology/pwm#inRun> <https://example.org/pwm-example#Run> .
+<https://example.org/pwm-example#BadDecisionTimeType> <https://ahmedmuzammil.com/ontology/pwm#escalationThreshold> "0.90"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+ex:BadDecisionTimeType prov:generatedAtTime "2026-11-03"^^xsd:date .
+<https://example.org/pwm-example#BadMultipleDecisionTimes> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#PolicyDecision> .
+<https://example.org/pwm-example#BadMultipleDecisionTimes> <https://ahmedmuzammil.com/ontology/pwm#decisionOutcome> <https://ahmedmuzammil.com/ontology/pwm#OutcomeAllow> .
+<https://example.org/pwm-example#BadMultipleDecisionTimes> <https://ahmedmuzammil.com/ontology/pwm#decidedByRule> <https://example.org/pwm-example#RuleModelAccess> .
+<https://example.org/pwm-example#BadMultipleDecisionTimes> <https://ahmedmuzammil.com/ontology/pwm#hasCheck> <https://example.org/pwm-example#ModelAccessCheck> .
+<https://example.org/pwm-example#BadMultipleDecisionTimes> <https://ahmedmuzammil.com/ontology/pwm#underUseCase> <https://example.org/pwm-example#UseCaseMeetingPrep> .
+<https://example.org/pwm-example#BadMultipleDecisionTimes> <https://ahmedmuzammil.com/ontology/pwm#inRun> <https://example.org/pwm-example#Run> .
+<https://example.org/pwm-example#BadMultipleDecisionTimes> <https://ahmedmuzammil.com/ontology/pwm#escalationThreshold> "0.90"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+ex:BadMultipleDecisionTimes prov:generatedAtTime "2026-11-03T09:00:00Z"^^xsd:dateTime, "2026-11-03T09:01:00Z"^^xsd:dateTime .
+<https://example.org/pwm-example#BadTypedDateExpiry> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#PolicyDecision> .
+<https://example.org/pwm-example#BadTypedDateExpiry> <https://ahmedmuzammil.com/ontology/pwm#decisionOutcome> <https://ahmedmuzammil.com/ontology/pwm#OutcomeAllow> .
+<https://example.org/pwm-example#BadTypedDateExpiry> <https://ahmedmuzammil.com/ontology/pwm#decidedByRule> <https://example.org/pwm-example#RuleModelAccess> .
+<https://example.org/pwm-example#BadTypedDateExpiry> <https://ahmedmuzammil.com/ontology/pwm#hasCheck> <https://example.org/pwm-example#ModelAccessCheck> .
+<https://example.org/pwm-example#BadTypedDateExpiry> <https://ahmedmuzammil.com/ontology/pwm#inRun> <https://example.org/pwm-example#Run> .
+<https://example.org/pwm-example#BadTypedDateExpiry> <https://ahmedmuzammil.com/ontology/pwm#escalationThreshold> "0.90"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+ex:BadTypedDateExpiry prov:generatedAtTime "2026-11-03T23:30:00-02:00"^^xsd:dateTime ; pwm:underUseCase ex:TimezoneReviewUseCase .
+ex:TimezoneReviewUseCase pwm:nextReviewDate "2026-11-03"^^xsd:date .
+ex:SecondModel a pwm:AIModel ; pwm:hasModelCard ex:ModelCard .
+
+<https://example.org/pwm-example#TimezoneReviewUseCase> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#AIUseCase> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <http://www.w3.org/2000/01/rdf-schema#label> "Client meeting preparation and draft recommendations"@en .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#hasPurpose> <https://example.org/pwm-example#PurposeMeetingPrep> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#approvedJurisdiction> "SG" .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#modelType> "Language model with retrieval from approved sources" .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#dependsOn> <https://example.org/pwm-example#Model> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#dependsOn> <https://example.org/pwm-example#Provider> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#usesDataClass> <https://ahmedmuzammil.com/ontology/pwm#C2> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#lifecycleStatus> <https://ahmedmuzammil.com/ontology/pwm#StatusLive> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#riskTier> <https://ahmedmuzammil.com/ontology/pwm#Tier3> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#isMediated> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#hasAccountabilityRole> <https://example.org/pwm-example#BusinessOwner> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#hasAccountabilityRole> <https://example.org/pwm-example#TechnologyOwner> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#hasAccountabilityRole> <https://example.org/pwm-example#RiskOwner> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#hasAccountabilityRole> <https://example.org/pwm-example#KnowledgeLead> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#hasAccountabilityRole> <https://example.org/pwm-example#Validator> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#hasMaterialityAssessment> <https://example.org/pwm-example#Materiality> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#gatewayFailureMode> <https://ahmedmuzammil.com/ontology/pwm#FailClosed> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#retentionPolicy> <https://example.org/pwm-example#ContentPolicy> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#hasOutcomeMetric> <https://example.org/pwm-example#Metric> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#appetitePermits> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#lowRiskSamplingRate> "0.10"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#evaluatedAgainstAppetite> <https://example.org/pwm-example#Appetite> .
+ex:Bad04RiskAppetiteDecisionShape prov:generatedAtTime "2026-11-03T09:58:00+08:00"^^xsd:dateTime .
+ex:BadBudgetDenial prov:generatedAtTime "2026-11-03T09:58:00+08:00"^^xsd:dateTime .

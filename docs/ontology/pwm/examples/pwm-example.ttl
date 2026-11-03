@@ -601,4 +601,4 @@ ex:Communication pwm:underUseCase ex:UseCaseMeetingPrep .
 
 ex:UseCaseMeetingPrep pwm:evaluatedAgainstAppetite ex:Appetite .
 
-ex:PolicyDecisionModelAllow prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime .
+ex:PolicyDecisionModelAllow prov:generatedAtTime "2026-11-03T09:58:00+08:00"^^xsd:dateTime .

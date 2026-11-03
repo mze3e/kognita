@@ -3,7 +3,7 @@
     python3 tools/build.py [--site PATH]
 
 1. Concatenates src/*.ttl into pwm.ttl.
-2. Reads pwm.ttl and pwm-shapes.ttl.
+2. Copies src/shapes/pwm-shapes.ttl and regenerates code-list shapes.
 3. Writes SPEC.md, the human-readable specification.
 4. With --site, writes the TypeScript data module the website page renders.
 
@@ -146,6 +146,7 @@ def build(base: Path, site_path):
         order.setdefault(m.group(1), m.start())
 
     g = Graph().parse(base / "pwm.ttl")
+    (base / "pwm-shapes.ttl").write_text((base / "src/shapes/pwm-shapes.ttl").read_text(encoding="utf-8"), encoding="utf-8")
     write_code_list_shapes(g, base / "pwm-shapes.ttl")
     sg = Graph().parse(base / "pwm-shapes.ttl")
     ont = URIRef(SITE)
@@ -407,9 +408,27 @@ def build(base: Path, site_path):
         negative = base / "examples/pwm-example-invalid.ttl"
         if positive.exists() and negative.exists():
             pg, ng = Graph().parse(positive), Graph().parse(negative)
-            spec.write(f"The positive example contains {len(set(pg.subjects(RDF.type, None)))} typed records. The negative fixture contains {len(set(ng.subjects(RDF.type, None)))} typed records. There are 89 typed violating records, twenty typed supporting records and four untyped violating subjects, yielding 100 expected violations across 93 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.\n\n")
+            import importlib.util
+            validator_spec = importlib.util.spec_from_file_location("pwm_validate", Path(__file__).with_name("validate.py"))
+            validator = importlib.util.module_from_spec(validator_spec)
+            validator_spec.loader.exec_module(validator)
+            run = validator.run
+            _, found, _ = run(base, ["examples/pwm-example.ttl", "examples/pwm-example-invalid.ttl"])
+            if found != validator.EXPECTED:
+                raise ValueError("Validation counts differ from the registered negative fixtures")
+            focus = {URIRef("https://example.org/pwm-example#" + k[0]) for k in found}
+            typed = set(ng.subjects(RDF.type, None))
+            spec.write(f"The positive example contains {len(set(pg.subjects(RDF.type, None)))} typed records. The negative fixture contains {len(set(ng.subjects(RDF.type, None)))} typed records. There are {len(typed & focus)} typed violating records, {len(typed - focus)} typed supporting records and {len(focus - typed)} untyped violating subjects, yielding {sum(found.values())} expected violations across {len(focus)} focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.\n\n")
+        readme = base / "README.md"
+        if readme.exists() and positive.exists() and negative.exists():
+            summary = (f"The positive example contains {len(set(pg.subjects(RDF.type, None)))} typed records. "
+                       f"The negative fixture contains {len(typed)} typed records: {len(typed & focus)} violating records "
+                       f"and {len(typed - focus)} supporting records, plus {len(focus - typed)} untyped violating subjects, "
+                       f"raising {sum(found.values())} expected violations across {len(focus)} focus nodes.")
+            readme.write_text(re.sub(r"The positive example contains .*? focus nodes\.", summary,
+                                    readme.read_text(encoding="utf-8")), encoding="utf-8")
         spec.write("The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.\n\n")
-        spec.write(f"All {counts['rules']} written rules have negative fixtures. Two generated code-list rules are exercised there; all {counts['codeListRules']} generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, falling back to NOW when absent; historical decisions are judged at their decision time. A decision on an expired use case must be DENY.\n\n")
+        spec.write(f"All {counts['rules']} written rules have negative fixtures. Two generated code-list rules are exercised there; all {counts['codeListRules']} generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. Review dates remain valid through the end of that day; absent timezones are interpreted as UTC. A decision on an expired use case must be DENY.\n\n")
         spec.write("New 0.4 PROV specialisations: IngestedDocument, DeclarativePolicy, PolicyChange, PolicyTestCase, PolicyPack, FlightRecorderSession, RMReviewEdit, ReviewQueue, ReviewQueueEntry, ReviewCoverageReport, AffectedClientQuery, AffectedClientResult and InteractionOutcome specialise prov:Entity. Replay specialises prov:Activity. DocumentElement specialises existing DocumentSection (OMG Commons Document); CircuitBreaker specialises KillSwitch; CircuitBreakerTrip specialises AIIncident (prov:Entity). No PROV activity parent is asserted for recorder manifests, edits or trips.\n\n")
         spec.write("PWM version N aligns to roadmap milestone N. Version 0.4 models milestone 0.4, not the software release number. The inherited 0.3 PROV specialisations remain as follows. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.\n\n")
         spec.write("Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. "

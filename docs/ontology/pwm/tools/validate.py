@@ -137,6 +137,13 @@ EXPECTED.update([("BadDiffLocator", "RMReviewEditShape", "diffLocator"),
                  ("BadAffectedRecipient", "AffectedClientCountShape", None)])
 EXPECTED.update([("OutsideAppetite", "LiveRiskAppetiteShape", None)])
 
+EXPECTED.update([("BadMultipleModels", "ModelCallShape", "usesModel"),
+                 ("BadEmptyDiffLocator", "RMReviewEditShape", "diffLocator"),
+                 ("BadMissingDecisionTime", "PolicyDecisionShape", "generatedAtTime"),
+                 ("BadDecisionTimeType", "PolicyDecisionShape", "generatedAtTime"),
+                 ("BadMultipleDecisionTimes", "PolicyDecisionShape", "generatedAtTime"),
+                 ("BadTypedDateExpiry", "PastReviewDecisionShape", None)])
+
 def local(term):
     if term is None:
         return None
