@@ -262,4 +262,4 @@ pwm:SlowContext a pwm:ContextSpeed ; rdfs:label "slow"@en ;
 pwm:MediumContext a pwm:ContextSpeed ; rdfs:label "medium"@en ;
     skos:definition "Changes over days or weeks, such as client profile, KYC status and mandate. Synchronised from the system of record and cached with an explicit as-of time."@en .
 pwm:FastContext a pwm:ContextSpeed ; rdfs:label "fast"@en ;
-    skos:definition "Changes in seconds or minutes, such as positions, prices, cash and orders. Looked up live from the system of record; never cached or embedded for AI."@en .
+    skos:definition "Changes in seconds or minutes, such as positions, prices, cash, orders and live authority or kill-switch state. Looked up live from the system of record; never cached or embedded for AI."@en .

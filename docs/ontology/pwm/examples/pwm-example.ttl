@@ -602,3 +602,15 @@ ex:Communication pwm:underUseCase ex:UseCaseMeetingPrep .
 ex:UseCaseMeetingPrep pwm:evaluatedAgainstAppetite ex:Appetite .
 
 ex:PolicyDecisionModelAllow prov:generatedAtTime "2026-11-03T09:58:00+08:00"^^xsd:dateTime .
+
+# Live reads obtained at decision time, separate from the cached definitions.
+ex:DelegationLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:Delegation ;
+    pwm:revoked false ; pwm:asOf "2026-11-03T10:00:00+08:00"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
+ex:LiveObserver a prov:Agent .
+ex:LiveSwitch a pwm:KillSwitch ; pwm:scopeUseCase ex:UseCaseMeetingPrep .
+ex:SwitchLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:LiveSwitch ;
+    pwm:engaged false ; pwm:asOf "2026-11-03T10:00:00+08:00"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
+ex:LiveAuthorityAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:reliesOnDelegation ex:Delegation ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:decidedByRule ex:RuleClientCommunication ; prov:generatedAtTime "2026-11-03T10:01:00+08:00"^^xsd:dateTime .
+ex:LiveAuthorityAllow pwm:hasCheck ex:Check .

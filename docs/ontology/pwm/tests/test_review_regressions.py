@@ -115,8 +115,8 @@ def test_version_and_counts(tmp_path):
     assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.3')
     assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.3/pwm-shapes.ttl')
     assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 229
-    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 141
-    assert len(set(example().subjects(RDF.type, None))) == 147
+    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 144
+    assert len(set(example().subjects(RDF.type, None))) == 152
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
@@ -124,7 +124,7 @@ def test_version_and_counts(tmp_path):
     shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (167, 171, 120, 46, 81, 59)
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (168, 173, 122, 46, 84, 59)
     assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
     negative_count = len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None)))
     assert f'negative fixture contains {negative_count} typed records' in (tmp_path / 'SPEC.md').read_text()
@@ -477,3 +477,90 @@ def test_model_authorization_precedes_dispatch():
     g = example()
     at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
     assert g.value(E('PolicyDecisionModelAllow'), at).toPython() < g.value(E('Evidence4'), at).toPython()
+
+
+def test_build_rejects_broken_evidence_chain(tmp_path):
+    import shutil
+    shutil.copytree(BASE / 'src', tmp_path / 'src')
+    shutil.copytree(BASE / 'examples', tmp_path / 'examples')
+    shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
+    g = example()
+    g.set((E('Evidence2'), P('previousRecordHash'), Literal('sha256:' + '0' * 64)))
+    g.serialize(tmp_path / 'examples/pwm-example.ttl', format='turtle')
+    with pytest.raises(ValueError, match='Broken example evidence chain'):
+        builder.build(tmp_path, None)
+
+
+@pytest.mark.parametrize('kind', ['delegation', 'switch'])
+@pytest.mark.parametrize('case,allowed', [
+    ('active', False), ('future', True), ('reset', True),
+    ('tied', False), ('unrelated', True), ('absent', True),
+])
+def test_live_status_at_decision_time(kind, case, allowed):
+    from pyshacl import validate
+    g = Graph()
+    decision, subject = E('Decision'), E('Authority')
+    time = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    g.add((decision, RDF.type, P('PolicyDecision')))
+    g.add((decision, P('decisionOutcome'), P('OutcomeAllow')))
+    g.add((decision, time, Literal('2026-11-03T10:00:00Z', datatype=XSD.dateTime)))
+    if kind == 'delegation':
+        g.add((subject, RDF.type, P('DelegatedAuthority')))
+        g.add((decision, P('reliesOnDelegation'), subject))
+        flag, shape = 'revoked', 'LiveDelegationDecisionShape'
+        # Missing decision-time authority observations fail closed too.
+        if case in ('future', 'absent', 'unrelated'):
+            allowed = False
+    else:
+        g.add((subject, RDF.type, P('KillSwitch')))
+        g.add((subject, P('scopeUseCase'), E('UseCase')))
+        g.add((decision, P('underUseCase'), E('UseCase')))
+        flag, shape = 'engaged', 'LiveKillSwitchDecisionShape'
+    def status(name, value, at, target=subject):
+        g.add((E(name), RDF.type, P('AuthorityLiveStatus')))
+        g.add((E(name), P('statusOf'), target))
+        g.add((E(name), P(flag), Literal(value)))
+        g.add((E(name), P('asOf'), Literal(at, datatype=XSD.dateTime)))
+    if case != 'absent':
+        status('On', True, '2026-11-03T10:00:01Z' if case == 'future' else '2026-11-03T10:00:00Z',
+               E('Other') if case == 'unrelated' else subject)
+    if case == 'reset':
+        g.set((E('On'), P('asOf'), Literal('2026-11-03T09:00:00Z', datatype=XSD.dateTime)))
+        status('Off', False, '2026-11-03T10:00:00Z')
+    if case == 'tied':
+        status('Off', False, '2026-11-03T10:00:00Z')
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    for node in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if node != URIRef(validator.PWMSH + shape):
+            shapes.add((node, validator.SH.deactivated, Literal(True)))
+    assert validate(g, shacl_graph=shapes)[0] == allowed
+
+
+@pytest.mark.parametrize('dimension', ['scopeUseCase', 'scopePolicy', 'scopeModel', 'scopePromptVersion', 'global'])
+def test_engaged_switch_scope(dimension):
+    from pyshacl import validate
+    g = Graph()
+    decision, switch, call = E('Decision'), E('Switch'), E('Call')
+    g.add((decision, RDF.type, P('PolicyDecision')))
+    g.add((decision, P('decisionOutcome'), P('OutcomeAllow')))
+    g.add((decision, URIRef('http://www.w3.org/ns/prov#generatedAtTime'), Literal('2026-11-03T10:00:00Z', datatype=XSD.dateTime)))
+    g.add((switch, RDF.type, P('KillSwitch')))
+    g.add((E('Status'), RDF.type, P('AuthorityLiveStatus')))
+    for prop, value in [('statusOf', switch), ('engaged', Literal(True)), ('asOf', Literal('2026-11-03T10:00:00Z', datatype=XSD.dateTime))]:
+        g.add((E('Status'), P(prop), value))
+    if dimension != 'global':
+        prop = {'scopeUseCase': 'underUseCase', 'scopePolicy': 'decidedByRule', 'scopeModel': 'usesModel', 'scopePromptVersion': 'promptTemplateVersion'}[dimension]
+        scope = Literal('v1') if dimension == 'scopePromptVersion' else E('Scope')
+        g.add((switch, P(dimension), scope))
+        target = call if dimension in ('scopeModel', 'scopePromptVersion') else decision
+        g.add((call, P('governedByDecision'), decision))
+        g.add((target, P(prop), scope))
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    for node in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if node != URIRef(validator.PWMSH + 'LiveKillSwitchDecisionShape'):
+            shapes.add((node, validator.SH.deactivated, Literal(True)))
+    assert not validate(g, shacl_graph=shapes)[0]
+    if dimension != 'global':
+        g.remove((switch, P(dimension), None))
+        g.add((switch, P(dimension), Literal('other') if dimension == 'scopePromptVersion' else E('Other')))
+        assert validate(g, shacl_graph=shapes)[0]

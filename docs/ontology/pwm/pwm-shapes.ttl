@@ -1192,3 +1192,49 @@ pwmsh:LiveRiskAppetiteShape a sh:NodeShape ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
         sh:message "An explicit failed risk-appetite evaluation prevents activation (Kognita 0.4 item 8; MAS AIRG 4.11)." ;
         sh:select """SELECT $this WHERE { $this pwm:lifecycleStatus pwm:StatusLive ; pwm:appetitePermits false . }""" ] .
+
+pwmsh:AuthorityLiveStatusShape a sh:NodeShape ;
+    rdfs:label "Live authority status"@en ; sh:targetClass pwm:AuthorityLiveStatus ;
+    dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;
+    sh:property [ sh:path pwm:statusOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:or ( [ sh:class pwm:DelegatedAuthority ] [ sh:class pwm:KillSwitch ] ) ] ;
+    sh:property [ sh:path pwm:asOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ] ;
+    sh:property [ sh:path pwm:observedBy ; sh:minCount 1 ; sh:class prov:Agent ] ;
+    sh:property [ sh:path pwm:revoked ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
+    sh:property [ sh:path pwm:engaged ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
+    sh:or (
+      [ sh:property [ sh:path pwm:statusOf ; sh:class pwm:DelegatedAuthority ] ; sh:property [ sh:path pwm:revoked ; sh:minCount 1 ] ; sh:property [ sh:path pwm:engaged ; sh:maxCount 0 ] ]
+      [ sh:property [ sh:path pwm:statusOf ; sh:class pwm:KillSwitch ] ; sh:property [ sh:path pwm:engaged ; sh:minCount 1 ] ; sh:property [ sh:path pwm:revoked ; sh:maxCount 0 ] ]
+    ) ;
+    sh:message "Record the matching live boolean, subject, xsd:dateTime asOf and observer (KOG 0.4 item 14; 0.3 item 2; MAS AIRG 5.9)." .
+
+pwmsh:LiveDelegationDecisionShape a sh:NodeShape ;
+    rdfs:label "Live delegation at decision time"@en ; sh:targetClass pwm:PolicyDecision ;
+    dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+      sh:message "An ALLOW relying on delegated authority requires a live status and must not have a latest status showing it revoked as of decision time (KOG 0.4 item 14; 0.3 item 2; MAS AIRG 5.9)." ;
+      sh:select """SELECT DISTINCT $this WHERE {
+        $this pwm:decisionOutcome pwm:OutcomeAllow ; pwm:reliesOnDelegation ?authority ; prov:generatedAtTime ?time .
+        FILTER (NOT EXISTS { ?s a pwm:AuthorityLiveStatus ; pwm:statusOf ?authority ; pwm:asOf ?at . FILTER (?at <= ?time) }
+          || EXISTS {
+            ?s a pwm:AuthorityLiveStatus ; pwm:statusOf ?authority ; pwm:revoked true ; pwm:asOf ?at . FILTER (?at <= ?time)
+            FILTER NOT EXISTS { ?later a pwm:AuthorityLiveStatus ; pwm:statusOf ?authority ; pwm:asOf ?after . FILTER (?after > ?at && ?after <= ?time) }
+          })
+      }""" ] .
+
+pwmsh:LiveKillSwitchDecisionShape a sh:NodeShape ;
+    rdfs:label "Live kill switch at decision time"@en ; sh:targetClass pwm:PolicyDecision ;
+    dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;
+    rdfs:comment "A switch covers a decision if any declared scope dimension matches its use case, policy, model or prompt, including governed calls. Unscoped switches cover all decisions. Latest observations at or before the decision apply; tied engaged observations fail closed."@en ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+      sh:message "A decision made while a covering kill switch status is engaged must not be ALLOW (KOG 0.4 item 14: circuit breaker; MAS AIRG 5.9)." ;
+      sh:select """SELECT DISTINCT $this WHERE {
+        $this pwm:decisionOutcome pwm:OutcomeAllow ; prov:generatedAtTime ?time .
+        ?s a pwm:AuthorityLiveStatus ; pwm:statusOf ?switch ; pwm:engaged true ; pwm:asOf ?at .
+        ?switch a pwm:KillSwitch . FILTER (?at <= ?time)
+        FILTER NOT EXISTS { ?later a pwm:AuthorityLiveStatus ; pwm:statusOf ?switch ; pwm:asOf ?after . FILTER (?after > ?at && ?after <= ?time) }
+        FILTER (NOT EXISTS { ?switch (pwm:scopeUseCase|pwm:scopePolicy|pwm:scopeModel|pwm:scopePromptVersion) ?scope }
+          || EXISTS { ?switch pwm:scopeUseCase ?uc . $this pwm:underUseCase ?uc }
+          || EXISTS { ?switch pwm:scopePolicy ?rule . $this pwm:decidedByRule ?rule }
+          || EXISTS { ?switch pwm:scopeModel ?model . $this (pwm:usesModel|^pwm:governedByDecision/pwm:usesModel) ?model }
+          || EXISTS { ?switch pwm:scopePromptVersion ?prompt . $this (pwm:promptTemplateVersion|^pwm:governedByDecision/pwm:promptTemplateVersion) ?prompt })
+      }""" ] .

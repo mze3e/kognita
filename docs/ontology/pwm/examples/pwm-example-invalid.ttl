@@ -591,3 +591,17 @@ ex:SecondModel a pwm:AIModel ; pwm:hasModelCard ex:ModelCard .
 <https://example.org/pwm-example#TimezoneReviewUseCase> <https://ahmedmuzammil.com/ontology/pwm#evaluatedAgainstAppetite> <https://example.org/pwm-example#Appetite> .
 ex:Bad04RiskAppetiteDecisionShape prov:generatedAtTime "2026-11-03T09:58:00+08:00"^^xsd:dateTime .
 ex:BadBudgetDenial prov:generatedAtTime "2026-11-03T09:58:00+08:00"^^xsd:dateTime .
+
+ex:BadLiveStatusDate a pwm:AuthorityLiveStatus ; pwm:statusOf ex:Delegation ; pwm:revoked false ;
+    pwm:asOf "2026-11-03"^^xsd:date ; pwm:observedBy ex:LiveObserver .
+ex:RevokedLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:Delegation ; pwm:revoked true ;
+    pwm:asOf "2026-11-03T10:02:00+08:00"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
+ex:EngagedLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:LiveSwitch ; pwm:engaged true ;
+    pwm:asOf "2026-11-03T23:00:00+08:00"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
+ex:BadRevokedAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ; pwm:reliesOnDelegation ex:Delegation ;
+    pwm:decidedByRule ex:RuleClientCommunication ; prov:generatedAtTime "2026-11-03T10:03:00+08:00"^^xsd:dateTime .
+ex:BadEngagedAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:decidedByRule ex:RuleClientCommunication ; prov:generatedAtTime "2026-11-03T23:01:00+08:00"^^xsd:dateTime .
+ex:BadRevokedAllow pwm:hasCheck ex:Check .
+ex:BadEngagedAllow pwm:hasCheck ex:Check .
+ex:BadRevokedAllow pwm:underUseCase ex:UseCaseMeetingPrep .
