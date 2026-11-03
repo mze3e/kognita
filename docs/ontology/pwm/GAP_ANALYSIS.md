@@ -1,4 +1,6 @@
-# PWM 0.4 gap analysis
+# PWM 0.5 gap analysis
+
+## Inherited 0.4 coverage
 
 Compared with the inherited PWM 0.3 vocabulary and shapes before adding terms. PWM version N aligns with roadmap milestone N. Locators below refer to `docs/ROADMAP.md`, milestone 0.4, items 1 to 15 and its Definition of Done. Existing terms retain their original grounds.
 
@@ -25,7 +27,7 @@ Every new class, property and scheme has item-level KOG grounds and a NEW practi
 The Definition of Done describes software behaviour as well as records. These artefacts model the evidence and enforce the written structural constraints; they do not implement Docling, policy compilation, CLI delta resolution, strict validation of serialized YAML, telemetry export, adapters, automatic halt dispatch, query execution, revocation, approval-packet execution or rubber-stamp detection. Appetite evaluation and tier derivation remain external policy computations. An explicit failed appetite evaluation is denied; absence of that evaluation is not treated as proof of permission. Affected-client result counts are checked against recorded communications, not an external delivery system. A production query must establish completeness for the stated scope and window. New code-list replacement requires reviewing these constraints along with the existing ones.
 
 
-## PWM 0.5 gap analysis
+## Added 0.5 coverage
 
 Compared with inherited PWM 0.4 before adding terms. PWM version N follows roadmap milestone N. All sixteen items and the Definition of Done in `docs/ROADMAP.md`, 0.5 "Agents, Authority and Fleets", were reviewed. Additions live in `src/11-agents-authority-fleets.ttl`; the existing governance terms and their grounds remain in place.
 
@@ -61,3 +63,8 @@ Open questions: migrate inherited date/duration ranges in a later compatibility 
 Ahmed's 3 Nov 2026 design decisions add AuthorityLiveStatus in FastContext. Each observation names exactly one DelegatedAuthority or KillSwitch, its liveStatusValue and observedAt (the as-of time). Delegation values are active or revoked; kill-switch values are armed or tripped. DelegatedAuthority and KillSwitch definitions remain SlowContext. Gateways retrieve live observations at decision time; SHACL checks the record, not freshness against a remote system.
 
 Firm-specific BlastRadiusLimit and AutonomyPromotionGate records each require exactly one riskControlApproval. The RiskControlApproval record identifies approverRole and approvedAt. ApprovingAuthorityRole specialises OMG Commons PartyRole; its permitted subclasses are RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer. The role sets and approves the limit or gate. This configuration approval is distinct from an individual transition's ownerApproval and independentValidation. The positive example includes risk-committee approval for its limit and gate; negative fixtures reject missing control approval, an unauthorized approver, missing approval time and an invalid live-status value.
+
+
+Review validation for 0.5: 193 domain classes, 219 object properties, 188 datatype properties, 48 code lists and 235 codes. The 126 written rules and 66 generated code-list rules form 193 node shapes, including one untargeted helper. The positive example has 186 typed records. The negative fixture has 236 typed records: 164 violating and 72 supporting, plus 4 untyped violating subjects. It raises 184 expected violations across 168 focus nodes and exercises all 126 written rules and two generated rules; regression tests cover all 66 generated rules.
+
+Classification comparisons use the DataClassificationScheme sensitivity rank. Child scopes may narrow from C2 to C1; a C3 human entitlement does not back a C2 delegation. Irreversible approvals must precede their calls, and step-up approvals must request the exact decision at a checkpoint in the same run. ALLOW decisions cover every calling-agent limit exactly once and reject observations of unrelated limits. The anomaly's Incident is explicitly an AIIncident; no additional AIIncident property shape is declared. Every positive governed call has a recorded timestamp after its governing decision.

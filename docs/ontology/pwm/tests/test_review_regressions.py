@@ -116,7 +116,7 @@ def test_version_and_counts(tmp_path):
     assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.4/pwm-shapes.ttl')
     assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 235
     assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 193
-    assert len(set(example().subjects(RDF.type, None))) == 184
+    assert len(set(example().subjects(RDF.type, None))) == 186
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
@@ -125,8 +125,8 @@ def test_version_and_counts(tmp_path):
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 219, 188, 48, 126, 66)
-    assert sum(validator.EXPECTED.values()) == 170
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 207
+    assert sum(validator.EXPECTED.values()) == 184
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 236
     assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
     negative_count = len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None)))
     assert f'negative fixture contains {negative_count} typed records' in (tmp_path / 'SPEC.md').read_text()
@@ -530,6 +530,7 @@ def test_05_approval_repairs_and_combined_taint():
     # Approval of a different held decision in the same run is insufficient.
     assert not validate_05(g, ['IrreversibleApprovalShape'])
     g.set((E('Approval'), P('requestsDecision'), E('PolicyDecisionModelAllow')))
+    g.set((E('Resolution'), URIRef('http://www.w3.org/ns/prov#generatedAtTime'), Literal('2026-11-03T01:58:01Z', datatype=XSD.dateTime)))
     assert validate_05(g, ['IrreversibleApprovalShape'])
     # Both external and client-data taint may apply to the same content.
     g = example()
@@ -611,10 +612,14 @@ def test_05_irreversible_approval_with_maximum_autonomy_only():
     # Isolate the max-only call from the other negative irreversible case.
     g.remove((E('Bad05IrreversibleApprovalShape'), P('invokedTool'), None))
     g.remove((E('Bad05WrongApprovalDecision'), P('invokedTool'), None))
+    g.remove((E('BadLateApprovalCall'), P('invokedTool'), None))
     assert not validate_05(g, ['IrreversibleApprovalShape'])
     g.set((E('MaxOnlyDecision'), P('humanApproval'), E('Resolution')))
     assert not validate_05(g, ['IrreversibleApprovalShape'])
     g.set((E('Approval'), P('requestsDecision'), E('MaxOnlyDecision')))
+    at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    g.set((E('Resolution'), at, Literal('2026-11-03T01:58:01Z', datatype=XSD.dateTime)))
+    g.set((E('Bad05IrreversibleMaxOnly'), at, Literal('2026-11-03T02:00:00Z', datatype=XSD.dateTime)))
     assert validate_05(g, ['IrreversibleApprovalShape'])
 
 
@@ -680,3 +685,62 @@ def test_model_authorization_precedes_dispatch():
     g = example()
     at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
     assert g.value(E('PolicyDecisionModelAllow'), at).toPython() < g.value(E('Evidence4'), at).toPython()
+
+
+def test_review_rank_narrowing_and_entitlement_direction():
+    g = example()
+    assert g.value(E('ReadScope'), P('classification')) == P('C1')
+    assert validate_05(g, ['DelegationScopeShape', 'LiveAuthorityDecisionShape', 'SubDelegationShape'])
+    g.set((E('ReadScope'), P('classification'), P('C3')))
+    assert not validate_05(g, ['SubDelegationShape'])
+    g = example()
+    g.remove((E('PersonRM'), P('holdsEntitlement'), E('ReadEntitlement')))
+    g.set((E('Scope'), P('classification'), P('C3')))
+    # Give delegation an independent C2 scope, leaving its backing entitlement C3.
+    for pred, value in list(g.predicate_objects(E('Scope'))):
+        g.add((E('DelegationScopeC2'), pred, value))
+    g.set((E('DelegationScopeC2'), P('classification'), P('C2')))
+    g.set((E('Delegation'), P('authorityScope'), E('DelegationScopeC2')))
+    assert not validate_05(g, ['DelegationScopeShape', 'LiveAuthorityDecisionShape'])
+
+
+def test_review_step_up_binds_exact_decision_and_run():
+    g = example()
+    g.set((E('PolicyDecisionRelease'), P('decisionOutcome'), P('OutcomeAllow')))
+    assert validate_05(g, ['InstructionAssuranceShape'])
+    g.set((E('Approval'), P('requestsDecision'), E('PolicyDecisionModelAllow')))
+    assert not validate_05(g, ['InstructionAssuranceShape'])
+    g = example()
+    g.set((E('PolicyDecisionRelease'), P('decisionOutcome'), P('OutcomeAllow')))
+    g.set((E('Checkpoint'), P('inRun'), E('OtherRun')))
+    assert not validate_05(g, ['InstructionAssuranceShape'])
+
+
+def test_review_blast_radius_complete_agent_limit_coverage():
+    g = example()
+    assert validate_05(g, ['BlastRadiusDecisionShape'])
+    g.remove((E('PolicyDecisionModelAllow'), P('limitObservation'), None))
+    assert not validate_05(g, ['BlastRadiusDecisionShape'])
+    g = example()
+    g.set((E('Observation'), P('observedLimit'), E('UnrelatedLimit')))
+    assert not validate_05(g, ['BlastRadiusDecisionShape'])
+
+
+def test_review_irreversible_approval_strictly_precedes_call():
+    g = example()
+    g += Graph().parse(BASE / 'examples/pwm-example-invalid.ttl')
+    # Only target the late approval call, isolating this timing regression.
+    for call in list(g.subjects(P('invokedTool'), None)):
+        if call != E('BadLateApprovalCall'):
+            g.remove((call, P('invokedTool'), None))
+    assert not validate_05(g, ['IrreversibleApprovalShape'])
+    at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    g.set((E('LateResolution'), at, Literal('2026-11-03T01:59:00Z', datatype=XSD.dateTime)))
+    assert validate_05(g, ['IrreversibleApprovalShape'])
+
+
+def test_positive_decisions_precede_every_governed_call():
+    g = example()
+    at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    for call, decision in g.subject_objects(P('governedByDecision')):
+        assert g.value(decision, at).toPython() < g.value(call, at).toPython()

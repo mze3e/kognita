@@ -214,6 +214,18 @@ EXPECTED.update([("BadMultipleModels", "ModelCallShape", "usesModel"),
                  ("BadMultipleDecisionTimes", "PolicyDecisionShape", "generatedAtTime"),
                  ("BadTypedDateExpiry", "PastReviewDecisionShape", None)])
 
+# Review fixtures: classification rank, approval timing/binding and complete limit coverage.
+EXPECTED.update([
+    ('BadLateApprovalCall', 'IrreversibleApprovalShape', None),
+    ('BadMissingLimitObservation', 'BlastRadiusDecisionShape', None),
+    ('BadRankChild', 'SubDelegationShape', None),
+    ('BadRestrictedEntitlement', 'DelegationScopeShape', None),
+    ('BadRestrictedEntitlementCall', 'LiveAuthorityDecisionShape', None),
+    ('BadStepUpOtherDecision', 'InstructionAssuranceShape', None),
+    ('BadUnrelatedLimitObservation', 'BlastRadiusDecisionShape', None),
+    ('LateRequest', 'SuspendedApprovalShape', None),
+])
+
 def local(term):
     if term is None:
         return None

@@ -19,7 +19,8 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 | Path | What it is |
 |---|---|
 | `pwm.ttl` | The ontology, built from `src/`. Do not edit; edit `src/` and rebuild |
-| `pwm-shapes.ttl` | SHACL data rules, each citing the paragraph or item it enforces, plus one generated code-list rule per coded property |
+| `pwm-shapes.ttl` | Built SHACL rules and generated code-list rules. Edit `src/shapes/pwm-shapes.ttl` and rebuild |
+| `src/shapes/pwm-shapes.ttl` | Source SHACL rules, each citing the paragraph or item it enforces |
 | `SPEC.md` | The specification, generated from the Turtle |
 | `examples/pwm-example.ttl` | Synthetic data for a fictional firm: one client journey end to end |
 | `examples/pwm-example-invalid.ttl` | Negative fixture records and their supporting records |
@@ -101,7 +102,7 @@ robot reason --reasoner HermiT --equivalent-classes-allowed none --input pwm.ttl
 
 To reason over data, merge it with `pwm.ttl` as RDF first (for example with rdflib), so that properties keep the types `pwm.ttl` declares.
 
-Version 0.5 contains 193 domain classes, 407 properties (219 object, 188 datatype), 48 code lists with 235 codes, 126 written rules and 66 generated rules. There are 193 node shapes, including one untargeted helper, and 192 targeted shapes. The positive example contains 184 typed records. The negative fixture contains 207 typed records: 150 violating records and 57 supporting records, plus 4 untyped violating subjects, raising 170 expected violations across 154 focus nodes. It covers all 126 written shapes and two generated code-list shapes. Regression tests exercise all 66 generated code-list shapes.
+Version 0.5 contains 193 domain classes, 407 properties (219 object, 188 datatype), 48 code lists with 235 codes, 126 written rules and 66 generated rules. There are 193 node shapes, including one untargeted helper, and 192 targeted shapes. The positive example contains 186 typed records. The negative fixture contains 236 typed records: 164 violating records and 72 supporting records, plus 4 untyped violating subjects, raising 184 expected violations across 168 focus nodes. It covers all 126 written shapes and two generated code-list shapes. Regression tests exercise all 66 generated code-list shapes.
 
 Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. HermiT consistency checks pass with no unsatisfiable classes. The positive example conforms, is consistent with the ontology, and has one unbroken evidence chain. The negative fixture is intentionally inconsistent under HermiT because it names an AI agent in an accountability role.
 

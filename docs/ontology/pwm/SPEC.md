@@ -4335,6 +4335,7 @@ Applies to [blast radius observation](#BlastRadiusObservation). Sources: [Kognit
 Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 - Projected consumption exceeding any agent blast-radius cap cannot be ALLOW (Kognita 0.5 item 4).
+- ALLOW requires exactly one observation for each calling agent limit and no unrelated limits.
 
 *Roadmap milestone 0.5 item 4. Checks recorded evidence; runtime enforcement remains external.*
 
@@ -4822,7 +4823,9 @@ Other code lists may require changes to handwritten constraints and code-depende
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
 
-## Gap analysis for 0.4
+## Gap analysis for 0.5
+
+## Inherited 0.4 coverage
 
 Compared with the inherited PWM 0.3 vocabulary and shapes before adding terms. PWM version N aligns with roadmap milestone N. Locators below refer to `docs/ROADMAP.md`, milestone 0.4, items 1 to 15 and its Definition of Done. Existing terms retain their original grounds.
 
@@ -4849,7 +4852,7 @@ Every new class, property and scheme has item-level KOG grounds and a NEW practi
 The Definition of Done describes software behaviour as well as records. These artefacts model the evidence and enforce the written structural constraints; they do not implement Docling, policy compilation, CLI delta resolution, strict validation of serialized YAML, telemetry export, adapters, automatic halt dispatch, query execution, revocation, approval-packet execution or rubber-stamp detection. Appetite evaluation and tier derivation remain external policy computations. An explicit failed appetite evaluation is denied; absence of that evaluation is not treated as proof of permission. Affected-client result counts are checked against recorded communications, not an external delivery system. A production query must establish completeness for the stated scope and window. New code-list replacement requires reviewing these constraints along with the existing ones.
 
 
-## Gap analysis for 0.5
+## Added 0.5 coverage
 
 Compared with inherited PWM 0.4 before adding terms. PWM version N follows roadmap milestone N. All sixteen items and the Definition of Done in `docs/ROADMAP.md`, 0.5 "Agents, Authority and Fleets", were reviewed. Additions live in `src/11-agents-authority-fleets.ttl`; the existing governance terms and their grounds remain in place.
 
@@ -4887,17 +4890,22 @@ Ahmed's 3 Nov 2026 design decisions add AuthorityLiveStatus in FastContext. Each
 Firm-specific BlastRadiusLimit and AutonomyPromotionGate records each require exactly one riskControlApproval. The RiskControlApproval record identifies approverRole and approvedAt. ApprovingAuthorityRole specialises OMG Commons PartyRole; its permitted subclasses are RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer. The role sets and approves the limit or gate. This configuration approval is distinct from an individual transition's ownerApproval and independentValidation. The positive example includes risk-committee approval for its limit and gate; negative fixtures reject missing control approval, an unauthorized approver, missing approval time and an invalid live-status value.
 
 
+Review validation for 0.5: 193 domain classes, 219 object properties, 188 datatype properties, 48 code lists and 235 codes. The 126 written rules and 66 generated code-list rules form 193 node shapes, including one untargeted helper. The positive example has 186 typed records. The negative fixture has 236 typed records: 164 violating and 72 supporting, plus 4 untyped violating subjects. It raises 184 expected violations across 168 focus nodes and exercises all 126 written rules and two generated rules; regression tests cover all 66 generated rules.
+
+Classification comparisons use the DataClassificationScheme sensitivity rank. Child scopes may narrow from C2 to C1; a C3 human entitlement does not back a C2 delegation. Irreversible approvals must precede their calls, and step-up approvals must request the exact decision at a checkpoint in the same run. ALLOW decisions cover every calling-agent limit exactly once and reject observations of unrelated limits. The anomaly's Incident is explicitly an AIIncident; no additional AIIncident property shape is declared. Every positive governed call has a recorded timestamp after its governing decision.
+
+
 ## Verification for 0.5
 
 New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGrant (OMG Commons Authorization), AdversarialTestCase (PolicyTestCase, itself a prov:Entity), and ApprovingAuthorityRole (OMG Commons PartyRole) with RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer subclasses. AuthorityRevocation, FleetHalt and ActionStop are records about interventions, not prov:Activity. AIAgent retains prov:SoftwareAgent and OMG SoftwareAgent. Existing Run, governed calls and Replay retain their activity parents. No new external matches are asserted. All new datatype-property ranges use OWL 2 datatype-map datatypes.
 
 There are 193 node shapes: 126 written targeted shapes, 66 generated targeted shapes and one untargeted helper.
 
-The positive example contains 184 typed records. The negative fixture contains 207 typed records. There are 150 typed violating records, 57 typed supporting records and 4 untyped violating subjects, yielding 170 expected violations across 154 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 186 typed records. The negative fixture contains 236 typed records. There are 164 typed violating records, 72 typed supporting records and 4 untyped violating subjects, yielding 184 expected violations across 168 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
 The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 
-All 126 written rules have negative fixtures. Two generated code-list rules are exercised there; all 66 generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, falling back to NOW when absent; historical decisions are judged at their decision time. A decision on an expired use case must be DENY.
+All 126 written rules have negative fixtures. Two generated code-list rules are exercised there; all 66 generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. Review dates remain valid through the end of that day; absent timezones are interpreted as UTC. A decision on an expired use case must be DENY.
 
 New 0.4 PROV specialisations: IngestedDocument, DeclarativePolicy, PolicyChange, PolicyTestCase, PolicyPack, FlightRecorderSession, RMReviewEdit, ReviewQueue, ReviewQueueEntry, ReviewCoverageReport, AffectedClientQuery, AffectedClientResult and InteractionOutcome specialise prov:Entity. Replay specialises prov:Activity. DocumentElement specialises existing DocumentSection (OMG Commons Document); CircuitBreaker specialises KillSwitch; CircuitBreakerTrip specialises AIIncident (prov:Entity). No PROV activity parent is asserted for recorder manifests, edits or trips.
 

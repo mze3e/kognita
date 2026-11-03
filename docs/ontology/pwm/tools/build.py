@@ -400,7 +400,7 @@ def build(base: Path, site_path):
     with (base / "SPEC.md").open("a", encoding="utf-8") as spec:
         gap_path = base / "GAP_ANALYSIS.md"
         if gap_path.exists():
-            spec.write("\n" + gap_path.read_text(encoding="utf-8").replace("# PWM 0.4 gap analysis", "## Gap analysis for 0.4", 1).replace("## PWM 0.5 gap analysis", "## Gap analysis for 0.5", 1) + "\n")
+            spec.write("\n" + gap_path.read_text(encoding="utf-8").replace("# PWM 0.5 gap analysis", "## Gap analysis for 0.5", 1).replace("# PWM 0.4 gap analysis", "## Gap analysis for 0.4", 1).replace("## PWM 0.5 gap analysis", "## Gap analysis for 0.5", 1) + "\n")
         spec.write("\n## Verification for 0.5\n\n")
         spec.write("New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGrant (OMG Commons Authorization), AdversarialTestCase (PolicyTestCase, itself a prov:Entity), and ApprovingAuthorityRole (OMG Commons PartyRole) with RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer subclasses. AuthorityRevocation, FleetHalt and ActionStop are records about interventions, not prov:Activity. AIAgent retains prov:SoftwareAgent and OMG SoftwareAgent. Existing Run, governed calls and Replay retain their activity parents. No new external matches are asserted. All new datatype-property ranges use OWL 2 datatype-map datatypes.\n\n")
         node_count = len(set(sg.subjects(RDF.type, SH.NodeShape)))

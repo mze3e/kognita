@@ -838,7 +838,12 @@ pwmsh:DelegationScopeShape a sh:NodeShape ; rdfs:label "DelegationScopeShape"@en
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Grantor must hold an entitlement covering the complete explicit delegation scope and time (Kognita 0.5 item 2)." ;
         sh:select """SELECT DISTINCT $this WHERE { $this pwm:delegatedBy ?human ; pwm:authorityScope ?scope ; pwm:validFrom ?start ; pwm:validUntil ?end .
  FILTER NOT EXISTS { ?human pwm:holdsEntitlement ?e . ?e pwm:authorityScope ?hs ; pwm:validFrom ?es ; pwm:validUntil ?ee . FILTER (?es <= ?start && ?ee >= ?end)
- FILTER NOT EXISTS { ?scope ?dim ?value . FILTER (?dim IN (pwm:aboutClient,pwm:hasPurpose,pwm:actionVerb,pwm:classification,pwm:scopeTool,pwm:scopeField,pwm:scopeSystem,pwm:scopeProduct,pwm:jurisdictionCode)) FILTER NOT EXISTS { ?hs ?dim ?value } }
+
+ ?scope pwm:classification ?childClass . ?hs pwm:classification ?parentClass .
+ BIND(IF(?childClass = pwm:C0,0,IF(?childClass = pwm:C1,1,IF(?childClass = pwm:C2,2,3))) AS ?childRank)
+ BIND(IF(?parentClass = pwm:C0,0,IF(?parentClass = pwm:C1,1,IF(?parentClass = pwm:C2,2,3))) AS ?parentRank)
+ FILTER(?parentRank <= ?childRank)
+ FILTER NOT EXISTS { ?scope ?dim ?value . FILTER (?dim IN (pwm:aboutClient,pwm:hasPurpose,pwm:actionVerb,pwm:scopeTool,pwm:scopeField,pwm:scopeSystem,pwm:scopeProduct,pwm:jurisdictionCode)) FILTER NOT EXISTS { ?hs ?dim ?value } }
  } }""" ] .
 
 pwmsh:AuthorityRevocationShape a sh:NodeShape ; rdfs:label "AuthorityRevocationShape"@en ; sh:targetClass pwm:AuthorityRevocation ;
@@ -855,7 +860,12 @@ pwmsh:LiveAuthorityDecisionShape a sh:NodeShape ; rdfs:label "LiveAuthorityDecis
  ?auth pwm:delegatedTo ?a ; pwm:delegatedBy ?h ; pwm:authorityScope ?s ; pwm:validFrom ?start ; pwm:validUntil ?end .
  FILTER(?at >= ?start && ?at < ?end)
  ?h pwm:holdsEntitlement ?e . ?e pwm:validFrom ?es ; pwm:validUntil ?ee ; pwm:authorityScope ?hs . FILTER (?at >= ?es && ?at < ?ee)
- FILTER NOT EXISTS { ?s ?dim ?v . FILTER (?dim IN (pwm:aboutClient,pwm:hasPurpose,pwm:actionVerb,pwm:classification,pwm:scopeTool,pwm:scopeField,pwm:scopeSystem,pwm:scopeProduct,pwm:jurisdictionCode)) FILTER NOT EXISTS { ?hs ?dim ?v } }
+
+ ?s pwm:classification ?childClass . ?hs pwm:classification ?parentClass .
+ BIND(IF(?childClass = pwm:C0,0,IF(?childClass = pwm:C1,1,IF(?childClass = pwm:C2,2,3))) AS ?childRank)
+ BIND(IF(?parentClass = pwm:C0,0,IF(?parentClass = pwm:C1,1,IF(?parentClass = pwm:C2,2,3))) AS ?parentRank)
+ FILTER(?parentRank <= ?childRank)
+ FILTER NOT EXISTS { ?s ?dim ?v . FILTER (?dim IN (pwm:aboutClient,pwm:hasPurpose,pwm:actionVerb,pwm:scopeTool,pwm:scopeField,pwm:scopeSystem,pwm:scopeProduct,pwm:jurisdictionCode)) FILTER NOT EXISTS { ?hs ?dim ?v } }
  FILTER NOT EXISTS { ?rev pwm:revokedAuthority ?e ; pwm:revokedAt ?et . FILTER(?et <= ?at) }
  FILTER NOT EXISTS { ?auth pwm:parentDelegation* ?ancestor . ?rev pwm:revokedAuthority ?ancestor ; pwm:revokedAt ?rt . FILTER(?rt <= ?at) }
  FILTER NOT EXISTS { ?auth pwm:parentDelegation+ ?ancestor . ?ancestor pwm:validUntil ?ae . FILTER(?at >= ?ae) }
@@ -869,7 +879,12 @@ pwmsh:SubDelegationShape a sh:NodeShape ; rdfs:label "SubDelegationShape"@en ; s
  $this pwm:authorityScope ?s ; pwm:delegationDepth ?depth ; pwm:maxDelegationDepth ?max ; pwm:validFrom ?start ; pwm:validUntil ?end ; pwm:delegatedBy ?human .
  ?parent pwm:authorityScope ?ps ; pwm:delegationDepth ?pd ; pwm:maxDelegationDepth ?pm ; pwm:validFrom ?pstart ; pwm:validUntil ?pend ; pwm:delegatedBy ?human .
  FILTER(?depth = ?pd + 1 && ?depth <= ?max && ?max <= ?pm && ?start >= ?pstart && ?end <= ?pend)
- FILTER NOT EXISTS { ?s ?dim ?v . FILTER (?dim IN (pwm:aboutClient,pwm:hasPurpose,pwm:actionVerb,pwm:classification,pwm:scopeTool,pwm:scopeField,pwm:scopeSystem,pwm:scopeProduct,pwm:jurisdictionCode)) FILTER NOT EXISTS { ?ps ?dim ?v } }
+
+ ?s pwm:classification ?childClass . ?ps pwm:classification ?parentClass .
+ BIND(IF(?childClass = pwm:C0,0,IF(?childClass = pwm:C1,1,IF(?childClass = pwm:C2,2,3))) AS ?childRank)
+ BIND(IF(?parentClass = pwm:C0,0,IF(?parentClass = pwm:C1,1,IF(?parentClass = pwm:C2,2,3))) AS ?parentRank)
+ FILTER(?childRank <= ?parentRank)
+ FILTER NOT EXISTS { ?s ?dim ?v . FILTER (?dim IN (pwm:aboutClient,pwm:hasPurpose,pwm:actionVerb,pwm:scopeTool,pwm:scopeField,pwm:scopeSystem,pwm:scopeProduct,pwm:jurisdictionCode)) FILTER NOT EXISTS { ?ps ?dim ?v } }
  }) }""" ]  ;
     sh:property [ sh:path pwm:parentDelegation ; sh:maxCount 1 ; sh:class pwm:DelegatedAuthority ] .
 
@@ -940,7 +955,13 @@ pwmsh:BlastRadiusObservationShape a sh:NodeShape ; rdfs:label "BlastRadiusObserv
 pwmsh:BlastRadiusDecisionShape a sh:NodeShape ; rdfs:label "BlastRadiusDecisionShape"@en ; sh:targetClass pwm:PolicyDecision ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 4. Checks recorded evidence; runtime enforcement remains external."@en ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Projected consumption exceeding any agent blast-radius cap cannot be ALLOW (Kognita 0.5 item 4)." ;
-        sh:select """SELECT DISTINCT $this WHERE { $this pwm:decisionOutcome pwm:OutcomeAllow ; pwm:limitObservation ?o . ?o pwm:observedLimit/pwm:limitMaximum ?max ; pwm:projectedConsumption ?n . FILTER (?n > ?max) }""" ] .
+        sh:select """SELECT DISTINCT $this WHERE { $this pwm:decisionOutcome pwm:OutcomeAllow ; pwm:limitObservation ?o . ?o pwm:observedLimit/pwm:limitMaximum ?max ; pwm:projectedConsumption ?n . FILTER (?n > ?max) }""" ]  ;
+ sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "ALLOW requires exactly one observation for each calling agent limit and no unrelated limits." ; sh:select """SELECT DISTINCT $this WHERE {
+ $this pwm:decisionOutcome pwm:OutcomeAllow . ?call pwm:governedByDecision $this ; pwm:callAgent ?agent . ?agent pwm:hasBlastRadiusLimit ?limit .
+ FILTER (NOT EXISTS { $this pwm:limitObservation ?obs . ?obs pwm:observedLimit ?limit } ||
+ EXISTS { $this pwm:limitObservation ?obs1, ?obs2 . ?obs1 pwm:observedLimit ?limit . ?obs2 pwm:observedLimit ?limit . FILTER(?obs1 != ?obs2) } ||
+ EXISTS { $this pwm:limitObservation/pwm:observedLimit ?other . FILTER NOT EXISTS { ?agent pwm:hasBlastRadiusLimit ?other } })
+ }""" ] .
 
 pwmsh:ToolAllowListShape a sh:NodeShape ; rdfs:label "ToolAllowListShape"@en ; sh:targetClass pwm:ToolCall ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 5. Checks recorded evidence; runtime enforcement remains external."@en ;
@@ -976,7 +997,7 @@ pwmsh:AuthenticatedInstructionShape a sh:NodeShape ; rdfs:label "AuthenticatedIn
 pwmsh:InstructionAssuranceShape a sh:NodeShape ; rdfs:label "InstructionAssuranceShape"@en ; sh:targetSubjectsOf pwm:requiresStepUp ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 7. Checks recorded evidence; runtime enforcement remains external."@en ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "High-risk instructions require step-up workflow evidence and independent authorization, never channel identity alone (Kognita 0.5 item 7)." ;
-        sh:select """SELECT DISTINCT $this WHERE { $this pwm:requiresStepUp true ; pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { $this pwm:instructionEvidence ?i ; pwm:humanApproval ?approval . ?i pwm:assuranceLevel "step-up" ; pwm:signatureReference ?signature . ?approval pwm:approvalResolution pwm:ApprovalApproved . } }""" ] .
+        sh:select """SELECT DISTINCT $this WHERE { $this pwm:requiresStepUp true ; pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { $this pwm:instructionEvidence ?i ; pwm:humanApproval ?approval . ?i pwm:assuranceLevel "step-up" ; pwm:signatureReference ?signature . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval ?request . ?request a pwm:ApprovalRequest ; pwm:requestsDecision $this ; pwm:atCheckpoint/pwm:inRun ?run . $this pwm:inRun ?run . } }""" ] .
 
 pwmsh:BehaviourBaselineShape a sh:NodeShape ; rdfs:label "BehaviourBaselineShape"@en ; sh:targetClass pwm:BehaviourBaseline ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 8. Checks recorded evidence; runtime enforcement remains external."@en ;
@@ -1044,7 +1065,7 @@ pwmsh:ReversibilityShape a sh:NodeShape ; rdfs:label "ReversibilityShape"@en ; s
 pwmsh:IrreversibleApprovalShape a sh:NodeShape ; rdfs:label "IrreversibleApprovalShape"@en ; sh:targetClass pwm:ToolCall ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 13. Checks recorded evidence; runtime enforcement remains external."@en ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "High-autonomy irreversible action requires human approval whose ApprovalRequest requests this call's governing decision in the same run (Kognita 0.5 item 13)." ;
-        sh:select """SELECT DISTINCT $this WHERE { $this pwm:invokedTool ?t ; pwm:callAgent ?a ; pwm:governedByDecision ?d . ?t pwm:reversibilityClass pwm:Irreversible . ?a pwm:maxAutonomyLevel ?max . OPTIONAL { ?a pwm:effectiveAutonomyLevel ?effective } BIND(COALESCE(?effective, ?max) AS ?l) FILTER(?l IN (pwm:L5BoundedAutonomy,pwm:L6BroadAutonomy)) ?d pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { ?d pwm:humanApproval ?approval . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval/pwm:requestsDecision ?d . ?d pwm:inRun ?run . $this pwm:inRun ?run . } }""" ] .
+        sh:select """SELECT DISTINCT $this WHERE { $this pwm:invokedTool ?t ; pwm:callAgent ?a ; pwm:governedByDecision ?d . ?t pwm:reversibilityClass pwm:Irreversible . ?a pwm:maxAutonomyLevel ?max . OPTIONAL { ?a pwm:effectiveAutonomyLevel ?effective } BIND(COALESCE(?effective, ?max) AS ?l) FILTER(?l IN (pwm:L5BoundedAutonomy,pwm:L6BroadAutonomy)) ?d pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { ?d pwm:humanApproval ?approval . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval/pwm:requestsDecision ?d . ?d pwm:inRun ?run . $this pwm:inRun ?run . ?approval prov:generatedAtTime ?approvedAt . $this prov:generatedAtTime ?calledAt . FILTER(?approvedAt < ?calledAt) } }""" ] .
 
 pwmsh:AdversarialTestShape a sh:NodeShape ; rdfs:label "AdversarialTestShape"@en ; sh:targetClass pwm:AdversarialTestCase ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 14. Checks recorded evidence; runtime enforcement remains external."@en ;
@@ -1157,3 +1178,6 @@ pwmsh:RiskControlApprovalRecordShape a sh:NodeShape ; rdfs:label "RiskControlApp
     rdfs:comment "Approval records identify a permitted firm approving role and approval time (Ahmed, 3 Nov 2026)."@en ;
     sh:property [ sh:path pwm:approverRole ; sh:minCount 1 ; sh:maxCount 1 ; sh:or ( [ sh:class pwm:RiskCommittee ] [ sh:class pwm:DataGovernanceCommittee ] [ sh:class pwm:ChiefRiskOfficer ] ) ; sh:message "Record exactly one approverRole: RiskCommittee, DataGovernanceCommittee or ChiefRiskOfficer." ] ;
     sh:property [ sh:path pwm:approvedAt ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:message "pwm:approvedAt: minimum count 1, maximum count 1, datatype xsd:dateTime." ] .
+
+# BEGIN GENERATED CODE-LIST SHAPES
+# END GENERATED CODE-LIST SHAPES

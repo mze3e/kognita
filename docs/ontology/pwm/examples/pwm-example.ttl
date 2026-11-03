@@ -620,7 +620,7 @@ ex:ChildDelegation a pwm:DelegatedAuthority ; pwm:delegatedBy ex:PersonRM ; pwm:
     pwm:validFrom "2026-11-03T02:00:00Z"^^xsd:dateTime ; pwm:validUntil "2026-11-03T09:00:00Z"^^xsd:dateTime ;
     pwm:delegationDepth "1"^^xsd:nonNegativeInteger ; pwm:maxDelegationDepth "1"^^xsd:nonNegativeInteger .
 ex:ReadScope a pwm:AuthorityScope ; pwm:aboutClient ex:Client ; pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:actionVerb pwm:VerbRead ;
-    pwm:classification pwm:C2 ; pwm:scopeTool ex:ToolPortfolioRead ; pwm:scopeField "riskProfile" ; pwm:jurisdictionCode "SG" .
+    pwm:classification pwm:C1 ; pwm:scopeTool ex:ToolPortfolioRead ; pwm:scopeField "riskProfile" ; pwm:jurisdictionCode "SG" .
 ex:Worker a pwm:AIAgent ; pwm:agentIdentifier "AGENT-RM-WORKER-01" ; pwm:maxAutonomyLevel pwm:L0Retrieve ; pwm:effectiveAutonomyLevel pwm:L0Retrieve ;
     pwm:registeredForUseCase ex:UseCaseMeetingPrep ; pwm:deploymentVersion "worker-v1" ; pwm:approvedDeploymentVersion "worker-v1" ;
     pwm:nextReviewDate "2027-02-01"^^xsd:date ; pwm:agentOwner ex:PersonHeadOfAdvisory ; pwm:operatesFor ex:PersonRM ; pwm:workloadIdentity ex:WorkerIdentity ;
@@ -643,7 +643,7 @@ ex:Observation a pwm:BlastRadiusObservation ; pwm:observedLimit ex:Limit ; pwm:p
 ex:PolicyDecisionModelAllow pwm:limitObservation ex:Observation ; pwm:reliesOnDelegation ex:Delegation .
 ex:GatewayCall pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation .
 ex:ProxyCall pwm:reliesOnDelegation ex:Delegation ; pwm:requestedField "riskProfile" ; pwm:reliesOnGrant ex:Grant .
-ex:Grant a pwm:CapabilityGrant ; pwm:grantee ex:Agent ; pwm:grantedCapability ex:ToolPortfolioRead ; pwm:authorityScope ex:ReadScope ;
+ex:Grant a pwm:CapabilityGrant ; pwm:grantee ex:Agent ; pwm:grantedCapability ex:ToolPortfolioRead ; pwm:authorityScope ex:Scope ;
     pwm:validFrom "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:validUntil "2026-11-03T10:00:00Z"^^xsd:dateTime .
 ex:ExternalResearch a pwm:ExternalContent ; pwm:trustLabel pwm:TrustExternal ; pwm:contentHash "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" .
 ex:ClientSnapshot a prov:Entity ; pwm:trustLabel pwm:TrustClientData .
@@ -720,3 +720,21 @@ ex:FirmRiskCommittee a pwm:RiskCommittee .
 ex:CommitteeApproval a pwm:RiskControlApproval ; pwm:approverRole ex:FirmRiskCommittee ; pwm:approvedAt "2026-11-02T00:00:00Z"^^xsd:dateTime .
 ex:DelegationLive a pwm:AuthorityLiveStatus ; pwm:liveStatusSubject ex:Delegation ; pwm:liveStatusValue "active" ; pwm:observedAt "2026-11-03T02:00:00Z"^^xsd:dateTime .
 ex:KillSwitchLive a pwm:AuthorityLiveStatus ; pwm:liveStatusSubject ex:Breaker ; pwm:liveStatusValue "armed" ; pwm:observedAt "2026-11-03T02:00:00Z"^^xsd:dateTime .
+
+ex:Incident a pwm:AIIncident .
+
+# A separate C1 entitlement backs the narrowed child delegation.
+ex:PersonRM pwm:holdsEntitlement ex:ReadEntitlement .
+ex:ReadEntitlement a pwm:HumanEntitlement ; pwm:authorityScope ex:ReadScope ; pwm:validFrom "2026-01-01T00:00:00Z"^^xsd:dateTime ; pwm:validUntil "2027-01-01T00:00:00Z"^^xsd:dateTime .
+
+ex:GatewayCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
+
+ex:ProxyCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
+
+ex:CancelledCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
+
+ex:TimedOutCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
+
+ex:LowerClassificationCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
+
+ex:PolicyDecisionRelease pwm:humanApproval ex:Resolution .
