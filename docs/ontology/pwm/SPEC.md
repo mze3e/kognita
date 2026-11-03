@@ -3459,7 +3459,7 @@ Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMA
 <a id="GovernedCallShape"></a>
 ### GovernedCallShape
 
-Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
 
 - call agent: at most 1
 - system trigger: at most 1
@@ -3467,8 +3467,9 @@ Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-R
 - Record governedByDecision (roadmap milestone 0.3).
 - Record clientConfiguration (roadmap milestone 0.3).
 - Call identity must be an agent bound to the authenticated client or a listed system trigger (0.3 Tier 0).
+- A denied approval does not authorize a call governed by the held decision (0.3 item 2; MAS AIRG 5.9).
 
-*Roadmap milestone 0.3 item 3.*
+*Roadmap milestone 0.3 items 2 and 3; MAS AIRG 5.9 human oversight.*
 
 <a id="PinnedDecisionShape"></a>
 ### Pinned decision checks
@@ -3870,7 +3871,7 @@ Other code lists may require changes to handwritten constraints and code-depende
 | Version | Date | Change |
 |---|---|---|
 | 0.4 | 2026-11-03 | Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
-| 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. |
+| 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls reject held decisions whose approval request resolves only as ApprovalDenied (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
 
@@ -3905,7 +3906,7 @@ The Definition of Done describes software behaviour as well as records. These ar
 
 There are 141 node shapes: 81 written targeted shapes, 59 generated targeted shapes and one untargeted helper.
 
-The positive example contains 146 typed records. The negative fixture contains 90 typed records. There are 84 typed violating records, six typed supporting records and four untyped violating subjects, yielding 95 expected violations across 88 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 146 typed records. The negative fixture contains 94 typed records. There are 85 typed violating records, nine typed supporting records and four untyped violating subjects, yielding 96 expected violations across 89 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
 The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 
