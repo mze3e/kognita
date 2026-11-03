@@ -57,6 +57,7 @@ EXPECTED = Counter([
     ('BadPendingApprovalCall', 'GovernedCallShape', None),
     ('BadNoRequestApprovalCall', 'GovernedCallShape', None),
     ('BadCrossRunApprovalCall', 'GovernedCallShape', None),
+    ('BadMultiRunApprovalCall', 'GovernedCallShape', None),
     ('BadDeniedApprovalCall', 'GovernedCallShape', None),
     ('BadCallIdentity', 'GovernedCallShape', None),
     ('BadMultipleCallAgents', 'GovernedCallShape', 'callAgent'),

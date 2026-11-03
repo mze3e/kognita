@@ -123,8 +123,8 @@ def test_version_and_counts(tmp_path):
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (150, 140, 83, 44, 55, 56)
-    assert sum(validator.EXPECTED.values()) == 73
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 83
+    assert sum(validator.EXPECTED.values()) == 74
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 87
 
 
 def test_every_generated_code_list_rule():
@@ -317,7 +317,7 @@ def test_classifier_identity_and_typed_precedence():
     assert ('DerivedPrincipal', 'EnvelopeAttributeShape') in failures
 
 
-@pytest.mark.parametrize('case', ['denied', 'pending', 'no_request', 'cross_run', 'no_run'])
+@pytest.mark.parametrize('case', ['denied', 'pending', 'no_request', 'cross_run', 'multi_run_checkpoint', 'no_run'])
 def test_held_approval_cannot_authorize_governed_calls(case):
     """All call types require an approved held decision in their own run."""
     from pyshacl import validate
@@ -344,6 +344,12 @@ def test_held_approval_cannot_authorize_governed_calls(case):
             for predicate, value in list(g.predicate_objects(E('Run'))):
                 g.add((other, predicate, value))
             g.set((E('PolicyDecisionRelease'), P('inRun'), other))
+        elif case == 'multi_run_checkpoint':
+            other = E('OtherRun')
+            for predicate, value in list(g.predicate_objects(E('Run'))):
+                g.add((other, predicate, value))
+            g.add((E('PolicyDecisionRelease'), P('inRun'), other))
+            g.set((E('Checkpoint'), P('inRun'), other))
         else:
             g.remove((E('PolicyDecisionRelease'), P('inRun'), None))
         conforms, report, _ = validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
@@ -353,3 +359,9 @@ def test_held_approval_cannot_authorize_governed_calls(case):
                     for r in report.subjects(RDF.type, validator.SH.ValidationResult)
                     if report.value(r, validator.SH.sourceShape) == URIRef(validator.PWMSH + 'GovernedCallShape')}
         assert failures == {(call, URIRef(validator.PWMSH + 'GovernedCallShape'))}
+
+
+def test_proxy_read_uses_pre_drafting_decision():
+    g = example()
+    assert g.value(E('ProxyCall'), P('governedByDecision')) == E('PolicyDecisionModelAllow')
+    assert not validator.chain_problems(g)
