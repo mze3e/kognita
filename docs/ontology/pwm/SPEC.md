@@ -3813,7 +3813,7 @@ Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMA
 <a id="GovernedCallShape"></a>
 ### GovernedCallShape
 
-Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
 
 - call agent: at most 1
 - system trigger: at most 1
@@ -3821,8 +3821,9 @@ Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-R
 - Record governedByDecision (roadmap milestone 0.3).
 - Record clientConfiguration (roadmap milestone 0.3).
 - Call identity must be an agent bound to the authenticated client or a listed system trigger (0.3 Tier 0).
+- A call governed by a held decision requires that decision in the same run and an ApprovalRequest with an ApprovalApproved resolution (KOG roadmap 0.3 item 2; MAS AIRG 5.9).
 
-*Roadmap milestone 0.3 item 3.*
+*Roadmap milestone 0.3 items 2 and 3; MAS AIRG 5.9 human oversight.*
 
 <a id="PinnedDecisionShape"></a>
 ### Pinned decision checks
@@ -4715,7 +4716,7 @@ Other code lists may require changes to handwritten constraints and code-depende
 |---|---|---|
 | 0.5 | 2026-11-03 | Aligned to roadmap milestone 0.5: workload identity, explicit scoped and expiring human authority, autonomy evidence and step-down, blast-radius caps, content trust, instruction assurance, anomaly records, narrowing delegation chains, capability grants, fleets, sandbox output, reversibility, adversarial tests, enforcement attestations and stopping in-flight calls. Existing governance terms are reused. Configuration/grants are SlowContext; execution evidence is MediumContext. |
 | 0.4 | 2026-11-03 | Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
-| 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. |
+| 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
 
@@ -4784,7 +4785,7 @@ New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGra
 
 There are 190 node shapes: 123 written targeted shapes, 66 generated targeted shapes and one untargeted helper.
 
-The positive example contains 178 typed records. The negative fixture contains 152 typed records. There are 126 typed violating records, 26 typed supporting records and 4 untyped violating subjects, yielding 146 expected violations across 130 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 178 typed records. The negative fixture contains 167 typed records. There are 130 typed violating records, 37 typed supporting records and 4 untyped violating subjects, yielding 150 expected violations across 134 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
 The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 

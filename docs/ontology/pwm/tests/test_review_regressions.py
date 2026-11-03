@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 from rdflib import Graph, Literal, URIRef
 from rdflib.namespace import RDF, XSD
 
@@ -123,8 +125,8 @@ def test_version_and_counts(tmp_path):
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (187, 216, 183, 48, 123, 66)
-    assert sum(validator.EXPECTED.values()) == 146
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 152
+    assert sum(validator.EXPECTED.values()) == 150
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 167
 
 
 def test_every_generated_code_list_rule():
@@ -430,6 +432,7 @@ def test_05_promotion_thresholds_and_step_down():
 def test_05_authority_revocation_and_expiry_boundaries():
     shapes = ['LiveAuthorityDecisionShape', 'LiveGrantShape']
     g = example()
+    g.set((E('ProxyCall'), P('governedByDecision'), E('PolicyDecisionModelAllow')))
     assert validate_05(g, shapes)
     decision_time = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
     at = g.value(E('PolicyDecisionModelAllow'), decision_time)
@@ -471,6 +474,7 @@ def test_05_blast_radius_and_content_lanes():
     g.set((E('PolicyDecisionModelAllow'), P('decisionOutcome'), P('OutcomeHumanApproval')))
     assert validate_05(g, ['BlastRadiusDecisionShape'])
     g = example()
+    g.set((E('ProxyCall'), P('governedByDecision'), E('PolicyDecisionModelAllow')))
     g.add((E('Run'), P('inputContent'), E('ClientSnapshot')))
     g.set((E('ToolPortfolioRead'), P('publicContentTool'), Literal(True)))
     assert not validate_05(g, ['ContentIsolationShape'])
@@ -522,3 +526,42 @@ def test_05_approval_repairs_and_combined_taint():
     assert validate_05(g, ['ExternalContentShape'])
     g.set((E('ToolPortfolioRead'), P('publicContentTool'), Literal(True)))
     assert not validate_05(g, ['ContentIsolationShape'])
+
+
+@pytest.mark.parametrize('case', ['denied', 'pending', 'no_request', 'cross_run', 'no_run'])
+def test_held_approval_cannot_authorize_governed_calls(case):
+    """All call types require an approved held decision in their own run."""
+    from pyshacl import validate
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    ontology = Graph().parse(BASE / 'pwm.ttl')
+    for kind in ('ModelCall', 'ToolCall', 'MCPProxiedCall'):
+        g = example()
+        g.set((E('ProxyCall'), P('governedByDecision'), E('PolicyDecisionModelAllow')))
+        call = E('GatewayCall')
+        g.set((call, RDF.type, P(kind)))
+        g.set((call, P('governedByDecision'), E('PolicyDecisionRelease')))
+        g.add((call, P('invokedTool'), E('ToolPortfolioRead')))
+        g.add((call, P('mcpBackend'), Literal('portfolio-local')))
+        g.add((call, P('aboutClient'), E('Client')))
+        assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
+        if case == 'denied':
+            g.set((E('Resolution'), P('approvalResolution'), P('ApprovalDenied')))
+        elif case == 'pending':
+            g.remove((E('Resolution'), None, None))
+        elif case == 'no_request':
+            g.remove((E('Resolution'), None, None))
+            g.remove((E('Approval'), None, None))
+        elif case == 'cross_run':
+            other = E('OtherRun')
+            for predicate, value in list(g.predicate_objects(E('Run'))):
+                g.add((other, predicate, value))
+            g.set((E('PolicyDecisionRelease'), P('inRun'), other))
+        else:
+            g.remove((E('PolicyDecisionRelease'), P('inRun'), None))
+        conforms, report, _ = validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
+        assert not conforms
+        failures = {(report.value(r, validator.SH.focusNode),
+                     report.value(r, validator.SH.sourceShape))
+                    for r in report.subjects(RDF.type, validator.SH.ValidationResult)
+                    if report.value(r, validator.SH.sourceShape) == URIRef(validator.PWMSH + 'GovernedCallShape')}
+        assert failures == {(call, URIRef(validator.PWMSH + 'GovernedCallShape'))}
