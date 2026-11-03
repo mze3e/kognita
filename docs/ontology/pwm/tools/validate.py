@@ -191,7 +191,22 @@ EXPECTED.update([('Bad05ActionStopShape', 'ActionStopShape', 'stopOutcome'),
  ('SharedAgentB', 'ExclusiveWorkloadShape', None),
  ('DuplicateCredentialA', 'WorkloadIdentityShape', None),
  ('DuplicateCredentialB', 'WorkloadIdentityShape', None),
- ('Bad05IrreversibleMaxOnly', 'IrreversibleApprovalShape', None)])
+ ('Bad05IrreversibleMaxOnly', 'IrreversibleApprovalShape', None),
+ ('Bad05ScopeRank', 'AuthorityRequestScopeShape', None),
+ ('Bad05MissingClassification', 'AuthorityRequestScopeShape', None),
+ ('Bad05MissingJurisdiction', 'AuthorityRequestScopeShape', None),
+ ('Bad05MultipleClassifications', 'AuthorityRequestScopeShape', None),
+ ('Bad05MultipleJurisdictions', 'AuthorityRequestScopeShape', None),
+ ('Bad05UncoveredVerb', 'AuthorityRequestScopeShape', None),
+ ('Bad05WrongApprovalDecision', 'IrreversibleApprovalShape', None),
+ ('Bad05LiveEntitlementCoverage', 'LiveAuthorityDecisionShape', None),
+])
+
+EXPECTED.update([('BadLiveStatus', 'AuthorityLiveStatusShape', None),
+ ('BadLimitApproval', 'RiskControlApprovalShape', 'riskControlApproval'),
+ ('BadGateApproval', 'RiskControlApprovalShape', 'riskControlApproval'),
+ ('BadApprover', 'RiskControlApprovalRecordShape', 'approverRole'),
+ ('BadApprovalTime', 'RiskControlApprovalRecordShape', 'approvedAt')])
 
 def local(term):
     if term is None:

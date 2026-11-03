@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.4 negative test fixture
+#  PWM 0.5 negative test fixture
 #
 #  Invalid records and their supporting records. Validate together with
 #  pwm-example.ttl, which supplies the people, use case, agent and decision
@@ -307,7 +307,7 @@ ex:BadMultipleSystemTriggers a pwm:GovernedCall ;
     pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ;
     pwm:clientConfiguration ex:GatewayClient ; pwm:systemTrigger ex:ScheduledTrigger, ex:UnlistedTrigger .
 
-# PWM 0.4 negative constraints
+# PWM 0.5 negative constraints
 ex:Bad04IngestedDocumentShape a pwm:IngestedDocument ; pwm:parserName "docling" ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
 ex:Bad04DocumentElementShape a pwm:DocumentElement ; pwm:ingestedFrom ex:Ingestion ; pwm:pageNumber "1"^^xsd:positiveInteger ; pwm:characterStart "0"^^xsd:nonNegativeInteger ; pwm:characterEnd "30"^^xsd:nonNegativeInteger ; pwm:classification pwm:C1 ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
 ex:Bad04DeclarativePolicyShape a pwm:DeclarativePolicy ; pwm:versionId "1" ; pwm:containsRule ex:RuleModelAccess ; pwm:hasPolicyTest ex:PolicyScenario .
@@ -1289,3 +1289,313 @@ ex:RecipientlessCommunication <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> 
 
 # Required 0.5 authority metadata; usesModel is deliberately absent.
 ex:BadMissingModel pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation .
+
+# Review regressions: exact approval, scope cardinality/rank/verbs and live entitlement coverage.
+@prefix ex: <https://example.org/pwm-example#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix pwm: <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:Bad05LiveEntitlementCoverage a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:CoverageDecision ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:CoverageDelegation ;
+    pwm:reliesOnGrant ex:Grant ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05MissingClassification a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:reliesOnGrant ex:Grant ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05MissingJurisdiction a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:reliesOnGrant ex:Grant ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05MultipleClassifications a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C1,
+        pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:reliesOnGrant ex:Grant ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05MultipleJurisdictions a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "GB",
+        "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:reliesOnGrant ex:Grant ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05ScopeRank a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C3 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:reliesOnGrant ex:Grant ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05UncoveredVerb a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:MultiVerbDecision ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:MultiVerbTool ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:MultiVerbDelegation ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05WrongApprovalDecision a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:MaxOnlyAgent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:WrongApprovalDecision ;
+    pwm:inRun ex:Run ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:MaxOnlyDelegation ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:MaxOnlyIdentity .
+
+ex:CoverageRevocation a pwm:AuthorityRevocation ;
+    pwm:rationale "Covering entitlement revoked before decision" ;
+    pwm:revokedAt "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:revokedAuthority ex:RevokedCoveringEntitlement .
+
+ex:CoverageDecision a pwm:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:59:00+00:00"^^xsd:dateTime ;
+    pwm:decidedByRule ex:RuleModelAccess ;
+    pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:escalationThreshold 0.90 ;
+    pwm:hasCheck ex:ModelAccessCheck ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:inRun ex:Run ;
+    pwm:limitObservation ex:Observation ;
+    pwm:reliesOnDelegation ex:CoverageDelegation ;
+    pwm:sandboxConstraints ex:Sandbox ;
+    pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:CoverageHuman a <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person> ;
+    rdfs:label "Relationship manager (fictional person)"@en ;
+    pwm:holdsEntitlement ex:LiveNarrowEntitlement,
+        ex:RevokedCoveringEntitlement .
+
+ex:LiveNarrowEntitlement a pwm:HumanEntitlement ;
+    pwm:authorityScope ex:ReadScope ;
+    pwm:validFrom "2026-01-01T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:validUntil "2027-01-01T00:00:00+00:00"^^xsd:dateTime .
+
+ex:MultiVerbDecision a pwm:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:59:00+00:00"^^xsd:dateTime ;
+    pwm:decidedByRule ex:RuleModelAccess ;
+    pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:escalationThreshold 0.90 ;
+    pwm:hasCheck ex:ModelAccessCheck ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:inRun ex:Run ;
+    pwm:limitObservation ex:Observation ;
+    pwm:reliesOnDelegation ex:MultiVerbDelegation ;
+    pwm:sandboxConstraints ex:Sandbox ;
+    pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:MultiVerbEntitlement a pwm:HumanEntitlement ;
+    pwm:authorityScope ex:MultiVerbScope ;
+    pwm:validFrom "2026-01-01T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:validUntil "2027-01-01T00:00:00+00:00"^^xsd:dateTime .
+
+ex:PersonRM pwm:holdsEntitlement ex:MultiVerbEntitlement .
+
+ex:WrongApprovalDecision a pwm:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:59:00+00:00"^^xsd:dateTime ;
+    pwm:decidedByRule ex:RuleModelAccess ;
+    pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:escalationThreshold 0.90 ;
+    pwm:hasCheck ex:ModelAccessCheck ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:humanApproval ex:Resolution ;
+    pwm:inRun ex:Run ;
+    pwm:limitObservation ex:Observation ;
+    pwm:reliesOnDelegation ex:MaxOnlyDelegation ;
+    pwm:sandboxConstraints ex:Sandbox ;
+    pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:CoverageDelegation a pwm:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    pwm:aboutClient ex:Client ;
+    pwm:actionVerb pwm:VerbDraft,
+        pwm:VerbRead ;
+    pwm:approvalThreshold "Any draft for the client needs RM approval" ;
+    pwm:authorityScope ex:Scope ;
+    pwm:delegatedBy ex:CoverageHuman ;
+    pwm:delegatedTo ex:Agent ;
+    pwm:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    pwm:endsOnTaskCompletion true ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    pwm:permitsDataClass pwm:C2 ;
+    pwm:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
+
+ex:MultiVerbDelegation a pwm:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    pwm:aboutClient ex:Client ;
+    pwm:actionVerb pwm:VerbDraft,
+        pwm:VerbRead ;
+    pwm:approvalThreshold "Any draft for the client needs RM approval" ;
+    pwm:authorityScope ex:MultiVerbScope ;
+    pwm:delegatedBy ex:PersonRM ;
+    pwm:delegatedTo ex:Agent ;
+    pwm:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    pwm:endsOnTaskCompletion true ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    pwm:permitsDataClass pwm:C2 ;
+    pwm:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
+
+ex:MultiVerbScope a pwm:AuthorityScope ;
+    pwm:aboutClient ex:Client ;
+    pwm:accessEvent "Meeting within 24 hours" ;
+    pwm:actionVerb pwm:VerbDraft,
+        pwm:VerbRead ;
+    pwm:classification pwm:C2 ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:scopeAutonomyLevel pwm:L3Draft ;
+    pwm:scopeField "riskProfile" ;
+    pwm:scopeLimit ex:Limit ;
+    pwm:scopeProduct ex:Product ;
+    pwm:scopeSystem "urn:synthetic:portfolio"^^xsd:anyURI ;
+    pwm:scopeTool ex:MultiVerbTool,
+        ex:ToolDraftNote,
+        ex:ToolPortfolioRead .
+
+ex:RevokedCoveringEntitlement a pwm:HumanEntitlement ;
+    pwm:authorityScope ex:Scope ;
+    pwm:validFrom "2026-01-01T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:validUntil "2027-01-01T00:00:00+00:00"^^xsd:dateTime .
+
+ex:MultiVerbTool a pwm:Tool ;
+    rdfs:label "Read portfolio positions"@en ;
+    pwm:actionVerb pwm:VerbAnalyse,
+        pwm:VerbRead ;
+    pwm:maximumDurationSeconds 30.0 ;
+    pwm:requiredAutonomyLevel pwm:L0Retrieve ;
+    pwm:reversibilityClass pwm:Irreversible ;
+    pwm:supportsCancellation true .
+
+ex:Agent pwm:permittedTool ex:MultiVerbTool .
+
+
+# Firm approval of configured risk controls.
+<https://example.org/pwm-example#Bad05BlastRadiusLimitShape> pwm:riskControlApproval ex:CommitteeApproval .
+<https://example.org/pwm-example#Bad05PromotionGateShape> pwm:riskControlApproval ex:CommitteeApproval .
+ex:BadLiveStatus a pwm:AuthorityLiveStatus ; pwm:liveStatusSubject ex:Delegation ; pwm:liveStatusValue "armed" ; pwm:observedAt "2026-11-03T02:00:00Z"^^xsd:dateTime .
+ex:BadLimitApproval a pwm:BlastRadiusLimit ; pwm:limitDimension "clients" ; pwm:limitWindowBasis "minute" ; pwm:limitUnit "clients" ; pwm:limitMaximum 5.0 .
+ex:BadGateApproval a pwm:AutonomyPromotionGate ; pwm:minimumSample "10"^^xsd:positiveInteger ; pwm:minimumWindowSeconds 60.0 ; pwm:qualityThreshold 0.95 ; pwm:exceptionRateThreshold 0.05 ; pwm:requiresFullTraceability true ; pwm:stepDownThreshold 0.8 .
+ex:BadApprover a pwm:RiskControlApproval ; pwm:approverRole ex:Agent ; pwm:approvedAt "2026-11-02T00:00:00Z"^^xsd:dateTime .
+ex:BadApprovalTime a pwm:RiskControlApproval ; pwm:approverRole ex:FirmRiskCommittee .
+
+@prefix dcterms: <http://purl.org/dc/terms/> .
+<https://example.org/pwm-example-invalid> dcterms:title "PWM 0.5 negative test fixture"@en ;
+    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl> .
+
+# Keep legacy approval and call fixtures focused on their original failures.
+ex:BadToolCall pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" .
+ex:BadMCP pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" .
+ex:BadDeniedApprovalCall pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" .
+ex:BadPendingApprovalCall pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" .
+ex:BadNoRequestApprovalCall pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" .
+ex:BadCrossRunApprovalCall pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" .
+ex:BadMultiRunApprovalCall pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" .

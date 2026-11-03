@@ -115,8 +115,8 @@ def test_version_and_counts(tmp_path):
     assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.4')
     assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.4/pwm-shapes.ttl')
     assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 235
-    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 190
-    assert len(set(example().subjects(RDF.type, None))) == 179
+    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 193
+    assert len(set(example().subjects(RDF.type, None))) == 184
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
@@ -124,9 +124,9 @@ def test_version_and_counts(tmp_path):
     shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (187, 216, 185, 48, 123, 66)
-    assert sum(validator.EXPECTED.values()) == 157
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 182
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 219, 188, 48, 126, 66)
+    assert sum(validator.EXPECTED.values()) == 170
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 207
 
 
 def test_every_generated_code_list_rule():
@@ -438,7 +438,8 @@ def test_05_authority_revocation_and_expiry_boundaries():
     at = g.value(E('PolicyDecisionModelAllow'), decision_time)
     g.set((E('GrantRevocation'), P('revokedAt'), at))
     assert not validate_05(g, shapes)
-    g.remove((E('ProxyCall'), P('reliesOnGrant'), None))
+    # All example calls stop relying on the revoked optional grant.
+    g.remove((None, P('reliesOnGrant'), None))
     assert validate_05(g, shapes)
     g.set((E('Delegation'), P('validUntil'), at))
     assert not validate_05(g, shapes)
@@ -492,12 +493,16 @@ def test_05_owl_datatypes_context_and_grounding():
         if (term, RDF.type, OWL.DatatypeProperty) in g:
             assert set(g.objects(term, RDFS.range)) <= allowed
         if (term, RDF.type, OWL.Class) in g:
-            assert g.value(term, P('contextSpeed')) in (P('SlowContext'), P('MediumContext'))
+            if term == P('AuthorityLiveStatus'):
+                assert g.value(term, P('contextSpeed')) == P('FastContext')
+            else:
+                assert g.value(term, P('contextSpeed')) in (P('SlowContext'), P('MediumContext'))
         citations = list(g.objects(term, P('citation')))
         assert any(g.value(c, P('cites')) == P('ref-KOG-ROADMAP') and
                    '0.5' in str(g.value(c, P('locator'))) for c in citations)
     assert g.value(P('DelegatedAuthority'), P('contextSpeed')) == P('SlowContext')
     assert g.value(P('WorkloadIdentity'), P('contextSpeed')) == P('SlowContext')
+    assert g.value(P('KillSwitch'), P('contextSpeed')) == P('SlowContext')
 
 
 def test_05_no_term_redefinition_or_em_dash():
@@ -519,6 +524,9 @@ def test_05_approval_repairs_and_combined_taint():
     g.set((E('Agent'), P('maxAutonomyLevel'), P('L5BoundedAutonomy')))
     assert not validate_05(g, ['IrreversibleApprovalShape'])
     g.add((E('PolicyDecisionModelAllow'), P('humanApproval'), E('Resolution')))
+    # Approval of a different held decision in the same run is insufficient.
+    assert not validate_05(g, ['IrreversibleApprovalShape'])
+    g.set((E('Approval'), P('requestsDecision'), E('PolicyDecisionModelAllow')))
     assert validate_05(g, ['IrreversibleApprovalShape'])
     # Both external and client-data taint may apply to the same content.
     g = example()
@@ -543,6 +551,8 @@ def test_held_approval_cannot_authorize_governed_calls(case):
         g.add((call, P('invokedTool'), E('ToolPortfolioRead')))
         g.add((call, P('mcpBackend'), Literal('portfolio-local')))
         g.add((call, P('aboutClient'), E('Client')))
+        g.add((call, P('classification'), P('C2')))
+        g.add((call, P('jurisdictionCode'), Literal('SG')))
         assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
         if case == 'denied':
             g.set((E('Resolution'), P('approvalResolution'), P('ApprovalDenied')))
@@ -597,8 +607,11 @@ def test_05_irreversible_approval_with_maximum_autonomy_only():
     assert not list(g.objects(E('MaxOnlyAgent'), P('effectiveAutonomyLevel')))
     # Isolate the max-only call from the other negative irreversible case.
     g.remove((E('Bad05IrreversibleApprovalShape'), P('invokedTool'), None))
+    g.remove((E('Bad05WrongApprovalDecision'), P('invokedTool'), None))
     assert not validate_05(g, ['IrreversibleApprovalShape'])
     g.set((E('MaxOnlyDecision'), P('humanApproval'), E('Resolution')))
+    assert not validate_05(g, ['IrreversibleApprovalShape'])
+    g.set((E('Approval'), P('requestsDecision'), E('MaxOnlyDecision')))
     assert validate_05(g, ['IrreversibleApprovalShape'])
 
 
@@ -617,3 +630,24 @@ def test_review_date_without_timestamp_is_not_evaluated():
     g.add((E('UntimedDecision'), URIRef('http://www.w3.org/ns/prov#generatedAtTime'),
            Literal('2026-11-03T00:00:00Z', datatype=XSD.dateTime)))
     assert not validate(g, shacl_graph=shapes)[0]
+
+
+@pytest.mark.parametrize('role_class', ['RiskCommittee', 'DataGovernanceCommittee', 'ChiefRiskOfficer'])
+def test_05_approving_authority_roles(role_class):
+    g = example()
+    g.set((E('FirmRiskCommittee'), RDF.type, P(role_class)))
+    names = ['RiskControlApprovalShape', 'RiskControlApprovalRecordShape']
+    assert validate_05(g, names)
+    g.set((E('CommitteeApproval'), P('approverRole'), E('Agent')))
+    assert not validate_05(g, names)
+
+
+@pytest.mark.parametrize('subject,state', [('Delegation', 'active'), ('Delegation', 'revoked'),
+                                         ('Breaker', 'armed'), ('Breaker', 'tripped')])
+def test_05_live_authority_status(subject, state):
+    g = example()
+    g.set((E('DelegationLive'), P('liveStatusSubject'), E(subject)))
+    g.set((E('DelegationLive'), P('liveStatusValue'), Literal(state)))
+    assert validate_05(g, ['AuthorityLiveStatusShape'])
+    g.remove((E('DelegationLive'), P('observedAt'), None))
+    assert not validate_05(g, ['AuthorityLiveStatusShape'])

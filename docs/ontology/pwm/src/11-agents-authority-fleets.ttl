@@ -268,7 +268,7 @@ pwm:limitDimension a owl:DatatypeProperty ; rdfs:label "limit dimension"@en ;
     skos:definition "Measured dimension: records, clients, value, actions, transactions or clients-contacted."@en ; rdfs:domain pwm:BlastRadiusLimit ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 4" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
 
-pwm:limitWindowBasis a owl:DatatypeProperty ; rdfs:label "limit basis"@en ;
+pwm:limitWindowBasis a owl:DatatypeProperty ; rdfs:label "limit window basis"@en ;
     skos:definition "Aggregation basis: action, run, minute, hour or UTC-day."@en ; rdfs:domain pwm:BlastRadiusLimit ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 4" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
 
@@ -421,7 +421,7 @@ pwm:permittedCommand a owl:DatatypeProperty ; rdfs:label "permitted command"@en 
     skos:definition "Command allowed by the sandbox."@en ; rdfs:domain pwm:SandboxConstraints ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 12" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
 
-pwm:permittedAPI a owl:DatatypeProperty ; rdfs:label "permitted a p i"@en ;
+pwm:permittedAPI a owl:DatatypeProperty ; rdfs:label "permitted API"@en ;
     skos:definition "API allowed by the sandbox."@en ; rdfs:domain pwm:SandboxConstraints ; rdfs:range xsd:anyURI ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 12" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
 
@@ -567,3 +567,41 @@ pwm:AgentFleet pwm:citation [ pwm:cites pwmref:IMDA-MGF-AGENTIC ; pwm:locator "A
 pwm:ExternalContent pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11: agent risks" ] .
 
 pwm:EnforcementAttestation pwm:citation [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 03: boundaries enforced in permissions" ] .
+
+# Live operational state and firm approval of risk controls.
+
+pwm:AuthorityLiveStatus a owl:Class ; rdfs:label "authority live status"@en ; skos:definition "Live observation of delegation revocation or kill-switch state, retrieved at decision time rather than cached. The durable authority and kill-switch definitions remain SlowContext."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:ApprovingAuthorityRole a owl:Class ; rdfs:label "approving authority role"@en ; skos:definition "Firm role empowered to set and approve blast-radius limits and autonomy promotion gates."@en ; rdfs:subClassOf cmns-pts:PartyRole ;
+    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:RiskCommittee a owl:Class ; rdfs:label "risk committee"@en ; skos:definition "Firm risk committee acting as approving authority."@en ; rdfs:subClassOf pwm:ApprovingAuthorityRole ;
+    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:DataGovernanceCommittee a owl:Class ; rdfs:label "data governance committee"@en ; skos:definition "Firm data governance committee acting as approving authority."@en ; rdfs:subClassOf pwm:ApprovingAuthorityRole ;
+    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:ChiefRiskOfficer a owl:Class ; rdfs:label "chief risk officer"@en ; skos:definition "Firm chief risk officer acting as approving authority."@en ; rdfs:subClassOf pwm:ApprovingAuthorityRole ;
+    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:RiskControlApproval a owl:Class ; rdfs:label "risk control approval"@en ; skos:definition "Recorded approval of a firm-specific blast-radius limit or autonomy promotion gate, identifying the approving role and time."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:liveStatusSubject a owl:ObjectProperty ; rdfs:label "live status subject"@en ; skos:definition "Authority or kill switch whose state was observed."@en ;
+    rdfs:domain pwm:AuthorityLiveStatus ; pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:liveStatusValue a owl:DatatypeProperty ; rdfs:label "live status value"@en ; skos:definition "Observed state: active or revoked for delegation; armed or tripped for kill switch."@en ;
+    rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:string ; pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:observedAt a owl:DatatypeProperty ; rdfs:label "observed at"@en ; skos:definition "Time as of which the live status was observed."@en ;
+    rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:dateTime ; pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:riskControlApproval a owl:ObjectProperty ; rdfs:label "risk control approval"@en ; skos:definition "Approval setting and authorizing this firm-specific limit or promotion gate."@en ;
+    rdfs:range pwm:RiskControlApproval ; pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:approverRole a owl:ObjectProperty ; rdfs:label "approver role"@en ; skos:definition "Approving authority role that set and approved the control."@en ;
+    rdfs:domain pwm:RiskControlApproval ; rdfs:range pwm:ApprovingAuthorityRole ; pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
+
+pwm:approvedAt a owl:DatatypeProperty ; rdfs:label "approved at"@en ; skos:definition "Time the approving authority approved the risk control."@en ;
+    rdfs:domain pwm:RiskControlApproval ; rdfs:range xsd:dateTime ; pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.11 agent risks; 5.9 autonomy oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
