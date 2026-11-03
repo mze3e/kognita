@@ -1,6 +1,6 @@
 # Private Wealth Management Ontology (PWM)
 
-**Version 0.2, draft for comment (3 November 2026).**
+**Version 0.3, draft for comment (3 November 2026).**
 Web page: https://ahmedmuzammil.com/ontology/pwm · Full specification: [SPEC.md](SPEC.md)
 
 PWM is a generic ontology for private banking and wealth management, and for the AI that works on it. It covers parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, the client journey from origination to communication, and the governance of AI: use cases, risk materiality, accountability, agents, delegated authority, claims and evidence.
@@ -12,7 +12,7 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 - **FIBO first.** Business terms specialise or map to the Financial Industry Business Ontology, then OMG Commons, W3C PROV-O and DPV. A term is defined here only when none fits, and it is marked NEW.
 - **Declared, not imported.** External terms are declared in `src/90-external.ttl` with label, source and FIBO maturity (Release or Provisional), so `pwm.ttl` loads on its own.
 - **Every term cites its grounds.** Each class, property and code list carries citations with locators to the reference register (`src/01-references.ttl`): standards (ONT, ISO), regulation (REG), Kognita (KOG), the author's frameworks and talks (AM), or a practitioner definition (NEW). Each reference records whether it was verified against the source while drafting or cited at instrument level.
-- **OWL 2 DL, SKOS and SHACL.** Light OWL axioms, code lists as SKOS concept schemes, and data rules as SHACL shapes in a separate file.
+- **OWL, SKOS and SHACL.** Light OWL axioms, code lists as SKOS concept schemes, and data rules as SHACL shapes in a separate file.
 
 ## Files
 
@@ -26,11 +26,11 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 | `src/*.ttl` | Sources: header, reference register, one file per module group, code-list bindings, external declarations |
 | `tools/` | Build, integrity checks and validation |
 
-IRIs: ontology `https://ahmedmuzammil.com/ontology/pwm`, version `https://ahmedmuzammil.com/ontology/pwm/0.2` (resolves to the Turtle file), namespace `https://ahmedmuzammil.com/ontology/pwm#` (each term resolves to its entry on the web page).
+IRIs: ontology `https://ahmedmuzammil.com/ontology/pwm`, version `https://ahmedmuzammil.com/ontology/pwm/0.3` (resolves to the Turtle file), namespace `https://ahmedmuzammil.com/ontology/pwm#` (each term resolves to its entry on the web page).
 
-Shapes use `https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl` as their version IRI. The unversioned `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. Both retain the original host without www.
+Shapes use `https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl` as their version IRI. The unversioned `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. Both retain the original host without www.
 
-Kognita grounding refers to software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. See the source verification table in SPEC for every FIBO IRI and its maturity. The sitemap and speaking page expose no talk-specific Filing Cabinet page, so its general speaking link is retained with a note.
+The roadmap source is pinned to software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. See the source verification table in SPEC for every FIBO IRI and its maturity. The sitemap and speaking page expose no talk-specific Filing Cabinet page, so its general speaking link is retained with a note.
 
 Sustainability preferences support combined taxonomy and SFDR minimum proportions (fractions from 0 to 1), client-determined PAI elements, or exclusive no preference. EU suitability records marked `jurisdictionCode "EU"` require one preference record. These shapes check recorded structure; product matching and the full legal assessment remain with the firm.
 
@@ -40,14 +40,14 @@ Import the version IRI:
 
 ```turtle
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.2> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.3> .
 ```
 
 The version IRI resolves to `pwm.ttl` once the web page is published. Until then, or to work offline, map it to a local copy. In Protégé, put a `catalog-v001.xml` next to your ontology:
 
 ```xml
 <catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
-  <uri name="https://ahmedmuzammil.com/ontology/pwm/0.2" uri="pwm.ttl"/>
+  <uri name="https://ahmedmuzammil.com/ontology/pwm/0.3" uri="pwm.ttl"/>
 </catalog>
 ```
 
@@ -100,10 +100,20 @@ robot reason --reasoner HermiT --equivalent-classes-allowed none --input pwm.ttl
 
 To reason over data, merge it with `pwm.ttl` as RDF first (for example with rdflib), so that properties keep the types `pwm.ttl` declares.
 
-Version 0.2 contains 127 domain classes, 153 properties (105 object, 48 datatype), 38 code lists with 192 codes, 30 written rules and 49 generated rules. There are 80 node shapes in total, including one untargeted helper, and 79 targeted shapes. The negative fixture file contains 40 records, including 35 violating records and five supporting records, and raises 42 violations. The ontology is in the OWL 2 DL profile and consistent under HermiT, with no unsatisfiable classes. The example conforms, is consistent with the ontology, and has an unbroken evidence chain. The negative fixture raises the 42 expected violations: it covers all 30 written shapes and two of the 49 generated code-list shapes. Under HermiT it is inconsistent, because it names an AI agent in an accountability role.
+Version 0.3 contains 150 domain classes, 223 properties (140 object, 83 datatype), 44 code lists with 217 codes, 55 written rules and 56 generated rules. There are 112 node shapes, including one untargeted helper, and 111 targeted shapes. The positive example contains 124 typed records. The negative fixture contains 87 typed records: 67 violating records and twenty supporting records, raising 74 expected violations. It covers all 55 written shapes and two generated code-list shapes. Regression tests exercise all 56 generated code-list shapes.
+
+Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. HermiT consistency checks pass with no unsatisfiable classes. The positive example conforms, is consistent with the ontology, and has one unbroken evidence chain. The negative fixture is intentionally inconsistent under HermiT because it names an AI agent in an accountability role.
+
+PWM version N aligns with Kognita roadmap milestone N. Version 0.3 adds run budgets and consumption, durable approval checkpoints and resolution, gateway model and MCP records, classifier evidence and typed-attribute precedence, pinned policy checks and retrieved content, retention and evidenced erasure, ten-question reconstruction coverage, failure modes, and authenticated client identity bindings. Existing model, hash, provider, decision and event vocabulary is reused. New specialised records and fields cite specific 0.3 items and are marked NEW; Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. MAS AIRG grounds use the existing 7 October 2026 register entry, including 5.9 human oversight, 5.17 reproducibility and 5.23(d) record keeping. Retention and policy checks also reuse the existing Filing Cabinet slide grounds.
+
+The shapes validate recorded structure and relationships. They do not fetch retained payloads, execute gateway controls, or recompute content hashes. The example uses synthetic content references; production reconstruction must retrieve the retained content and compare hashes. A report records that verification result and any mismatch finding. Per-use-case degraded mode permits only local models without client data and requires evidence after recovery; this policy meaning is recorded in the code definition, while enforcement belongs to the gateway.
 
 ## Status and licence
 
 Draft. Terms may change before 1.0; changes are recorded in the change log in SPEC.md. Regulatory citations show where a term comes from, not how a rule applies to a firm; they are not legal advice.
 
 The ontology, shapes, examples and specification in this folder are licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The scripts in `tools/` are MIT, like the rest of Kognita. FIBO is MIT-licensed by the EDM Council.
+
+The 0.3 review fixes use `xsd:nonNegativeInteger` in whole days for `retentionDuration`, with matching shapes and example data. `RetentionPolicy` now uses `SlowContext` and `C1`; `AuthenticatedClientConfiguration` and the persistent configured identity `SystemTrigger` use `SlowContext` and retain `C2`. Other new classes describe execution events, evidence or snapshots and retain `FastContext`.
+
+The proxy portfolio read uses the pre-drafting PolicyDecisionModelAllow. Held calls require an approved request whose checkpoint belongs to the call's run, including when the decision names multiple runs.

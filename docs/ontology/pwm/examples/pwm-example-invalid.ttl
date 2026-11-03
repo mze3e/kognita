@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.2 negative test fixture
+#  PWM 0.3 negative test fixture
 #
 #  Invalid records and their supporting records. Validate together with
 #  pwm-example.ttl, which supplies the people, use case, agent and decision
@@ -252,3 +252,114 @@ ex:BadNoPreference a pwm:SustainabilityPreference ;
 # RP1 is not a sustainability preference kind.
 ex:BadPreferenceCode a pwm:SustainabilityPreference ;
     pwm:sustainabilityPreferenceKind pwm:RP1 .
+
+# 0.3: one focused negative fixture for each new written shape
+ex:BadRun a pwm:Run ; pwm:runState pwm:RunReady .
+ex:BadBudget a pwm:RunBudget ; pwm:maxCalls "1"^^xsd:nonNegativeInteger ; pwm:maxTokens "1"^^xsd:nonNegativeInteger ; pwm:maxCostUSD 1.0 ; pwm:wallClockSeconds 1.0 ; pwm:consumedCalls "1"^^xsd:nonNegativeInteger ; pwm:consumedTokens "1"^^xsd:nonNegativeInteger ; pwm:consumedCostUSD 1.0 ; pwm:elapsedSeconds 1.0 .
+ex:BadBudgetDenial a pwm:BudgetExceededDenial ; pwm:decisionOutcome pwm:OutcomeDeny ; pwm:budgetDimension "max_calls" ; pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep .
+ex:BadCheckpoint a pwm:RunCheckpoint ; pwm:inRun ex:Run .
+ex:BadApprovalRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:PolicyDecisionRelease .
+ex:BadResolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:Approval ; pwm:approvalResolution pwm:ApprovalApproved ; prov:generatedAtTime "2026-11-03T10:00:00Z"^^xsd:dateTime .
+ex:BadResumption a pwm:RunResumption ; pwm:inRun ex:Run ; pwm:resumedFrom ex:Checkpoint .
+ex:BadModelCall a pwm:ModelCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:providedBy ex:Provider ; pwm:modelName "fictional" ; pwm:modelVersion "1" ; pwm:promptTemplateVersion "1" ; pwm:promptHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ; pwm:inputTokens "1"^^xsd:nonNegativeInteger ; pwm:outputTokens "1"^^xsd:nonNegativeInteger .
+ex:BadToolCall a pwm:ToolCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead .
+ex:BadMCP a pwm:MCPProxiedCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+ex:BadClassifier a pwm:ClassifierOutput ; pwm:classifierModelId "local" ; pwm:classifierLabel "C2" ; pwm:inputHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ; pwm:confidence 0.9 .
+ex:BadAttribute a pwm:EnvelopeAttribute ; pwm:attributeName "classification" ; pwm:attributeValue "C2" ; pwm:attributeSource pwm:AttributeClassifierDerived .
+ex:BadLowConfidence a pwm:PolicyDecision ; pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:decisionOutcome pwm:OutcomeAllow ; pwm:hasAttribute ex:Attribute ; pwm:escalationThreshold 0.99 .
+ex:BadCheck a pwm:PolicyCheck ; pwm:checkedRule ex:RuleClientCommunication .
+ex:BadRetrievedItem a pwm:RetrievedItem ; pwm:contentHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+ex:BadRetentionEntry a pwm:RetentionEntry ; pwm:underUseCase ex:UseCaseMeetingPrep .
+ex:BadRetentionPolicy a pwm:RetentionPolicy .
+ex:BadErasure a pwm:ErasureEvent ; pwm:erasedEntry ex:RetainedPrompt ; pwm:contentHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+ex:BadReport a pwm:ReconstructionReport ; pwm:partOfInteraction ex:Interaction ; pwm:chainVerified true ; pwm:pinnedHashesVerified true .
+ex:BadCoverage a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionAuthority .
+ex:BadFinding a pwm:ReconstructionFinding ; pwm:findingKind "hash_mismatch" ; pwm:findingRecord ex:RetainedPrompt .
+ex:BadGatewayConfig a pwm:AIUseCase ; pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:retentionPolicy ex:ContentPolicy ; pwm:riskTier pwm:Tier1 ; pwm:lifecycleStatus pwm:StatusSuspended ;
+    pwm:nextReviewDate "2027-01-01"^^xsd:date ; pwm:hasAccountabilityRole ex:BusinessOwner .
+ex:BadCallIdentity a pwm:GovernedCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ; pwm:clientConfiguration ex:GatewayClient ; pwm:systemTrigger ex:UnlistedTrigger .
+
+ex:BadBudgetDenial pwm:hasCheck ex:Check .
+
+ex:BadLowConfidence pwm:hasCheck ex:Check .
+
+ex:BadPolicyDecision pwm:hasCheck ex:Check .
+
+ex:BadUseCaseNoKnowledgeLead pwm:gatewayFailureMode pwm:FailClosed ; pwm:retentionPolicy ex:ContentPolicy .
+
+ex:BadUseCaseSelfApproved pwm:gatewayFailureMode pwm:FailClosed ; pwm:retentionPolicy ex:ContentPolicy .
+
+ex:BadUseCaseUnapproved pwm:gatewayFailureMode pwm:FailClosed ; pwm:retentionPolicy ex:ContentPolicy .
+
+ex:BadPinnedDecision a pwm:PolicyDecision ; pwm:decidedByRule ex:RuleClientCommunication ;
+    pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:decisionOutcome pwm:OutcomeDeny .
+ex:BadSuspendedApproval a pwm:ApprovalRequest ; pwm:requestsDecision ex:PolicyDecisionRelease ; pwm:atCheckpoint ex:WrongCheckpoint .
+ex:WrongCheckpoint a pwm:RunCheckpoint ; pwm:inRun ex:Run ; pwm:contentHash "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" ; pwm:runState pwm:RunReady .
+
+ex:BadGatewayConfig pwm:approvedJurisdiction "SG" ; pwm:isMediated true .
+
+# A matching identity must not allow a second, unbound identity through.
+ex:BadMultipleCallAgents a pwm:GovernedCall ;
+    pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ;
+    pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent, ex:BadAgentOverreach .
+ex:BadMultipleSystemTriggers a pwm:GovernedCall ;
+    pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ;
+    pwm:clientConfiguration ex:GatewayClient ; pwm:systemTrigger ex:ScheduledTrigger, ex:UnlistedTrigger .
+
+# A denied approval cannot authorize dispatch of the held action.
+ex:DeniedCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:Run .
+ex:DeniedCallRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:DeniedCallDecision ; pwm:atCheckpoint ex:Checkpoint .
+ex:DeniedCallResolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:DeniedCallRequest ;
+    pwm:approvalResolution pwm:ApprovalDenied ; prov:wasAttributedTo ex:PersonRM ;
+    prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime .
+ex:BadDeniedApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:DeniedCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+
+ex:PendingCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:Run .
+ex:BadPendingApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:PendingCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+ex:PendingCallRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:PendingCallDecision ; pwm:atCheckpoint ex:Checkpoint .
+
+ex:NoRequestCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:Run .
+ex:BadNoRequestApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:NoRequestCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+
+ex:CrossRunCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:OtherRun .
+ex:BadCrossRunApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:CrossRunCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+ex:CrossRunCallRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:CrossRunCallDecision ; pwm:atCheckpoint ex:OtherCheckpoint .
+ex:CrossRunCallResolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:CrossRunCallRequest ;
+    pwm:approvalResolution pwm:ApprovalApproved ; prov:wasAttributedTo ex:PersonRM ;
+    prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime .
+ex:OtherRun a pwm:Run ; pwm:hasBudget ex:Budget ; pwm:runState pwm:RunSuspended ; pwm:partOfInteraction ex:Interaction ; pwm:underUseCase ex:UseCaseMeetingPrep .
+ex:OtherCheckpoint a pwm:RunCheckpoint ; pwm:inRun ex:OtherRun ; pwm:runState pwm:RunSuspended ; pwm:contentHash "sha256:7755c6a35112601fc1664e9bf33c62e566d20c5545f67a7538b5bf6ebe84b321" ; pwm:retainedIn ex:RetainedContinuation .
+
+# The decision names both runs, but its approved checkpoint belongs only to the other run.
+ex:MultiRunCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:Run, ex:OtherRun .
+ex:BadMultiRunApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:MultiRunCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+ex:MultiRunCallRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:MultiRunCallDecision ; pwm:atCheckpoint ex:OtherCheckpoint .
+ex:MultiRunCallResolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:MultiRunCallRequest ;
+    pwm:approvalResolution pwm:ApprovalApproved ; prov:wasAttributedTo ex:PersonRM ;
+    prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime .

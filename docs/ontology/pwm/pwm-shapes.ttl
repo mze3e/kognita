@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.2 SHACL shapes
+#  PWM 0.3 SHACL shapes
 #
 #  The rules from the ontology that can be checked on data. Each shape names
 #  the references it enforces (dcterms:source) and each message gives the
@@ -25,13 +25,15 @@
 
 <https://ahmedmuzammil.com/ontology/pwm/shapes>
     a owl:Ontology ;
-    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl> ;
-    owl:versionInfo "0.2 (draft)" ;
+    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl> ;
+    owl:versionInfo "0.3 (draft)" ;
+    owl:priorVersion <https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl> ;
+    dcterms:modified "2026-11-03"^^xsd:date ;
     dcterms:title "Private Wealth Management Ontology: SHACL shapes"@en ;
-    dcterms:description "Data rules for the Private Wealth Management Ontology 0.2. Shapes stay generic; a firm adds its own thresholds and jurisdiction rules in a separate shapes graph."@en ;
+    dcterms:description "Data rules for the Private Wealth Management Ontology 0.3. Shapes stay generic; a firm adds its own thresholds and jurisdiction rules in a separate shapes graph."@en ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
-    dcterms:requires <https://ahmedmuzammil.com/ontology/pwm/0.2> ;
+    dcterms:requires <https://ahmedmuzammil.com/ontology/pwm/0.3> ;
     sh:declare
         [ sh:prefix "pwm" ; sh:namespace "https://ahmedmuzammil.com/ontology/pwm#"^^xsd:anyURI ] ,
         [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ,
@@ -455,12 +457,26 @@ pwmsh:CodeList_appliesToInvestorCategory a sh:NodeShape ;
     sh:property [ sh:path pwm:appliesToInvestorCategory ; sh:in ( pwm:AccreditedInvestorSG pwm:AccreditedInvestorUS pwm:EligibleCounterpartyEU pwm:ExpertInvestorSG pwm:InstitutionalClientCH pwm:InstitutionalInvestorSG pwm:NonRetailCategory pwm:PrivateClientCH pwm:ProfessionalClientCH pwm:ProfessionalClientEU pwm:ProfessionalClientUK pwm:ProfessionalInvestorHK pwm:RetailCategory pwm:RetailClientEU pwm:RetailClientUK pwm:RetailInvestorSG ) ;
         sh:message "Use a code from investor categories (pwm:InvestorCategoryScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
+pwmsh:CodeList_approvalResolution a sh:NodeShape ;
+    rdfs:label "Code list: approval resolution"@en ;
+    sh:targetSubjectsOf pwm:approvalResolution ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:approvalResolution ; sh:in ( pwm:ApprovalApproved pwm:ApprovalDenied ) ;
+        sh:message "Use a code from approval resolutions (pwm:ApprovalResolutionScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
 pwmsh:CodeList_approvalStatus a sh:NodeShape ;
     rdfs:label "Code list: approval status"@en ;
     sh:targetSubjectsOf pwm:approvalStatus ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:approvalStatus ; sh:in ( pwm:AssetCurrent pwm:AssetDraft pwm:AssetSuperseded pwm:AssetWithdrawn ) ;
         sh:message "Use a code from information asset statuses (pwm:AssetStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_attributeSource a sh:NodeShape ;
+    rdfs:label "Code list: attribute source"@en ;
+    sh:targetSubjectsOf pwm:attributeSource ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:attributeSource ; sh:in ( pwm:AttributeClassifierDerived pwm:AttributeTyped ) ;
+        sh:message "Use a code from attribute sources (pwm:AttributeSourceScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_autonomyAxis a sh:NodeShape ;
     rdfs:label "Code list: autonomy axis"@en ;
@@ -504,6 +520,13 @@ pwmsh:CodeList_classification a sh:NodeShape ;
     sh:property [ sh:path pwm:classification ; sh:in ( pwm:C0 pwm:C1 pwm:C2 pwm:C3 ) ;
         sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
+pwmsh:CodeList_classificationCeiling a sh:NodeShape ;
+    rdfs:label "Code list: classification ceiling"@en ;
+    sh:targetSubjectsOf pwm:classificationCeiling ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:classificationCeiling ; sh:in ( pwm:C0 pwm:C1 pwm:C2 pwm:C3 ) ;
+        sh:message "Use a code from data classifications (pwm:DataClassificationScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
 pwmsh:CodeList_clientImpactClass a sh:NodeShape ;
     rdfs:label "Code list: client-impact class"@en ;
     sh:targetSubjectsOf pwm:clientImpactClass ;
@@ -538,6 +561,13 @@ pwmsh:CodeList_coverageRole a sh:NodeShape ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:coverageRole ; sh:in ( pwm:CoveragePrimary pwm:CoverageSecondary pwm:CoverageSpecialist ) ;
         sh:message "Use a code from coverage roles (pwm:CoverageRoleScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_coverageStatus a sh:NodeShape ;
+    rdfs:label "Code list: coverage status"@en ;
+    sh:targetSubjectsOf pwm:coverageStatus ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:coverageStatus ; sh:in ( pwm:QuestionAnswered pwm:QuestionNotRecorded ) ;
+        sh:message "Use a code from question coverage statuses (pwm:QuestionCoverageStatusScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_decisionConsequence a sh:NodeShape ;
     rdfs:label "Code list: decision consequence"@en ;
@@ -587,6 +617,13 @@ pwmsh:CodeList_feeType a sh:NodeShape ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:feeType ; sh:in ( pwm:FeeAdvisory pwm:FeeCustody pwm:FeeManagement pwm:FeePerformance pwm:FeeTransaction ) ;
         sh:message "Use a code from fee types (pwm:FeeTypeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_gatewayFailureMode a sh:NodeShape ;
+    rdfs:label "Code list: gateway failure mode"@en ;
+    sh:targetSubjectsOf pwm:gatewayFailureMode ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:gatewayFailureMode ; sh:in ( pwm:Degraded pwm:FailClosed ) ;
+        sh:message "Use a code from gateway failure modes (pwm:GatewayFailureModeScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_impact a sh:NodeShape ;
     rdfs:label "Code list: impact"@en ;
@@ -679,6 +716,13 @@ pwmsh:CodeList_productRiskLevel a sh:NodeShape ;
     sh:property [ sh:path pwm:productRiskLevel ; sh:in ( pwm:RP1 pwm:RP2 pwm:RP3 pwm:RP4 pwm:RP5 ) ;
         sh:message "Use a code from illustrative risk scale (pwm:IllustrativeRiskScale). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
+pwmsh:CodeList_reconstructionQuestion a sh:NodeShape ;
+    rdfs:label "Code list: reconstruction question"@en ;
+    sh:targetSubjectsOf pwm:reconstructionQuestion ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:reconstructionQuestion ; sh:in ( pwm:QuestionAuthority pwm:QuestionCommunication pwm:QuestionControls pwm:QuestionFinalDecision pwm:QuestionInformation pwm:QuestionModelAgent pwm:QuestionRMChanges pwm:QuestionReproduction pwm:QuestionWhyClient pwm:QuestionWhyProduct ) ;
+        sh:message "Use a code from supervisory reconstruction questions (pwm:ReconstructionQuestionScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
 pwmsh:CodeList_reliance a sh:NodeShape ;
     rdfs:label "Code list: reliance"@en ;
     sh:targetSubjectsOf pwm:reliance ;
@@ -713,6 +757,13 @@ pwmsh:CodeList_riskTier a sh:NodeShape ;
     dcterms:source pwmref:W3C-SKOS ;
     sh:property [ sh:path pwm:riskTier ; sh:in ( pwm:Tier1 pwm:Tier2 pwm:Tier3 pwm:Tier4 ) ;
         sh:message "Use a code from use-case risk tiers (pwm:RiskTierScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
+
+pwmsh:CodeList_runState a sh:NodeShape ;
+    rdfs:label "Code list: run state"@en ;
+    sh:targetSubjectsOf pwm:runState ;
+    dcterms:source pwmref:W3C-SKOS ;
+    sh:property [ sh:path pwm:runState ; sh:in ( pwm:RunCompleted pwm:RunDenied pwm:RunFailed pwm:RunReady pwm:RunResumed pwm:RunRunning pwm:RunSuspended ) ;
+        sh:message "Use a code from run states (pwm:RunStateScheme). See https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md for replacement requirements." ] .
 
 pwmsh:CodeList_screeningDisposition a sh:NodeShape ;
     rdfs:label "Code list: screening disposition"@en ;
@@ -813,3 +864,173 @@ pwmsh:SustainabilityPreferenceShape a sh:NodeShape ;
           }
         """
     ] .
+
+pwmsh:RunShape a sh:NodeShape ; rdfs:label "RunShape"@en ; sh:targetClass pwm:Run ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 1."@en ;
+    sh:property [ sh:path pwm:hasBudget ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RunBudget ; sh:message "Record hasBudget (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:runState ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record runState (roadmap milestone 0.3)." ] ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+        sh:message "A resumed run must have a resumption referencing a resolved approval (0.3 item 2)." ;
+        sh:select """SELECT $this WHERE {
+          $this pwm:runState pwm:RunResumed . FILTER NOT EXISTS {
+            ?resumption a pwm:RunResumption ; pwm:inRun $this ; pwm:resolvedApproval ?resolution .
+            ?resolution pwm:approvalResolution ?result .
+            FILTER (?result IN (pwm:ApprovalApproved,pwm:ApprovalDenied))
+          }
+        }""" ] .
+
+
+pwmsh:RunBudgetShape a sh:NodeShape ; rdfs:label "RunBudgetShape"@en ; sh:targetClass pwm:RunBudget ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 1."@en ;
+    sh:property [ sh:path pwm:maxCalls ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record maxCalls (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:maxTokens ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record maxTokens (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:maxCostUSD ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:message "Record maxCostUSD (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:wallClockSeconds ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:message "Record wallClockSeconds (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:consumedCalls ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record consumedCalls (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:consumedTokens ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record consumedTokens (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:consumedCostUSD ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:message "Record consumedCostUSD (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:elapsedSeconds ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:message "Record elapsedSeconds (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:classificationCeiling ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record classificationCeiling (roadmap milestone 0.3)." ] .
+
+
+pwmsh:BudgetExceededDenialShape a sh:NodeShape ; rdfs:label "BudgetExceededDenialShape"@en ; sh:targetClass pwm:BudgetExceededDenial ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 1."@en ;
+    sh:property [ sh:path pwm:exceededBudget ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RunBudget ; sh:message "Record exceededBudget (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:budgetDimension ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record budgetDimension (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:decisionOutcome ; sh:hasValue pwm:OutcomeDeny ] .
+
+
+pwmsh:CheckpointShape a sh:NodeShape ; rdfs:label "CheckpointShape"@en ; sh:targetClass pwm:RunCheckpoint ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 2."@en ;
+    sh:property [ sh:path pwm:inRun ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:Run ; sh:message "Record inRun (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:contentHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record contentHash (roadmap milestone 0.3)." ] .
+
+
+pwmsh:ApprovalRequestShape a sh:NodeShape ; rdfs:label "ApprovalRequestShape"@en ; sh:targetClass pwm:ApprovalRequest ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 2."@en ;
+    sh:property [ sh:path pwm:requestsDecision ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:PolicyDecision ; sh:message "Record requestsDecision (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:atCheckpoint ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RunCheckpoint ; sh:message "Record atCheckpoint (roadmap milestone 0.3)." ] .
+
+
+pwmsh:ApprovalResolutionShape a sh:NodeShape ; rdfs:label "ApprovalResolutionShape"@en ; sh:targetClass pwm:ApprovalResolution ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 2."@en ;
+    sh:property [ sh:path pwm:resolvesApproval ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:ApprovalRequest ; sh:message "Record resolvesApproval (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:approvalResolution ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record approvalResolution (roadmap milestone 0.3)." ] ; sh:property [ sh:path prov:wasAttributedTo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class fibo-fnd-aap-ppl:Person ] ; sh:property [ sh:path prov:generatedAtTime ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ] .
+
+
+pwmsh:RunResumptionShape a sh:NodeShape ; rdfs:label "RunResumptionShape"@en ; sh:targetClass pwm:RunResumption ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 2."@en ;
+    sh:property [ sh:path pwm:inRun ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:Run ; sh:message "Record inRun (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:resumedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RunCheckpoint ; sh:message "Record resumedFrom (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:resolvedApproval ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:ApprovalResolution ; sh:message "Record resolvedApproval (roadmap milestone 0.3)." ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Resumption must cite a resolved approval for its run checkpoint (0.3 item 2)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:inRun ?run ; pwm:resumedFrom ?cp ; pwm:resolvedApproval ?resolution . FILTER NOT EXISTS { ?cp pwm:inRun ?run . ?resolution pwm:resolvesApproval ?request ; pwm:approvalResolution ?result . ?request pwm:atCheckpoint ?cp . FILTER (?result IN (pwm:ApprovalApproved, pwm:ApprovalDenied)) } }""" ] .
+
+
+pwmsh:ModelCallShape a sh:NodeShape ; rdfs:label "ModelCallShape"@en ; sh:targetClass pwm:ModelCall ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
+    sh:property [ sh:path pwm:modelName ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record modelName (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:modelVersion ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record modelVersion (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:promptTemplateVersion ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record promptTemplateVersion (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:promptHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record promptHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:responseHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record responseHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:providedBy ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:ModelProvider ; sh:message "Record providedBy (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:inputTokens ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record inputTokens (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:outputTokens ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record outputTokens (roadmap milestone 0.3)." ] .
+
+
+pwmsh:ToolCallShape a sh:NodeShape ; rdfs:label "ToolCallShape"@en ; sh:targetClass pwm:ToolCall ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
+    sh:property [ sh:path pwm:responseHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record responseHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:invokedTool ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:Tool ; sh:message "Record invokedTool (roadmap milestone 0.3)." ] .
+
+
+pwmsh:MCPProxiedCallShape a sh:NodeShape ; rdfs:label "MCPProxiedCallShape"@en ; sh:targetClass pwm:MCPProxiedCall ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 5."@en ;
+    sh:property [ sh:path pwm:mcpBackend ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record mcpBackend (roadmap milestone 0.3)." ] .
+
+
+pwmsh:ClassifierOutputShape a sh:NodeShape ; rdfs:label "ClassifierOutputShape"@en ; sh:targetClass pwm:ClassifierOutput ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 4."@en ;
+    sh:property [ sh:path pwm:classifierModelId ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record classifierModelId (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:classifierVersion ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record classifierVersion (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:classifierLabel ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record classifierLabel (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:inputHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record inputHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:confidence ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0 ; sh:message "Record confidence (roadmap milestone 0.3)." ] .
+
+
+pwmsh:EnvelopeAttributeShape a sh:NodeShape ; rdfs:label "EnvelopeAttributeShape"@en ; sh:targetClass pwm:EnvelopeAttribute ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 4."@en ;
+    sh:property [ sh:path pwm:attributeName ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record attributeName (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:attributeValue ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record attributeValue (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:attributeSource ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record attributeSource (roadmap milestone 0.3)." ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Classifier-derived attribute needs calibrated confidence and classifier version (0.3 item 4)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:attributeSource pwm:AttributeClassifierDerived . FILTER NOT EXISTS { $this pwm:derivedFromClassifier ?c . ?c pwm:confidence ?confidence ; pwm:classifierVersion ?version } }""" ] ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+      sh:message "Identity attributes come from authentication, never classifier text (0.3 item 4 and Tier 0)." ;
+      sh:select """SELECT $this WHERE { $this pwm:attributeSource pwm:AttributeClassifierDerived ; pwm:attributeName ?name .
+        FILTER (?name IN ("principal", "agent", "agent_name", "system_trigger", "client_configuration")) }""" ] .
+
+pwmsh:ClassifierThresholdShape a sh:NodeShape ; rdfs:label "ClassifierThresholdShape"@en ; sh:targetSubjectsOf pwm:hasAttribute , pwm:escalationThreshold ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 4."@en ;
+    sh:property [ sh:path pwm:escalationThreshold ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0.0 ; sh:maxInclusive 1.0 ] ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Below-threshold or missing-threshold classifier evidence cannot yield ALLOW (0.3 item 4)." ; sh:select """SELECT DISTINCT $this WHERE { { $this pwm:decisionOutcome pwm:OutcomeAllow . BIND($this AS ?decision) } UNION { $this pwm:governedByDecision ?decision . ?decision pwm:decisionOutcome pwm:OutcomeAllow } $this pwm:hasAttribute ?a . ?a pwm:attributeSource pwm:AttributeClassifierDerived ; pwm:derivedFromClassifier ?c . ?c pwm:confidence ?confidence . FILTER NOT EXISTS { ?decision pwm:escalationThreshold ?t . FILTER (?confidence >= ?t) } }""" ] ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+      sh:message "Classifier fills gaps only; a typed attribute remains authoritative (0.3 item 4)." ;
+      sh:select """SELECT DISTINCT $this WHERE {
+        $this pwm:hasAttribute ?typed, ?derived .
+        ?typed pwm:attributeSource pwm:AttributeTyped ; pwm:attributeName ?name .
+        ?derived pwm:attributeSource pwm:AttributeClassifierDerived ; pwm:attributeName ?name .
+      }""" ] .
+
+pwmsh:PolicyCheckShape a sh:NodeShape ; rdfs:label "PolicyCheckShape"@en ; sh:targetClass pwm:PolicyCheck ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
+    sh:property [ sh:path pwm:checkedRule ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:PolicyRule ; sh:message "Record checkedRule (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:policyContentHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record policyContentHash (roadmap milestone 0.3)." ] .
+
+
+pwmsh:RetrievedItemShape a sh:NodeShape ; rdfs:label "RetrievedItemShape"@en ; sh:targetClass pwm:RetrievedItem ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
+    sh:property [ sh:path pwm:contentHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record contentHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:embeddingModel ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record embeddingModel (roadmap milestone 0.3)." ] .
+
+
+pwmsh:RetentionEntryShape a sh:NodeShape ; rdfs:label "RetentionEntryShape"@en ; sh:targetClass pwm:RetentionEntry ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
+    sh:property [ sh:path pwm:contentHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record contentHash (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:underUseCase ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AIUseCase ; sh:message "Record underUseCase (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:storeLocator ; sh:maxCount 1 ; sh:datatype xsd:anyURI ] .
+
+
+pwmsh:RetentionPolicyShape a sh:NodeShape ; rdfs:label "RetentionPolicyShape"@en ; sh:targetClass pwm:RetentionPolicy ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
+    sh:property [ sh:path pwm:retentionDuration ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record retentionDuration (roadmap milestone 0.3)." ] .
+
+
+pwmsh:ErasureShape a sh:NodeShape ; rdfs:label "ErasureShape"@en ; sh:targetClass pwm:ErasureEvent ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
+    sh:property [ sh:path pwm:erasedEntry ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RetentionEntry ; sh:message "Record erasedEntry (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:contentHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record contentHash (roadmap milestone 0.3)." ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Erasure removes stored content reference and keeps the same hash on the entry, event and surviving chain evidence (0.3 item 7)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:erasedEntry ?entry ; pwm:contentHash ?hash . FILTER NOT EXISTS { ?entry pwm:contentHash ?hash ; pwm:erased true . FILTER NOT EXISTS { ?entry pwm:storeLocator ?locator } ?e pwm:evidenceFor $this ; pwm:eventType pwm:EventErasure ; pwm:contentHash ?hash ; pwm:recordHash ?recordHash } }""" ] .
+
+
+pwmsh:ReconstructionReportShape a sh:NodeShape ; rdfs:label "ReconstructionReportShape"@en ; sh:targetClass pwm:ReconstructionReport ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 8."@en ;
+    sh:property [ sh:path pwm:partOfInteraction ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:ClientInteraction ; sh:message "Record partOfInteraction (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:chainVerified ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ; sh:message "Record chainVerified (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:pinnedHashesVerified ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ; sh:message "Record pinnedHashesVerified (roadmap milestone 0.3)." ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Cover all ten questions explicitly, marking absent evidence not recorded (0.3 item 8)." ; sh:select """SELECT DISTINCT $this WHERE { FILTER (NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionWhyClient ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) } || NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionWhyProduct ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) } || NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionInformation ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) } || NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionModelAgent ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) } || NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionAuthority ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) } || NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionControls ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) } || NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionRMChanges ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) } || NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionFinalDecision ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) } || NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionCommunication ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) } || NOT EXISTS { $this pwm:questionCoverage ?coverage . ?coverage pwm:reconstructionQuestion pwm:QuestionReproduction ; pwm:coverageStatus ?status . FILTER (?status IN (pwm:QuestionAnswered,pwm:QuestionNotRecorded)) }) }""" ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Report hash mismatches as findings (0.3 item 8)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:pinnedHashesVerified false . FILTER NOT EXISTS { $this pwm:hasFinding ?finding . ?finding pwm:findingKind "hash_mismatch" } }""" ] .
+
+
+pwmsh:QuestionCoverageShape a sh:NodeShape ; rdfs:label "QuestionCoverageShape"@en ; sh:targetClass pwm:QuestionCoverage ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 8."@en ;
+    sh:property [ sh:path pwm:reconstructionQuestion ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record reconstructionQuestion (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:coverageStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record coverageStatus (roadmap milestone 0.3)." ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Answered question must cite recorded evidence (0.3 item 8)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:coverageStatus pwm:QuestionAnswered . FILTER NOT EXISTS { $this pwm:citesSource ?source } }""" ] .
+
+
+pwmsh:ReconstructionFindingShape a sh:NodeShape ; rdfs:label "ReconstructionFindingShape"@en ; sh:targetClass pwm:ReconstructionFinding ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 8."@en ;
+    sh:property [ sh:path pwm:findingKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record findingKind (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:findingRecord ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record findingRecord (roadmap milestone 0.3)." ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Hash mismatch finding records different expected and observed hashes (0.3 item 8)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:findingKind "hash_mismatch" . FILTER NOT EXISTS { $this pwm:expectedHash ?expected ; pwm:observedHash ?observed . FILTER (?expected != ?observed) } }""" ] .
+
+
+pwmsh:GatewayConfigurationShape a sh:NodeShape ; rdfs:label "GatewayConfigurationShape"@en ; sh:targetClass pwm:AIUseCase ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 9."@en ;
+    sh:property [ sh:path pwm:gatewayFailureMode ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Record gatewayFailureMode (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:retentionPolicy ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:RetentionPolicy ] .
+
+
+pwmsh:GovernedCallShape a sh:NodeShape ; rdfs:label "GovernedCallShape"@en ; sh:targetClass pwm:GovernedCall ;
+    dcterms:source pwmref:KOG-ROADMAP , pwmref:MAS-AIRG ;
+    rdfs:comment "Roadmap milestone 0.3 items 2 and 3; MAS AIRG 5.9 human oversight."@en ;
+    sh:property [ sh:path pwm:callAgent ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:systemTrigger ; sh:maxCount 1 ] ;
+    sh:property [ sh:path pwm:inRun ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:Run ; sh:message "Record inRun (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:governedByDecision ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:PolicyDecision ; sh:message "Record governedByDecision (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:clientConfiguration ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AuthenticatedClientConfiguration ; sh:message "Record clientConfiguration (roadmap milestone 0.3)." ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Call identity must be an agent bound to the authenticated client or a listed system trigger (0.3 Tier 0)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:clientConfiguration ?config . FILTER NOT EXISTS { { $this pwm:callAgent ?agent . ?config pwm:boundAgent ?agent . FILTER NOT EXISTS { $this pwm:systemTrigger ?trigger } } UNION { $this pwm:systemTrigger ?trigger . ?config pwm:listedTrigger ?trigger . FILTER NOT EXISTS { $this pwm:callAgent ?agent } } } }""" ] ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+        sh:message "A call governed by a held decision requires that decision in the same run and an ApprovalRequest at a checkpoint in the call's run with an ApprovalApproved resolution (KOG roadmap 0.3 item 2; MAS AIRG 5.9)." ;
+        sh:select """SELECT DISTINCT $this WHERE {
+          $this pwm:inRun ?run ; pwm:governedByDecision ?decision .
+          ?decision pwm:decisionOutcome pwm:OutcomeHumanApproval .
+          FILTER NOT EXISTS {
+            ?decision pwm:inRun ?run .
+            ?request a pwm:ApprovalRequest ; pwm:requestsDecision ?decision ; pwm:atCheckpoint ?checkpoint .
+            ?checkpoint pwm:inRun ?run .
+            ?approved pwm:resolvesApproval ?request ; pwm:approvalResolution pwm:ApprovalApproved .
+          }
+        }""" ] .
+
+# Pin each decision's component checks, including checks on denied requests.
+pwmsh:PinnedDecisionShape a sh:NodeShape ;
+    rdfs:label "Pinned decision checks"@en ; sh:targetClass pwm:PolicyDecision ;
+    dcterms:source pwmref:KOG-ROADMAP , pwmref:MAS-AIRG ;
+    rdfs:comment "Roadmap milestone 0.3 item 7; MAS AIRG 5.23(d) record keeping."@en ;
+    sh:property [ sh:path pwm:hasCheck ; sh:minCount 1 ; sh:class pwm:PolicyCheck ;
+        sh:message "Every policy decision carries pinned component checks (0.3 item 7)." ] .
+
+pwmsh:SuspendedApprovalShape a sh:NodeShape ;
+    rdfs:label "Approval checkpoint consistency"@en ; sh:targetClass pwm:ApprovalRequest ;
+    dcterms:source pwmref:KOG-ROADMAP , pwmref:MAS-AIRG ;
+    rdfs:comment "Roadmap milestone 0.3 item 2; MAS AIRG 5.9 human oversight."@en ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
+        sh:message "An approval request holds a HUMAN_APPROVAL decision at a suspended checkpoint of the same run (0.3 item 2)." ;
+        sh:select """SELECT DISTINCT $this WHERE {
+          $this pwm:requestsDecision ?decision ; pwm:atCheckpoint ?checkpoint .
+          FILTER NOT EXISTS {
+            ?decision pwm:decisionOutcome pwm:OutcomeHumanApproval ; pwm:inRun ?run .
+            ?checkpoint pwm:inRun ?run ; pwm:runState pwm:RunSuspended .
+          }
+        }""" ] .

@@ -36,7 +36,7 @@ SOURCES = [
 MARK_ORDER = ["ONT", "ISO", "REG", "KOG", "AM", "NEW"]
 
 STATUS = (
-    "Draft for comment. Version 0.2 adds verified grounding and sustainability preferences. Terms, code lists and rules may change "
+    "Draft for comment. Version 0.3 aligns with roadmap milestone 0.3: gateways, runs, budgets, durable approvals and replay evidence. Terms, code lists and rules may change "
     "before 1.0, and every change will be recorded in the change log. It is not legal advice: the "
     "regulatory citations show where a term comes from, not how a rule applies to a given firm."
 )
@@ -65,7 +65,7 @@ PRINCIPLES = [
     ("Every term cites its grounds",
      "Each class, property and code list carries at least one citation with a locator: an article, paragraph, roadmap item or slide. The reference register records how each source was checked."),
     ("Logic in OWL, codes in SKOS, rules in SHACL",
-     "The ontology stays within OWL 2 DL with light axioms that an extension can build on. Code lists are SKOS concept schemes. Data rules are SHACL shapes kept in a separate file."),
+     "The ontology uses light OWL axioms that an extension can build on. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. Code lists are SKOS concept schemes. Data rules are SHACL shapes kept in a separate file."),
     ("Context speed and classification",
      "Each class states how fast its facts change and the data classification it carries by default. Fast facts, such as positions and prices, are looked up live and are never cached or embedded for AI."),
     ("Accountability stays with people",
@@ -73,7 +73,7 @@ PRINCIPLES = [
     ("Generic core, firm extension",
      "No institution's data, thresholds or names appear here. A firm adds them in its own ontology that imports PWM."),
 ]
-CHANGELOG = [("0.2", "2026-11-03", "Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link."), ("0.1", "2026-11-02", "First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests.")]
+CHANGELOG = [("0.3", "2026-11-03", "Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9)."), ("0.2", "2026-11-03", "Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link."), ("0.1", "2026-11-02", "First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests.")]
 
 EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -84,7 +84,7 @@ EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix firm: <https://example.org/firm/ontology#> .
 
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.2> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.3> .
 
 # The firm's own risk scale, in place of the illustrative one
 firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
@@ -397,11 +397,13 @@ def build(base: Path, site_path):
 
     (base / "SPEC.md").write_text(spec_md(data, refs), encoding="utf-8")
     with (base / "SPEC.md").open("a", encoding="utf-8") as spec:
-        spec.write("\n## Verification for 0.2\n\n")
-        spec.write("There are 80 node shapes: 30 written targeted shapes, 49 generated targeted shapes and one untargeted helper. The negative fixture file contains 40 records: 35 violating records and five supporting records, yielding 42 expected violations.\n\n")
+        spec.write("\n## Verification for 0.3\n\n")
+        spec.write("There are 112 node shapes: 55 written targeted shapes, 56 generated targeted shapes and one untargeted helper. The negative fixture file contains 87 records: 67 violating records and twenty supporting records, yielding 74 expected violations. The positive example contains 124 typed records.\n\n")
         spec.write("The unversioned shapes IRI `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. "
-                   "The immutable 0.2 shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl`. "
+                   "The immutable 0.3 shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl`. "
                    "The existing host excludes www. Publication is separate from this build.\n\n")
+        spec.write("All 55 written rules are exercised by the negative fixture; two generated code-list rules are exercised there and all 56 generated rules are exercised by regression tests. The positive example conforms and its chain is unbroken. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency; HermiT also checks the merged positive example. The data uses xsd:date and xsd:duration, which are outside the OWL 2 DL datatype map, so no DL profile conformance is claimed for the example data. SHACL validates recorded structure; the synthetic content store references are not fetched and content hashes are not recomputed. Runtime gateways and reconstruction must enforce dispatch and verify retained payload bytes.\n\n")
+        spec.write("PWM version N aligns to roadmap milestone N. Version 0.3 models milestone 0.3, not the software release number. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.\n\n")
         spec.write("Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. "
                    "Item locators retain the roadmap section numbers at that commit.\n\n")
         spec.write("EUR-Lex CELEX 32021R1253 (EN/ALL text and relationship table) confirms that 2021/1253 Art. 1(1) "
@@ -490,7 +492,7 @@ def spec_md(d, refs):
            f"| Version IRI | {m['versionIri']} |",
            f"| Namespace | `pwm:` {m['namespace']} |",
            f"| Shapes | {m['shapesIri']} (`pwm-shapes.ttl`), latest pointer |",
-           f"| Shapes version IRI | {SITE}/0.2/pwm-shapes.ttl |",
+           f"| Shapes version IRI | {SITE}/0.3/pwm-shapes.ttl |",
            f"| Licence | [CC BY-SA 4.0]({m['license']}) |",
            f"| Author | {m['creator']} |",
            f"| Web page | {m['ontologyIri']} |", "",
@@ -499,7 +501,7 @@ def spec_md(d, refs):
            f"Size: {c['classes']} classes, {c['objectProperties']} object properties, {c['datatypeProperties']} datatype properties, "
            f"{c['codeLists']} code lists with {c['concepts']} codes, {c['rules']} data rules plus {c['codeListRules']} generated code-list rules, {c['references']} references and "
            f"{c['citations']} citations. {m['fiboAligned']} FIBO terms are specialised or mapped.", "",
-           "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.2:", ""] + \
+           "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.3:", ""] + \
           [f"- {s}" for s in d["scopeOut"]] + ["", "## Design principles", ""] + \
           [f"{i}. **{p['title']}.** {p['body']}" for i, p in enumerate(d["principles"], 1)] + \
           ["", "## How references are marked", "",

@@ -17,6 +17,10 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
     rdfs:label "Activity"@en ;
     rdfs:isDefinedBy <http://www.w3.org/ns/prov-o#> .
 
+<http://www.w3.org/ns/prov#Agent> a owl:Class ;
+    rdfs:label "Agent"@en ;
+    rdfs:isDefinedBy <http://www.w3.org/ns/prov-o#> .
+
 <http://www.w3.org/ns/prov#Entity> a owl:Class ;
     rdfs:label "Entity"@en ;
     rdfs:isDefinedBy <http://www.w3.org/ns/prov-o#> .

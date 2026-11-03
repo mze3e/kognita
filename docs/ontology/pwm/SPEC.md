@@ -1,15 +1,15 @@
-# Private Wealth Management Ontology (PWM) 0.2
+# Private Wealth Management Ontology (PWM) 0.3
 
 > Generated from the Turtle sources by `tools/build.py`. Do not edit by hand.
 
 | | |
 |---|---|
-| Version | 0.2 (draft), 2026-11-03 |
+| Version | 0.3 (draft), 2026-11-03 |
 | Ontology IRI | https://ahmedmuzammil.com/ontology/pwm |
-| Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.2 |
+| Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.3 |
 | Namespace | `pwm:` https://ahmedmuzammil.com/ontology/pwm# |
 | Shapes | https://ahmedmuzammil.com/ontology/pwm/shapes (`pwm-shapes.ttl`), latest pointer |
-| Shapes version IRI | https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl |
+| Shapes version IRI | https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl |
 | Licence | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | Author | Ahmed Muzammil |
 | Web page | https://ahmedmuzammil.com/ontology/pwm |
@@ -20,9 +20,9 @@ A generic ontology for private banking and wealth management. It models parties 
 
 ## Status
 
-Draft for comment. Version 0.2 adds verified grounding and sustainability preferences. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
+Draft for comment. Version 0.3 aligns with roadmap milestone 0.3: gateways, runs, budgets, durable approvals and replay evidence. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
 
-Size: 127 classes, 105 object properties, 48 datatype properties, 38 code lists with 192 codes, 30 data rules plus 49 generated code-list rules, 47 references and 479 citations. 39 FIBO terms are specialised or mapped.
+Size: 150 classes, 140 object properties, 83 datatype properties, 44 code lists with 217 codes, 55 data rules plus 56 generated code-list rules, 47 references and 752 citations. 39 FIBO terms are specialised or mapped.
 
 ## Scope
 
@@ -38,7 +38,7 @@ In scope:
 - AI governance: the use-case inventory, risk materiality, accountability, agents, tools, delegated authority and autonomy
 - Information governance, facts and claims, policy decisions and hash-chained evidence
 
-Not in 0.2:
+Not in 0.3:
 
 - Orders, execution and the trade lifecycle; corporate actions
 - Performance and attribution methods (only the provenance of figures is modelled)
@@ -50,7 +50,7 @@ Not in 0.2:
 1. **Reuse before inventing.** Business terms specialise or map to FIBO first (Release before Provisional), then OMG Commons, W3C PROV-O and DPV. A term is defined here only when none fits, and it is marked NEW.
 2. **Declare, don't import.** External terms are declared with their label, source and FIBO maturity instead of importing whole ontologies, so the file loads on its own. Specialisation uses rdfs:subClassOf; looser alignment uses SKOS exact, close and related matches.
 3. **Every term cites its grounds.** Each class, property and code list carries at least one citation with a locator: an article, paragraph, roadmap item or slide. The reference register records how each source was checked.
-4. **Logic in OWL, codes in SKOS, rules in SHACL.** The ontology stays within OWL 2 DL with light axioms that an extension can build on. Code lists are SKOS concept schemes. Data rules are SHACL shapes kept in a separate file.
+4. **Logic in OWL, codes in SKOS, rules in SHACL.** The ontology uses light OWL axioms that an extension can build on. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. Code lists are SKOS concept schemes. Data rules are SHACL shapes kept in a separate file.
 5. **Context speed and classification.** Each class states how fast its facts change and the data classification it carries by default. Fast facts, such as positions and prices, are looked up live and are never cached or embedded for AI.
 6. **Accountability stays with people.** Accountability roles are played by named people. A shape rejects any record that names an AI agent in one.
 7. **Generic core, firm extension.** No institution's data, thresholds or names appear here. A firm adds them in its own ontology that imports PWM.
@@ -91,7 +91,7 @@ Classes carry a context speed:
 | 6 | [Products, distribution and research](#ModuleProducts) | The product shelf, product risk and target market, cross-border distribution rules, offering documents and the house view. | 9 | 11 | 2 |
 | 7 | [Interactions, advice and communication](#ModuleInteractions) | Why a client was approached, what was recommended, who decided, and what reached the client. | 9 | 16 | 6 |
 | 8 | [AI use cases, authority and accountability](#ModuleGovernance) | The AI inventory, risk materiality, agents, delegated authority, autonomy and the people accountable for them. | 24 | 40 | 11 |
-| 9 | [Information governance, claims and evidence](#ModuleEvidence) | Governed documents and definitions, facts and claims, policy decisions and the evidence that reconstructs them. | 14 | 28 | 8 |
+| 9 | [Information governance, claims and evidence](#ModuleEvidence) | Governed documents and definitions, facts and claims, policy decisions and the evidence that reconstructs them. | 37 | 98 | 14 |
 
 <a id="ModuleCore"></a>
 
@@ -1359,7 +1359,7 @@ Record of a client's consent to a stated processing purpose, with its scope, dat
 | <a id="disclosureTrigger"></a>`pwm:disclosureTrigger` disclosure trigger | any → [AI disclosure triggers](#DisclosureTriggerScheme) | Reason recorded for an AI disclosure: what the AI did that the disclosure describes. Whether disclosure is required is decided by the jurisdiction's disclosure rule and the content provenance. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.DISCLOSURE_TRIGGERS |
 | <a id="isApprovedChannel"></a>`pwm:isApprovedChannel` is approved channel | [communication channel](#CommunicationChannel) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether a channel is registered as meeting archiving and supervision requirements. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 12: approved-channel register |
 | <a id="aiDisclosureGiven"></a>`pwm:aiDisclosureGiven` AI disclosure given | [client communication](#ClientCommunication) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the communication told the client that AI was involved. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.6; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-ai-disclosure |
-| <a id="contentHash"></a>`pwm:contentHash` content hash | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Cryptographic hash of content as rendered, sent or stored, so the content can be proved later without being copied into the record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 items 11, 12: hash of the content as sent; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: version ID or content hash; keep the hash when content is deleted |
+| <a id="contentHash"></a>`pwm:contentHash` content hash | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Cryptographic hash of content as rendered, sent or stored, so the content can be proved later without being copied into the record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 items 11, 12: hash of the content as sent; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7: pinned evidence; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: version ID or content hash; keep the hash when content is deleted |
 
 ### Code lists
 
@@ -1479,7 +1479,7 @@ Specific real-world context that an AI model or system is applied to, registered
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** slow context, default classification C1
-- **Properties:** [`approvedJurisdiction`](#approvedJurisdiction), [`modelType`](#modelType), [`lifecycleStatus`](#lifecycleStatus), [`isMediated`](#isMediated), [`riskTier`](#riskTier), [`hasMaterialityAssessment`](#hasMaterialityAssessment)
+- **Properties:** [`approvedJurisdiction`](#approvedJurisdiction), [`modelType`](#modelType), [`lifecycleStatus`](#lifecycleStatus), [`isMediated`](#isMediated), [`riskTier`](#riskTier), [`hasMaterialityAssessment`](#hasMaterialityAssessment), [`retentionPolicy`](#retentionPolicy)
 - **References:** **ISO** [ISO/IEC 42001](#ref-ISO-IEC-42001) AI management system; **REG** [MAS AIRG](#ref-MAS-AIRG) 1.4(c) use case; 4.5 to 4.9 inventory; 4.7 attributes; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: use-case register; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 19: an unregistered use case is refused
 
 <a id="AISystem"></a>
@@ -1726,7 +1726,7 @@ Test activation of a kill switch, recording who activated it, how long until the
 | <a id="aboutClient"></a>`pwm:aboutClient` about client | any → [client](#Client) | Client a delegation, claim or fact is about. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2; 0.6 item 1 |
 | <a id="permitsDataClass"></a>`pwm:permitsDataClass` permits data class | [delegated authority](#DelegatedAuthority) → [data classifications](#DataClassificationScheme) | Highest data classification a delegation permits the agent to access. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: allowed data |
 | <a id="primaryMetric"></a>`pwm:primaryMetric` primary metric | [outcome metric](#OutcomeMetric) → [primary outcome metrics](#PrimaryMetricScheme) | Kind of an outcome metric. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.PRIMARY_METRICS |
-| <a id="providedBy"></a>`pwm:providedBy` provided by | any → [model provider](#ModelProvider) | Model provider that supplies a model or AI service. Close match: [is provided by](https://www.omg.org/spec/Commons/Organizations/isProvidedBy) (OMG Commons). | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.11 |
+| <a id="providedBy"></a>`pwm:providedBy` provided by | any → [model provider](#ModelProvider) | Model provider that supplies a model or AI service. Close match: [is provided by](https://www.omg.org/spec/Commons/Organizations/isProvidedBy) (OMG Commons). | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.11; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7: pinned evidence |
 | <a id="approvedJurisdiction"></a>`pwm:approvedJurisdiction` approved jurisdiction | [AI use case](#AIUseCase) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Jurisdiction in which a use case is approved for use, as an ISO 3166-1 alpha-2 code. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7: approved scope of use (e.g., jurisdiction) |
 | <a id="modelType"></a>`pwm:modelType` model type | [AI use case](#AIUseCase) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Kind of model a use case relies on, such as a classifier, ranking model or large language model. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7 |
 | <a id="isMediated"></a>`pwm:isMediated` is mediated | [AI use case](#AIUseCase) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether a use case runs through the institution's AI control plane. Unmediated entries record the assurance gap and compensating control. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.2, 4.4: AI in third-party services and shadow AI; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Gap 1 |
@@ -2021,7 +2021,7 @@ Deterministic outcome of evaluating every applicable rule for a request, allow, 
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** fast context, default classification C1
-- **Properties:** [`decisionOutcome`](#decisionOutcome), [`decidedByRule`](#decidedByRule)
+- **Properties:** [`decisionOutcome`](#decisionOutcome), [`decidedByRule`](#decidedByRule), [`hasCheck`](#hasCheck)
 - **References:** **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 9: runtime policy enforcement outside the LLM; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.Outcome, OUTCOME_PRECEDENCE; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 14: the AI answer receipt, for approvals and denials
 
 <a id="EvidenceRecord"></a>
@@ -2074,6 +2074,234 @@ Item an agent retains beyond a single step, scoped as working, relationship or i
 - **Properties:** [`memoryScope`](#memoryScope)
 - **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 8: memory governance; **AM** [EVOLVE](#ref-EVOLVE) Closed-loop learning; human expertise becomes institutional capability
 
+<a id="Run"></a>
+#### run (`pwm:Run`)
+
+Governed execution grouping calls across agent steps, budget snapshots, pending approvals and lifecycle transitions.
+
+- **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`hasBudget`](#hasBudget), [`pendingApproval`](#pendingApproval)
+- **References:** **ONT** [PROV-O](#ref-W3C-PROV-O) Section 3.1: Activity; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="RunBudget"></a>
+#### run budget (`pwm:RunBudget`)
+
+Limits and consumption snapshot for one run. Cost is USD; wall clock is seconds. Evidence records successive snapshots rather than overwriting history.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`maxCalls`](#maxCalls), [`maxTokens`](#maxTokens), [`maxCostUSD`](#maxCostUSD), [`wallClockSeconds`](#wallClockSeconds), [`consumedCalls`](#consumedCalls), [`consumedTokens`](#consumedTokens), [`consumedCostUSD`](#consumedCostUSD), [`elapsedSeconds`](#elapsedSeconds), [`classificationCeiling`](#classificationCeiling)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="BudgetExceededDenial"></a>
+#### budget exceeded denial (`pwm:BudgetExceededDenial`)
+
+Denial caused by an exceeded run budget, naming the budget and breached dimension.
+
+- **Specialises:** [policy decision](#PolicyDecision)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`exceededBudget`](#exceededBudget), [`budgetDimension`](#budgetDimension)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="ApprovalRequest"></a>
+#### approval request (`pwm:ApprovalRequest`)
+
+Request to a human to approve an exact held policy decision at a run checkpoint.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`requestsDecision`](#requestsDecision), [`atCheckpoint`](#atCheckpoint)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="RunCheckpoint"></a>
+#### run checkpoint (`pwm:RunCheckpoint`)
+
+Durable snapshot at a synchronous policy evaluation boundary; contentHash is the continuation handle in the retention store.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="ApprovalResolution"></a>
+#### approval resolution (`pwm:ApprovalResolution`)
+
+Human resolution of a specific approval request, approved or denied, with attribution and time.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`resolvesApproval`](#resolvesApproval)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="RunResumption"></a>
+#### run resumption (`pwm:RunResumption`)
+
+Evidenced continuation of a checkpointed run after a human resolution; denied resolutions never authorize the held action.
+
+- **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`resumedFrom`](#resumedFrom), [`resolvedApproval`](#resolvedApproval)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="GovernedCall"></a>
+#### governed call (`pwm:GovernedCall`)
+
+Gateway call carrying a run, policy decision and identity bound to authenticated client configuration.
+
+- **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`governedByDecision`](#governedByDecision), [`clientConfiguration`](#clientConfiguration), [`callAgent`](#callAgent), [`systemTrigger`](#systemTrigger)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="ModelCall"></a>
+#### model call (`pwm:ModelCall`)
+
+Gateway model invocation recording provider-reported identity, prompt as sent and response as received, template version and token usage.
+
+- **Specialises:** [governed call](#GovernedCall)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`usesModel`](#usesModel), [`modelName`](#modelName), [`promptTemplateVersion`](#promptTemplateVersion), [`promptHash`](#promptHash), [`inputTokens`](#inputTokens), [`outputTokens`](#outputTokens)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="ToolCall"></a>
+#### tool call (`pwm:ToolCall`)
+
+Governed tool invocation with response hash and retained response reference.
+
+- **Specialises:** [governed call](#GovernedCall)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`invokedTool`](#invokedTool)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="MCPProxiedCall"></a>
+#### MCP proxied call (`pwm:MCPProxiedCall`)
+
+Tool invocation mediated by the MCP proxy, recording backend and invoked tool.
+
+- **Specialises:** [tool call](#ToolCall)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`mcpBackend`](#mcpBackend)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="EnvelopeAttribute"></a>
+#### envelope attribute (`pwm:EnvelopeAttribute`)
+
+Recorded request or response attribute, with name, value and typed or classifier-derived source. Typed values are authoritative; classification fills gaps and may only narrow permission. Authentication supplies identity.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`derivedFromClassifier`](#derivedFromClassifier), [`attributeName`](#attributeName), [`attributeValue`](#attributeValue)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="ClassifierOutput"></a>
+#### classifier output (`pwm:ClassifierOutput`)
+
+Calibrated classifier evidence with model identifier, version, label, confidence and input hash. Replay uses the recorded label without invoking the classifier.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`classifierModelId`](#classifierModelId), [`classifierVersion`](#classifierVersion), [`classifierLabel`](#classifierLabel), [`confidence`](#confidence), [`inputHash`](#inputHash)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="PolicyCheck"></a>
+#### policy check (`pwm:PolicyCheck`)
+
+Individual rule evaluation, pinning the evaluated policy row content hash; a policy decision may contain several checks.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`checkedRule`](#checkedRule), [`policyContentHash`](#policyContentHash)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 14: the rule and rule version that decided it; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="RetrievedItem"></a>
+#### retrieved item (`pwm:RetrievedItem`)
+
+Retrieved source snapshot with content hash and embedding model identity.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`embeddingModel`](#embeddingModel)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="RetentionEntry"></a>
+#### retention entry (`pwm:RetentionEntry`)
+
+Content-addressed retention store entry, separate from chain evidence. Erasure removes content but preserves its hash and erasure evidence.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`storeLocator`](#storeLocator), [`erased`](#erased)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="RetentionPolicy"></a>
+#### retention policy (`pwm:RetentionPolicy`)
+
+Per-use-case policy for how long source snapshots, prompts and responses are retained, subject to lawful erasure.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C1
+- **Properties:** [`retentionDuration`](#retentionDuration)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: retention date; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="ErasureEvent"></a>
+#### erasure event (`pwm:ErasureEvent`)
+
+Erasure of retained content, recording its hash on the surviving evidence chain.
+
+- **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`erasedEntry`](#erasedEntry)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="ReconstructionReport"></a>
+#### reconstruction report (`pwm:ReconstructionReport`)
+
+Report for an interaction verifying chain and pinned hashes, listing findings and explicitly covering all ten supervisory questions, including not recorded answers.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`hasFinding`](#hasFinding), [`questionCoverage`](#questionCoverage), [`chainVerified`](#chainVerified), [`pinnedHashesVerified`](#pinnedHashesVerified)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="ReconstructionFinding"></a>
+#### reconstruction finding (`pwm:ReconstructionFinding`)
+
+Finding from reconstruction, including hash mismatch, affected record, expected hash and observed hash.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`findingRecord`](#findingRecord), [`expectedHash`](#expectedHash), [`observedHash`](#observedHash), [`findingKind`](#findingKind)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="QuestionCoverage"></a>
+#### question coverage (`pwm:QuestionCoverage`)
+
+Answer status for exactly one supervisory reconstruction question; absent evidence is explicitly not recorded.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** fast context, default classification C2
+- **Properties:** [`answerText`](#answerText)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="AuthenticatedClientConfiguration"></a>
+#### authenticated client configuration (`pwm:AuthenticatedClientConfiguration`)
+
+Authenticated gateway client configuration binding permitted agent names and listed system triggers.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`boundAgent`](#boundAgent), [`listedTrigger`](#listedTrigger)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 Tier 0; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+<a id="SystemTrigger"></a>
+#### system trigger (`pwm:SystemTrigger`)
+
+Listed authenticated system identity admitted for calls without an agent; still subject to purpose, use-case, policy and budget checks.
+
+- **Specialises:** [Agent](http://www.w3.org/ns/prov#Agent) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **References:** **ONT** [PROV-O](#ref-W3C-PROV-O) Section 3.1: Agent; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 Tier 0; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
 ### Properties
 
 | Property | Domain → range | Definition | References |
@@ -2094,8 +2322,43 @@ Item an agent retains beyond a single step, scoped as working, relationship or i
 | <a id="underUseCase"></a>`pwm:underUseCase` under use case | any → [AI use case](#AIUseCase) | Registered use case a decision, claim or event was produced under. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: every decision must reference a registered use case |
 | <a id="reliesOnDelegation"></a>`pwm:reliesOnDelegation` relies on delegation | any → [delegated authority](#DelegatedAuthority) | Delegated authority a decision or action relied on. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: every decision references the delegation it relied on |
 | <a id="eventType"></a>`pwm:eventType` event type | [evidence record](#EvidenceRecord) → [evidence event types](#EvidenceEventTypeScheme) | Kind of event an evidence record captures. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.EventType |
-| <a id="evidenceFor"></a>`pwm:evidenceFor` evidence for | [evidence record](#EvidenceRecord) → any | Decision, action, communication or other record that an evidence record documents. The record points to it by identifier and hash and does not copy its content. Sub-property of [References](http://purl.org/dc/terms/references) (DCMI). | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d); **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
+| <a id="evidenceFor"></a>`pwm:evidenceFor` evidence for | [evidence record](#EvidenceRecord) → any | Decision, action, communication or other record that an evidence record documents. The record points to it by identifier and hash and does not copy its content. Sub-property of [References](http://purl.org/dc/terms/references) (DCMI). | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d); **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7: pinned evidence |
 | <a id="memoryScope"></a>`pwm:memoryScope` memory scope | [memory record](#MemoryRecord) → [memory scopes](#MemoryScopeScheme) | Scope of a memory record. | **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) memory.MemoryScope |
+| <a id="hasBudget"></a>`pwm:hasBudget` has budget | [run](#Run) → [run budget](#RunBudget) | Budget snapshot applied to a run. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="inRun"></a>`pwm:inRun` in run | any → [run](#Run) | Run grouping a call, checkpoint, decision or resumption. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="exceededBudget"></a>`pwm:exceededBudget` exceeded budget | [budget exceeded denial](#BudgetExceededDenial) → [run budget](#RunBudget) | Budget whose limit caused this denial. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="pendingApproval"></a>`pwm:pendingApproval` pending approval | [run](#Run) → [approval request](#ApprovalRequest) | Unresolved human approval currently holding the run. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="requestsDecision"></a>`pwm:requestsDecision` requests decision | [approval request](#ApprovalRequest) → [policy decision](#PolicyDecision) | Exact held policy decision requiring approval. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="atCheckpoint"></a>`pwm:atCheckpoint` at checkpoint | [approval request](#ApprovalRequest) → [run checkpoint](#RunCheckpoint) | Checkpoint at which the action was withheld. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="resolvesApproval"></a>`pwm:resolvesApproval` resolves approval | [approval resolution](#ApprovalResolution) → [approval request](#ApprovalRequest) | Approval request resolved by a human. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="resumedFrom"></a>`pwm:resumedFrom` resumed from | [run resumption](#RunResumption) → [run checkpoint](#RunCheckpoint) | Durable checkpoint rehydrated for resumption. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="resolvedApproval"></a>`pwm:resolvedApproval` resolved approval | [run resumption](#RunResumption) → [approval resolution](#ApprovalResolution) | Resolved approval cited by resumption of the same run and checkpoint. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="governedByDecision"></a>`pwm:governedByDecision` governed by decision | [governed call](#GovernedCall) → [policy decision](#PolicyDecision) | Policy authorization evaluated before gateway dispatch. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="usesModel"></a>`pwm:usesModel` uses model | [model call](#ModelCall) → [AI model](#AIModel) | Model invoked by the gateway. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="invokedTool"></a>`pwm:invokedTool` invoked tool | [tool call](#ToolCall) → [tool](#Tool) | Tool invoked through the gateway. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="hasAttribute"></a>`pwm:hasAttribute` has attribute | any → [envelope attribute](#EnvelopeAttribute) | Recorded attribute used in the request or response envelope. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="derivedFromClassifier"></a>`pwm:derivedFromClassifier` derived from classifier | [envelope attribute](#EnvelopeAttribute) → [classifier output](#ClassifierOutput) | Classifier evidence supplying this gap in typed attributes. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="hasCheck"></a>`pwm:hasCheck` has check | [policy decision](#PolicyDecision) → [policy check](#PolicyCheck) | Pinned evaluation of one policy rule contributing to this decision. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="checkedRule"></a>`pwm:checkedRule` checked rule | [policy check](#PolicyCheck) → [policy rule](#PolicyRule) | Policy row evaluated by this check. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="retrievedItem"></a>`pwm:retrievedItem` retrieved item | any → [retrieved item](#RetrievedItem) | Pinned item used by a governed call. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="retainedIn"></a>`pwm:retainedIn` retained in | any → [retention entry](#RetentionEntry) | Store entry holding content keyed by its hash. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="retentionPolicy"></a>`pwm:retentionPolicy` retention policy | [AI use case](#AIUseCase) → [retention policy](#RetentionPolicy) | Retention policy applied to this use case. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="erasedEntry"></a>`pwm:erasedEntry` erased entry | [erasure event](#ErasureEvent) → [retention entry](#RetentionEntry) | Store entry whose content was erased; hash remains. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="hasFinding"></a>`pwm:hasFinding` has finding | [reconstruction report](#ReconstructionReport) → [reconstruction finding](#ReconstructionFinding) | Verification finding included in the report. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="findingRecord"></a>`pwm:findingRecord` finding record | [reconstruction finding](#ReconstructionFinding) → any | Record affected by the finding. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="questionCoverage"></a>`pwm:questionCoverage` question coverage | [reconstruction report](#ReconstructionReport) → [question coverage](#QuestionCoverage) | Explicit coverage record for a supervisory question. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="clientConfiguration"></a>`pwm:clientConfiguration` client configuration | [governed call](#GovernedCall) → [authenticated client configuration](#AuthenticatedClientConfiguration) | Authenticated client configuration authorizing the asserted caller identity. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 Tier 0; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="callAgent"></a>`pwm:callAgent` call agent | [governed call](#GovernedCall) → [AI agent](#AIAgent) | Registered agent identity admitted under the authenticated configuration. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 Tier 0; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="systemTrigger"></a>`pwm:systemTrigger` system trigger | [governed call](#GovernedCall) → [system trigger](#SystemTrigger) | Listed system trigger admitted on a call without an agent. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 Tier 0; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="boundAgent"></a>`pwm:boundAgent` bound agent | [authenticated client configuration](#AuthenticatedClientConfiguration) → [AI agent](#AIAgent) | Agent bound to this authenticated client configuration. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 Tier 0; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="listedTrigger"></a>`pwm:listedTrigger` listed trigger | [authenticated client configuration](#AuthenticatedClientConfiguration) → [system trigger](#SystemTrigger) | System trigger admitted by this authenticated client configuration. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 Tier 0; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="runState"></a>`pwm:runState` run state | any → [run states](#RunStateScheme) | Recorded runState code. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="approvalResolution"></a>`pwm:approvalResolution` approval resolution | any → [approval resolutions](#ApprovalResolutionScheme) | Recorded approvalResolution code. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="attributeSource"></a>`pwm:attributeSource` attribute source | any → [attribute sources](#AttributeSourceScheme) | Recorded attributeSource code. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="coverageStatus"></a>`pwm:coverageStatus` coverage status | any → [question coverage statuses](#QuestionCoverageStatusScheme) | Recorded coverageStatus code. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="gatewayFailureMode"></a>`pwm:gatewayFailureMode` gateway failure mode | any → [gateway failure modes](#GatewayFailureModeScheme) | Recorded gatewayFailureMode code. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 9; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="reconstructionQuestion"></a>`pwm:reconstructionQuestion` reconstruction question | any → [supervisory reconstruction questions](#ReconstructionQuestionScheme) | Recorded reconstructionQuestion code. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="classificationCeiling"></a>`pwm:classificationCeiling` classification ceiling | [run budget](#RunBudget) → [data classifications](#DataClassificationScheme) | Highest data sensitivity the run may touch. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
 | <a id="versionId"></a>`pwm:versionId` version identifier | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Version identifier of an asset, definition, rule, model or deployment. | **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: version ID or content hash |
 | <a id="retentionUntil"></a>`pwm:retentionUntil` retention until | any → [date](http://www.w3.org/2001/XMLSchema#date) (XSD) | Date until which a record must be kept. An AI record never expires before the regulatory record it supports. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.7: retention by record class; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: retention date |
 | <a id="definesTerm"></a>`pwm:definesTerm` defines term | [governed definition](#GovernedDefinition) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Business term a governed definition defines. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 12 |
@@ -2105,7 +2368,42 @@ Item an agent retains beyond a single step, scoped as working, relationship or i
 | <a id="recordHash"></a>`pwm:recordHash` record hash | [evidence record](#EvidenceRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of an evidence record, chained to the previous record so deletion or alteration is detectable. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
 | <a id="previousRecordHash"></a>`pwm:previousRecordHash` previous record hash | [evidence record](#EvidenceRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of the record that precedes this one in the chain. Required on every record except the first in a chain. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
 | <a id="chainStart"></a>`pwm:chainStart` chain start | [evidence record](#EvidenceRecord) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | True on the first record of an evidence chain, the only record without a previous record hash. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
-| <a id="modelVersion"></a>`pwm:modelVersion` model version | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Provider model version as served for a model call, claim or evaluation. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): applicable model versions |
+| <a id="modelVersion"></a>`pwm:modelVersion` model version | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Provider model version as served for a model call, claim or evaluation. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): applicable model versions; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7: pinned evidence |
+| <a id="maxCalls"></a>`pwm:maxCalls` max calls | [run budget](#RunBudget) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Maximum number of governed calls. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="maxTokens"></a>`pwm:maxTokens` max tokens | [run budget](#RunBudget) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Maximum aggregate model tokens. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="maxCostUSD"></a>`pwm:maxCostUSD` max cost usd | [run budget](#RunBudget) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Maximum spend in US dollars. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="wallClockSeconds"></a>`pwm:wallClockSeconds` wall clock seconds | [run budget](#RunBudget) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Maximum elapsed wall clock seconds. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="consumedCalls"></a>`pwm:consumedCalls` consumed calls | [run budget](#RunBudget) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Calls consumed at this snapshot. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="consumedTokens"></a>`pwm:consumedTokens` consumed tokens | [run budget](#RunBudget) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Tokens consumed at this snapshot. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="consumedCostUSD"></a>`pwm:consumedCostUSD` consumed cost usd | [run budget](#RunBudget) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | US dollars consumed at this snapshot. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="elapsedSeconds"></a>`pwm:elapsedSeconds` elapsed seconds | [run budget](#RunBudget) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Elapsed wall clock seconds at this snapshot. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="budgetDimension"></a>`pwm:budgetDimension` budget dimension | [budget exceeded denial](#BudgetExceededDenial) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Exceeded dimension, such as max_calls or classification_ceiling. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="modelName"></a>`pwm:modelName` model name | [model call](#ModelCall) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Model name as reported for this call. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="promptTemplateVersion"></a>`pwm:promptTemplateVersion` prompt template version | [model call](#ModelCall) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Version of the prompt template used. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="promptHash"></a>`pwm:promptHash` prompt hash | [model call](#ModelCall) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of prompt as sent after redaction. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="responseHash"></a>`pwm:responseHash` response hash | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of model or tool response as received. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="inputTokens"></a>`pwm:inputTokens` input tokens | [model call](#ModelCall) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Provider-reported input token usage. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="outputTokens"></a>`pwm:outputTokens` output tokens | [model call](#ModelCall) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Provider-reported output token usage. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="mcpBackend"></a>`pwm:mcpBackend` mcp backend | [MCP proxied call](#MCPProxiedCall) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Backend MCP server identifier. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="attributeName"></a>`pwm:attributeName` attribute name | [envelope attribute](#EnvelopeAttribute) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Envelope field name; identity fields must come from authentication. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="attributeValue"></a>`pwm:attributeValue` attribute value | [envelope attribute](#EnvelopeAttribute) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Recorded effective attribute value. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="classifierModelId"></a>`pwm:classifierModelId` classifier model id | [classifier output](#ClassifierOutput) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Classifier model identifier. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="classifierVersion"></a>`pwm:classifierVersion` classifier version | [classifier output](#ClassifierOutput) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Classifier model version used for inference. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="classifierLabel"></a>`pwm:classifierLabel` classifier label | [classifier output](#ClassifierOutput) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Label reused during deterministic policy replay. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="confidence"></a>`pwm:confidence` confidence | [classifier output](#ClassifierOutput) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Calibrated confidence in the closed interval zero to one. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="inputHash"></a>`pwm:inputHash` input hash | [classifier output](#ClassifierOutput) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of classified prompt, response or tool input. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="escalationThreshold"></a>`pwm:escalationThreshold` escalation threshold | any → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Policy confidence threshold below which the classifier cannot yield ALLOW. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="policyContentHash"></a>`pwm:policyContentHash` policy content hash | [policy check](#PolicyCheck) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of the exact policy row evaluated by this check. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="embeddingModel"></a>`pwm:embeddingModel` embedding model | [retrieved item](#RetrievedItem) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Embedding model identifier and version used for retrieval. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="retentionDuration"></a>`pwm:retentionDuration` retention duration in days | [retention policy](#RetentionPolicy) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Retention duration for content under this policy, measured in whole days. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="storeLocator"></a>`pwm:storeLocator` store locator | [retention entry](#RetentionEntry) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Reference to content in the separate retention store, never embedded chain content. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="erased"></a>`pwm:erased` erased | [retention entry](#RetentionEntry) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the retained payload was erased. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="expectedHash"></a>`pwm:expectedHash` expected hash | [reconstruction finding](#ReconstructionFinding) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Expected pinned hash for a mismatch finding. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="observedHash"></a>`pwm:observedHash` observed hash | [reconstruction finding](#ReconstructionFinding) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Observed hash of the mismatching content. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="findingKind"></a>`pwm:findingKind` finding kind | [reconstruction finding](#ReconstructionFinding) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Finding type, including hash_mismatch or chain_break. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="answerText"></a>`pwm:answerText` answer text | [question coverage](#QuestionCoverage) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Evidence-based answer, or reason the question was not recorded. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="chainVerified"></a>`pwm:chainVerified` chain verified | [reconstruction report](#ReconstructionReport) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the evidence chain passed verification. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
+| <a id="pinnedHashesVerified"></a>`pwm:pinnedHashesVerified` pinned hashes verified | [reconstruction report](#ReconstructionReport) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether all available pinned hashes matched; mismatches require findings. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified |
 
 ### Code lists
 
@@ -2114,7 +2412,7 @@ Item an agent retains beyond a single step, scoped as working, relationship or i
 
 Ordered by sensitivity. Compare by rank, never by label: entitlement filtering and egress control depend on the order.
 
-Used by: [`classification`](#classification), [`permitsDataClass`](#permitsDataClass), [`usesDataClass`](#usesDataClass)
+Used by: [`classification`](#classification), [`classificationCeiling`](#classificationCeiling), [`permitsDataClass`](#permitsDataClass), [`usesDataClass`](#usesDataClass)
 
 References: **REG** [MAS AIRG](#ref-MAS-AIRG) 5.4(d); **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.Classification
 
@@ -2250,6 +2548,103 @@ References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.EventType;
 | INCIDENT_OPENED | <a id="EventIncidentOpened"></a>incident opened (`pwm:EventIncidentOpened`) | An AI incident was opened. |
 | ERASURE | <a id="EventErasure"></a>erasure (`pwm:EventErasure`) | Content was erased; the chain stays verifiable. |
 | MODEL_REFUSAL | <a id="EventModelRefusal"></a>model refusal (`pwm:EventModelRefusal`) | The model declined, as distinct from a policy denial. |
+
+<a id="RunStateScheme"></a>
+#### run states (`pwm:RunStateScheme`)
+
+Codes for runState.
+
+Used by: [`runState`](#runState)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+| Code | Concept | Definition |
+|---|---|---|
+| ready | <a id="RunReady"></a>ready (`pwm:RunReady`) | Run created and ready to start governed calls. |
+| running | <a id="RunRunning"></a>running (`pwm:RunRunning`) | Run is executing governed calls within its budgets. |
+| suspended | <a id="RunSuspended"></a>suspended (`pwm:RunSuspended`) | Run is held at a durable checkpoint awaiting human approval. |
+| resumed | <a id="RunResumed"></a>resumed (`pwm:RunResumed`) | Run continuation was rehydrated after a recorded human resolution. |
+| completed | <a id="RunCompleted"></a>completed (`pwm:RunCompleted`) | Run finished its authorized work. |
+| denied | <a id="RunDenied"></a>denied (`pwm:RunDenied`) | Run stopped because a governing decision denied continuation. |
+| failed | <a id="RunFailed"></a>failed (`pwm:RunFailed`) | Run terminated with a recorded execution failure. |
+
+<a id="ApprovalResolutionScheme"></a>
+#### approval resolutions (`pwm:ApprovalResolutionScheme`)
+
+Codes for approvalResolution.
+
+Used by: [`approvalResolution`](#approvalResolution)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+| Code | Concept | Definition |
+|---|---|---|
+| approved | <a id="ApprovalApproved"></a>approved (`pwm:ApprovalApproved`) | A named human approved the exact held action. |
+| denied | <a id="ApprovalDenied"></a>denied (`pwm:ApprovalDenied`) | A named human denied the held action; continuation records the denial and does not authorize that action. |
+
+<a id="AttributeSourceScheme"></a>
+#### attribute sources (`pwm:AttributeSourceScheme`)
+
+Codes for attributeSource.
+
+Used by: [`attributeSource`](#attributeSource)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+| Code | Concept | Definition |
+|---|---|---|
+| typed | <a id="AttributeTyped"></a>typed (`pwm:AttributeTyped`) | Caller-supplied typed attribute is authoritative; a classifier cannot replace it. |
+| classifier_derived | <a id="AttributeClassifierDerived"></a>classifier-derived (`pwm:AttributeClassifierDerived`) | Classifier fills a gap in typed attributes and can only narrow permission. |
+
+<a id="QuestionCoverageStatusScheme"></a>
+#### question coverage statuses (`pwm:QuestionCoverageStatusScheme`)
+
+Codes for coverageStatus.
+
+Used by: [`coverageStatus`](#coverageStatus)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+| Code | Concept | Definition |
+|---|---|---|
+| answered | <a id="QuestionAnswered"></a>answered (`pwm:QuestionAnswered`) | Answered from recorded evidence; citesSource identifies the evidence. |
+| not_recorded | <a id="QuestionNotRecorded"></a>not recorded (`pwm:QuestionNotRecorded`) | Evidence needed to answer was not recorded at this milestone; the question remains explicit. |
+
+<a id="GatewayFailureModeScheme"></a>
+#### gateway failure modes (`pwm:GatewayFailureModeScheme`)
+
+Codes for gatewayFailureMode.
+
+Used by: [`gatewayFailureMode`](#gatewayFailureMode)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 9; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+| Code | Concept | Definition |
+|---|---|---|
+| fail_closed | <a id="FailClosed"></a>fail closed (`pwm:FailClosed`) | Default: refuse calls while the gateway or evidence store is unavailable. |
+| degraded | <a id="Degraded"></a>degraded (`pwm:Degraded`) | Only local-model calls without client data may proceed during an outage; evidence is written when the store recovers. |
+
+<a id="ReconstructionQuestionScheme"></a>
+#### supervisory reconstruction questions (`pwm:ReconstructionQuestionScheme`)
+
+Codes for reconstructionQuestion.
+
+Used by: [`reconstructionQuestion`](#reconstructionQuestion)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
+
+| Code | Concept | Definition |
+|---|---|---|
+| QuestionWhyClient | <a id="QuestionWhyClient"></a>Why this client? (`pwm:QuestionWhyClient`) | Supervisory reconstruction question: Why this client? |
+| QuestionWhyProduct | <a id="QuestionWhyProduct"></a>Why this insight or product? (`pwm:QuestionWhyProduct`) | Supervisory reconstruction question: Why this insight or product? |
+| QuestionInformation | <a id="QuestionInformation"></a>What information did the AI use? (`pwm:QuestionInformation`) | Supervisory reconstruction question: What information did the AI use? |
+| QuestionModelAgent | <a id="QuestionModelAgent"></a>What model or agent produced it? (`pwm:QuestionModelAgent`) | Supervisory reconstruction question: What model or agent produced it? |
+| QuestionAuthority | <a id="QuestionAuthority"></a>What was the agent authorized to do? (`pwm:QuestionAuthority`) | Supervisory reconstruction question: What was the agent authorized to do? |
+| QuestionControls | <a id="QuestionControls"></a>What suitability or policy controls ran? (`pwm:QuestionControls`) | Supervisory reconstruction question: What suitability or policy controls ran? |
+| QuestionRMChanges | <a id="QuestionRMChanges"></a>What did the RM see and change? (`pwm:QuestionRMChanges`) | Supervisory reconstruction question: What did the RM see and change? |
+| QuestionFinalDecision | <a id="QuestionFinalDecision"></a>Who made the final decision? (`pwm:QuestionFinalDecision`) | Supervisory reconstruction question: Who made the final decision? |
+| QuestionCommunication | <a id="QuestionCommunication"></a>What was communicated to the client? (`pwm:QuestionCommunication`) | Supervisory reconstruction question: What was communicated to the client? |
+| QuestionReproduction | <a id="QuestionReproduction"></a>Can the bank reproduce that evidence later? (`pwm:QuestionReproduction`) | Supervisory reconstruction question: Can the bank reproduce that evidence later? |
 
 <a id="rules"></a>
 
@@ -2539,12 +2934,296 @@ Applies to [sustainability preference](#SustainabilityPreference). Sources: [MiF
 - PAI consideration elements: of type string
 - Record the minimum proportion for each selected category and client-determined PAI elements; no preference is exclusive and has no category details (2017/565 Art. 2(7)(a)-(c)).
 
+<a id="RunShape"></a>
+### RunShape
+
+Applies to [run](#Run). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record hasBudget (roadmap milestone 0.3).
+- Record runState (roadmap milestone 0.3).
+- A resumed run must have a resumption referencing a resolved approval (0.3 item 2).
+
+*Roadmap milestone 0.3 item 1.*
+
+<a id="RunBudgetShape"></a>
+### RunBudgetShape
+
+Applies to [run budget](#RunBudget). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record maxCalls (roadmap milestone 0.3).
+- Record maxTokens (roadmap milestone 0.3).
+- Record maxCostUSD (roadmap milestone 0.3).
+- Record wallClockSeconds (roadmap milestone 0.3).
+- Record consumedCalls (roadmap milestone 0.3).
+- Record consumedTokens (roadmap milestone 0.3).
+- Record consumedCostUSD (roadmap milestone 0.3).
+- Record elapsedSeconds (roadmap milestone 0.3).
+- Record classificationCeiling (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 1.*
+
+<a id="BudgetExceededDenialShape"></a>
+### BudgetExceededDenialShape
+
+Applies to [budget exceeded denial](#BudgetExceededDenial). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record exceededBudget (roadmap milestone 0.3).
+- Record budgetDimension (roadmap milestone 0.3).
+- decision outcome: checked
+
+*Roadmap milestone 0.3 item 1.*
+
+<a id="CheckpointShape"></a>
+### CheckpointShape
+
+Applies to [run checkpoint](#RunCheckpoint). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record inRun (roadmap milestone 0.3).
+- Record contentHash (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 2.*
+
+<a id="ApprovalRequestShape"></a>
+### ApprovalRequestShape
+
+Applies to [approval request](#ApprovalRequest). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record requestsDecision (roadmap milestone 0.3).
+- Record atCheckpoint (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 2.*
+
+<a id="ApprovalResolutionShape"></a>
+### ApprovalResolutionShape
+
+Applies to [approval resolution](#ApprovalResolution). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record resolvesApproval (roadmap milestone 0.3).
+- Record approvalResolution (roadmap milestone 0.3).
+- wasAttributedTo: exactly one, an instance of Person
+- generated at time: exactly one, of type dateTime
+
+*Roadmap milestone 0.3 item 2.*
+
+<a id="RunResumptionShape"></a>
+### RunResumptionShape
+
+Applies to [run resumption](#RunResumption). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record inRun (roadmap milestone 0.3).
+- Record resumedFrom (roadmap milestone 0.3).
+- Record resolvedApproval (roadmap milestone 0.3).
+- Resumption must cite a resolved approval for its run checkpoint (0.3 item 2).
+
+*Roadmap milestone 0.3 item 2.*
+
+<a id="ModelCallShape"></a>
+### ModelCallShape
+
+Applies to [model call](#ModelCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record modelName (roadmap milestone 0.3).
+- Record modelVersion (roadmap milestone 0.3).
+- Record promptTemplateVersion (roadmap milestone 0.3).
+- Record promptHash (roadmap milestone 0.3).
+- Record responseHash (roadmap milestone 0.3).
+- Record providedBy (roadmap milestone 0.3).
+- Record inputTokens (roadmap milestone 0.3).
+- Record outputTokens (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 7.*
+
+<a id="ToolCallShape"></a>
+### ToolCallShape
+
+Applies to [tool call](#ToolCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record responseHash (roadmap milestone 0.3).
+- Record invokedTool (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 7.*
+
+<a id="MCPProxiedCallShape"></a>
+### MCPProxiedCallShape
+
+Applies to [MCP proxied call](#MCPProxiedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record mcpBackend (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 5.*
+
+<a id="ClassifierOutputShape"></a>
+### ClassifierOutputShape
+
+Applies to [classifier output](#ClassifierOutput). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record classifierModelId (roadmap milestone 0.3).
+- Record classifierVersion (roadmap milestone 0.3).
+- Record classifierLabel (roadmap milestone 0.3).
+- Record inputHash (roadmap milestone 0.3).
+- Record confidence (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 4.*
+
+<a id="EnvelopeAttributeShape"></a>
+### EnvelopeAttributeShape
+
+Applies to [envelope attribute](#EnvelopeAttribute). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record attributeName (roadmap milestone 0.3).
+- Record attributeValue (roadmap milestone 0.3).
+- Record attributeSource (roadmap milestone 0.3).
+- Classifier-derived attribute needs calibrated confidence and classifier version (0.3 item 4).
+- Identity attributes come from authentication, never classifier text (0.3 item 4 and Tier 0).
+
+*Roadmap milestone 0.3 item 4.*
+
+<a id="ClassifierThresholdShape"></a>
+### ClassifierThresholdShape
+
+Applies to subjects of [has attribute](#hasAttribute), subjects of [escalation threshold](#escalationThreshold). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- escalation threshold: at most 1, of type decimal
+- Below-threshold or missing-threshold classifier evidence cannot yield ALLOW (0.3 item 4).
+- Classifier fills gaps only; a typed attribute remains authoritative (0.3 item 4).
+
+*Roadmap milestone 0.3 item 4.*
+
+<a id="PolicyCheckShape"></a>
+### PolicyCheckShape
+
+Applies to [policy check](#PolicyCheck). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record checkedRule (roadmap milestone 0.3).
+- Record policyContentHash (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 7.*
+
+<a id="RetrievedItemShape"></a>
+### RetrievedItemShape
+
+Applies to [retrieved item](#RetrievedItem). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record contentHash (roadmap milestone 0.3).
+- Record embeddingModel (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 7.*
+
+<a id="RetentionEntryShape"></a>
+### RetentionEntryShape
+
+Applies to [retention entry](#RetentionEntry). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record contentHash (roadmap milestone 0.3).
+- Record underUseCase (roadmap milestone 0.3).
+- store locator: at most 1, of type anyURI
+
+*Roadmap milestone 0.3 item 7.*
+
+<a id="RetentionPolicyShape"></a>
+### RetentionPolicyShape
+
+Applies to [retention policy](#RetentionPolicy). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record retentionDuration (roadmap milestone 0.3).
+
+*Roadmap milestone 0.3 item 7.*
+
+<a id="ErasureShape"></a>
+### ErasureShape
+
+Applies to [erasure event](#ErasureEvent). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record erasedEntry (roadmap milestone 0.3).
+- Record contentHash (roadmap milestone 0.3).
+- Erasure removes stored content reference and keeps the same hash on the entry, event and surviving chain evidence (0.3 item 7).
+
+*Roadmap milestone 0.3 item 7.*
+
+<a id="ReconstructionReportShape"></a>
+### ReconstructionReportShape
+
+Applies to [reconstruction report](#ReconstructionReport). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record partOfInteraction (roadmap milestone 0.3).
+- Record chainVerified (roadmap milestone 0.3).
+- Record pinnedHashesVerified (roadmap milestone 0.3).
+- Cover all ten questions explicitly, marking absent evidence not recorded (0.3 item 8).
+- Report hash mismatches as findings (0.3 item 8).
+
+*Roadmap milestone 0.3 item 8.*
+
+<a id="QuestionCoverageShape"></a>
+### QuestionCoverageShape
+
+Applies to [question coverage](#QuestionCoverage). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record reconstructionQuestion (roadmap milestone 0.3).
+- Record coverageStatus (roadmap milestone 0.3).
+- Answered question must cite recorded evidence (0.3 item 8).
+
+*Roadmap milestone 0.3 item 8.*
+
+<a id="ReconstructionFindingShape"></a>
+### ReconstructionFindingShape
+
+Applies to [reconstruction finding](#ReconstructionFinding). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record findingKind (roadmap milestone 0.3).
+- Record findingRecord (roadmap milestone 0.3).
+- Hash mismatch finding records different expected and observed hashes (0.3 item 8).
+
+*Roadmap milestone 0.3 item 8.*
+
+<a id="GatewayConfigurationShape"></a>
+### GatewayConfigurationShape
+
+Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Record gatewayFailureMode (roadmap milestone 0.3).
+- retention policy: exactly one, an instance of RetentionPolicy
+
+*Roadmap milestone 0.3 item 9.*
+
+<a id="GovernedCallShape"></a>
+### GovernedCallShape
+
+Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- call agent: at most 1
+- system trigger: at most 1
+- Record inRun (roadmap milestone 0.3).
+- Record governedByDecision (roadmap milestone 0.3).
+- Record clientConfiguration (roadmap milestone 0.3).
+- Call identity must be an agent bound to the authenticated client or a listed system trigger (0.3 Tier 0).
+- A call governed by a held decision requires that decision in the same run and an ApprovalRequest at a checkpoint in the call's run with an ApprovalApproved resolution (KOG roadmap 0.3 item 2; MAS AIRG 5.9).
+
+*Roadmap milestone 0.3 items 2 and 3; MAS AIRG 5.9 human oversight.*
+
+<a id="PinnedDecisionShape"></a>
+### Pinned decision checks
+
+Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- Every policy decision carries pinned component checks (0.3 item 7).
+
+*Roadmap milestone 0.3 item 7; MAS AIRG 5.23(d) record keeping.*
+
+<a id="SuspendedApprovalShape"></a>
+### Approval checkpoint consistency
+
+Applies to [approval request](#ApprovalRequest). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- An approval request holds a HUMAN_APPROVAL decision at a suspended checkpoint of the same run (0.3 item 2).
+
+*Roadmap milestone 0.3 item 2; MAS AIRG 5.9 human oversight.*
+
 <a id="CodeListShapes"></a>
 ### Code lists
 
 Applies to every coded property. Sources: [SKOS](#ref-W3C-SKOS).
 
-- Each of the 49 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
+- Each of the 56 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
 
 ## Extending PWM for an institution
 
@@ -2562,7 +3241,7 @@ Save as `firm.ttl`:
 @prefix firm: <https://example.org/firm/ontology#> .
 
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.2> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.3> .
 
 # The firm's own risk scale, in place of the illustrative one
 firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
@@ -2619,7 +3298,7 @@ Other code lists may require changes to handwritten constraints and code-depende
 |---|---|---|---|---|---|---|---|
 | <a id="ref-FIBO"></a>FIBO | ONT | [Financial Industry Business Ontology (FIBO)](https://github.com/edmcouncil/fibo) | EDM Council and Object Management Group | 2026-10-27 | Global | verified | Every FIBO IRI and maturity used here was rechecked on 3 November 2026 against raw .rdf files from master at GitHub commit 33a92cd34285d532c158da97bb42add089f135d3 (27 October 2026). Each term's maturity level, Release or Provisional, is taken from the file that defines it. |
 | <a id="ref-OMG-COMMONS"></a>OMG Commons | ONT | [Commons Ontology Library](https://www.omg.org/spec/Commons/) | Object Management Group | 2025-08-01 | Global | verified | Collections/hasMember was verified against https://www.omg.org/spec/Commons/20250801/Collections.rdf on 3 November 2026. PartiesAndSituations and Organizations were read at version 20250801. Jurisdiction, RegulatoryAgency, Authorization, isPlayedBy and Document are referenced by FIBO production ontologies; their module files were not opened. |
-| <a id="ref-W3C-PROV-O"></a>PROV-O | ONT | [PROV-O: The PROV Ontology](https://www.w3.org/TR/prov-o/) | W3C | 2013-04-30 | Global | instrument-level |  |
+| <a id="ref-W3C-PROV-O"></a>PROV-O | ONT | [PROV-O: The PROV Ontology](https://www.w3.org/TR/prov-o/) | W3C | 2013-04-30 | Global | verified | Section 3.1 Activity and Agent definitions verified against the W3C Recommendation on 3 November 2026 for Run and SystemTrigger. Other PROV-O terms retain their existing instrument-level grounding. |
 | <a id="ref-W3C-SKOS"></a>SKOS | ONT | [SKOS Simple Knowledge Organization System Reference](https://www.w3.org/TR/skos-reference/) | W3C | 2009-08-18 | Global | instrument-level |  |
 | <a id="ref-DCMI-TERMS"></a>DCMI Terms | ONT | [DCMI Metadata Terms](https://www.dublincore.org/specifications/dublin-core/dcmi-terms/) | Dublin Core Metadata Initiative |  | Global | instrument-level |  |
 | <a id="ref-W3C-DPV"></a>DPV | ONT | [Data Privacy Vocabulary (DPV) 2.3, with the AI extension](https://w3id.org/dpv) | W3C Data Privacy Vocabularies and Controls Community Group |  | Global | verified | Concept IRIs checked against the DPV 2.3 Turtle files (dpv and ai) in the w3c-cg/dpv repository. |
@@ -2692,14 +3371,19 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 | Version | Date | Change |
 |---|---|---|
+| 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
 
-## Verification for 0.2
+## Verification for 0.3
 
-There are 80 node shapes: 30 written targeted shapes, 49 generated targeted shapes and one untargeted helper. The negative fixture file contains 40 records: 35 violating records and five supporting records, yielding 42 expected violations.
+There are 112 node shapes: 55 written targeted shapes, 56 generated targeted shapes and one untargeted helper. The negative fixture file contains 87 records: 67 violating records and twenty supporting records, yielding 74 expected violations. The positive example contains 124 typed records.
 
-The unversioned shapes IRI `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. The immutable 0.2 shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl`. The existing host excludes www. Publication is separate from this build.
+The unversioned shapes IRI `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. The immutable 0.3 shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl`. The existing host excludes www. Publication is separate from this build.
+
+All 55 written rules are exercised by the negative fixture; two generated code-list rules are exercised there and all 56 generated rules are exercised by regression tests. The positive example conforms and its chain is unbroken. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency; HermiT also checks the merged positive example. The data uses xsd:date and xsd:duration, which are outside the OWL 2 DL datatype map, so no DL profile conformance is claimed for the example data. SHACL validates recorded structure; the synthetic content store references are not fetched and content hashes are not recomputed. Runtime gateways and reconstruction must enforce dispatch and verify retained payload bytes.
+
+PWM version N aligns to roadmap milestone N. Version 0.3 models milestone 0.3, not the software release number. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.
 
 Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. Item locators retain the roadmap section numbers at that commit.
 
