@@ -1648,7 +1648,7 @@ Authorisation that binds a person, an agent, a purpose, a client, permitted acti
 *Note:* A request is allowed only if the person holds the entitlement and the agent holds a live delegation for it.
 
 - **Specialises:** [authorization](https://www.omg.org/spec/Commons/BusinessAuthorizations/Authorization) (OMG Commons)
-- **Handling:** fast context, default classification C2
+- **Handling:** slow context, default classification C2
 - **Properties:** [`delegatedBy`](#delegatedBy), [`delegatedTo`](#delegatedTo), [`permitsDataClass`](#permitsDataClass), [`endsOnTaskCompletion`](#endsOnTaskCompletion), [`approvalThreshold`](#approvalThreshold)
 - **References:** **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 2: explicit delegated authority; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: delegated authority
 
@@ -1685,7 +1685,7 @@ Declared reason for processing data or invoking AI. Access is bound to it; a req
 
 Mechanism that deactivates an AI system expeditiously when it exceeds risk tolerances, effective on the next decision, with a tested activation protocol and fallback.
 
-- **Handling:** fast context
+- **Handling:** slow context
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.3 and fn 29; 5.23(b); **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 12
 
 <a id="KillSwitchDrill"></a>
@@ -2021,7 +2021,7 @@ Effective-dated, citable rule evaluated outside the model before data moves or a
 Deterministic outcome of evaluating every applicable rule for a request, allow, deny, escalate or hold for human approval, citing the deciding rule and its version, the use case and any delegation relied on. One failing rule denies.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C1
+- **Handling:** medium context, default classification C1
 - **Properties:** [`decisionOutcome`](#decisionOutcome), [`decidedByRule`](#decidedByRule), [`hasCheck`](#hasCheck)
 - **References:** **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 9: runtime policy enforcement outside the LLM; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.Outcome, OUTCOME_PRECEDENCE; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 14: the AI answer receipt, for approvals and denials
 
@@ -2033,7 +2033,7 @@ Append-only, hash-chained record of an event, such as a policy decision, model c
 *Note:* Record a model refusal separately from a policy denial. Otherwise the evidence shows only that the model usually behaves, not that the controls work.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C1
+- **Handling:** medium context, default classification C1
 - **Properties:** [`eventType`](#eventType), [`evidenceFor`](#evidenceFor), [`recordHash`](#recordHash), [`previousRecordHash`](#previousRecordHash), [`chainStart`](#chainStart)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): logging of prompts, responses, model versions; 5.17 reproducibility; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 12: complete action audit trail; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 15: append-only, tamper-evident; log refusals and blocks separately
 
@@ -2081,7 +2081,7 @@ Item an agent retains beyond a single step, scoped as working, relationship or i
 Governed execution grouping calls across agent steps, budget snapshots, pending approvals and lifecycle transitions.
 
 - **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`hasBudget`](#hasBudget), [`pendingApproval`](#pendingApproval)
 - **References:** **ONT** [PROV-O](#ref-W3C-PROV-O) Section 3.1: Activity; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2091,7 +2091,7 @@ Governed execution grouping calls across agent steps, budget snapshots, pending 
 Limits and consumption snapshot for one run. Cost is USD; wall clock is seconds. Evidence records successive snapshots rather than overwriting history.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`maxCalls`](#maxCalls), [`maxTokens`](#maxTokens), [`maxCostUSD`](#maxCostUSD), [`wallClockSeconds`](#wallClockSeconds), [`consumedCalls`](#consumedCalls), [`consumedTokens`](#consumedTokens), [`consumedCostUSD`](#consumedCostUSD), [`elapsedSeconds`](#elapsedSeconds), [`classificationCeiling`](#classificationCeiling)
 - **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2101,7 +2101,7 @@ Limits and consumption snapshot for one run. Cost is USD; wall clock is seconds.
 Denial caused by an exceeded run budget, naming the budget and breached dimension.
 
 - **Specialises:** [policy decision](#PolicyDecision)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`exceededBudget`](#exceededBudget), [`budgetDimension`](#budgetDimension)
 - **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2111,7 +2111,7 @@ Denial caused by an exceeded run budget, naming the budget and breached dimensio
 Request to a human to approve an exact held policy decision at a run checkpoint.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`requestsDecision`](#requestsDecision), [`atCheckpoint`](#atCheckpoint)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2121,7 +2121,7 @@ Request to a human to approve an exact held policy decision at a run checkpoint.
 Durable snapshot at a synchronous policy evaluation boundary; contentHash is the continuation handle in the retention store.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
 <a id="ApprovalResolution"></a>
@@ -2130,7 +2130,7 @@ Durable snapshot at a synchronous policy evaluation boundary; contentHash is the
 Human resolution of a specific approval request, approved or denied, with attribution and time.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`resolvesApproval`](#resolvesApproval)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2140,7 +2140,7 @@ Human resolution of a specific approval request, approved or denied, with attrib
 Evidenced continuation of a checkpointed run after a human resolution; denied resolutions never authorize the held action.
 
 - **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`resumedFrom`](#resumedFrom), [`resolvedApproval`](#resolvedApproval)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2150,7 +2150,7 @@ Evidenced continuation of a checkpointed run after a human resolution; denied re
 Gateway call carrying a run, policy decision and identity bound to authenticated client configuration.
 
 - **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`governedByDecision`](#governedByDecision), [`clientConfiguration`](#clientConfiguration), [`callAgent`](#callAgent), [`systemTrigger`](#systemTrigger)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2160,7 +2160,7 @@ Gateway call carrying a run, policy decision and identity bound to authenticated
 Gateway model invocation recording provider-reported identity, prompt as sent and response as received, template version and token usage.
 
 - **Specialises:** [governed call](#GovernedCall)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`usesModel`](#usesModel), [`modelName`](#modelName), [`promptTemplateVersion`](#promptTemplateVersion), [`promptHash`](#promptHash), [`inputTokens`](#inputTokens), [`outputTokens`](#outputTokens)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2170,7 +2170,7 @@ Gateway model invocation recording provider-reported identity, prompt as sent an
 Governed tool invocation with response hash and retained response reference.
 
 - **Specialises:** [governed call](#GovernedCall)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`invokedTool`](#invokedTool)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2180,7 +2180,7 @@ Governed tool invocation with response hash and retained response reference.
 Tool invocation mediated by the MCP proxy, recording backend and invoked tool.
 
 - **Specialises:** [tool call](#ToolCall)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`mcpBackend`](#mcpBackend)
 - **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2190,7 +2190,7 @@ Tool invocation mediated by the MCP proxy, recording backend and invoked tool.
 Recorded request or response attribute, with name, value and typed or classifier-derived source. Typed values are authoritative; classification fills gaps and may only narrow permission. Authentication supplies identity.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`derivedFromClassifier`](#derivedFromClassifier), [`attributeName`](#attributeName), [`attributeValue`](#attributeValue)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2200,7 +2200,7 @@ Recorded request or response attribute, with name, value and typed or classifier
 Calibrated classifier evidence with model identifier, version, label, confidence and input hash. Replay uses the recorded label without invoking the classifier.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`classifierModelId`](#classifierModelId), [`classifierVersion`](#classifierVersion), [`classifierLabel`](#classifierLabel), [`confidence`](#confidence), [`inputHash`](#inputHash)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2210,7 +2210,7 @@ Calibrated classifier evidence with model identifier, version, label, confidence
 Individual rule evaluation, pinning the evaluated policy row content hash; a policy decision may contain several checks.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`checkedRule`](#checkedRule), [`policyContentHash`](#policyContentHash)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 14: the rule and rule version that decided it; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2220,7 +2220,7 @@ Individual rule evaluation, pinning the evaluated policy row content hash; a pol
 Retrieved source snapshot with content hash and embedding model identity.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`embeddingModel`](#embeddingModel)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2230,7 +2230,7 @@ Retrieved source snapshot with content hash and embedding model identity.
 Content-addressed retention store entry, separate from chain evidence. Erasure removes content but preserves its hash and erasure evidence.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`storeLocator`](#storeLocator), [`erased`](#erased)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2250,7 +2250,7 @@ Per-use-case policy for how long source snapshots, prompts and responses are ret
 Erasure of retained content, recording its hash on the surviving evidence chain.
 
 - **Specialises:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`erasedEntry`](#erasedEntry)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2260,7 +2260,7 @@ Erasure of retained content, recording its hash on the surviving evidence chain.
 Report for an interaction verifying chain and pinned hashes, listing findings and explicitly covering all ten supervisory questions, including not recorded answers.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`hasFinding`](#hasFinding), [`questionCoverage`](#questionCoverage), [`chainVerified`](#chainVerified), [`pinnedHashesVerified`](#pinnedHashesVerified)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2270,7 +2270,7 @@ Report for an interaction verifying chain and pinned hashes, listing findings an
 Finding from reconstruction, including hash mismatch, affected record, expected hash and observed hash.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`findingRecord`](#findingRecord), [`expectedHash`](#expectedHash), [`observedHash`](#observedHash), [`findingKind`](#findingKind)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -2280,7 +2280,7 @@ Finding from reconstruction, including hash mismatch, affected record, expected 
 Answer status for exactly one supervisory reconstruction question; absent evidence is explicitly not recorded.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
-- **Handling:** fast context, default classification C2
+- **Handling:** medium context, default classification C2
 - **Properties:** [`answerText`](#answerText)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
@@ -3870,7 +3870,7 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 | Version | Date | Change |
 |---|---|---|
-| 0.4 | 2026-11-03 | Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
+| 0.4 | 2026-11-03 | Context review: durable execution evidence, snapshots and checkpoints use MediumContext; DelegatedAuthority and KillSwitch use SlowContext; FastContext is reserved for live financial state. Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
 | 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
