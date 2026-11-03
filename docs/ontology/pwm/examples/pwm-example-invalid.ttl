@@ -1112,3 +1112,19 @@ ex:PendingCallDecision pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:reliesOnDelega
 ex:NoRequestCallDecision pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:reliesOnDelegation ex:Delegation ; prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
 
 ex:CrossRunCallDecision pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:reliesOnDelegation ex:Delegation ; prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
+
+# The decision names both runs, but its approved checkpoint belongs only to the other run.
+ex:MultiRunCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:Run, ex:OtherRun .
+ex:BadMultiRunApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:MultiRunCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+ex:MultiRunCallRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:MultiRunCallDecision ; pwm:atCheckpoint ex:OtherCheckpoint .
+ex:MultiRunCallResolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:MultiRunCallRequest ;
+    pwm:approvalResolution pwm:ApprovalApproved ; prov:wasAttributedTo ex:PersonRM ;
+    prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime .
+
+ex:BadMultiRunApprovalCall pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation ; pwm:aboutClient ex:Client .
+ex:MultiRunCallDecision pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:reliesOnDelegation ex:Delegation ; prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .

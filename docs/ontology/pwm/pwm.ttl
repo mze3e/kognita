@@ -3565,7 +3565,7 @@ pwm:Run a owl:Class ; rdfs:label "run"@en ;
 
 pwm:RunBudget a owl:Class ; rdfs:label "run budget"@en ;
     skos:definition "Limits and consumption snapshot for one run. Cost is USD; wall clock is seconds. Evidence records successive snapshots rather than overwriting history."@en ; rdfs:subClassOf prov:Entity ;
-    pwm:inModule pwm:ModuleEvidence ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:inModule pwm:ModuleEvidence ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified" ] .
 
 pwm:BudgetExceededDenial a owl:Class ; rdfs:label "budget exceeded denial"@en ;

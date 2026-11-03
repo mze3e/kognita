@@ -1069,13 +1069,14 @@ pwmsh:GovernedCallShape a sh:NodeShape ; rdfs:label "GovernedCallShape"@en ; sh:
     sh:property [ sh:path pwm:systemTrigger ; sh:maxCount 1 ] ;
     sh:property [ sh:path pwm:inRun ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:Run ; sh:message "Record inRun (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:governedByDecision ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:PolicyDecision ; sh:message "Record governedByDecision (roadmap milestone 0.3)." ] ; sh:property [ sh:path pwm:clientConfiguration ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AuthenticatedClientConfiguration ; sh:message "Record clientConfiguration (roadmap milestone 0.3)." ] ; sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Call identity must be an agent bound to the authenticated client or a listed system trigger (0.3 Tier 0)." ; sh:select """SELECT DISTINCT $this WHERE { $this pwm:clientConfiguration ?config . FILTER NOT EXISTS { { $this pwm:callAgent ?agent . ?config pwm:boundAgent ?agent . FILTER NOT EXISTS { $this pwm:systemTrigger ?trigger } } UNION { $this pwm:systemTrigger ?trigger . ?config pwm:listedTrigger ?trigger . FILTER NOT EXISTS { $this pwm:callAgent ?agent } } } }""" ] ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ;
-        sh:message "A call governed by a held decision requires that decision in the same run and an ApprovalRequest with an ApprovalApproved resolution (KOG roadmap 0.3 item 2; MAS AIRG 5.9)." ;
+        sh:message "A call governed by a held decision requires that decision in the same run and an ApprovalRequest at a checkpoint in the call's run with an ApprovalApproved resolution (KOG roadmap 0.3 item 2; MAS AIRG 5.9)." ;
         sh:select """SELECT DISTINCT $this WHERE {
           $this pwm:inRun ?run ; pwm:governedByDecision ?decision .
           ?decision pwm:decisionOutcome pwm:OutcomeHumanApproval .
           FILTER NOT EXISTS {
             ?decision pwm:inRun ?run .
-            ?request a pwm:ApprovalRequest ; pwm:requestsDecision ?decision .
+            ?request a pwm:ApprovalRequest ; pwm:requestsDecision ?decision ; pwm:atCheckpoint ?checkpoint .
+            ?checkpoint pwm:inRun ?run .
             ?approved pwm:resolvesApproval ?request ; pwm:approvalResolution pwm:ApprovalApproved .
           }
         }""" ] .
