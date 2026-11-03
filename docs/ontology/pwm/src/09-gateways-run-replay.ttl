@@ -83,7 +83,7 @@ pwm:RetentionEntry a owl:Class ; rdfs:label "retention entry"@en ;
 
 pwm:RetentionPolicy a owl:Class ; rdfs:label "retention policy"@en ;
     skos:definition "Per-use-case policy for how long source snapshots, prompts and responses are retained, subject to lawful erasure."@en ; rdfs:subClassOf prov:Entity ;
-    pwm:inModule pwm:ModuleEvidence ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:inModule pwm:ModuleEvidence ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(d): record keeping; 5.17: reproducibility" ] .
 
 pwm:ErasureEvent a owl:Class ; rdfs:label "erasure event"@en ;
@@ -108,12 +108,12 @@ pwm:QuestionCoverage a owl:Class ; rdfs:label "question coverage"@en ;
 
 pwm:AuthenticatedClientConfiguration a owl:Class ; rdfs:label "authenticated client configuration"@en ;
     skos:definition "Authenticated gateway client configuration binding permitted agent names and listed system triggers."@en ; rdfs:subClassOf prov:Entity ;
-    pwm:inModule pwm:ModuleEvidence ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:inModule pwm:ModuleEvidence ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 Tier 0" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified" ] .
 
 pwm:SystemTrigger a owl:Class ; rdfs:label "system trigger"@en ;
     skos:definition "Listed authenticated system identity admitted for calls without an agent; still subject to purpose, use-case, policy and budget checks."@en ; rdfs:subClassOf prov:Agent ;
-    pwm:inModule pwm:ModuleEvidence ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:inModule pwm:ModuleEvidence ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 Tier 0" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified" ] .
 
 pwm:hasBudget a owl:ObjectProperty ; rdfs:label "has budget"@en ; skos:definition "Budget snapshot applied to a run."@en ;
@@ -379,9 +379,9 @@ pwm:embeddingModel a owl:DatatypeProperty ; rdfs:label "embedding model"@en ; sk
     rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleEvidence ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified" ] .
 
-pwm:retentionDuration a owl:DatatypeProperty ; rdfs:label "retention duration"@en ; skos:definition "Retention duration for content under this policy."@en ;
+pwm:retentionDuration a owl:DatatypeProperty ; rdfs:label "retention duration in days"@en ; skos:definition "Retention duration for content under this policy, measured in whole days."@en ;
     rdfs:domain pwm:RetentionPolicy ;
-    rdfs:range xsd:duration ;
+    rdfs:range xsd:nonNegativeInteger ;
     pwm:inModule pwm:ModuleEvidence ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified" ] .
 
 pwm:storeLocator a owl:DatatypeProperty ; rdfs:label "store locator"@en ; skos:definition "Reference to content in the separate retention store, never embedded chain content."@en ;

@@ -966,7 +966,7 @@ pwmsh:RetentionEntryShape a sh:NodeShape ; rdfs:label "RetentionEntryShape"@en ;
 
 pwmsh:RetentionPolicyShape a sh:NodeShape ; rdfs:label "RetentionPolicyShape"@en ; sh:targetClass pwm:RetentionPolicy ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.3 item 7."@en ;
-    sh:property [ sh:path pwm:retentionDuration ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:duration ; sh:message "Record retentionDuration (roadmap milestone 0.3)." ] .
+    sh:property [ sh:path pwm:retentionDuration ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:nonNegativeInteger ; sh:message "Record retentionDuration (roadmap milestone 0.3)." ] .
 
 
 pwmsh:ErasureShape a sh:NodeShape ; rdfs:label "ErasureShape"@en ; sh:targetClass pwm:ErasureEvent ;
