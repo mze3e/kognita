@@ -107,22 +107,24 @@ def test_version_and_counts(tmp_path):
     g = Graph().parse(BASE / 'pwm.ttl')
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     site = 'https://ahmedmuzammil.com/ontology/pwm'
-    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.3')
-    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.3/pwm-shapes.ttl')
-    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.3 (draft)'
-    assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.2')
-    assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.2/pwm-shapes.ttl')
-    assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 217
-    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 112
-    assert len(set(example().subjects(RDF.type, None))) == 124
+    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.4')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.4/pwm-shapes.ttl')
+    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.4 (draft)'
+    assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.3')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.3/pwm-shapes.ttl')
+    assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 229
+    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 141
+    assert len(set(example().subjects(RDF.type, None))) == 146
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
+    shutil.copytree(BASE / 'examples', tmp_path / 'examples')
+    shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (150, 140, 83, 44, 55, 56)
-    assert sum(validator.EXPECTED.values()) == 69
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 68
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (167, 171, 118, 46, 81, 59)
+    assert sum(validator.EXPECTED.values()) == 95
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 90
 
 
 def test_every_generated_code_list_rule():
@@ -168,7 +170,7 @@ def test_every_generated_code_list_rule():
     actual = {(report.value(r, validator.SH.focusNode), report.value(r, validator.SH.resultPath))
               for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
     assert actual == expected
-    assert len(actual) == 56
+    assert len(actual) == 59
 
 
 def test_sustainability_preference_edges():
@@ -313,3 +315,67 @@ def test_classifier_identity_and_typed_precedence():
                 for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
     assert ('GatewayCall', 'ClassifierThresholdShape') in failures
     assert ('DerivedPrincipal', 'EnvelopeAttributeShape') in failures
+
+
+def test_ingestion_edit_and_scope_required_fields():
+    """Removing each audit-critical value is observable, including the reused classification."""
+    from pyshacl import validate
+    g = example()
+    cases = [('Passage', 'pageNumber'), ('Passage', 'classification'),
+             ('Passage', 'contentHash'), ('Edit', 'beforeHash'),
+             ('Edit', 'afterHash'), ('Edit', 'editDiffHash'),
+             ('Trip', 'scopeModel'), ('Trip', 'flagThreshold'),
+             ('PolicyScenario', 'expectedOutcome')]
+    for i, (source, missing) in enumerate(cases):
+        clone = E('Missing04_' + str(i))
+        for predicate, value in list(g.predicate_objects(E(source))):
+            if predicate != P(missing):
+                g.add((clone, predicate, value))
+    conforms, report, _ = validate(g, shacl_graph=Graph().parse(BASE / 'pwm-shapes.ttl'),
+                                 ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')
+    assert not conforms
+    focuses = set(report.objects(None, validator.SH.focusNode))
+    assert focuses == {E('Missing04_' + str(i)) for i in range(len(cases))}
+    paths = {(report.value(r, validator.SH.focusNode), report.value(r, validator.SH.resultPath))
+             for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
+    for i, (_, missing) in enumerate(cases):
+        assert (E('Missing04_' + str(i)), None if missing == 'scopeModel' else P(missing)) in paths
+
+
+def test_historical_review_boundary_and_distinct_signatures():
+    """Same-day review is valid; the following day requires DENY; repeated signer is one human."""
+    from pyshacl import validate
+    g = example()
+    due = g.value(E('UseCaseMeetingPrep'), P('nextReviewDate'))
+    at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    g.set((E('PolicyDecisionModelAllow'), at, Literal(str(due) + 'T23:59:59Z', datatype=XSD.dateTime)))
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    ontology = Graph().parse(BASE / 'pwm.ttl')
+    assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
+    from datetime import date, timedelta
+    later = date.fromisoformat(str(due)) + timedelta(days=1)
+    g.set((E('PolicyDecisionModelAllow'), at, Literal(str(later) + 'T00:00:00Z', datatype=XSD.dateTime)))
+    g.remove((E('Communication'), P('communicationSigner'), E('PersonModelRisk')))
+    g.add((E('Communication'), P('communicationSigner'), E('PersonRM')))
+    conforms, report, _ = validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
+    assert not conforms
+    failures = {(validator.local(report.value(r, validator.SH.focusNode)),
+                 validator.local(report.value(r, validator.SH.sourceShape)))
+                for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
+    assert ('PolicyDecisionModelAllow', 'PastReviewDecisionShape') in failures
+    assert ('Communication', 'TwoSignatureShape') in failures
+    g.set((E('PolicyDecisionModelAllow'), P('decisionOutcome'), P('OutcomeDeny')))
+    g.add((E('Communication'), P('communicationSigner'), E('PersonModelRisk')))
+    assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
+
+
+def test_04_reconstruction_and_zero_affected_clients():
+    from pyshacl import validate
+    g = example()
+    assert len(list(g.subjects(P('coverageStatus'), P('QuestionAnswered')))) == 10
+    assert not list(g.subjects(P('coverageStatus'), P('QuestionNotRecorded')))
+    g.remove((E('Affected'), P('affectedCommunication'), None))
+    g.remove((E('Affected'), P('withClient'), None))
+    g.set((E('Affected'), P('resultCount'), Literal(0, datatype=XSD.nonNegativeInteger)))
+    assert validate(g, shacl_graph=Graph().parse(BASE / 'pwm-shapes.ttl'),
+                    ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')[0]

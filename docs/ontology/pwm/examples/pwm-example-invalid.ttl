@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.3 negative test fixture
+#  PWM 0.4 negative test fixture
 #
 #  Invalid records and their supporting records. Validate together with
 #  pwm-example.ttl, which supplies the people, use case, agent and decision
@@ -306,3 +306,79 @@ ex:BadMultipleCallAgents a pwm:GovernedCall ;
 ex:BadMultipleSystemTriggers a pwm:GovernedCall ;
     pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ;
     pwm:clientConfiguration ex:GatewayClient ; pwm:systemTrigger ex:ScheduledTrigger, ex:UnlistedTrigger .
+
+# PWM 0.4 negative constraints
+ex:Bad04IngestedDocumentShape a pwm:IngestedDocument ; pwm:parserName "docling" ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
+ex:Bad04DocumentElementShape a pwm:DocumentElement ; pwm:ingestedFrom ex:Ingestion ; pwm:pageNumber "1"^^xsd:positiveInteger ; pwm:characterStart "0"^^xsd:nonNegativeInteger ; pwm:characterEnd "30"^^xsd:nonNegativeInteger ; pwm:classification pwm:C1 ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
+ex:Bad04DeclarativePolicyShape a pwm:DeclarativePolicy ; pwm:versionId "1" ; pwm:containsRule ex:RuleModelAccess ; pwm:hasPolicyTest ex:PolicyScenario .
+ex:Bad04PolicyTestCaseShape a pwm:PolicyTestCase ; pwm:testsRule ex:RuleModelAccess ; pwm:givenAttributes "classification: C2" ; pwm:whenAction "model_call" .
+ex:Bad04PolicyPackShape a pwm:PolicyPack ; pwm:packPolicy ex:PolicyArtefact ; pwm:fixtureLocator "urn:synthetic:pack-fixtures"^^xsd:anyURI .
+ex:Bad04RMReviewEditShape a pwm:RMReviewEdit ; pwm:beforeHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:editDiffHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
+ex:Bad04ReviewQueueEntryShape a pwm:ReviewQueueEntry ; pwm:inReviewQueue ex:Queue ; pwm:partOfInteraction ex:Interaction ; pwm:queuedAt "2026-11-03T10:00:00Z"^^xsd:dateTime ; pwm:reviewBeforeDelivery true .
+ex:Bad04ReviewCoverageReportShape a pwm:ReviewCoverageReport ; pwm:eligibleCount "10"^^xsd:nonNegativeInteger ; pwm:screenedCount "10"^^xsd:nonNegativeInteger ; pwm:queuedCount "2"^^xsd:nonNegativeInteger ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
+ex:Bad04CircuitBreakerTripShape a pwm:CircuitBreakerTrip ; pwm:trippedBreaker ex:Breaker ; pwm:scopeUseCase ex:UseCaseMeetingPrep ; pwm:observedFlags "3"^^xsd:nonNegativeInteger ; pwm:prohibitingRule ex:RuleModelAccess ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
+ex:Bad04AffectedClientQueryShape a pwm:AffectedClientQuery ; pwm:scopeModel ex:Model ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
+ex:Bad04InteractionOutcomeShape a pwm:InteractionOutcome ; pwm:partOfInteraction ex:Interaction ; pwm:affectedOutput ex:Recommendation ; pwm:implicatedModel ex:Model ; pwm:outcomeApprover ex:PersonRM .
+ex:Bad04BreakerScopeShape a pwm:CircuitBreaker ; pwm:flagThreshold "3"^^xsd:positiveInteger .
+ex:Bad04TwoSignatureShape pwm:requiresTwoSignatures true ; pwm:communicationSigner ex:PersonRM .
+ex:Bad04PastReviewDecisionShape pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:decisionOutcome pwm:OutcomeAllow ; prov:generatedAtTime "2099-01-01T00:00:00Z"^^xsd:dateTime .
+ex:Bad04RiskAppetiteDecisionShape pwm:underUseCase ex:OutsideAppetite ; pwm:decisionOutcome pwm:OutcomeAllow .
+ex:Bad04CoverageCountsShape a pwm:ReviewCoverageReport ; pwm:eligibleCount "1"^^xsd:nonNegativeInteger ; pwm:screenedCount "2"^^xsd:nonNegativeInteger ; pwm:queuedCount "0"^^xsd:nonNegativeInteger ; pwm:reviewedCount "0"^^xsd:nonNegativeInteger ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
+ex:OutsideAppetite pwm:appetitePermits false .
+
+ex:Bad04PastReviewDecisionShape pwm:decidedByRule ex:RuleModelAccess ; pwm:hasCheck ex:ModelAccessCheck .
+ex:Bad04RiskAppetiteDecisionShape pwm:decidedByRule ex:RuleModelAccess ; pwm:hasCheck ex:ModelAccessCheck .
+
+ex:OutsideAppetite a pwm:AIUseCase ;
+    rdfs:label "Client meeting preparation and draft recommendations"@en ;
+    pwm:approvedJurisdiction "SG" ;
+    pwm:dependsOn ex:Model,
+        ex:Provider ;
+    pwm:gatewayFailureMode pwm:FailClosed ;
+    pwm:hasAccountabilityRole ex:BusinessOwner,
+        ex:KnowledgeLead,
+        ex:RiskOwner,
+        ex:TechnologyOwner,
+        ex:Validator ;
+    pwm:hasMaterialityAssessment ex:Materiality ;
+    pwm:hasOutcomeMetric ex:Metric ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:isMediated true ;
+    pwm:lifecycleStatus pwm:StatusLive ;
+    pwm:lowRiskSamplingRate 0.10 ;
+    pwm:modelType "Language model with retrieval from approved sources" ;
+    pwm:nextReviewDate "2027-05-01"^^xsd:date ;
+    pwm:retentionPolicy ex:ContentPolicy ;
+    pwm:riskTier pwm:Tier3 ;
+    pwm:usesDataClass pwm:C2 .
+
+ex:Bad04CircuitBreakerConfigurationShape a pwm:CircuitBreaker ; pwm:scopeModel ex:Model ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
+ex:Bad04BreakerScopeShape pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
+ex:Bad04FlightRecorderSessionShape a pwm:FlightRecorderSession ; pwm:recordedRun ex:Run .
+ex:Bad04ReplayShape a pwm:Replay ; pwm:replaysSession ex:Recorder .
+ex:Bad04PolicyChangeShape a pwm:PolicyChange ; pwm:changesPolicy ex:PolicyArtefact ; pwm:deltaText "ADDED rule" .
+ex:Bad04NearMissClassificationShape a pwm:NearMiss ; pwm:partOfInteraction ex:Interaction .
+ex:Bad04ReviewSamplingRateShape pwm:lowRiskSamplingRate 1.1 .
+ex:Bad04AffectedClientResultShape a pwm:AffectedClientResult .
+ex:Bad04AffectedClientCountShape a pwm:AffectedClientResult ; pwm:resultCount "2"^^xsd:nonNegativeInteger ; pwm:affectedCommunication ex:Communication .
+ex:Bad04ModelCallCardShape pwm:hasModelCard ex:ModelCard ; pwm:modelVersion "different-version" .
+
+ex:Bad04ModelCallCardShape a pwm:ModelCall ;
+    pwm:callAgent ex:Agent ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:hasAttribute ex:Attribute,
+        ex:ResponseAttribute ;
+    pwm:hasModelCard ex:ModelCard ;
+    pwm:inRun ex:Run ;
+    pwm:inputTokens "100"^^xsd:nonNegativeInteger ;
+    pwm:modelName "fictional-meeting-model" ;
+    pwm:outputTokens "20"^^xsd:nonNegativeInteger ;
+    pwm:promptHash "sha256:7dc7222a66cbd84f39d0f9aa418ddb550b82b80785e9183ec67339831773ccfc" ;
+    pwm:promptTemplateVersion "meeting-v3" ;
+    pwm:providedBy ex:Provider ;
+    pwm:responseHash "sha256:813776e604662a411b5febca6cd96d4f5917400024609a219f07cec53b472101" ;
+    pwm:retainedIn ex:RetainedPrompt,
+        ex:RetainedResponse ;
+    pwm:retrievedItem ex:Snapshot ;
+    pwm:usesModel ex:Model .

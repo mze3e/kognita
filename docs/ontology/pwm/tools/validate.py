@@ -102,6 +102,32 @@ EXPECTED = Counter([
     ("BadRiskProfileWrongCode", "CodeList_riskProfileLevel", "riskProfileLevel"),
 ])
 
+EXPECTED.update([('Bad04IngestedDocumentShape', 'IngestedDocumentShape', 'parserVersion'),
+ ('Bad04DocumentElementShape', 'DocumentElementShape', 'sectionPath'),
+ ('Bad04DeclarativePolicyShape', 'DeclarativePolicyShape', 'policySerialization'),
+ ('Bad04PolicyTestCaseShape', 'PolicyTestCaseShape', 'expectedOutcome'),
+ ('Bad04PolicyPackShape', 'PolicyPackShape', 'versionId'),
+ ('Bad04RMReviewEditShape', 'RMReviewEditShape', 'afterHash'),
+ ('Bad04ReviewQueueEntryShape', 'ReviewQueueEntryShape', 'queueReason'),
+ ('Bad04ReviewCoverageReportShape', 'ReviewCoverageReportShape', 'reviewedCount'),
+ ('Bad04CircuitBreakerTripShape', 'CircuitBreakerTripShape', 'flagThreshold'),
+ ('Bad04AffectedClientQueryShape', 'AffectedClientQueryShape', 'queryResult'),
+ ('Bad04InteractionOutcomeShape', 'InteractionOutcomeShape', 'outcomeKind'),
+ ('Bad04BreakerScopeShape', 'BreakerScopeShape', None),
+ ('Bad04TwoSignatureShape', 'TwoSignatureShape', None),
+ ('Bad04PastReviewDecisionShape', 'PastReviewDecisionShape', None),
+ ('Bad04RiskAppetiteDecisionShape', 'RiskAppetiteDecisionShape', None),
+ ('Bad04CoverageCountsShape', 'CoverageCountsShape', None)])
+EXPECTED.update([('Bad04CircuitBreakerConfigurationShape', 'CircuitBreakerConfigurationShape', 'flagThreshold'),
+ ('Bad04FlightRecorderSessionShape', 'FlightRecorderSessionShape', 'contentHash'),
+ ('Bad04ReplayShape', 'ReplayShape', 'replayReport'),
+ ('Bad04PolicyChangeShape', 'PolicyChangeShape', 'changeStage'),
+ ('Bad04NearMissClassificationShape', 'NearMissClassificationShape', 'nearMissKind'),
+ ('Bad04ReviewSamplingRateShape', 'ReviewSamplingRateShape', 'lowRiskSamplingRate'),
+ ('Bad04AffectedClientResultShape', 'AffectedClientResultShape', 'resultCount'),
+ ('Bad04AffectedClientCountShape', 'AffectedClientCountShape', None),
+ ('Bad04ModelCallCardShape', 'ModelCallCardShape', None)])
+EXPECTED.update([("OutsideAppetite", "LiveRiskAppetiteShape", None)])
 
 def local(term):
     if term is None:
