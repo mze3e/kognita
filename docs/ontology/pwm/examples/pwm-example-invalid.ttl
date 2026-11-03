@@ -382,3 +382,672 @@ ex:Bad04ModelCallCardShape a pwm:ModelCall ;
         ex:RetainedResponse ;
     pwm:retrievedItem ex:Snapshot ;
     pwm:usesModel ex:Model .
+
+
+# 0.5 required registry and tool metadata for inherited records.
+ex:BadToolExecute pwm:reversibilityClass pwm:Irreversible ; pwm:maximumDurationSeconds 30.0 ; pwm:supportsCancellation true .
+ex:BadToolNoVerb pwm:reversibilityClass pwm:Irreversible ; pwm:maximumDurationSeconds 30.0 ; pwm:supportsCancellation true .
+ex:BadAgentOverreach pwm:agentOwner ex:PersonHeadOfAdvisory ; pwm:operatesFor ex:PersonRM ; pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:deploymentDate "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:deploymentModel ex:Model ; pwm:deploymentEnvironment "test" ; pwm:agentStatus pwm:StatusLive ; pwm:approvedDeploymentVersion "sha256:0000000000000000000000000000000000000000000000000000000000000002" ; pwm:workloadIdentity ex:BadAgentOverreachIdentity .
+ex:BadAgentOverreachIdentity a pwm:WorkloadIdentity ; pwm:credentialReference "urn:synthetic:BadAgentOverreach"^^xsd:anyURI ; pwm:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ; pwm:workloadSubject "BadAgentOverreach" ; pwm:deploymentEnvironment "test" .
+ex:BadAgentNoReview pwm:agentOwner ex:PersonHeadOfAdvisory ; pwm:operatesFor ex:PersonRM ; pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:deploymentDate "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:deploymentModel ex:Model ; pwm:deploymentEnvironment "test" ; pwm:agentStatus pwm:StatusLive ; pwm:approvedDeploymentVersion "sha256:0000000000000000000000000000000000000000000000000000000000000003" ; pwm:workloadIdentity ex:BadAgentNoReviewIdentity .
+ex:BadAgentNoReviewIdentity a pwm:WorkloadIdentity ; pwm:credentialReference "urn:synthetic:BadAgentNoReview"^^xsd:anyURI ; pwm:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ; pwm:workloadSubject "BadAgentNoReview" ; pwm:deploymentEnvironment "test" .
+ex:BadUseCaseUnapproved pwm:deploymentMode "gateway" ; pwm:enforcementAttestation ex:BadUseCaseUnapprovedAttestation .
+ex:BadUseCaseUnapprovedAttestation a pwm:EnforcementAttestation ; pwm:attestedUseCase ex:BadUseCaseUnapproved ; pwm:gatewayOnlyCredentials true ; pwm:egressRestricted true ; pwm:evidenceStoreIsolated true ; prov:wasAttributedTo ex:PersonHeadOfAdvisory ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
+ex:BadUseCaseNoKnowledgeLead pwm:deploymentMode "gateway" ; pwm:enforcementAttestation ex:BadUseCaseNoKnowledgeLeadAttestation .
+ex:BadUseCaseNoKnowledgeLeadAttestation a pwm:EnforcementAttestation ; pwm:attestedUseCase ex:BadUseCaseNoKnowledgeLead ; pwm:gatewayOnlyCredentials true ; pwm:egressRestricted true ; pwm:evidenceStoreIsolated true ; prov:wasAttributedTo ex:PersonHeadOfAdvisory ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
+ex:BadUseCaseSelfApproved pwm:deploymentMode "gateway" ; pwm:enforcementAttestation ex:BadUseCaseSelfApprovedAttestation .
+ex:BadUseCaseSelfApprovedAttestation a pwm:EnforcementAttestation ; pwm:attestedUseCase ex:BadUseCaseSelfApproved ; pwm:gatewayOnlyCredentials true ; pwm:egressRestricted true ; pwm:evidenceStoreIsolated true ; prov:wasAttributedTo ex:PersonHeadOfAdvisory ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
+ex:BadGatewayConfig pwm:deploymentMode "gateway" ; pwm:enforcementAttestation ex:BadGatewayConfigAttestation .
+ex:BadGatewayConfigAttestation a pwm:EnforcementAttestation ; pwm:attestedUseCase ex:BadGatewayConfig ; pwm:gatewayOnlyCredentials true ; pwm:egressRestricted true ; pwm:evidenceStoreIsolated true ; prov:wasAttributedTo ex:PersonHeadOfAdvisory ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
+ex:OutsideAppetite pwm:deploymentMode "gateway" ; pwm:enforcementAttestation ex:OutsideAppetiteAttestation .
+ex:OutsideAppetiteAttestation a pwm:EnforcementAttestation ; pwm:attestedUseCase ex:OutsideAppetite ; pwm:gatewayOnlyCredentials true ; pwm:egressRestricted true ; pwm:evidenceStoreIsolated true ; prov:wasAttributedTo ex:PersonHeadOfAdvisory ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
+ex:BadDelegationOpenEnded pwm:authorityScope ex:Scope ; pwm:validFrom "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:delegationDepth "0"^^xsd:nonNegativeInteger ; pwm:maxDelegationDepth "2"^^xsd:nonNegativeInteger .
+
+# Existing negative calls receive valid 0.5 evidence so their original fault stays focused.
+ex:BadModelCall pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation .
+ex:BadMultipleCallAgents pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation .
+ex:BadToolCall pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation .
+ex:BadToolCall pwm:aboutClient ex:Client .
+ex:BadMCP pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation .
+ex:BadMCP pwm:aboutClient ex:Client .
+ex:Bad04ModelCallCardShape pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation .
+ex:PolicyDecisionRelease pwm:hasPurpose ex:PurposeMeetingPrep .
+
+# PWM 0.5 negative cases and supporting records.
+@prefix ex: <https://example.org/pwm-example#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix pwm: <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:Bad05ActionStopShape a pwm:ActionStop ;
+    prov:generatedAtTime "2026-11-05T10:00:01+00:00"^^xsd:dateTime ;
+    pwm:stopReason "kill switch drill after call completion" ;
+    pwm:stoppedCall ex:ProxyCall .
+
+ex:Bad05AdversarialTestShape a pwm:AdversarialTestCase ;
+    pwm:attackKind "prompt injection and privilege escalation" ;
+    pwm:expectedOutcome pwm:OutcomeDeny ;
+    pwm:givenAttributes "external content requests tool execution" ;
+    pwm:testsRule ex:RuleClientCommunication ;
+    pwm:whenAction "execute" .
+
+ex:Bad05AgentDecisionShape a pwm:ModelCall ;
+    pwm:callAgent ex:Agent ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:hasAttribute ex:Attribute,
+        ex:ResponseAttribute ;
+    pwm:hasModelCard ex:ModelCard ;
+    pwm:inRun ex:Run ;
+    pwm:inputTokens "100"^^xsd:nonNegativeInteger ;
+    pwm:modelName "fictional-meeting-model" ;
+    pwm:modelVersion "model-2026-09" ;
+    pwm:outputTokens "20"^^xsd:nonNegativeInteger ;
+    pwm:promptHash "sha256:7dc7222a66cbd84f39d0f9aa418ddb550b82b80785e9183ec67339831773ccfc" ;
+    pwm:promptTemplateVersion "meeting-v3" ;
+    pwm:providedBy ex:Provider ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:responseHash "sha256:813776e604662a411b5febca6cd96d4f5917400024609a219f07cec53b472101" ;
+    pwm:retainedIn ex:RetainedPrompt,
+        ex:RetainedResponse ;
+    pwm:retrievedItem ex:Snapshot ;
+    pwm:usesModel ex:Model ;
+    pwm:workloadIdentity ex:WorkerIdentity .
+
+ex:Bad05AgentFleetShape a pwm:AgentFleet ;
+    pwm:fleetMember ex:Agent,
+        ex:Worker ;
+    pwm:fleetQuota "10"^^xsd:positiveInteger .
+
+ex:Bad05AgentIdentityShape a pwm:AIAgent ;
+    rdfs:label "Meeting preparation agent"@en ;
+    pwm:agentIdentifier "AGENT-RM-PRECALL-01" ;
+    pwm:agentStatus pwm:StatusLive ;
+    pwm:approvedDeploymentVersion "sha256:fe17d8288da18bb3cc7a178d050b9af718c402a10d4f5d338633dfe0af0e1787" ;
+    pwm:deploymentDate "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:deploymentEnvironment "production" ;
+    pwm:deploymentModel ex:Model ;
+    pwm:deploymentVersion "sha256:fe17d8288da18bb3cc7a178d050b9af718c402a10d4f5d338633dfe0af0e1787" ;
+    pwm:effectiveAutonomyLevel pwm:L3Draft ;
+    pwm:hasBlastRadiusLimit ex:Limit ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:maxAutonomyLevel pwm:L3Draft ;
+    pwm:nextReviewDate "2027-02-01"^^xsd:date ;
+    pwm:operatesFor ex:PersonRM ;
+    pwm:permittedField "riskProfile" ;
+    pwm:permittedTool ex:ToolDraftNote,
+        ex:ToolPortfolioRead ;
+    pwm:registeredForUseCase ex:UseCaseMeetingPrep ;
+    pwm:workloadIdentity ex:MissingOwnerIdentity .
+
+ex:Bad05AuthenticatedInstructionShape a pwm:AuthenticatedInstruction ;
+    pwm:assuranceLevel "step-up" ;
+    pwm:instructionSource "urn:synthetic:authenticated-workflow"^^xsd:anyURI ;
+    pwm:signatureReference "urn:synthetic:signature:instruction-01"^^xsd:anyURI ;
+    pwm:transactionContext "meeting-preparation-client-0001" .
+
+ex:Bad05AuthorityRequestScopeShape a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:EUClient ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05AuthorityRevocationShape a pwm:AuthorityRevocation ;
+    pwm:rationale "Meeting preparation completed; remaining authority ends." ;
+    pwm:revokedAuthority ex:ChildDelegation .
+
+ex:Bad05AuthorityScopeShape a pwm:AuthorityScope ;
+    pwm:aboutClient ex:Client ;
+    pwm:accessEvent "Meeting within 24 hours" ;
+    pwm:actionVerb pwm:VerbDraft,
+        pwm:VerbRead ;
+    pwm:classification pwm:C2 ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:scopeAutonomyLevel pwm:L3Draft ;
+    pwm:scopeLimit ex:Limit ;
+    pwm:scopeProduct ex:Product ;
+    pwm:scopeSystem "urn:synthetic:portfolio"^^xsd:anyURI ;
+    pwm:scopeTool ex:ToolDraftNote,
+        ex:ToolPortfolioRead .
+
+ex:Bad05AutonomyCallShape a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:invokedTool ex:HighLevelTool ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05AutonomyEvidenceShape a pwm:AutonomyTransition ;
+    pwm:fromAutonomyLevel pwm:L2Recommend ;
+    pwm:fullyReconstructable true ;
+    pwm:independentValidation ex:Validator ;
+    pwm:modelVersion "model-2026-09" ;
+    pwm:observedExceptionRate 0.02 ;
+    pwm:observedQuality 0.90 ;
+    pwm:ownerApproval ex:PersonHeadOfAdvisory ;
+    pwm:promotionGate ex:Gate ;
+    pwm:sampleCount "120"^^xsd:nonNegativeInteger ;
+    pwm:toAutonomyLevel pwm:L3Draft ;
+    pwm:transitionAgent ex:Agent ;
+    pwm:transitionApproved true ;
+    pwm:windowEnd "2026-11-02T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:windowStart "2026-11-01T00:00:00+00:00"^^xsd:dateTime .
+
+ex:Bad05AutonomyTransitionShape a pwm:AutonomyTransition ;
+    pwm:fromAutonomyLevel pwm:L2Recommend ;
+    pwm:fullyReconstructable true ;
+    pwm:independentValidation ex:Validator ;
+    pwm:modelVersion "model-2026-09" ;
+    pwm:observedExceptionRate 0.02 ;
+    pwm:observedQuality 0.97 ;
+    pwm:ownerApproval ex:PersonHeadOfAdvisory ;
+    pwm:promotionGate ex:Gate ;
+    pwm:toAutonomyLevel pwm:L3Draft ;
+    pwm:transitionAgent ex:Agent ;
+    pwm:transitionApproved true ;
+    pwm:windowEnd "2026-11-02T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:windowStart "2026-11-01T00:00:00+00:00"^^xsd:dateTime .
+
+ex:Bad05BehaviourAnomalyShape a pwm:BehaviourAnomaly ;
+    pwm:anomalyBaseline ex:Baseline ;
+    pwm:anomalyValue 100.0 ;
+    pwm:containmentApplied true ;
+    pwm:notifiedRole ex:BusinessOwner .
+
+ex:Bad05BehaviourBaselineShape a pwm:BehaviourBaseline ;
+    pwm:anomalyThreshold 20.0 ;
+    pwm:baselineAgent ex:Agent ;
+    pwm:baselineExpected 5.0 ;
+    pwm:versionId "1" ;
+    pwm:windowEnd "2026-11-01T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:windowStart "2026-10-01T00:00:00+00:00"^^xsd:dateTime .
+
+ex:Bad05BlastRadiusDecisionShape a pwm:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:59:00+00:00"^^xsd:dateTime ;
+    pwm:decidedByRule ex:RuleModelAccess ;
+    pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:escalationThreshold 0.90 ;
+    pwm:hasCheck ex:ModelAccessCheck ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:inRun ex:Run ;
+    pwm:limitObservation ex:Bad05OverLimit ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:sandboxConstraints ex:Sandbox ;
+    pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:Bad05BlastRadiusLimitShape a pwm:BlastRadiusLimit ;
+    pwm:limitDimension "clients" ;
+    pwm:limitMaximum 5.0 ;
+    pwm:limitWindowBasis "minute" .
+
+ex:Bad05BlastRadiusObservationShape a pwm:BlastRadiusObservation ;
+    pwm:observedLimit ex:Limit .
+
+ex:Bad05BoundedToolShape a pwm:Tool ;
+    rdfs:label "Read portfolio positions"@en ;
+    pwm:actionVerb pwm:VerbRead ;
+    pwm:maximumDurationSeconds 30.0 ;
+    pwm:requiredAutonomyLevel pwm:L0Retrieve ;
+    pwm:reversibilityClass pwm:Irreversible ;
+    pwm:supportsCancellation false .
+
+ex:Bad05CapabilityGrantShape a pwm:CapabilityGrant ;
+    pwm:authorityScope ex:ReadScope ;
+    pwm:grantedCapability ex:ToolPortfolioRead ;
+    pwm:grantee ex:Agent ;
+    pwm:validFrom "2026-11-03T00:00:00+00:00"^^xsd:dateTime .
+
+ex:Bad05ContentIsolationShape a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolDraftNote ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05DelegationScopeShape a pwm:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    pwm:aboutClient ex:Client ;
+    pwm:actionVerb pwm:VerbDraft,
+        pwm:VerbRead ;
+    pwm:approvalThreshold "Any draft for the client needs RM approval" ;
+    pwm:authorityScope ex:Scope ;
+    pwm:delegatedBy ex:PersonModelRisk ;
+    pwm:delegatedTo ex:Agent ;
+    pwm:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    pwm:endsOnTaskCompletion true ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    pwm:permitsDataClass pwm:C2 ;
+    pwm:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
+
+ex:Bad05DeploymentEnforcementShape a pwm:AIUseCase ;
+    rdfs:label "Client meeting preparation and draft recommendations"@en ;
+    pwm:appetitePermits true ;
+    pwm:approvedJurisdiction "SG" ;
+    pwm:dependsOn ex:Model,
+        ex:Provider ;
+    pwm:deploymentMode "library" ;
+    pwm:enforcementAttestation ex:Attestation ;
+    pwm:evaluatedAgainstAppetite ex:Appetite ;
+    pwm:gatewayFailureMode pwm:FailClosed ;
+    pwm:hasAccountabilityRole ex:BusinessOwner,
+        ex:KnowledgeLead,
+        ex:RiskOwner,
+        ex:TechnologyOwner,
+        ex:Validator ;
+    pwm:hasMaterialityAssessment ex:Materiality ;
+    pwm:hasOutcomeMetric ex:Metric ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:isMediated true ;
+    pwm:lifecycleStatus pwm:StatusLive ;
+    pwm:lowRiskSamplingRate 0.10 ;
+    pwm:modelType "Language model with retrieval from approved sources" ;
+    pwm:nextReviewDate "2027-05-01"^^xsd:date ;
+    pwm:retentionPolicy ex:ContentPolicy ;
+    pwm:riskTier pwm:Tier3 ;
+    pwm:usesDataClass pwm:C2 .
+
+ex:Bad05EnforcementAttestationShape a pwm:EnforcementAttestation ;
+    prov:generatedAtTime "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
+    prov:wasAttributedTo ex:PersonHeadOfAdvisory ;
+    pwm:attestedUseCase ex:UseCaseMeetingPrep ;
+    pwm:evidenceStoreIsolated true ;
+    pwm:gatewayOnlyCredentials true .
+
+ex:Bad05ExternalContentShape a pwm:ExternalContent ;
+    pwm:contentHash "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" .
+
+ex:Bad05FieldMinimizationShape a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:reliesOnGrant ex:Grant ;
+    pwm:requestedField "passportNumber" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05FleetHaltShape a pwm:FleetHalt ;
+    prov:generatedAtTime "2026-11-05T10:00:00+00:00"^^xsd:dateTime ;
+    pwm:rationale "Containment drill" .
+
+ex:Bad05HumanEntitlementShape a pwm:HumanEntitlement ;
+    pwm:authorityScope ex:Scope ;
+    pwm:validFrom "2026-01-01T00:00:00+00:00"^^xsd:dateTime .
+
+ex:Bad05InstructionAssuranceShape a pwm:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:59:00+00:00"^^xsd:dateTime ;
+    pwm:decidedByRule ex:RuleModelAccess ;
+    pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:escalationThreshold 0.90 ;
+    pwm:hasCheck ex:ModelAccessCheck ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:inRun ex:Run ;
+    pwm:instructionEvidence ex:Instruction ;
+    pwm:limitObservation ex:Observation ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:requiresStepUp true ;
+    pwm:sandboxConstraints ex:Sandbox ;
+    pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:Bad05IrreversibleApprovalShape a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:HighAgent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:HighDecision ;
+    pwm:inRun ex:Run ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:HighDelegation ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:HighIdentity .
+
+ex:Bad05LiveAuthorityDecisionShape a pwm:ModelCall ;
+    pwm:callAgent ex:Agent ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:hasAttribute ex:Attribute,
+        ex:ResponseAttribute ;
+    pwm:hasModelCard ex:ModelCard ;
+    pwm:inRun ex:Run ;
+    pwm:inputTokens "100"^^xsd:nonNegativeInteger ;
+    pwm:modelName "fictional-meeting-model" ;
+    pwm:modelVersion "model-2026-09" ;
+    pwm:outputTokens "20"^^xsd:nonNegativeInteger ;
+    pwm:promptHash "sha256:7dc7222a66cbd84f39d0f9aa418ddb550b82b80785e9183ec67339831773ccfc" ;
+    pwm:promptTemplateVersion "meeting-v3" ;
+    pwm:providedBy ex:Provider ;
+    pwm:responseHash "sha256:813776e604662a411b5febca6cd96d4f5917400024609a219f07cec53b472101" ;
+    pwm:retainedIn ex:RetainedPrompt,
+        ex:RetainedResponse ;
+    pwm:retrievedItem ex:Snapshot ;
+    pwm:usesModel ex:Model ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05LiveGrantShape a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:reliesOnGrant ex:ExpiredGrant ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05PromotionGateShape a pwm:AutonomyPromotionGate ;
+    pwm:exceptionRateThreshold 0.05 ;
+    pwm:minimumWindowSeconds 3600.0 ;
+    pwm:qualityThreshold 0.95 ;
+    pwm:requiresFullTraceability true ;
+    pwm:stepDownThreshold 0.90 .
+
+ex:Bad05ReversibilityShape a pwm:Tool ;
+    rdfs:label "Draft a client note"@en ;
+    pwm:actionVerb pwm:VerbDraft ;
+    pwm:maximumDurationSeconds 30.0 ;
+    pwm:requiredAutonomyLevel pwm:L3Draft ;
+    pwm:reversibilityClass pwm:Reversible ;
+    pwm:supportsCancellation true .
+
+ex:Bad05SandboxConstraintsShape a pwm:SandboxConstraints ;
+    pwm:autoStopSeconds 60.0 ;
+    pwm:diskBytes "0"^^xsd:nonNegativeInteger ;
+    pwm:filesystemScope "/work read-only" ;
+    pwm:memoryBytes "1048576"^^xsd:nonNegativeInteger ;
+    pwm:networkDestination "urn:synthetic:gateway"^^xsd:anyURI ;
+    pwm:permitsExport false ;
+    pwm:permitsPersistence false ;
+    pwm:permittedAPI "urn:synthetic:portfolio-api"^^xsd:anyURI ;
+    pwm:permittedCommand "analyse" ;
+    pwm:sandboxCredential "urn:synthetic:credential:scoped"^^xsd:anyURI .
+
+ex:Bad05ScopeNarrowingLimitsShape a pwm:DelegatedAuthority ;
+    pwm:aboutClient ex:Client ;
+    pwm:actionVerb pwm:VerbRead ;
+    pwm:authorityScope ex:WiderChildScope ;
+    pwm:delegatedBy ex:PersonRM ;
+    pwm:delegatedTo ex:Worker ;
+    pwm:delegationDepth "1"^^xsd:nonNegativeInteger ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:maxDelegationDepth "1"^^xsd:nonNegativeInteger ;
+    pwm:parentDelegation ex:Delegation ;
+    pwm:permitsDataClass pwm:C2 ;
+    pwm:validFrom "2026-11-03T02:00:00+00:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-03T09:00:00+00:00"^^xsd:dateTime .
+
+ex:Bad05SubDelegationShape a pwm:DelegatedAuthority ;
+    pwm:aboutClient ex:Client ;
+    pwm:actionVerb pwm:VerbRead ;
+    pwm:authorityScope ex:ReadScope ;
+    pwm:delegatedBy ex:PersonRM ;
+    pwm:delegatedTo ex:Worker ;
+    pwm:delegationDepth "1"^^xsd:nonNegativeInteger ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:maxDelegationDepth "3"^^xsd:nonNegativeInteger ;
+    pwm:parentDelegation ex:Delegation ;
+    pwm:permitsDataClass pwm:C2 ;
+    pwm:validFrom "2026-11-03T02:00:00+00:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-03T09:00:00+00:00"^^xsd:dateTime .
+
+ex:Bad05ThreatModelShape a pwm:ThreatModel ;
+    pwm:versionId "1" .
+
+ex:Bad05ToolAllowListShape a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:invokedTool ex:UnlistedTool ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05ToolDurationShape a pwm:MCPProxiedCall ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 31.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:PolicyDecisionModelAllow ;
+    pwm:inRun ex:Run ;
+    pwm:inputContent ex:ExternalResearch ;
+    pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:Delegation ;
+    pwm:reliesOnGrant ex:Grant ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:Bad05WorkloadIdentityShape a pwm:WorkloadIdentity ;
+    pwm:credentialReference "urn:synthetic:credential:agent-01"^^xsd:anyURI ;
+    pwm:deploymentEnvironment "production" ;
+    pwm:workloadSubject "bad-identity-no-issuer" .
+
+ex:EarlyHalt a pwm:FleetHalt ;
+    prov:generatedAtTime "2026-11-03T01:00:00+00:00"^^xsd:dateTime ;
+    pwm:haltScope ex:StoppedFleet ;
+    pwm:rationale "Containment drill" .
+
+ex:Bad05OverLimit a pwm:BlastRadiusObservation ;
+    pwm:observedLimit ex:Limit ;
+    pwm:projectedConsumption 6.0 .
+
+ex:ExpiredGrant a pwm:CapabilityGrant ;
+    pwm:authorityScope ex:ReadScope ;
+    pwm:grantedCapability ex:ToolPortfolioRead ;
+    pwm:grantee ex:Agent ;
+    pwm:validFrom "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-03T01:00:00+00:00"^^xsd:dateTime .
+
+ex:HighDecision a pwm:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:59:00+00:00"^^xsd:dateTime ;
+    pwm:decidedByRule ex:RuleModelAccess ;
+    pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:escalationThreshold 0.90 ;
+    pwm:hasCheck ex:ModelAccessCheck ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:inRun ex:Run ;
+    pwm:limitObservation ex:Observation ;
+    pwm:reliesOnDelegation ex:HighDelegation ;
+    pwm:sandboxConstraints ex:Sandbox ;
+    pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:HighLevelTool a pwm:Tool ;
+    rdfs:label "Read portfolio positions"@en ;
+    pwm:actionVerb pwm:VerbRead ;
+    pwm:maximumDurationSeconds 30.0 ;
+    pwm:requiredAutonomyLevel pwm:L5BoundedAutonomy ;
+    pwm:reversibilityClass pwm:Irreversible ;
+    pwm:supportsCancellation true .
+
+ex:StoppedFleet a pwm:AgentFleet ;
+    pwm:fleetIsolation "Separate run identities and stores; agent calls use gateway authorization" ;
+    pwm:fleetMember ex:HighAgent ;
+    pwm:fleetQuota "10"^^xsd:positiveInteger .
+
+ex:UnlistedTool a pwm:Tool ;
+    rdfs:label "Read portfolio positions"@en ;
+    pwm:actionVerb pwm:VerbRead ;
+    pwm:maximumDurationSeconds 30.0 ;
+    pwm:requiredAutonomyLevel pwm:L0Retrieve ;
+    pwm:reversibilityClass pwm:Irreversible ;
+    pwm:supportsCancellation true .
+
+ex:WiderChildScope a pwm:AuthorityScope ;
+    pwm:aboutClient ex:Client ;
+    pwm:actionVerb pwm:VerbRead ;
+    pwm:classification pwm:C2 ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:scopeAutonomyLevel pwm:L6BroadAutonomy ;
+    pwm:scopeField "riskProfile" ;
+    pwm:scopeLimit ex:Limit ;
+    pwm:scopeTool ex:ToolPortfolioRead .
+
+ex:HighDelegation a pwm:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    pwm:aboutClient ex:Client ;
+    pwm:actionVerb pwm:VerbDraft,
+        pwm:VerbRead ;
+    pwm:approvalThreshold "Any draft for the client needs RM approval" ;
+    pwm:authorityScope ex:Scope ;
+    pwm:delegatedBy ex:PersonRM ;
+    pwm:delegatedTo ex:HighAgent ;
+    pwm:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    pwm:endsOnTaskCompletion true ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    pwm:permitsDataClass pwm:C2 ;
+    pwm:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
+
+ex:HighIdentity a pwm:WorkloadIdentity ;
+    pwm:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ;
+    pwm:credentialReference "urn:synthetic:high"^^xsd:anyURI ;
+    pwm:deploymentEnvironment "production" ;
+    pwm:workloadSubject "agent-high-05" .
+
+ex:HighAgent a pwm:AIAgent ;
+    rdfs:label "Meeting preparation agent"@en ;
+    pwm:agentIdentifier "AGENT-HIGH-05" ;
+    pwm:agentOwner ex:PersonHeadOfAdvisory ;
+    pwm:agentStatus pwm:StatusLive ;
+    pwm:approvedDeploymentVersion "sha256:fe17d8288da18bb3cc7a178d050b9af718c402a10d4f5d338633dfe0af0e1787" ;
+    pwm:deploymentDate "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:deploymentEnvironment "production" ;
+    pwm:deploymentModel ex:Model ;
+    pwm:deploymentVersion "sha256:fe17d8288da18bb3cc7a178d050b9af718c402a10d4f5d338633dfe0af0e1787" ;
+    pwm:effectiveAutonomyLevel pwm:L5BoundedAutonomy ;
+    pwm:hasBlastRadiusLimit ex:Limit ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:maxAutonomyLevel pwm:L5BoundedAutonomy ;
+    pwm:nextReviewDate "2027-02-01"^^xsd:date ;
+    pwm:operatesFor ex:PersonRM ;
+    pwm:permittedField "riskProfile" ;
+    pwm:permittedTool ex:ToolDraftNote,
+        ex:ToolPortfolioRead ;
+    pwm:registeredForUseCase ex:UseCaseMeetingPrep ;
+    pwm:workloadIdentity ex:HighIdentity .
+
+ex:GatewayClient pwm:boundAgent ex:HighAgent .
+
+
+ex:MissingOwnerIdentity a pwm:WorkloadIdentity ; pwm:credentialReference "urn:synthetic:missing-owner"^^xsd:anyURI ; pwm:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ; pwm:workloadSubject "missing-owner-05" ; pwm:deploymentEnvironment "test" .
+# Two complete agents intentionally share one separate workload identity.
+@prefix ex: <https://example.org/pwm-example#> .
+@prefix pwm: <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:SharedAgentA a pwm:AIAgent ;
+    pwm:agentIdentifier "SharedAgentA" ;
+    pwm:agentOwner ex:PersonHeadOfAdvisory ;
+    pwm:agentStatus pwm:StatusLive ;
+    pwm:approvedDeploymentVersion "worker-v1" ;
+    pwm:deploymentDate "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:deploymentEnvironment "production" ;
+    pwm:deploymentModel ex:Model ;
+    pwm:deploymentVersion "worker-v1" ;
+    pwm:effectiveAutonomyLevel pwm:L0Retrieve ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:maxAutonomyLevel pwm:L0Retrieve ;
+    pwm:nextReviewDate "2027-02-01"^^xsd:date ;
+    pwm:operatesFor ex:PersonRM ;
+    pwm:permittedField "riskProfile" ;
+    pwm:permittedTool ex:ToolPortfolioRead ;
+    pwm:registeredForUseCase ex:UseCaseMeetingPrep ;
+    pwm:workloadIdentity ex:SharedIdentity .
+
+ex:SharedAgentB a pwm:AIAgent ;
+    pwm:agentIdentifier "SharedAgentB" ;
+    pwm:agentOwner ex:PersonHeadOfAdvisory ;
+    pwm:agentStatus pwm:StatusLive ;
+    pwm:approvedDeploymentVersion "worker-v1" ;
+    pwm:deploymentDate "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
+    pwm:deploymentEnvironment "production" ;
+    pwm:deploymentModel ex:Model ;
+    pwm:deploymentVersion "worker-v1" ;
+    pwm:effectiveAutonomyLevel pwm:L0Retrieve ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:maxAutonomyLevel pwm:L0Retrieve ;
+    pwm:nextReviewDate "2027-02-01"^^xsd:date ;
+    pwm:operatesFor ex:PersonRM ;
+    pwm:permittedField "riskProfile" ;
+    pwm:permittedTool ex:ToolPortfolioRead ;
+    pwm:registeredForUseCase ex:UseCaseMeetingPrep ;
+    pwm:workloadIdentity ex:SharedIdentity .
+
+ex:SharedIdentity a pwm:WorkloadIdentity ;
+    pwm:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ;
+    pwm:credentialReference "urn:synthetic:credential:worker-01"^^xsd:anyURI ;
+    pwm:deploymentEnvironment "production" ;
+    pwm:workloadSubject "shared-05" .

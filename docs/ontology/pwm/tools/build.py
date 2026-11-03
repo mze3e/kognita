@@ -36,7 +36,7 @@ SOURCES = [
 MARK_ORDER = ["ONT", "ISO", "REG", "KOG", "AM", "NEW"]
 
 STATUS = (
-    "Draft for comment. Version 0.4 aligns with roadmap milestone 0.4: ingestion, declarative policy and the client lifecycle. Terms, code lists and rules may change "
+    "Draft for comment. Version 0.5 aligns with roadmap milestone 0.5: agents, authority and fleets. Terms, code lists and rules may change "
     "before 1.0, and every change will be recorded in the change log. It is not legal advice: the "
     "regulatory citations show where a term comes from, not how a rule applies to a given firm."
 )
@@ -73,7 +73,7 @@ PRINCIPLES = [
     ("Generic core, firm extension",
      "No institution's data, thresholds or names appear here. A firm adds them in its own ontology that imports PWM."),
 ]
-CHANGELOG = [("0.4", "2026-11-03", "Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing."), ("0.3", "2026-11-03", "Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2."), ("0.2", "2026-11-03", "Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link."), ("0.1", "2026-11-02", "First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests.")]
+CHANGELOG = [("0.5", "2026-11-03", "Aligned to roadmap milestone 0.5: workload identity, explicit scoped and expiring human authority, autonomy evidence and step-down, blast-radius caps, content trust, instruction assurance, anomaly records, narrowing delegation chains, capability grants, fleets, sandbox output, reversibility, adversarial tests, enforcement attestations and stopping in-flight calls. Existing governance terms are reused. Configuration/grants are SlowContext; execution evidence is MediumContext."), ("0.4", "2026-11-03", "Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing."), ("0.3", "2026-11-03", "Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2."), ("0.2", "2026-11-03", "Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link."), ("0.1", "2026-11-02", "First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests.")]
 
 EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -84,7 +84,7 @@ EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix firm: <https://example.org/firm/ontology#> .
 
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.4> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.5> .
 
 # The firm's own risk scale, in place of the illustrative one
 firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
@@ -399,19 +399,35 @@ def build(base: Path, site_path):
     with (base / "SPEC.md").open("a", encoding="utf-8") as spec:
         gap_path = base / "GAP_ANALYSIS.md"
         if gap_path.exists():
-            spec.write("\n" + gap_path.read_text(encoding="utf-8").replace("# PWM 0.4 gap analysis", "## Gap analysis for 0.4", 1) + "\n")
-        spec.write("\n## Verification for 0.4\n\n")
+            spec.write("\n" + gap_path.read_text(encoding="utf-8").replace("# PWM 0.4 gap analysis", "## Gap analysis for 0.4", 1).replace("## PWM 0.5 gap analysis", "## Gap analysis for 0.5", 1) + "\n")
+        spec.write("\n## Verification for 0.5\n\n")
+        spec.write("New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGrant (OMG Commons Authorization), and AdversarialTestCase (PolicyTestCase, itself a prov:Entity). AuthorityRevocation, FleetHalt and ActionStop are records about interventions, not prov:Activity. AIAgent retains prov:SoftwareAgent and OMG SoftwareAgent. Existing Run, governed calls and Replay retain their activity parents. No new external matches are asserted. All new datatype-property ranges use OWL 2 datatype-map datatypes.\n\n")
         node_count = len(set(sg.subjects(RDF.type, SH.NodeShape)))
         spec.write(f"There are {node_count} node shapes: {counts['rules']} written targeted shapes, {counts['codeListRules']} generated targeted shapes and one untargeted helper.\n\n")
         positive = base / "examples/pwm-example.ttl"
         negative = base / "examples/pwm-example-invalid.ttl"
         if positive.exists() and negative.exists():
             pg, ng = Graph().parse(positive), Graph().parse(negative)
-            spec.write(f"The positive example contains {len(set(pg.subjects(RDF.type, None)))} typed records. The negative fixture contains {len(set(ng.subjects(RDF.type, None)))} typed records. There are 84 typed violating records, six typed supporting records and four untyped violating subjects, yielding 95 expected violations across 88 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.\n\n")
-        spec.write("The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.\n\n")
+            # Counts come from the explicit expected violations, without executing SHACL here.
+            import importlib.util
+            validator_spec = importlib.util.spec_from_file_location("pwm_validator", base / "tools" / "validate.py")
+            # Test builds can copy only data and sources; use this tool's sibling as fallback.
+            if not (base / "tools" / "validate.py").exists():
+                validator_spec = importlib.util.spec_from_file_location("pwm_validator", Path(__file__).with_name("validate.py"))
+            validator = importlib.util.module_from_spec(validator_spec)
+            validator_spec.loader.exec_module(validator)
+            focuses = {URIRef(validator.EX + focus) for focus, _, _ in validator.EXPECTED}
+            typed = set(ng.subjects(RDF.type, None))
+            typed_violating = len(typed & focuses)
+            typed_supporting = len(typed - focuses)
+            untyped_violating = len(focuses - typed)
+            expected_violations = sum(validator.EXPECTED.values())
+            focus_count = len(focuses)
+            spec.write(f"The positive example contains {len(set(pg.subjects(RDF.type, None)))} typed records. The negative fixture contains {len(set(ng.subjects(RDF.type, None)))} typed records. There are {typed_violating} typed violating records, {typed_supporting} typed supporting records and {untyped_violating} untyped violating subjects, yielding {expected_violations} expected violations across {focus_count} focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.\n\n")
+        spec.write("The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.\n\n")
         spec.write(f"All {counts['rules']} written rules have negative fixtures. Two generated code-list rules are exercised there; all {counts['codeListRules']} generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, falling back to NOW when absent; historical decisions are judged at their decision time. A decision on an expired use case must be DENY.\n\n")
         spec.write("New 0.4 PROV specialisations: IngestedDocument, DeclarativePolicy, PolicyChange, PolicyTestCase, PolicyPack, FlightRecorderSession, RMReviewEdit, ReviewQueue, ReviewQueueEntry, ReviewCoverageReport, AffectedClientQuery, AffectedClientResult and InteractionOutcome specialise prov:Entity. Replay specialises prov:Activity. DocumentElement specialises existing DocumentSection (OMG Commons Document); CircuitBreaker specialises KillSwitch; CircuitBreakerTrip specialises AIIncident (prov:Entity). No PROV activity parent is asserted for recorder manifests, edits or trips.\n\n")
-        spec.write("PWM version N aligns to roadmap milestone N. Version 0.4 models milestone 0.4, not the software release number. The inherited 0.3 PROV specialisations remain as follows. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.\n\n")
+        spec.write("PWM version N aligns to roadmap milestone N. Version 0.5 models milestone 0.5, not the software release number. The inherited 0.3 PROV specialisations remain as follows. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.\n\n")
         spec.write("Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. "
                    "Item locators retain the roadmap section numbers at that commit.\n\n")
         spec.write("EUR-Lex CELEX 32021R1253 (EN/ALL text and relationship table) confirms that 2021/1253 Art. 1(1) "
@@ -500,7 +516,7 @@ def spec_md(d, refs):
            f"| Version IRI | {m['versionIri']} |",
            f"| Namespace | `pwm:` {m['namespace']} |",
            f"| Shapes | {m['shapesIri']} (`pwm-shapes.ttl`), latest pointer |",
-           f"| Shapes version IRI | {SITE}/0.4/pwm-shapes.ttl |",
+           f"| Shapes version IRI | {SITE}/0.5/pwm-shapes.ttl |",
            f"| Licence | [CC BY-SA 4.0]({m['license']}) |",
            f"| Author | {m['creator']} |",
            f"| Web page | {m['ontologyIri']} |", "",
@@ -509,7 +525,7 @@ def spec_md(d, refs):
            f"Size: {c['classes']} classes, {c['objectProperties']} object properties, {c['datatypeProperties']} datatype properties, "
            f"{c['codeLists']} code lists with {c['concepts']} codes, {c['rules']} data rules plus {c['codeListRules']} generated code-list rules, {c['references']} references and "
            f"{c['citations']} citations. {m['fiboAligned']} FIBO terms are specialised or mapped.", "",
-           "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.4:", ""] + \
+           "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.5:", ""] + \
           [f"- {s}" for s in d["scopeOut"]] + ["", "## Design principles", ""] + \
           [f"{i}. **{p['title']}.** {p['body']}" for i, p in enumerate(d["principles"], 1)] + \
           ["", "## How references are marked", "",

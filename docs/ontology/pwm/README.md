@@ -1,6 +1,6 @@
 # Private Wealth Management Ontology (PWM)
 
-**Version 0.4, draft for comment (3 November 2026).**
+**Version 0.5, draft for comment (3 November 2026).**
 Web page: https://ahmedmuzammil.com/ontology/pwm · Full specification: [SPEC.md](SPEC.md)
 
 PWM is a generic ontology for private banking and wealth management, and for the AI that works on it. It covers parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, the client journey from origination to communication, and the governance of AI: use cases, risk materiality, accountability, agents, delegated authority, claims and evidence.
@@ -26,9 +26,9 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 | `src/*.ttl` | Sources: header, reference register, one file per module group, code-list bindings, external declarations |
 | `tools/` | Build, integrity checks and validation |
 
-IRIs: ontology `https://ahmedmuzammil.com/ontology/pwm`, version `https://ahmedmuzammil.com/ontology/pwm/0.4` (resolves to the Turtle file), namespace `https://ahmedmuzammil.com/ontology/pwm#` (each term resolves to its entry on the web page).
+IRIs: ontology `https://ahmedmuzammil.com/ontology/pwm`, version `https://ahmedmuzammil.com/ontology/pwm/0.5` (resolves to the Turtle file), namespace `https://ahmedmuzammil.com/ontology/pwm#` (each term resolves to its entry on the web page).
 
-Shapes use `https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl` as their version IRI. The unversioned `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. Both retain the original host without www.
+Shapes use `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl` as their version IRI. The unversioned `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. Both retain the original host without www.
 
 The roadmap source is pinned to software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. See the source verification table in SPEC for every FIBO IRI and its maturity. The sitemap and speaking page expose no talk-specific Filing Cabinet page, so its general speaking link is retained with a note.
 
@@ -40,14 +40,14 @@ Import the version IRI:
 
 ```turtle
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.4> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.5> .
 ```
 
 The version IRI resolves to `pwm.ttl` once the web page is published. Until then, or to work offline, map it to a local copy. In Protégé, put a `catalog-v001.xml` next to your ontology:
 
 ```xml
 <catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
-  <uri name="https://ahmedmuzammil.com/ontology/pwm/0.4" uri="pwm.ttl"/>
+  <uri name="https://ahmedmuzammil.com/ontology/pwm/0.5" uri="pwm.ttl"/>
 </catalog>
 ```
 
@@ -85,6 +85,7 @@ python3 tools/check.py pwm.ttl /tmp/fibo-index.json path/to/dpv/2.3   # without 
 # Every pwm: term used in the shapes and examples is defined (exits 1 if not)
 python3 tools/check_shapes_terms.py pwm.ttl pwm-shapes.ttl
 python3 tools/check_shapes_terms.py pwm.ttl examples/pwm-example.ttl
+python3 tools/check_shapes_terms.py pwm.ttl examples/pwm-example-invalid.ttl
 
 # SHACL: the example conforms and its evidence chain is unbroken; the negative
 # fixture raises exactly the expected violations (-v prints them)
@@ -100,19 +101,21 @@ robot reason --reasoner HermiT --equivalent-classes-allowed none --input pwm.ttl
 
 To reason over data, merge it with `pwm.ttl` as RDF first (for example with rdflib), so that properties keep the types `pwm.ttl` declares.
 
-Version 0.4 contains 167 domain classes, 289 properties (171 object, 118 datatype), 46 code lists with 229 codes, 81 written rules and 59 generated rules. There are 141 node shapes, including one untargeted helper, and 140 targeted shapes. The positive example contains 146 typed records. The negative fixture contains 90 typed records: 84 violating records and six supporting records, plus four untyped violating subjects, raising 95 expected violations across 88 focus nodes. It covers all 81 written shapes and two generated code-list shapes. Regression tests exercise all 59 generated code-list shapes.
+Version 0.5 contains 187 domain classes, 399 properties (216 object, 183 datatype), 48 code lists with 235 codes, 123 written rules and 66 generated rules. There are 190 node shapes, including one untargeted helper, and 189 targeted shapes. The positive example contains 178 typed records. The negative fixture contains 152 typed records: 126 violating records and 26 supporting records, plus 4 untyped violating subjects, raising 146 expected violations across 130 focus nodes. It covers all 123 written shapes and two generated code-list shapes. Regression tests exercise all 66 generated code-list shapes.
 
 Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. HermiT consistency checks pass with no unsatisfiable classes. The positive example conforms, is consistent with the ontology, and has one unbroken evidence chain. The negative fixture is intentionally inconsistent under HermiT because it names an AI agent in an accountability role.
 
-See [the 0.4 gap analysis](GAP_ANALYSIS.md) for reused terms, additions, grounds and runtime boundaries.
+See [the 0.5 gap analysis](GAP_ANALYSIS.md) for reused terms, additions, grounds and runtime boundaries.
 
 The inherited 0.3 model includes run budgets and consumption, durable approval checkpoints and resolution, gateway model and MCP records, classifier evidence and typed-attribute precedence, pinned policy checks and retrieved content, retention and evidenced erasure, ten-question reconstruction coverage, failure modes, and authenticated client identity bindings. Existing model, hash, provider, decision and event vocabulary is reused. New specialised records and fields cite specific 0.3 items and are marked NEW; Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. MAS AIRG grounds use the existing 7 October 2026 register entry, including 5.9 human oversight, 5.17 reproducibility and 5.23(d) record keeping. Retention and policy checks also reuse the existing Filing Cabinet slide grounds.
 
-Retention duration is measured in whole days as xsd:nonNegativeInteger. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. The 0.4 versioned policy artefacts and breaker configuration use SlowContext; recorded evidence and review state use MediumContext. FastContext is reserved for live data.
+Retention duration is measured in whole days as xsd:nonNegativeInteger. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Versioned policy artefacts, breaker configuration, agent registers, grants and scopes use SlowContext; recorded evidence and review state use MediumContext. FastContext is reserved for live data.
 
 PWM version N aligns with Kognita roadmap milestone N. Version 0.4 adds 17 classes, 66 properties and two classification schemes for structured ingestion, declarative policy artefacts and tests, policy packs, recorder replay, RM edits, review queues and coverage, circuit-breaker incidents, affected-client results and outcomes. New terms cite individual 0.4 items and are marked NEW. Existing register, materiality, origination, decision, communication and near-miss terms are reused. MAS AIRG grounds retain the registered 7 October 2026 instrument. SPEC describes the exact PROV parents and the runtime boundary. Removed roadmap item 2 adds no model.
 
 The shapes validate recorded structure and relationships. They do not fetch retained payloads, execute gateway controls, or recompute content hashes. The example uses synthetic content references; production reconstruction must retrieve the retained content and compare hashes. A report records that verification result and any mismatch finding. Per-use-case degraded mode permits only local models without client data and requires evidence after recovery; this policy meaning is recorded in the code definition, while enforcement belongs to the gateway.
+
+PWM 0.5 adds 20 classes, 110 properties and two code lists. Item-level KOG grounds cover all sixteen roadmap items; NEW marks specialised definitions. Existing MAS AIRG, IMDA, EVOLVE and Governing agentic AI references supply relevant governance grounds. No new external ontology matches are asserted. See [GAP_ANALYSIS.md](GAP_ANALYSIS.md#pwm-05-gap-analysis) for reused terms, constraints and runtime boundaries. New ranges use OWL 2 datatype-map datatypes. Credential examples contain opaque synthetic references only.
 
 ## Status and licence
 
@@ -120,4 +123,4 @@ Draft. Terms may change before 1.0; changes are recorded in the change log in SP
 
 The ontology, shapes, examples and specification in this folder are licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The scripts in `tools/` are MIT, like the rest of Kognita. FIBO is MIT-licensed by the EDM Council.
 
-The 0.3 review fixes use `xsd:nonNegativeInteger` in whole days for `retentionDuration`, with matching shapes and example data. `RetentionPolicy` now uses `SlowContext` and `C1`; `AuthenticatedClientConfiguration` and the persistent configured identity `SystemTrigger` use `SlowContext` and retain `C2`. Other new classes describe execution events, evidence or snapshots and retain `FastContext`.
+The 0.3 review fixes use `xsd:nonNegativeInteger` in whole days for `retentionDuration`, with matching shapes and example data. `RetentionPolicy` now uses `SlowContext` and `C1`; `AuthenticatedClientConfiguration` and the persistent configured identity `SystemTrigger` use `SlowContext` and retain `C2`. Execution events, evidence and snapshots use `MediumContext`; `FastContext` is reserved for live financial state.

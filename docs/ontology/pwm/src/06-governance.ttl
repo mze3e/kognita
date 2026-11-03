@@ -171,7 +171,7 @@ pwm:DelegatedAuthority a owl:Class ;
     skos:scopeNote "A request is allowed only if the person holds the entitlement and the agent holds a live delegation for it."@en ;
     rdfs:subClassOf cmns-bauth:Authorization ;
     pwm:inModule pwm:ModuleGovernance ;
-    pwm:contextSpeed pwm:FastContext ;
+    pwm:contextSpeed pwm:SlowContext ;
     pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2: delegated authority" ] ,
                  [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 2: explicit delegated authority" ] .
@@ -208,7 +208,7 @@ pwm:KillSwitch a owl:Class ;
     rdfs:label "kill switch"@en ;
     skos:definition "Mechanism that deactivates an AI system expeditiously when it exceeds risk tolerances, effective on the next decision, with a tested activation protocol and fallback."@en ;
     pwm:inModule pwm:ModuleGovernance ;
-    pwm:contextSpeed pwm:FastContext ;
+    pwm:contextSpeed pwm:SlowContext ;
     pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.3 and fn 29; 5.23(b)" ] , [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 12" ] .
 
 pwm:KillSwitchDrill a owl:Class ;

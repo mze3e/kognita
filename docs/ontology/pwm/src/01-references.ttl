@@ -326,7 +326,7 @@ pwmref:KOG-ROADMAP a pwm:Reference ;
     dcterms:date "2026-09, at release 0.7.0" ;
     rdfs:seeAlso <https://github.com/mze3e/kognita/blob/9303769/docs/ROADMAP.md> ;
     pwm:sourceType pwm:SourceKognita ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" ;
-    skos:note "Read at software release 0.7.0, commit 9303769, not roadmap milestone 0.7. Locators such as 0.4 item 8 refer to roadmap sections as recorded at that software release." .
+    skos:note "Read at software release 0.7.0, commit 9303769, not roadmap milestone 0.7. Locators such as 0.4 item 8 refer to roadmap sections as recorded at that software release. Milestone 0.5 items 1 to 16 and its Definition of Done were also re-read in the local docs/ROADMAP.md on 3 November 2026 for ontology 0.5; the original pinned software-release reference is retained." .
 
 pwmref:KOG-CONTROLS a pwm:Reference ;
     dcterms:alternative "Kognita regulations library" ;

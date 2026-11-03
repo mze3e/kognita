@@ -107,14 +107,14 @@ def test_version_and_counts(tmp_path):
     g = Graph().parse(BASE / 'pwm.ttl')
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     site = 'https://ahmedmuzammil.com/ontology/pwm'
-    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.4')
-    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.4/pwm-shapes.ttl')
-    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.4 (draft)'
-    assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.3')
-    assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.3/pwm-shapes.ttl')
-    assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 229
-    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 141
-    assert len(set(example().subjects(RDF.type, None))) == 146
+    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.5')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.5/pwm-shapes.ttl')
+    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.5 (draft)'
+    assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.4')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.4/pwm-shapes.ttl')
+    assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 235
+    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 190
+    assert len(set(example().subjects(RDF.type, None))) == 178
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
@@ -122,9 +122,9 @@ def test_version_and_counts(tmp_path):
     shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (167, 171, 118, 46, 81, 59)
-    assert sum(validator.EXPECTED.values()) == 95
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 90
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (187, 216, 183, 48, 123, 66)
+    assert sum(validator.EXPECTED.values()) == 146
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 152
 
 
 def test_every_generated_code_list_rule():
@@ -170,7 +170,7 @@ def test_every_generated_code_list_rule():
     actual = {(report.value(r, validator.SH.focusNode), report.value(r, validator.SH.resultPath))
               for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
     assert actual == expected
-    assert len(actual) == 59
+    assert len(actual) == 66
 
 
 def test_sustainability_preference_edges():
@@ -346,15 +346,17 @@ def test_historical_review_boundary_and_distinct_signatures():
     """Same-day review is valid; the following day requires DENY; repeated signer is one human."""
     from pyshacl import validate
     g = example()
+    for predicate, value in list(g.predicate_objects(E('PolicyDecisionModelAllow'))):
+        g.add((E('HistoricalReviewDecision'), predicate, value))
     due = g.value(E('UseCaseMeetingPrep'), P('nextReviewDate'))
     at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
-    g.set((E('PolicyDecisionModelAllow'), at, Literal(str(due) + 'T23:59:59Z', datatype=XSD.dateTime)))
+    g.set((E('HistoricalReviewDecision'), at, Literal(str(due) + 'T23:59:59Z', datatype=XSD.dateTime)))
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     ontology = Graph().parse(BASE / 'pwm.ttl')
     assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
     from datetime import date, timedelta
     later = date.fromisoformat(str(due)) + timedelta(days=1)
-    g.set((E('PolicyDecisionModelAllow'), at, Literal(str(later) + 'T00:00:00Z', datatype=XSD.dateTime)))
+    g.set((E('HistoricalReviewDecision'), at, Literal(str(later) + 'T00:00:00Z', datatype=XSD.dateTime)))
     g.remove((E('Communication'), P('communicationSigner'), E('PersonModelRisk')))
     g.add((E('Communication'), P('communicationSigner'), E('PersonRM')))
     conforms, report, _ = validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
@@ -362,9 +364,9 @@ def test_historical_review_boundary_and_distinct_signatures():
     failures = {(validator.local(report.value(r, validator.SH.focusNode)),
                  validator.local(report.value(r, validator.SH.sourceShape)))
                 for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
-    assert ('PolicyDecisionModelAllow', 'PastReviewDecisionShape') in failures
+    assert ('HistoricalReviewDecision', 'PastReviewDecisionShape') in failures
     assert ('Communication', 'TwoSignatureShape') in failures
-    g.set((E('PolicyDecisionModelAllow'), P('decisionOutcome'), P('OutcomeDeny')))
+    g.set((E('HistoricalReviewDecision'), P('decisionOutcome'), P('OutcomeDeny')))
     g.add((E('Communication'), P('communicationSigner'), E('PersonModelRisk')))
     assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
 
@@ -379,3 +381,144 @@ def test_04_reconstruction_and_zero_affected_clients():
     g.set((E('Affected'), P('resultCount'), Literal(0, datatype=XSD.nonNegativeInteger)))
     assert validate(g, shacl_graph=Graph().parse(BASE / 'pwm-shapes.ttl'),
                     ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')[0]
+
+
+def validate_05(data, names):
+    """Exercise selected policy boundaries against full ontology inference."""
+    from pyshacl import validate
+    from rdflib import BNode
+    all_shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    shapes = Graph()
+    pending = [URIRef(validator.PWMSH + name) for name in names]
+    # Include prefix declarations and nested property/RDF list nodes.
+    pending.append(URIRef('https://ahmedmuzammil.com/ontology/pwm/shapes'))
+    seen = set()
+    while pending:
+        node = pending.pop()
+        if node in seen:
+            continue
+        seen.add(node)
+        for triple in all_shapes.triples((node, None, None)):
+            shapes.add(triple)
+            if isinstance(triple[2], BNode):
+                pending.append(triple[2])
+    return validate(data, shacl_graph=shapes, ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')[0]
+
+
+def test_05_promotion_thresholds_and_step_down():
+    shapes = ['AutonomyEvidenceShape', 'AutonomyTransitionShape']
+    for prop, value, allowed in [
+        ('observedQuality', Literal('.95', datatype=XSD.decimal), True),
+        ('observedQuality', Literal('.949', datatype=XSD.decimal), False),
+        ('observedExceptionRate', Literal('.05', datatype=XSD.decimal), False),
+        ('sampleCount', Literal(99, datatype=XSD.nonNegativeInteger), False),
+        ('fullyReconstructable', Literal(False), False),
+        ('windowEnd', Literal('2026-11-01T00:59:59Z', datatype=XSD.dateTime), False),
+        ('windowEnd', Literal('2026-11-01T01:00:00Z', datatype=XSD.dateTime), True),
+    ]:
+        g = example()
+        g.set((E('Promotion'), P(prop), value))
+        assert validate_05(g, shapes) == allowed, prop
+    g = example()
+    g.set((E('StepDown'), P('toAutonomyLevel'), P('L1Explain')))
+    assert not validate_05(g, shapes)
+    g.set((E('StepDown'), P('toAutonomyLevel'), P('L2Recommend')))
+    g.remove((E('StepDown'), P('notifiedRole'), E('KnowledgeLead')))
+    assert not validate_05(g, shapes)
+
+
+def test_05_authority_revocation_and_expiry_boundaries():
+    shapes = ['LiveAuthorityDecisionShape', 'LiveGrantShape']
+    g = example()
+    assert validate_05(g, shapes)
+    decision_time = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    at = g.value(E('PolicyDecisionModelAllow'), decision_time)
+    g.set((E('GrantRevocation'), P('revokedAt'), at))
+    assert not validate_05(g, shapes)
+    g.remove((E('ProxyCall'), P('reliesOnGrant'), None))
+    assert validate_05(g, shapes)
+    g.set((E('Delegation'), P('validUntil'), at))
+    assert not validate_05(g, shapes)
+    g.set((E('PolicyDecisionModelAllow'), P('decisionOutcome'), P('OutcomeDeny')))
+    assert validate_05(g, shapes)
+
+
+def test_05_scope_narrowing_and_depth():
+    shapes = ['SubDelegationShape', 'ScopeNarrowingLimitsShape']
+    for prop, value in [('delegationDepth', Literal(3, datatype=XSD.nonNegativeInteger)),
+                        ('maxDelegationDepth', Literal(3, datatype=XSD.nonNegativeInteger)),
+                        ('validUntil', Literal('2026-11-04T00:00:00Z', datatype=XSD.dateTime))]:
+        g = example()
+        g.set((E('ChildDelegation'), P(prop), value))
+        assert not validate_05(g, shapes)
+    g = example()
+    g.add((E('ReadScope'), P('scopeField'), Literal('passportNumber')))
+    assert not validate_05(g, shapes)
+    g = example()
+    g.remove((E('ReadScope'), P('scopeLimit'), None))
+    assert not validate_05(g, shapes)
+    g = example()
+    g.set((E('Delegation'), P('parentDelegation'), E('ChildDelegation')))
+    assert not validate_05(g, shapes)
+
+
+def test_05_blast_radius_and_content_lanes():
+    g = example()
+    g.set((E('Observation'), P('projectedConsumption'), Literal('5', datatype=XSD.decimal)))
+    assert validate_05(g, ['BlastRadiusDecisionShape'])
+    g.set((E('Observation'), P('projectedConsumption'), Literal('5.01', datatype=XSD.decimal)))
+    assert not validate_05(g, ['BlastRadiusDecisionShape'])
+    g.set((E('PolicyDecisionModelAllow'), P('decisionOutcome'), P('OutcomeHumanApproval')))
+    assert validate_05(g, ['BlastRadiusDecisionShape'])
+    g = example()
+    g.add((E('Run'), P('inputContent'), E('ClientSnapshot')))
+    g.set((E('ToolPortfolioRead'), P('publicContentTool'), Literal(True)))
+    assert not validate_05(g, ['ContentIsolationShape'])
+    g.set((E('PolicyDecisionModelAllow'), P('decisionOutcome'), P('OutcomeDeny')))
+    assert validate_05(g, ['ContentIsolationShape'])
+
+
+def test_05_owl_datatypes_context_and_grounding():
+    from rdflib.namespace import OWL, RDFS
+    g = Graph().parse(BASE / 'pwm.ttl')
+    terms = set(g.subjects(P('inModule'), P('ModuleAgents')))
+    allowed = {XSD.string, XSD.anyURI, XSD.boolean, XSD.dateTime, XSD.decimal,
+               XSD.nonNegativeInteger, XSD.positiveInteger}
+    for term in terms:
+        if (term, RDF.type, OWL.DatatypeProperty) in g:
+            assert set(g.objects(term, RDFS.range)) <= allowed
+        if (term, RDF.type, OWL.Class) in g:
+            assert g.value(term, P('contextSpeed')) in (P('SlowContext'), P('MediumContext'))
+        citations = list(g.objects(term, P('citation')))
+        assert any(g.value(c, P('cites')) == P('ref-KOG-ROADMAP') and
+                   '0.5' in str(g.value(c, P('locator'))) for c in citations)
+    assert g.value(P('DelegatedAuthority'), P('contextSpeed')) == P('SlowContext')
+    assert g.value(P('WorkloadIdentity'), P('contextSpeed')) == P('SlowContext')
+
+
+def test_05_no_term_redefinition_or_em_dash():
+    import re
+    existing = ''.join(p.read_text() for p in sorted((BASE / 'src').glob('*.ttl'))
+                       if p.name != '11-agents-authority-fleets.ttl')
+    new = (BASE / 'src/11-agents-authority-fleets.ttl').read_text()
+    pattern = r'^pwm:(\w+) a (?:owl:Class|owl:ObjectProperty|owl:DatatypeProperty|skos:ConceptScheme)'
+    assert not set(re.findall(pattern, existing, re.M)) & set(re.findall(pattern, new, re.M))
+    for path in BASE.rglob('*'):
+        if path.suffix in ('.ttl', '.md', '.py'):
+            assert chr(0x2014) not in path.read_text(), path
+
+
+def test_05_approval_repairs_and_combined_taint():
+    # Human approval is necessary at high autonomy and can satisfy the rule.
+    g = example()
+    g.set((E('Agent'), P('effectiveAutonomyLevel'), P('L5BoundedAutonomy')))
+    g.set((E('Agent'), P('maxAutonomyLevel'), P('L5BoundedAutonomy')))
+    assert not validate_05(g, ['IrreversibleApprovalShape'])
+    g.add((E('PolicyDecisionModelAllow'), P('humanApproval'), E('Resolution')))
+    assert validate_05(g, ['IrreversibleApprovalShape'])
+    # Both external and client-data taint may apply to the same content.
+    g = example()
+    g.add((E('ExternalResearch'), P('trustLabel'), P('TrustClientData')))
+    assert validate_05(g, ['ExternalContentShape'])
+    g.set((E('ToolPortfolioRead'), P('publicContentTool'), Literal(True)))
+    assert not validate_05(g, ['ContentIsolationShape'])
