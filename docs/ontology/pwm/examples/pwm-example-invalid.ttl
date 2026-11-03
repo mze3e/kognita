@@ -306,3 +306,16 @@ ex:BadMultipleCallAgents a pwm:GovernedCall ;
 ex:BadMultipleSystemTriggers a pwm:GovernedCall ;
     pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ;
     pwm:clientConfiguration ex:GatewayClient ; pwm:systemTrigger ex:ScheduledTrigger, ex:UnlistedTrigger .
+
+# A denied approval cannot authorize dispatch of the held action.
+ex:DeniedCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:Run .
+ex:DeniedCallRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:DeniedCallDecision ; pwm:atCheckpoint ex:Checkpoint .
+ex:DeniedCallResolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:DeniedCallRequest ;
+    pwm:approvalResolution pwm:ApprovalDenied ; prov:wasAttributedTo ex:PersonRM ;
+    prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime .
+ex:BadDeniedApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:DeniedCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .

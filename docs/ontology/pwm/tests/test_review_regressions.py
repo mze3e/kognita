@@ -121,8 +121,8 @@ def test_version_and_counts(tmp_path):
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (150, 140, 83, 44, 55, 56)
-    assert sum(validator.EXPECTED.values()) == 69
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 68
+    assert sum(validator.EXPECTED.values()) == 70
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 72
 
 
 def test_every_generated_code_list_rule():
@@ -313,3 +313,25 @@ def test_classifier_identity_and_typed_precedence():
                 for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
     assert ('GatewayCall', 'ClassifierThresholdShape') in failures
     assert ('DerivedPrincipal', 'EnvelopeAttributeShape') in failures
+
+
+def test_denied_approval_cannot_authorize_governed_calls():
+    """All call types reject denial while an approved held decision still passes."""
+    from pyshacl import validate
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    ontology = Graph().parse(BASE / 'pwm.ttl')
+    for kind in ('ModelCall', 'ToolCall', 'MCPProxiedCall'):
+        g = example()
+        call = E('GatewayCall')
+        g.set((call, RDF.type, P(kind)))
+        g.set((call, P('governedByDecision'), E('PolicyDecisionRelease')))
+        g.add((call, P('invokedTool'), E('ToolPortfolioRead')))
+        g.add((call, P('mcpBackend'), Literal('portfolio-local')))
+        assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
+        g.set((E('Resolution'), P('approvalResolution'), P('ApprovalDenied')))
+        conforms, report, _ = validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
+        assert not conforms
+        failures = {(report.value(r, validator.SH.focusNode),
+                     report.value(r, validator.SH.sourceShape))
+                    for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
+        assert failures == {(call, URIRef(validator.PWMSH + 'GovernedCallShape'))}

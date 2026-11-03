@@ -3188,7 +3188,7 @@ Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMA
 <a id="GovernedCallShape"></a>
 ### GovernedCallShape
 
-Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
 
 - call agent: at most 1
 - system trigger: at most 1
@@ -3196,8 +3196,9 @@ Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-R
 - Record governedByDecision (roadmap milestone 0.3).
 - Record clientConfiguration (roadmap milestone 0.3).
 - Call identity must be an agent bound to the authenticated client or a listed system trigger (0.3 Tier 0).
+- A denied approval does not authorize a call governed by the held decision (0.3 item 2; MAS AIRG 5.9).
 
-*Roadmap milestone 0.3 item 3.*
+*Roadmap milestone 0.3 items 2 and 3; MAS AIRG 5.9 human oversight.*
 
 <a id="PinnedDecisionShape"></a>
 ### Pinned decision checks
@@ -3370,13 +3371,13 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 | Version | Date | Change |
 |---|---|---|
-| 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. |
+| 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls reject held decisions whose approval request resolves only as ApprovalDenied (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
 
 ## Verification for 0.3
 
-There are 112 node shapes: 55 written targeted shapes, 56 generated targeted shapes and one untargeted helper. The negative fixture file contains 68 records: 62 violating records and six supporting records, yielding 69 expected violations. The positive example contains 124 typed records.
+There are 112 node shapes: 55 written targeted shapes, 56 generated targeted shapes and one untargeted helper. The negative fixture file contains 72 records: 63 violating records and nine supporting records, yielding 70 expected violations. The positive example contains 124 typed records.
 
 The unversioned shapes IRI `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. The immutable 0.3 shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl`. The existing host excludes www. Publication is separate from this build.
 
