@@ -678,7 +678,7 @@ ex:ToolDraftNote pwm:reversibilityClass pwm:Reversible ; pwm:maximumDurationSeco
 ex:Scope pwm:scopeAutonomyLevel pwm:L3Draft ; pwm:scopeLimit ex:Limit .
 ex:ReadScope pwm:scopeAutonomyLevel pwm:L0Retrieve ; pwm:scopeLimit ex:Limit .
 ex:ProxyCall pwm:aboutClient ex:Client ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:callDurationSeconds 2.0 .
-ex:PolicyDecisionModelAllow pwm:hasPurpose ex:PurposeMeetingPrep ; prov:generatedAtTime "2026-11-03T01:59:00Z"^^xsd:dateTime .
+ex:PolicyDecisionModelAllow pwm:hasPurpose ex:PurposeMeetingPrep ; prov:generatedAtTime "2026-11-03T01:58:00Z"^^xsd:dateTime .
 
 ex:CancelledCall a pwm:MCPProxiedCall ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionModelAllow ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:mcpBackend "portfolio-local" ; pwm:responseHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:aboutClient ex:Client ; pwm:callDurationSeconds 10.0 .
 ex:Cancelled a pwm:ActionStop ; pwm:stoppedCall ex:CancelledCall ; pwm:stopOutcome "cancelled" ; pwm:stopReason "pause" ; prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .

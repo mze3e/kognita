@@ -127,6 +127,9 @@ def test_version_and_counts(tmp_path):
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 219, 188, 48, 126, 66)
     assert sum(validator.EXPECTED.values()) == 170
     assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 207
+    assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
+    negative_count = len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None)))
+    assert f'negative fixture contains {negative_count} typed records' in (tmp_path / 'SPEC.md').read_text()
 
 
 def test_every_generated_code_list_rule():
@@ -651,3 +654,29 @@ def test_05_live_authority_status(subject, state):
     assert validate_05(g, ['AuthorityLiveStatusShape'])
     g.remove((E('DelegationLive'), P('observedAt'), None))
     assert not validate_05(g, ['AuthorityLiveStatusShape'])
+@pytest.mark.parametrize('timestamp,expired', [
+    ('2026-11-03T23:30:00-02:00', True),
+    ('2026-11-04T00:30:00+02:00', False),
+    ('2026-11-03T23:59:59Z', False),
+    ('2026-11-04T00:00:00Z', True),
+])
+def test_review_expiry_compares_typed_instants(timestamp, expired):
+    from pyshacl import validate
+    g = Graph()
+    g.add((E('TimedDecision'), RDF.type, P('PolicyDecision')))
+    g.add((E('TimedDecision'), P('underUseCase'), E('ReviewUseCase')))
+    g.add((E('TimedDecision'), P('decisionOutcome'), P('OutcomeAllow')))
+    g.add((E('TimedDecision'), URIRef('http://www.w3.org/ns/prov#generatedAtTime'),
+           Literal(timestamp, datatype=XSD.dateTime)))
+    g.add((E('ReviewUseCase'), P('nextReviewDate'), Literal('2026-11-03', datatype=XSD.date)))
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    for shape in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if shape != URIRef(validator.PWMSH + 'PastReviewDecisionShape'):
+            shapes.add((shape, validator.SH.deactivated, Literal(True)))
+    assert validate(g, shacl_graph=shapes)[0] is not expired
+
+
+def test_model_authorization_precedes_dispatch():
+    g = example()
+    at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    assert g.value(E('PolicyDecisionModelAllow'), at).toPython() < g.value(E('Evidence4'), at).toPython()

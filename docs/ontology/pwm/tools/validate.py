@@ -207,6 +207,12 @@ EXPECTED.update([('BadLiveStatus', 'AuthorityLiveStatusShape', None),
  ('BadGateApproval', 'RiskControlApprovalShape', 'riskControlApproval'),
  ('BadApprover', 'RiskControlApprovalRecordShape', 'approverRole'),
  ('BadApprovalTime', 'RiskControlApprovalRecordShape', 'approvedAt')])
+EXPECTED.update([("BadMultipleModels", "ModelCallShape", "usesModel"),
+                 ("BadEmptyDiffLocator", "RMReviewEditShape", "diffLocator"),
+                 ("BadMissingDecisionTime", "PolicyDecisionShape", "generatedAtTime"),
+                 ("BadDecisionTimeType", "PolicyDecisionShape", "generatedAtTime"),
+                 ("BadMultipleDecisionTimes", "PolicyDecisionShape", "generatedAtTime"),
+                 ("BadTypedDateExpiry", "PastReviewDecisionShape", None)])
 
 def local(term):
     if term is None:

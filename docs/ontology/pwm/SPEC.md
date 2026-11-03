@@ -3553,6 +3553,7 @@ Applies to [cross-border rule](#CrossBorderRule). Sources: [Kognita private-bank
 
 Applies to [policy decision](#PolicyDecision). Sources: [Filing Cabinet talk](#ref-AM-FILING-CABINET), [Kognita roadmap](#ref-KOG-ROADMAP).
 
+- Record exactly one decision timestamp.
 - decision outcome: exactly one, one of deny, escalate, human approval, allow, observe
 - Every decision names the rule and rule version that decided it (Filing Cabinet, slide 14).
 - Every decision references a registered use case (Kognita 0.4 item 8).
