@@ -85,6 +85,7 @@ python3 tools/check.py pwm.ttl /tmp/fibo-index.json path/to/dpv/2.3   # without 
 # Every pwm: term used in the shapes and examples is defined (exits 1 if not)
 python3 tools/check_shapes_terms.py pwm.ttl pwm-shapes.ttl
 python3 tools/check_shapes_terms.py pwm.ttl examples/pwm-example.ttl
+python3 tools/check_shapes_terms.py pwm.ttl examples/pwm-example-invalid.ttl
 
 # SHACL: the example conforms and its evidence chain is unbroken; the negative
 # fixture raises exactly the expected violations (-v prints them)
@@ -100,7 +101,7 @@ robot reason --reasoner HermiT --equivalent-classes-allowed none --input pwm.ttl
 
 To reason over data, merge it with `pwm.ttl` as RDF first (for example with rdflib), so that properties keep the types `pwm.ttl` declares.
 
-Version 0.4 contains 167 domain classes, 289 properties (171 object, 118 datatype), 46 code lists with 229 codes, 81 written rules and 59 generated rules. There are 141 node shapes, including one untargeted helper, and 140 targeted shapes. The positive example contains 146 typed records. The negative fixture contains 109 typed records: 89 violating records and twenty supporting records, plus four untyped violating subjects, raising 100 expected violations across 93 focus nodes. It covers all 81 written shapes and two generated code-list shapes. Regression tests exercise all 59 generated code-list shapes.
+Version 0.4 contains 167 domain classes, 291 properties (171 object, 120 datatype), 46 code lists with 229 codes, 81 written rules and 59 generated rules. There are 141 node shapes, including one untargeted helper, and 140 targeted shapes. The positive example contains 147 typed records. The negative fixture contains 113 typed records: 92 violating records and twenty-one supporting records, plus four untyped violating subjects, raising 103 expected violations across 96 focus nodes. It covers all 81 written shapes and two generated code-list shapes. Regression tests exercise all 59 generated code-list shapes.
 
 Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. HermiT consistency checks pass with no unsatisfiable classes. The positive example conforms, is consistent with the ontology, and has one unbroken evidence chain. The negative fixture is intentionally inconsistent under HermiT because it names an AI agent in an accountability role.
 

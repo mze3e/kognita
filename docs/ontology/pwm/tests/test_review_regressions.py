@@ -116,7 +116,7 @@ def test_version_and_counts(tmp_path):
     assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.3/pwm-shapes.ttl')
     assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 229
     assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 141
-    assert len(set(example().subjects(RDF.type, None))) == 146
+    assert len(set(example().subjects(RDF.type, None))) == 147
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
@@ -124,9 +124,9 @@ def test_version_and_counts(tmp_path):
     shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (167, 171, 118, 46, 81, 59)
-    assert sum(validator.EXPECTED.values()) == 100
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 109
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (167, 171, 120, 46, 81, 59)
+    assert sum(validator.EXPECTED.values()) == 103
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 113
 
 
 def test_every_generated_code_list_rule():
@@ -325,7 +325,7 @@ def test_ingestion_edit_and_scope_required_fields():
     g = example()
     cases = [('Passage', 'pageNumber'), ('Passage', 'classification'),
              ('Passage', 'contentHash'), ('Edit', 'beforeHash'),
-             ('Edit', 'afterHash'), ('Edit', 'editDiffHash'),
+             ('Edit', 'afterHash'), ('Edit', 'editDiffHash'), ('Edit', 'diffLocator'),
              ('Trip', 'scopeModel'), ('Trip', 'flagThreshold'),
              ('PolicyScenario', 'expectedOutcome')]
     for i, (source, missing) in enumerate(cases):
@@ -431,3 +431,20 @@ def test_proxy_read_uses_pre_drafting_decision():
     g = example()
     assert g.value(E('ProxyCall'), P('governedByDecision')) == E('PolicyDecisionModelAllow')
     assert not validator.chain_problems(g)
+
+
+def test_review_date_without_timestamp_is_not_evaluated():
+    from pyshacl import validate
+    g = Graph()
+    g.add((E('UntimedDecision'), RDF.type, P('PolicyDecision')))
+    g.add((E('UntimedDecision'), P('underUseCase'), E('ExpiredUseCase')))
+    g.add((E('UntimedDecision'), P('decisionOutcome'), P('OutcomeAllow')))
+    g.add((E('ExpiredUseCase'), P('nextReviewDate'), Literal('2000-01-01', datatype=XSD.date)))
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    for shape in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if shape != URIRef(validator.PWMSH + 'PastReviewDecisionShape'):
+            shapes.add((shape, validator.SH.deactivated, Literal(True)))
+    assert validate(g, shacl_graph=shapes)[0]
+    g.add((E('UntimedDecision'), URIRef('http://www.w3.org/ns/prov#generatedAtTime'),
+           Literal('2026-11-03T00:00:00Z', datatype=XSD.dateTime)))
+    assert not validate(g, shacl_graph=shapes)[0]
