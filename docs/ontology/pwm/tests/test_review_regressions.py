@@ -125,8 +125,8 @@ def test_version_and_counts(tmp_path):
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (187, 216, 183, 48, 123, 66)
-    assert sum(validator.EXPECTED.values()) == 151
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 171
+    assert sum(validator.EXPECTED.values()) == 154
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 178
 
 
 def test_every_generated_code_list_rule():
@@ -528,7 +528,6 @@ def test_05_approval_repairs_and_combined_taint():
     assert not validate_05(g, ['ContentIsolationShape'])
 
 
-@pytest.mark.parametrize('case', ['denied', 'pending', 'no_request', 'cross_run', 'no_run'])
 @pytest.mark.parametrize('case', ['denied', 'pending', 'no_request', 'cross_run', 'multi_run_checkpoint', 'no_run'])
 def test_held_approval_cannot_authorize_governed_calls(case):
     """All call types require an approved held decision in their own run."""
@@ -578,3 +577,26 @@ def test_proxy_read_uses_pre_drafting_decision():
     g = example()
     assert g.value(E('ProxyCall'), P('governedByDecision')) == E('PolicyDecisionModelAllow')
     assert not validator.chain_problems(g)
+
+
+def test_05_duplicate_credential_references_on_distinct_identities():
+    g = example()
+    for name in ('CredentialA', 'CredentialB'):
+        for predicate, value in list(g.predicate_objects(E('Workload'))):
+            g.add((E(name), predicate, value))
+        g.set((E(name), P('workloadSubject'), Literal(name)))
+        g.set((E(name), P('credentialReference'), Literal('urn:credential:duplicate', datatype=XSD.anyURI)))
+    assert not validate_05(g, ['WorkloadIdentityShape'])
+    g.set((E('CredentialB'), P('credentialReference'), Literal('urn:credential:unique', datatype=XSD.anyURI)))
+    assert validate_05(g, ['WorkloadIdentityShape'])
+
+
+def test_05_irreversible_approval_with_maximum_autonomy_only():
+    g = example()
+    g += Graph().parse(BASE / 'examples/pwm-example-invalid.ttl')
+    assert not list(g.objects(E('MaxOnlyAgent'), P('effectiveAutonomyLevel')))
+    # Isolate the max-only call from the other negative irreversible case.
+    g.remove((E('Bad05IrreversibleApprovalShape'), P('invokedTool'), None))
+    assert not validate_05(g, ['IrreversibleApprovalShape'])
+    g.set((E('MaxOnlyDecision'), P('humanApproval'), E('Resolution')))
+    assert validate_05(g, ['IrreversibleApprovalShape'])

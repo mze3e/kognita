@@ -76,7 +76,7 @@ pwm:FleetHalt a owl:Class ; rdfs:label "fleet halt"@en ;
 
 pwm:SandboxConstraints a owl:Class ; rdfs:label "sandbox constraints"@en ;
     skos:definition "Decision output specifying the permitted credential references, network destinations, filesystem scope, APIs, commands, export, persistence, auto-stop interval and resource caps. Kognita emits constraints, not a sandbox."@en ; rdfs:subClassOf prov:Entity ;
-    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:inModule pwm:ModuleAgents ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 12" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialised record or property; no exact standard term identified" ] .
 
 pwm:CompensatingAction a owl:Class ; rdfs:label "compensating action"@en ;

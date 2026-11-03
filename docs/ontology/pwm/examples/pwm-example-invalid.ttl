@@ -888,7 +888,7 @@ ex:Bad05ToolDurationShape a pwm:MCPProxiedCall ;
     pwm:workloadIdentity ex:Workload .
 
 ex:Bad05WorkloadIdentityShape a pwm:WorkloadIdentity ;
-    pwm:credentialReference "urn:synthetic:credential:agent-01"^^xsd:anyURI ;
+    pwm:credentialReference "urn:synthetic:credential:missing-issuer"^^xsd:anyURI ;
     pwm:deploymentEnvironment "production" ;
     pwm:workloadSubject "bad-identity-no-issuer" .
 
@@ -1048,7 +1048,7 @@ ex:SharedAgentB a pwm:AIAgent ;
 
 ex:SharedIdentity a pwm:WorkloadIdentity ;
     pwm:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ;
-    pwm:credentialReference "urn:synthetic:credential:worker-01"^^xsd:anyURI ;
+    pwm:credentialReference "urn:synthetic:credential:shared-identity"^^xsd:anyURI ;
     pwm:deploymentEnvironment "production" ;
     pwm:workloadSubject "shared-05" .
 
@@ -1128,3 +1128,98 @@ ex:MultiRunCallResolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:Mul
 
 ex:BadMultiRunApprovalCall pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation ; pwm:aboutClient ex:Client .
 ex:MultiRunCallDecision pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:reliesOnDelegation ex:Delegation ; prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
+
+# Distinct workload subjects and identities must still use distinct credentials.
+@prefix ns1: <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.org/pwm-example#Bad05IrreversibleMaxOnly> a ns1:MCPProxiedCall ;
+    ns1:aboutClient <https://example.org/pwm-example#Client> ;
+    ns1:callAgent <https://example.org/pwm-example#MaxOnlyAgent> ;
+    ns1:callDurationSeconds 2.0 ;
+    ns1:classification ns1:C2 ;
+    ns1:clientConfiguration <https://example.org/pwm-example#GatewayClient> ;
+    ns1:governedByDecision <https://example.org/pwm-example#MaxOnlyDecision> ;
+    ns1:inRun <https://example.org/pwm-example#Run> ;
+    ns1:invokedTool <https://example.org/pwm-example#ToolPortfolioRead> ;
+    ns1:jurisdictionCode "SG" ;
+    ns1:mcpBackend "portfolio-local" ;
+    ns1:reliesOnDelegation <https://example.org/pwm-example#MaxOnlyDelegation> ;
+    ns1:requestedField "riskProfile" ;
+    ns1:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    ns1:retainedIn <https://example.org/pwm-example#RetainedToolResponse> ;
+    ns1:workloadIdentity <https://example.org/pwm-example#MaxOnlyIdentity> .
+
+<https://example.org/pwm-example#DuplicateCredentialA> a ns1:WorkloadIdentity ;
+    ns1:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ;
+    ns1:credentialReference "urn:synthetic:duplicate-credential"^^xsd:anyURI ;
+    ns1:deploymentEnvironment "production" ;
+    ns1:workloadSubject "duplicate-a" .
+
+<https://example.org/pwm-example#DuplicateCredentialB> a ns1:WorkloadIdentity ;
+    ns1:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ;
+    ns1:credentialReference "urn:synthetic:duplicate-credential"^^xsd:anyURI ;
+    ns1:deploymentEnvironment "production" ;
+    ns1:workloadSubject "duplicate-b" .
+
+<https://example.org/pwm-example#GatewayClient> ns1:boundAgent <https://example.org/pwm-example#MaxOnlyAgent> .
+
+<https://example.org/pwm-example#MaxOnlyDecision> a ns1:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:59:00+00:00"^^xsd:dateTime ;
+    ns1:decidedByRule <https://example.org/pwm-example#RuleModelAccess> ;
+    ns1:decisionOutcome ns1:OutcomeAllow ;
+    ns1:escalationThreshold 0.90 ;
+    ns1:hasCheck <https://example.org/pwm-example#ModelAccessCheck> ;
+    ns1:hasPurpose <https://example.org/pwm-example#PurposeMeetingPrep> ;
+    ns1:inRun <https://example.org/pwm-example#Run> ;
+    ns1:limitObservation <https://example.org/pwm-example#Observation> ;
+    ns1:reliesOnDelegation <https://example.org/pwm-example#MaxOnlyDelegation> ;
+    ns1:sandboxConstraints <https://example.org/pwm-example#Sandbox> ;
+    ns1:underUseCase <https://example.org/pwm-example#UseCaseMeetingPrep> .
+
+<https://example.org/pwm-example#MaxOnlyDelegation> a ns1:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    ns1:aboutClient <https://example.org/pwm-example#Client> ;
+    ns1:actionVerb ns1:VerbDraft,
+        ns1:VerbRead ;
+    ns1:approvalThreshold "Any draft for the client needs RM approval" ;
+    ns1:authorityScope <https://example.org/pwm-example#Scope> ;
+    ns1:delegatedBy <https://example.org/pwm-example#PersonRM> ;
+    ns1:delegatedTo <https://example.org/pwm-example#MaxOnlyAgent> ;
+    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    ns1:endsOnTaskCompletion true ;
+    ns1:hasPurpose <https://example.org/pwm-example#PurposeMeetingPrep> ;
+    ns1:jurisdictionCode "SG" ;
+    ns1:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    ns1:permitsDataClass ns1:C2 ;
+    ns1:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
+
+<https://example.org/pwm-example#MaxOnlyIdentity> a ns1:WorkloadIdentity ;
+    ns1:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ;
+    ns1:credentialReference "urn:synthetic:max-only"^^xsd:anyURI ;
+    ns1:deploymentEnvironment "production" ;
+    ns1:workloadSubject "agent-max-only-05" .
+
+<https://example.org/pwm-example#MaxOnlyAgent> a ns1:AIAgent ;
+    rdfs:label "Meeting preparation agent"@en ;
+    ns1:agentIdentifier "AGENT-MAX-ONLY-05" ;
+    ns1:agentOwner <https://example.org/pwm-example#PersonHeadOfAdvisory> ;
+    ns1:agentStatus ns1:StatusLive ;
+    ns1:approvedDeploymentVersion "sha256:fe17d8288da18bb3cc7a178d050b9af718c402a10d4f5d338633dfe0af0e1787" ;
+    ns1:deploymentDate "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
+    ns1:deploymentEnvironment "production" ;
+    ns1:deploymentModel <https://example.org/pwm-example#Model> ;
+    ns1:deploymentVersion "sha256:fe17d8288da18bb3cc7a178d050b9af718c402a10d4f5d338633dfe0af0e1787" ;
+    ns1:hasBlastRadiusLimit <https://example.org/pwm-example#Limit> ;
+    ns1:hasPurpose <https://example.org/pwm-example#PurposeMeetingPrep> ;
+    ns1:maxAutonomyLevel ns1:L5BoundedAutonomy ;
+    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:operatesFor <https://example.org/pwm-example#PersonRM> ;
+    ns1:permittedField "riskProfile" ;
+    ns1:permittedTool <https://example.org/pwm-example#ToolDraftNote>,
+        <https://example.org/pwm-example#ToolPortfolioRead> ;
+    ns1:registeredForUseCase <https://example.org/pwm-example#UseCaseMeetingPrep> ;
+    ns1:workloadIdentity <https://example.org/pwm-example#MaxOnlyIdentity> .

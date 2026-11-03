@@ -185,7 +185,10 @@ EXPECTED.update([('Bad05ActionStopShape', 'ActionStopShape', 'stopOutcome'),
  ('BadMultipleCallAgents', 'AgentDecisionShape', None),
  ('BadMultipleCallAgents', 'LiveAuthorityDecisionShape', None),
  ('SharedAgentA', 'ExclusiveWorkloadShape', None),
- ('SharedAgentB', 'ExclusiveWorkloadShape', None)])
+ ('SharedAgentB', 'ExclusiveWorkloadShape', None),
+ ('DuplicateCredentialA', 'WorkloadIdentityShape', None),
+ ('DuplicateCredentialB', 'WorkloadIdentityShape', None),
+ ('Bad05IrreversibleMaxOnly', 'IrreversibleApprovalShape', None)])
 
 def local(term):
     if term is None:

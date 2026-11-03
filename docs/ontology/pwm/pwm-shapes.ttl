@@ -1231,7 +1231,9 @@ pwmsh:WorkloadIdentityShape a sh:NodeShape ; rdfs:label "WorkloadIdentityShape"@
     sh:property [ sh:path pwm:workloadSubject ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record workloadSubject (Kognita 0.5 item 1)." ] ;
     sh:property [ sh:path pwm:deploymentEnvironment ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "Record deploymentEnvironment (Kognita 0.5 item 1)." ] ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Workload subjects must not be shared (Kognita 0.5 item 1)." ;
-        sh:select """SELECT DISTINCT $this WHERE { $this pwm:workloadSubject ?s . ?other pwm:workloadSubject ?s . FILTER(?other != $this) }""" ] .
+        sh:select """SELECT DISTINCT $this WHERE { $this pwm:workloadSubject ?s . ?other pwm:workloadSubject ?s . FILTER(?other != $this) }""" ] ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Credential references must not be shared by distinct workload identities (Kognita 0.5 item 1)." ;
+        sh:select """SELECT DISTINCT $this WHERE { $this pwm:credentialReference ?credential . ?other a pwm:WorkloadIdentity ; pwm:credentialReference ?credential . FILTER(?other != $this) }""" ] .
 
 pwmsh:AgentDecisionShape a sh:NodeShape ; rdfs:label "AgentDecisionShape"@en ; sh:targetClass pwm:GovernedCall ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 1. Checks recorded evidence; runtime enforcement remains external."@en ;
@@ -1476,7 +1478,7 @@ pwmsh:ReversibilityShape a sh:NodeShape ; rdfs:label "ReversibilityShape"@en ; s
 pwmsh:IrreversibleApprovalShape a sh:NodeShape ; rdfs:label "IrreversibleApprovalShape"@en ; sh:targetClass pwm:ToolCall ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 13. Checks recorded evidence; runtime enforcement remains external."@en ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "High-autonomy irreversible action requires exact human approval for the same run (Kognita 0.5 item 13)." ;
-        sh:select """SELECT DISTINCT $this WHERE { $this pwm:invokedTool ?t ; pwm:callAgent ?a ; pwm:governedByDecision ?d . ?t pwm:reversibilityClass pwm:Irreversible . ?a pwm:effectiveAutonomyLevel ?l . FILTER(?l IN (pwm:L5BoundedAutonomy,pwm:L6BroadAutonomy)) ?d pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { ?d pwm:humanApproval ?approval . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval/pwm:requestsDecision ?held . ?held pwm:inRun ?run . $this pwm:inRun ?run . } }""" ] .
+        sh:select """SELECT DISTINCT $this WHERE { $this pwm:invokedTool ?t ; pwm:callAgent ?a ; pwm:governedByDecision ?d . ?t pwm:reversibilityClass pwm:Irreversible . ?a pwm:maxAutonomyLevel ?max . OPTIONAL { ?a pwm:effectiveAutonomyLevel ?effective } BIND(COALESCE(?effective, ?max) AS ?l) FILTER(?l IN (pwm:L5BoundedAutonomy,pwm:L6BroadAutonomy)) ?d pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { ?d pwm:humanApproval ?approval . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval/pwm:requestsDecision ?held . ?held pwm:inRun ?run . $this pwm:inRun ?run . } }""" ] .
 
 pwmsh:AdversarialTestShape a sh:NodeShape ; rdfs:label "AdversarialTestShape"@en ; sh:targetClass pwm:AdversarialTestCase ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 14. Checks recorded evidence; runtime enforcement remains external."@en ;
