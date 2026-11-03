@@ -319,3 +319,34 @@ ex:BadDeniedApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
     pwm:governedByDecision ex:DeniedCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
     pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
     pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+
+ex:PendingCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:Run .
+ex:BadPendingApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:PendingCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+ex:PendingCallRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:PendingCallDecision ; pwm:atCheckpoint ex:Checkpoint .
+
+ex:NoRequestCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:Run .
+ex:BadNoRequestApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:NoRequestCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+
+ex:CrossRunCallDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeHumanApproval ;
+    pwm:decidedByRule ex:RuleClientCommunication ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:hasCheck ex:Check ; pwm:inRun ex:OtherRun .
+ex:BadCrossRunApprovalCall a pwm:ToolCall ; pwm:inRun ex:Run ;
+    pwm:governedByDecision ex:CrossRunCallDecision ; pwm:clientConfiguration ex:GatewayClient ;
+    pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ;
+    pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
+ex:CrossRunCallRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:CrossRunCallDecision ; pwm:atCheckpoint ex:OtherCheckpoint .
+ex:CrossRunCallResolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:CrossRunCallRequest ;
+    pwm:approvalResolution pwm:ApprovalApproved ; prov:wasAttributedTo ex:PersonRM ;
+    prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime .
+ex:OtherRun a pwm:Run ; pwm:hasBudget ex:Budget ; pwm:runState pwm:RunSuspended ; pwm:partOfInteraction ex:Interaction ; pwm:underUseCase ex:UseCaseMeetingPrep .
+ex:OtherCheckpoint a pwm:RunCheckpoint ; pwm:inRun ex:OtherRun ; pwm:runState pwm:RunSuspended ; pwm:contentHash "sha256:7755c6a35112601fc1664e9bf33c62e566d20c5545f67a7538b5bf6ebe84b321" ; pwm:retainedIn ex:RetainedContinuation .
