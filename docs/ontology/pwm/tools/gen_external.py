@@ -80,6 +80,7 @@ OTHER = {
 
 # Non-FIBO targets of SKOS mappings (labels as published by each source).
 MAPPED = {
+    CMNS + "Collections/hasMember": "has member",
     "http://purl.org/dc/terms/valid": "Date Valid",
     "http://purl.org/dc/terms/replaces": "Replaces",
     CMNS + "Organizations/isDomiciledIn": "is domiciled in",

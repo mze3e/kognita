@@ -157,6 +157,11 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;
     pwm:fiboMaturity "Release" .
 
+<https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount> a owl:Class ;
+    rdfs:label "deposit account"@en ;
+    rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;
+    pwm:fiboMaturity "Release" .
+
 <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Fee> a owl:Class ;
     rdfs:label "fee"@en ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;
@@ -372,6 +377,10 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateOwnership/> ;
     pwm:fiboMaturity "Release" .
 
+<https://spec.edmcouncil.org/fibo/ontology/FBC/DebtAndEquities/Debt/isCollateralizedBy> rdfs:label "is collateralized by"@en ;
+    rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/DebtAndEquities/Debt/> ;
+    pwm:fiboMaturity "Release" .
+
 <https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasAmount> rdfs:label "has amount"@en ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/> ;
     pwm:fiboMaturity "Release" .
@@ -433,6 +442,9 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
 
 <https://w3id.org/dpv/ai#OperationStage> rdfs:label "Operation Stage"@en ;
     rdfs:isDefinedBy <https://w3id.org/dpv/ai> .
+
+<https://www.omg.org/spec/Commons/Collections/hasMember> rdfs:label "has member"@en ;
+    rdfs:isDefinedBy <https://www.omg.org/spec/Commons/Collections/> .
 
 <https://www.omg.org/spec/Commons/Organizations/isDomiciledIn> rdfs:label "is domiciled in"@en ;
     rdfs:isDefinedBy <https://www.omg.org/spec/Commons/Organizations/> .

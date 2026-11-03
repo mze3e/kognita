@@ -56,3 +56,5 @@ pwm:suitabilityOutcome pwm:valuesFrom pwm:SuitabilityOutcomeScheme .
 pwm:targetRiskProfile pwm:valuesFrom pwm:IllustrativeRiskScale .
 pwm:usesDataClass pwm:valuesFrom pwm:DataClassificationScheme .
 pwm:validatorStatus pwm:valuesFrom pwm:ValidatorStatusScheme .
+
+pwm:sustainabilityPreferenceKind pwm:valuesFrom pwm:SustainabilityPreferenceScheme .

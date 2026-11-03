@@ -187,7 +187,7 @@ pwm:InvestmentObjective a owl:Class ;
 
 pwm:SuitabilityAssessment a owl:Class ;
     rdfs:label "suitability assessment"@en ;
-    skos:definition "Determination, before a recommendation or a discretionary decision, that a product or transaction fits the client's objectives, financial situation, and knowledge and experience, within the mandate."@en ;
+    skos:definition "Determination, before a recommendation or a discretionary decision, that a product or transaction fits the client's objectives, including any sustainability preferences, financial situation, and knowledge and experience, within the mandate."@en ;
     skos:scopeNote "Origination records why a client or product was proposed. Suitability records why it was permitted. Keep them separate."@en ;
     rdfs:subClassOf pwm:Assessment ;
     pwm:inModule pwm:ModuleSuitability ;
@@ -376,3 +376,63 @@ pwm:RP4 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConce
     skos:prefLabel "growth"@en ; skos:definition "Growth with higher volatility."@en .
 pwm:RP5 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConceptOf pwm:IllustrativeRiskScale ; skos:notation "RP5" ;
     skos:prefLabel "aggressive"@en ; skos:definition "Maximum growth; accepts large drawdowns."@en .
+
+# Sustainability preferences: record the client's choice, including no preference.
+pwm:SustainabilityPreference a owl:Class ;
+    rdfs:label "sustainability preference"@en ;
+    skos:definition "Versioned record of a client's choice of one or more sustainability categories, minimum proportions and PAI elements, or an explicit absence of preference."@en ;
+    rdfs:subClassOf prov:Entity ; pwm:inModule pwm:ModuleSuitability ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    skos:scopeNote "Proportions are decimals from 0 to 1. Categories may be combined; no preference is exclusive. This records preferences and does not certify product sustainability or implement the full Article 54 assessment."@en ;
+    pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:usesSustainabilityPreference a owl:ObjectProperty ;
+    rdfs:label "uses sustainability preference"@en ;
+    skos:definition "Version of the client sustainability preference considered by a suitability assessment."@en ;
+    rdfs:domain pwm:SuitabilityAssessment ; rdfs:range pwm:SustainabilityPreference ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:sustainabilityPreferenceKind a owl:ObjectProperty ;
+    rdfs:label "sustainability preference kind"@en ;
+    skos:definition "One or more client-selected sustainability categories, or explicit no preference."@en ;
+    rdfs:domain pwm:SustainabilityPreference ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:minimumTaxonomyAlignedProportion a owl:DatatypeProperty ;
+    rdfs:label "minimum taxonomy aligned proportion"@en ;
+    skos:definition "Client minimum proportion invested in environmentally sustainable investments under Regulation (EU) 2020/852 Article 2(1), as a fraction from 0 to 1."@en ;
+    rdfs:domain pwm:SustainabilityPreference ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:minimumSFDRSustainableProportion a owl:DatatypeProperty ;
+    rdfs:label "minimum SFDR sustainable proportion"@en ;
+    skos:definition "Client minimum proportion invested in sustainable investments under Regulation (EU) 2019/2088 Article 2(17), as a fraction from 0 to 1."@en ;
+    rdfs:domain pwm:SustainabilityPreference ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:paiConsiderationElements a owl:DatatypeProperty ;
+    rdfs:label "PAI consideration elements"@en ;
+    skos:definition "Client-determined qualitative or quantitative elements demonstrating consideration of principal adverse impacts on sustainability factors."@en ;
+    rdfs:domain pwm:SustainabilityPreference ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:SustainabilityPreferenceScheme a skos:ConceptScheme ;
+    skos:prefLabel "sustainability preference categories"@en ;
+    skos:definition "Three categories under Article 2(7) of 2017/565, plus explicit no preference for recording."@en ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:TaxonomyAlignedMinimum a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+    skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
+    skos:prefLabel "taxonomy aligned minimum"@en ; skos:definition "Article 2(7)(a): minimum proportion of environmentally sustainable investments."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:SFDRSustainableMinimum a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+    skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
+    skos:prefLabel "SFDR sustainable minimum"@en ; skos:definition "Article 2(7)(b): minimum proportion of sustainable investments."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:PAIConsideration a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+    skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
+    skos:prefLabel "PAI consideration"@en ; skos:definition "Article 2(7)(c): principal adverse impacts considered using client-determined elements."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:NoSustainabilityPreference a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+    skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
+    skos:prefLabel "no sustainability preference"@en ; skos:definition "Explicit record that the client has no sustainability preference; not a fourth Article 2(7) category."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .

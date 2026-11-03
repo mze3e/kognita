@@ -1,5 +1,5 @@
 # =============================================================================
-#  Private Wealth Management Ontology (PWM), version 0.1 (draft)
+#  Private Wealth Management Ontology (PWM), version 0.2 (draft)
 #
 #  A generic ontology for private banking and wealth management, built on
 #  published standards (FIBO, OMG Commons, W3C PROV-O, SKOS, DPV) and grounded
@@ -74,14 +74,14 @@
 
 <https://ahmedmuzammil.com/ontology/pwm>
     a owl:Ontology ;
-    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/0.1> ;
-    owl:versionInfo "0.1 (draft)" ;
+    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/0.2> ;
+    owl:versionInfo "0.2 (draft)" ;
     dcterms:title "Private Wealth Management Ontology"@en ;
     dcterms:alternative "PWM"@en ;
     dcterms:description """A generic ontology for private banking and wealth management. It models parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, client interactions, and the governance of AI that acts on them: use cases, agents, delegated authority, claims and evidence. Business concepts reuse or specialise the Financial Industry Business Ontology (FIBO) and the OMG Commons library. Governance concepts follow the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) and the Kognita roadmap. Every term cites the references it is grounded in. Institution-specific detail belongs in an extension that imports this ontology."""@en ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:created "2026-11-02"^^xsd:date ;
-    dcterms:modified "2026-11-02"^^xsd:date ;
+    dcterms:modified "2026-11-03"^^xsd:date ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
     dcterms:source <https://github.com/edmcouncil/fibo> , <https://github.com/mze3e/kognita> ;
     vann:preferredNamespacePrefix "pwm" ;
@@ -225,7 +225,7 @@ pwm:ModuleParties a pwm:Module ; rdfs:label "Parties, roles and relationships"@e
 pwm:ModuleCompliance a pwm:Module ; rdfs:label "Due diligence, financial crime and tax"@en ; pwm:moduleOrder 2 ;
     skos:definition "Customer due diligence, risk rating, source of wealth, screening and tax residency."@en .
 pwm:ModuleSuitability a pwm:Module ; rdfs:label "Investor profile and suitability"@en ; pwm:moduleOrder 3 ;
-    skos:definition "Regulatory investor classification, risk profile, knowledge and experience, and suitability and appropriateness."@en .
+    skos:definition "Regulatory investor classification, risk profile, knowledge and experience, sustainability preferences, and suitability and appropriateness."@en .
 pwm:ModuleMandates a pwm:Module ; rdfs:label "Mandates, restrictions and fees"@en ; pwm:moduleOrder 4 ;
     skos:definition "The service model agreed with the client, its investment restrictions and its charges."@en .
 pwm:ModuleAccounts a pwm:Module ; rdfs:label "Accounts, portfolios and holdings"@en ; pwm:moduleOrder 5 ;
@@ -285,7 +285,7 @@ pwmref:FIBO a pwm:Reference ;
     pwm:sourceType pwm:SourceStandardOntology ;
     pwm:jurisdiction "Global" ;
     pwm:verificationStatus "verified" ;
-    skos:note "Every FIBO IRI used here was checked against the ontology files at GitHub commit 33a92cd (27 October 2026). Each term's maturity level, Release or Provisional, is taken from the file that defines it." .
+    skos:note "Every FIBO IRI and maturity used here was rechecked on 3 November 2026 against raw .rdf files from master at GitHub commit 33a92cd34285d532c158da97bb42add089f135d3 (27 October 2026). Each term's maturity level, Release or Provisional, is taken from the file that defines it." .
 
 pwmref:OMG-COMMONS a pwm:Reference ;
     dcterms:alternative "OMG Commons" ;
@@ -296,7 +296,7 @@ pwmref:OMG-COMMONS a pwm:Reference ;
     pwm:sourceType pwm:SourceStandardOntology ;
     pwm:jurisdiction "Global" ;
     pwm:verificationStatus "verified" ;
-    skos:note "PartiesAndSituations and Organizations were read at version 20250801. Jurisdiction, RegulatoryAgency, Authorization, isPlayedBy and Document are referenced by FIBO production ontologies; their module files were not opened." .
+    skos:note "Collections/hasMember was verified against https://www.omg.org/spec/Commons/20250801/Collections.rdf on 3 November 2026. PartiesAndSituations and Organizations were read at version 20250801. Jurisdiction, RegulatoryAgency, Authorization, isPlayedBy and Document are referenced by FIBO production ontologies; their module files were not opened." .
 
 pwmref:W3C-PROV-O a pwm:Reference ;
     dcterms:alternative "PROV-O" ;
@@ -587,9 +587,9 @@ pwmref:KOG-ROADMAP a pwm:Reference ;
     dcterms:title "Kognita Roadmap: From Governance Engine to Agent Harness (docs/ROADMAP.md)" ;
     dcterms:publisher "Kognita (open source, MIT)" ;
     dcterms:date "2026-09, at release 0.7.0" ;
-    rdfs:seeAlso <https://github.com/mze3e/kognita/blob/main/docs/ROADMAP.md> ;
+    rdfs:seeAlso <https://github.com/mze3e/kognita/blob/9303769/docs/ROADMAP.md> ;
     pwm:sourceType pwm:SourceKognita ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" ;
-    skos:note "Read at commit 9303769 (release 0.7.0). Locators name the release and roadmap item, for example 0.4 item 8." .
+    skos:note "Read at software release 0.7.0, commit 9303769, not roadmap milestone 0.7. Locators such as 0.4 item 8 refer to roadmap sections as recorded at that software release." .
 
 pwmref:KOG-CONTROLS a pwm:Reference ;
     dcterms:alternative "Kognita regulations library" ;
@@ -638,6 +638,7 @@ pwmref:AM-FILING-CABINET a pwm:Reference ;
     dcterms:title "Your AI Is Only as Good as Your Filing Cabinet (AIIM ASEAN Forum, Singapore)" ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:date "2026-10-22" ;
+    skos:note "Checked https://www.ahmedmuzammil.com/sitemap.xml and the speaking page on 3 November 2026. No talk-specific page exists in the sitemap or speaking-page links; the general speaking page is retained." ;
     rdfs:seeAlso <https://ahmedmuzammil.com/speaking> ;
     pwm:sourceType pwm:SourceAuthorFramework ; pwm:jurisdiction "Global" ; pwm:verificationStatus "verified" .
 
@@ -653,6 +654,14 @@ pwmref:PWM-PRACTICE a pwm:Reference ;
 # Citations for the context-speed device itself
 pwm:contextSpeed pwm:citation
     [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 7: policies change over months, client status over days, prices in seconds" ] .
+
+pwmref:EU-SUSTAINABILITY a pwm:Reference ;
+    dcterms:alternative "MiFID sustainability preferences" ;
+    dcterms:title "Commission Delegated Regulation (EU) 2021/1253 amending Delegated Regulation (EU) 2017/565" ;
+    dcterms:publisher "European Commission" ; dcterms:date "2021-04-21" ;
+    rdfs:seeAlso <https://eur-lex.europa.eu/eli/reg_del/2021/1253/oj> ;
+    pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "EU" ; pwm:verificationStatus "verified" ;
+    skos:note "Verified against EUR-Lex CELEX 32021R1253, EN/ALL text and relationship table on 3 November 2026. Article 1(1) adds Article 2(7)(a)-(c) to 2017/565. Article 1(6)(a)-(f) amends Article 54(2)(a), (5), (9), (10), (12), (13). These are articles of the amended 2017/565, not Articles 2(7) and 54 of 2021/1253. No preference is an explicit PWM recording code, not a fourth statutory category." .
 
 # =============================================================================
 #  Module 0: Core patterns
@@ -820,14 +829,16 @@ pwm:AuthorisedSignatory a owl:Class ;
     skos:definition "Person authorised to give instructions on an account or for an entity client, within stated signing rules."@en ;
     rdfs:subClassOf fibo-be-oac-exec:AuthorizedIndividual ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Account mandate and signing authority" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Account mandate and signing authority" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "BE/OwnershipAndControl/Executives/AuthorizedIndividual, Release; master source verified 2026-11-03" ] .
 
 pwm:PowerOfAttorneyHolder a owl:Class ;
     rdfs:label "power of attorney holder"@en ;
     skos:definition "Party authorised by a client, under a power of attorney, to act for the client within the scope that instrument grants."@en ;
     rdfs:subClassOf fibo-be-oac-exec:AuthorizedIndividual ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "General and limited powers of attorney" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "General and limited powers of attorney" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "BE/OwnershipAndControl/Executives/AuthorizedIndividual, Release; master source verified 2026-11-03" ] .
 
 pwm:BeneficialOwner a owl:Class ;
     rdfs:label "beneficial owner"@en ;
@@ -933,7 +944,8 @@ pwm:FamilyOffice a owl:Class ;
     rdfs:subClassOf fibo-be-fct-fct:FamilyOffice ;
     skos:exactMatch fibo-be-fct-fct:FamilyOffice ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Client or intermediary" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Client or intermediary" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "BE/FunctionalEntities/FunctionalEntities/FamilyOffice, Release; master source verified 2026-11-03" ] .
 
 pwm:WealthManager a owl:Class ;
     rdfs:label "wealth manager"@en ;
@@ -972,7 +984,8 @@ pwm:Custodian a owl:Class ;
     rdfs:subClassOf fibo-sec-eq-eq:Custodian ;
     skos:exactMatch fibo-sec-eq-eq:Custodian ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Custody chain" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Custody chain" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "SEC/Equities/EquityInstruments/Custodian, Release; master source verified 2026-11-03" ] .
 
 # --- Properties ------------------------------------------------------------------
 
@@ -1313,7 +1326,7 @@ pwm:InvestmentObjective a owl:Class ;
 
 pwm:SuitabilityAssessment a owl:Class ;
     rdfs:label "suitability assessment"@en ;
-    skos:definition "Determination, before a recommendation or a discretionary decision, that a product or transaction fits the client's objectives, financial situation, and knowledge and experience, within the mandate."@en ;
+    skos:definition "Determination, before a recommendation or a discretionary decision, that a product or transaction fits the client's objectives, including any sustainability preferences, financial situation, and knowledge and experience, within the mandate."@en ;
     skos:scopeNote "Origination records why a client or product was proposed. Suitability records why it was permitted. Keep them separate."@en ;
     rdfs:subClassOf pwm:Assessment ;
     pwm:inModule pwm:ModuleSuitability ;
@@ -1503,6 +1516,66 @@ pwm:RP4 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConce
 pwm:RP5 a skos:Concept ; skos:inScheme pwm:IllustrativeRiskScale ; skos:topConceptOf pwm:IllustrativeRiskScale ; skos:notation "RP5" ;
     skos:prefLabel "aggressive"@en ; skos:definition "Maximum growth; accepts large drawdowns."@en .
 
+# Sustainability preferences: record the client's choice, including no preference.
+pwm:SustainabilityPreference a owl:Class ;
+    rdfs:label "sustainability preference"@en ;
+    skos:definition "Versioned record of a client's choice of one or more sustainability categories, minimum proportions and PAI elements, or an explicit absence of preference."@en ;
+    rdfs:subClassOf prov:Entity ; pwm:inModule pwm:ModuleSuitability ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    skos:scopeNote "Proportions are decimals from 0 to 1. Categories may be combined; no preference is exclusive. This records preferences and does not certify product sustainability or implement the full Article 54 assessment."@en ;
+    pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:usesSustainabilityPreference a owl:ObjectProperty ;
+    rdfs:label "uses sustainability preference"@en ;
+    skos:definition "Version of the client sustainability preference considered by a suitability assessment."@en ;
+    rdfs:domain pwm:SuitabilityAssessment ; rdfs:range pwm:SustainabilityPreference ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:sustainabilityPreferenceKind a owl:ObjectProperty ;
+    rdfs:label "sustainability preference kind"@en ;
+    skos:definition "One or more client-selected sustainability categories, or explicit no preference."@en ;
+    rdfs:domain pwm:SustainabilityPreference ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:minimumTaxonomyAlignedProportion a owl:DatatypeProperty ;
+    rdfs:label "minimum taxonomy aligned proportion"@en ;
+    skos:definition "Client minimum proportion invested in environmentally sustainable investments under Regulation (EU) 2020/852 Article 2(1), as a fraction from 0 to 1."@en ;
+    rdfs:domain pwm:SustainabilityPreference ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:minimumSFDRSustainableProportion a owl:DatatypeProperty ;
+    rdfs:label "minimum SFDR sustainable proportion"@en ;
+    skos:definition "Client minimum proportion invested in sustainable investments under Regulation (EU) 2019/2088 Article 2(17), as a fraction from 0 to 1."@en ;
+    rdfs:domain pwm:SustainabilityPreference ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:paiConsiderationElements a owl:DatatypeProperty ;
+    rdfs:label "PAI consideration elements"@en ;
+    skos:definition "Client-determined qualitative or quantitative elements demonstrating consideration of principal adverse impacts on sustainability factors."@en ;
+    rdfs:domain pwm:SustainabilityPreference ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:SustainabilityPreferenceScheme a skos:ConceptScheme ;
+    skos:prefLabel "sustainability preference categories"@en ;
+    skos:definition "Three categories under Article 2(7) of 2017/565, plus explicit no preference for recording."@en ;
+    pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:TaxonomyAlignedMinimum a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+    skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
+    skos:prefLabel "taxonomy aligned minimum"@en ; skos:definition "Article 2(7)(a): minimum proportion of environmentally sustainable investments."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:SFDRSustainableMinimum a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+    skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
+    skos:prefLabel "SFDR sustainable minimum"@en ; skos:definition "Article 2(7)(b): minimum proportion of sustainable investments."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:PAIConsideration a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+    skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
+    skos:prefLabel "PAI consideration"@en ; skos:definition "Article 2(7)(c): principal adverse impacts considered using client-determined elements."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
+pwm:NoSustainabilityPreference a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+    skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
+    skos:prefLabel "no sustainability preference"@en ; skos:definition "Explicit record that the client has no sustainability preference; not a fourth Article 2(7) category."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
+
 # =============================================================================
 #  Module 4: Mandates, restrictions and fees
 # =============================================================================
@@ -1675,7 +1748,8 @@ pwm:InvestmentAccount a owl:Class ;
     rdfs:subClassOf fibo-fbc-pas-caa:InvestmentAccount , pwm:Account ;
     pwm:inModule pwm:ModuleAccounts ;
     pwm:defaultClassification pwm:C2 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Specialises FIBO InvestmentAccount within the PWM account hierarchy" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Specialises FIBO InvestmentAccount within the PWM account hierarchy" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FBC/ProductsAndServices/ClientsAndAccounts/InvestmentAccount, Release; master source verified 2026-11-03" ] .
 
 pwm:CustodyAccount a owl:Class ;
     rdfs:label "custody account"@en ;
@@ -1689,11 +1763,12 @@ pwm:CustodyAccount a owl:Class ;
 pwm:CashAccount a owl:Class ;
     rdfs:label "cash account"@en ;
     skos:definition "Current or deposit account in a single currency, linked to a client's investment activity."@en ;
-    rdfs:subClassOf fibo-fbc-pas-caa:CustomerAccount , pwm:Account ;
+    rdfs:subClassOf <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount> , <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/CustomerAccount> , pwm:Account ;
     pwm:inModule pwm:ModuleAccounts ;
     pwm:contextSpeed pwm:FastContext ;
     pwm:defaultClassification pwm:C2 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Cash account" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Cash account" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount, Release; master source verified 2026-11-03" ] .
 
 pwm:JointAccount a owl:Class ;
     rdfs:label "joint account"@en ;
@@ -1758,7 +1833,8 @@ pwm:LombardFacility a owl:Class ;
     pwm:inModule pwm:ModuleAccounts ;
     pwm:contextSpeed pwm:FastContext ;
     pwm:defaultClassification pwm:C2 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Portfolio-backed lending" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Portfolio-backed lending" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "LOAN/LoansGeneral/Loans/CollateralizedLoan, Release; master source verified 2026-11-03" ] .
 
 pwm:accountHeldBy a owl:ObjectProperty ;
     rdfs:label "account held by"@en ;
@@ -1775,6 +1851,8 @@ pwm:hasPortfolio a owl:ObjectProperty ;
     pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Account and portfolio" ] .
 
 pwm:hasHolding a owl:ObjectProperty ;
+    skos:closeMatch <https://www.omg.org/spec/Commons/Collections/hasMember> ;
+    pwm:citation [ pwm:cites pwmref:OMG-COMMONS ; pwm:locator "Collections/hasMember, verified in https://www.omg.org/spec/Commons/20250801/Collections.rdf; portfolio membership is narrower" ] ;
     rdfs:label "has holding"@en ;
     skos:definition "Holding that forms part of a portfolio."@en ;
     rdfs:domain pwm:Portfolio ; rdfs:range pwm:Holding ;
@@ -1801,7 +1879,8 @@ pwm:amount a owl:DatatypeProperty ;
     rdfs:range xsd:decimal ;
     skos:closeMatch fibo-fnd-acc-cur:hasAmount ;
     pwm:inModule pwm:ModuleAccounts ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Amount and currency pattern" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Amount and currency pattern" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FND/Accounting/CurrencyAmount/hasAmount, Release; master source verified 2026-11-03" ] .
 
 pwm:currency a owl:DatatypeProperty ;
     rdfs:label "currency"@en ;
@@ -1822,8 +1901,10 @@ pwm:securedBy a owl:ObjectProperty ;
     rdfs:label "secured by"@en ;
     skos:definition "Portfolio pledged as collateral for a credit facility."@en ;
     rdfs:domain pwm:LombardFacility ; rdfs:range pwm:Portfolio ;
+    skos:closeMatch <https://spec.edmcouncil.org/fibo/ontology/FBC/DebtAndEquities/Debt/isCollateralizedBy> ;
     pwm:inModule pwm:ModuleAccounts ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Pledge" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Pledge" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FBC/DebtAndEquities/Debt/isCollateralizedBy, Release; master source verified 2026-11-03" ] .
 
 pwm:SigningRuleScheme a skos:ConceptScheme ;
     skos:prefLabel "signing rules"@en ;
@@ -1847,7 +1928,8 @@ pwm:Product a owl:Class ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:contextSpeed pwm:SlowContext ;
     pwm:defaultClassification pwm:C1 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product shelf" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product shelf" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FBC/ProductsAndServices/FinancialProductsAndServices/FinancialProduct, Release; master source verified 2026-11-03" ] .
 
 pwm:ProductRiskRating a owl:Class ;
     rdfs:label "product risk rating"@en ;
@@ -1906,7 +1988,8 @@ pwm:ProductTermSheet a owl:Class ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:contextSpeed pwm:SlowContext ;
     pwm:defaultClassification pwm:C0 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product documentation" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Product documentation" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "SEC/Securities/SecuritiesIssuance/OfferingDocument, Release; master source verified 2026-11-03" ] .
 
 pwm:KeyInformationDocument a owl:Class ;
     rdfs:label "key information document"@en ;
@@ -3469,6 +3552,8 @@ pwm:targetRiskProfile pwm:valuesFrom pwm:IllustrativeRiskScale .
 pwm:usesDataClass pwm:valuesFrom pwm:DataClassificationScheme .
 pwm:validatorStatus pwm:valuesFrom pwm:ValidatorStatusScheme .
 
+pwm:sustainabilityPreferenceKind pwm:valuesFrom pwm:SustainabilityPreferenceScheme .
+
 # =============================================================================
 #  External terms (declared, not imported). Generated by tools/gen_external.py
 #  from the FIBO source files; do not edit by hand.
@@ -3624,6 +3709,11 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
 
 <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/CustomerAccount> a owl:Class ;
     rdfs:label "customer account"@en ;
+    rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;
+    pwm:fiboMaturity "Release" .
+
+<https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/DepositAccount> a owl:Class ;
+    rdfs:label "deposit account"@en ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/> ;
     pwm:fiboMaturity "Release" .
 
@@ -3842,6 +3932,10 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/BE/OwnershipAndControl/CorporateOwnership/> ;
     pwm:fiboMaturity "Release" .
 
+<https://spec.edmcouncil.org/fibo/ontology/FBC/DebtAndEquities/Debt/isCollateralizedBy> rdfs:label "is collateralized by"@en ;
+    rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FBC/DebtAndEquities/Debt/> ;
+    pwm:fiboMaturity "Release" .
+
 <https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/hasAmount> rdfs:label "has amount"@en ;
     rdfs:isDefinedBy <https://spec.edmcouncil.org/fibo/ontology/FND/Accounting/CurrencyAmount/> ;
     pwm:fiboMaturity "Release" .
@@ -3903,6 +3997,9 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
 
 <https://w3id.org/dpv/ai#OperationStage> rdfs:label "Operation Stage"@en ;
     rdfs:isDefinedBy <https://w3id.org/dpv/ai> .
+
+<https://www.omg.org/spec/Commons/Collections/hasMember> rdfs:label "has member"@en ;
+    rdfs:isDefinedBy <https://www.omg.org/spec/Commons/Collections/> .
 
 <https://www.omg.org/spec/Commons/Organizations/isDomiciledIn> rdfs:label "is domiciled in"@en ;
     rdfs:isDefinedBy <https://www.omg.org/spec/Commons/Organizations/> .

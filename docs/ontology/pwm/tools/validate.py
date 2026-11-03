@@ -29,6 +29,12 @@ EX = "https://example.org/pwm-example#"
 # (focus node, node shape, path) for each expected violation. Path is None
 # for node-level constraints (sh:or, sh:sparql).
 EXPECTED = Counter([
+    ("BadEUSuitability", "EUSustainabilityAssessmentShape", None),
+    ("BadTaxonomyPreference", "SustainabilityPreferenceShape", None),
+    ("BadSFDRProportion", "SustainabilityPreferenceShape", "minimumSFDRSustainableProportion"),
+    ("BadPAIPreference", "SustainabilityPreferenceShape", None),
+    ("BadNoPreference", "SustainabilityPreferenceShape", None),
+    ("BadPreferenceCode", "CodeList_sustainabilityPreferenceKind", "sustainabilityPreferenceKind"),
     ("BadUseCaseUnapproved", "LiveUseCaseShape", None),
     ("BadUseCaseNoKnowledgeLead", "AIUseCaseShape", None),
     ("BadUseCaseSelfApproved", "ControlFunctionSeparationShape", None),

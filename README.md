@@ -968,7 +968,7 @@ Kognita governs policies, guidelines and governance records: the rules, the regi
 
 ## Domain ontology
 
-[docs/ontology/pwm](docs/ontology/pwm) holds the Private Wealth Management Ontology (draft 0.1): a generic, FIBO-aligned data model for private banking and the AI that works on it, with SHACL rules for the controls in this roadmap. Every term cites its standard, regulation or roadmap item.
+[docs/ontology/pwm](docs/ontology/pwm) holds the Private Wealth Management Ontology (draft 0.2): a generic, FIBO-aligned data model for private banking and the AI that works on it, with SHACL rules for the controls in this roadmap. Every term cites its standard, regulation or roadmap item.
 
 ## Layout
 

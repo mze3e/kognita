@@ -165,14 +165,16 @@ pwm:AuthorisedSignatory a owl:Class ;
     skos:definition "Person authorised to give instructions on an account or for an entity client, within stated signing rules."@en ;
     rdfs:subClassOf fibo-be-oac-exec:AuthorizedIndividual ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Account mandate and signing authority" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Account mandate and signing authority" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "BE/OwnershipAndControl/Executives/AuthorizedIndividual, Release; master source verified 2026-11-03" ] .
 
 pwm:PowerOfAttorneyHolder a owl:Class ;
     rdfs:label "power of attorney holder"@en ;
     skos:definition "Party authorised by a client, under a power of attorney, to act for the client within the scope that instrument grants."@en ;
     rdfs:subClassOf fibo-be-oac-exec:AuthorizedIndividual ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "General and limited powers of attorney" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "General and limited powers of attorney" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "BE/OwnershipAndControl/Executives/AuthorizedIndividual, Release; master source verified 2026-11-03" ] .
 
 pwm:BeneficialOwner a owl:Class ;
     rdfs:label "beneficial owner"@en ;
@@ -278,7 +280,8 @@ pwm:FamilyOffice a owl:Class ;
     rdfs:subClassOf fibo-be-fct-fct:FamilyOffice ;
     skos:exactMatch fibo-be-fct-fct:FamilyOffice ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Client or intermediary" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Client or intermediary" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "BE/FunctionalEntities/FunctionalEntities/FamilyOffice, Release; master source verified 2026-11-03" ] .
 
 pwm:WealthManager a owl:Class ;
     rdfs:label "wealth manager"@en ;
@@ -317,7 +320,8 @@ pwm:Custodian a owl:Class ;
     rdfs:subClassOf fibo-sec-eq-eq:Custodian ;
     skos:exactMatch fibo-sec-eq-eq:Custodian ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Custody chain" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Custody chain" ] ;
+    pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "SEC/Equities/EquityInstruments/Custodian, Release; master source verified 2026-11-03" ] .
 
 # --- Properties ------------------------------------------------------------------
 

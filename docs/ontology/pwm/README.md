@@ -1,6 +1,6 @@
 # Private Wealth Management Ontology (PWM)
 
-**Version 0.1, draft for comment (2 November 2026).**
+**Version 0.2, draft for comment (3 November 2026).**
 Web page: https://ahmedmuzammil.com/ontology/pwm · Full specification: [SPEC.md](SPEC.md)
 
 PWM is a generic ontology for private banking and wealth management, and for the AI that works on it. It covers parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, the client journey from origination to communication, and the governance of AI: use cases, risk materiality, accountability, agents, delegated authority, claims and evidence.
@@ -22,11 +22,17 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 | `pwm-shapes.ttl` | SHACL data rules, each citing the paragraph or item it enforces, plus one generated code-list rule per coded property |
 | `SPEC.md` | The specification, generated from the Turtle |
 | `examples/pwm-example.ttl` | Synthetic data for a fictional firm: one client journey end to end |
-| `examples/pwm-example-invalid.ttl` | Negative fixture: each record breaks one rule |
+| `examples/pwm-example-invalid.ttl` | Negative fixture records and their supporting records |
 | `src/*.ttl` | Sources: header, reference register, one file per module group, code-list bindings, external declarations |
 | `tools/` | Build, integrity checks and validation |
 
-IRIs: ontology `https://ahmedmuzammil.com/ontology/pwm`, version `https://ahmedmuzammil.com/ontology/pwm/0.1` (resolves to the Turtle file), namespace `https://ahmedmuzammil.com/ontology/pwm#` (each term resolves to its entry on the web page).
+IRIs: ontology `https://ahmedmuzammil.com/ontology/pwm`, version `https://ahmedmuzammil.com/ontology/pwm/0.2` (resolves to the Turtle file), namespace `https://ahmedmuzammil.com/ontology/pwm#` (each term resolves to its entry on the web page).
+
+Shapes use `https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl` as their version IRI. The unversioned `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. Both retain the original host without www.
+
+Kognita grounding refers to software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. See the source verification table in SPEC for every FIBO IRI and its maturity. The sitemap and speaking page expose no talk-specific Filing Cabinet page, so its general speaking link is retained with a note.
+
+Sustainability preferences support combined taxonomy and SFDR minimum proportions (fractions from 0 to 1), client-determined PAI elements, or exclusive no preference. EU suitability records marked `jurisdictionCode "EU"` require one preference record. These shapes check recorded structure; product matching and the full legal assessment remain with the firm.
 
 ## Using it
 
@@ -34,14 +40,14 @@ Import the version IRI:
 
 ```turtle
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.1> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.2> .
 ```
 
 The version IRI resolves to `pwm.ttl` once the web page is published. Until then, or to work offline, map it to a local copy. In Protégé, put a `catalog-v001.xml` next to your ontology:
 
 ```xml
 <catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
-  <uri name="https://ahmedmuzammil.com/ontology/pwm/0.1" uri="pwm.ttl"/>
+  <uri name="https://ahmedmuzammil.com/ontology/pwm/0.2" uri="pwm.ttl"/>
 </catalog>
 ```
 
@@ -94,7 +100,7 @@ robot reason --reasoner HermiT --equivalent-classes-allowed none --input pwm.ttl
 
 To reason over data, merge it with `pwm.ttl` as RDF first (for example with rdflib), so that properties keep the types `pwm.ttl` declares.
 
-At 0.1 all of these pass. The ontology is in the OWL 2 DL profile and consistent under HermiT, with no unsatisfiable classes. The example conforms, is consistent with the ontology, and has an unbroken evidence chain. The negative fixture raises the 36 expected violations: it covers all 28 written shapes and one of the 48 generated code-list shapes. Under HermiT it is inconsistent, because it names an AI agent in an accountability role.
+Version 0.2 contains 127 domain classes, 153 properties (105 object, 48 datatype), 38 code lists with 192 codes, 30 written rules and 49 generated rules. There are 80 node shapes in total, including one untargeted helper, and 79 targeted shapes. The negative fixture file contains 40 records, including 35 violating records and five supporting records, and raises 42 violations. The ontology is in the OWL 2 DL profile and consistent under HermiT, with no unsatisfiable classes. The example conforms, is consistent with the ontology, and has an unbroken evidence chain. The negative fixture raises the 42 expected violations: it covers all 30 written shapes and two of the 49 generated code-list shapes. Under HermiT it is inconsistent, because it names an AI agent in an accountability role.
 
 ## Status and licence
 

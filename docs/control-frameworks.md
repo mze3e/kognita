@@ -108,7 +108,7 @@ The frameworks use labels that clash with Kognita's own:
 
 ## IV. The Forty Domains (Bank-Grade Framework)
 
-*(See the comprehensive 40-domain table in [control-framework.md](control-framework.md), covering:)*
+*Excerpt: the first 10 of the framework's 40 domains are listed below. The full table is not included in this repository.*
 
 1. Human identity and accountability
 2. Agent identity
@@ -120,7 +120,6 @@ The frameworks use labels that clash with Kognita's own:
 8. Facts vs inferences vs recommendations
 9. Data freshness
 10. Deterministic financial calculations
-... *(30 more; full table on the separate document)*
 
 ---
 
@@ -212,13 +211,13 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 
 | Para | Expectation | Status | Kognita | Release |
 |---|---|---|---|---|
-| 3.2 to 3.4(a)(c)(d)(e) | Board approves the AI governance approach, sets roles, understands AI, reviews regularly | Out of scope | Governance decisions belong to the board | — |
+| 3.2 to 3.4(a)(c)(d)(e) | Board approves the AI governance approach, sets roles, understands AI, reviews regularly | Out of scope | Governance decisions belong to the board | - |
 | 3.4(b) | AI risk in the risk appetite framework, qualitative and quantitative | Added | Risk appetite as top-level policy: prohibited categories, maximum autonomy, client impact; quantitative measures computed from evidence (gap 12) | 0.4 |
 | 3.5(a)(c) | Implement frameworks consistent with appetite; controls across the life cycle | Planned | A use case outside the appetite cannot be registered; tier sets minimum controls | 0.4 |
 | 3.5(d) | Clear roles, including control functions for identification, inventory and materiality | Added | Five owner roles, an accountability matrix, and a designated control function (gap 2) | 0.4 |
 | 3.5(e) | Escalation of AI incidents and breaches of risk thresholds | Planned | Circuit breaker, intervention controls, outcomes and near misses (0.4); step-down alerts (0.5) | 0.4, 0.5 |
 | 3.5(f) | Timely board updates on material AI risk | Planned | Senior-management report of every material AI system, its classification, owner, status and open findings | 0.4 |
-| 3.5(g) | Competent personnel and adequate resources | Out of scope | — | — |
+| 3.5(g) | Competent personnel and adequate resources | Out of scope | - | - |
 | 3.6 | Local senior management visibility and escalation for Singapore | Partial | Jurisdiction and booking centre are envelope attributes; reports filtered by jurisdiction are not yet specified | 0.4 |
 
 ### Section 4: Identification, Inventory and Risk Materiality
@@ -232,7 +231,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | 4.6 | Links to other inventories (data assets, vendors, outsourcing registers) | Added | Each entry links to data sources and vendors using the identifiers in the bank's data inventory and outsourcing register (gap 5) | 0.4 |
 | 4.7 | Attributes: purpose, approved scope (jurisdiction), model type, data, dependencies, lifecycle status, materiality, review status, roles, documentation | Planned | Use-case register fields, model card per approved model, review dates | 0.4 |
 | 4.7, fn 25 | For agents: identifiers, tools and systems accessible, components, guardrails | Planned | Agent registry: identity, tool allow-list, permitted systems, autonomy level, blast-radius limits, behaviour-version hash | 0.5 |
-| 4.8 | Inventory design reviewed for newer AI technologies | Boundary | The register schema is versioned; the review is the bank's | — |
+| 4.8 | Inventory design reviewed for newer AI technologies | Boundary | The register schema is versioned; the review is the bank's | - |
 | 4.10, 4.12(a) | Materiality methodology; impact on the FI and customers, data sensitivity | Planned | Six axes: business criticality, client-impact class, decision consequence, data sensitivity, autonomy, complexity | 0.4 |
 | 4.12(b) | Complexity: technology, novelty, explainability, visibility into third-party AI | Added | Complexity added as a sixth axis, mapped to MAS's impact, complexity and reliance (gap 4) | 0.4 |
 | 4.12(c) | Reliance, including autonomy and degree of human oversight | Planned | Autonomy axis (0.4); autonomy levels L0 to L6 (0.5) | 0.4, 0.5 |
@@ -260,7 +259,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | 5.11(c) | Concentration risk | Planned | Share of critical use cases per provider, cloud and framework | 0.7 |
 | 5.11(d) | Notification and assessment of third-party changes | Planned | Pinned provider model version per call (0.3); silent model-change detection (0.7) | 0.3, 0.7 |
 | 5.11(e) | Contingency for third-party failure or discontinued support | Planned | Gateway failure mode (0.3); failover and failure drills (0.7) | 0.3, 0.7 |
-| 5.12, 5.13 | Selection of systems, models and features | Out of scope | — | — |
+| 5.12, 5.13 | Selection of systems, models and features | Out of scope | - | - |
 | 5.14 | Evaluation thresholds agreed by business owners, developers and reviewers | Boundary | Evaluation evidence gate requires a recorded agent or system result before tier 2 activation (`kognita.evaluation.check_activation`, `tests/test_evaluation.py`); the harness is the bank's | 0.6 |
 | 5.15 | Guardrails tested for agent failure modes | Planned | Conformance kit (Core); adversarial suite (0.5) | Core, 0.5 |
 | 5.16(a) | Secure deployment: input validation, API authentication, encryption, DLP | Partial | Egress guard and gateway decide before forwarding (0.3); agent workload credentials (0.5); infrastructure hardening is the bank's | 0.3, 0.5 |
@@ -345,7 +344,7 @@ This is Kognita's design rule stated from the outside. The mapping below uses th
 | Independent auditability: no single model controls both behaviour and its evidence | Partial | Kognita, not the model, writes the evidence. Independent validation (0.4); in gateway mode the agent has no write access to the evidence store (0.5 item 15); external review API and a separate verifier (0.7) | 0.4, 0.5, 0.7 |
 | Containment: assume compromise; an authorised person can pause or shut down a model mid-task | Partial | Kill switch denies the next decision (shipped); pause, revoke and recover (0.4); automatic containment (0.5). Added: bounded and cancellable tool calls, so an action already running can be stopped | Core, 0.4, 0.5 item 16 |
 | Incident disclosure: tell those affected; share what failed, which controls failed, and the runtime changes behind it | Partial | Affected-client query and circuit-breaker incidents (0.4); incident evidence (0.7). Added: a structured incident report naming the controls that failed and the deployment-version diff, with a redacted variant for sharing. Disclosure itself is the bank's | 0.4, 0.7 |
-| Industry standards where existing ones are insufficient | Out of scope | Standard-setting belongs to industry bodies and regulators. Kognita's conformance kit is open and importable, so a pack can prove it meets the same invariants | — |
+| Industry standards where existing ones are insufficient | Out of scope | Standard-setting belongs to industry bodies and regulators. Kognita's conformance kit is open and importable, so a pack can prove it meets the same invariants | - |
 
 ### Gaps Adopted
 
