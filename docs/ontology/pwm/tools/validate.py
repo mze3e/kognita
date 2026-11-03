@@ -55,6 +55,8 @@ EXPECTED = Counter([
     ('BadFinding', 'ReconstructionFindingShape', None),
     ('BadGatewayConfig', 'GatewayConfigurationShape', 'gatewayFailureMode'),
     ('BadCallIdentity', 'GovernedCallShape', None),
+    ('BadMultipleCallAgents', 'GovernedCallShape', 'callAgent'),
+    ('BadMultipleSystemTriggers', 'GovernedCallShape', 'systemTrigger'),
 
     ("BadEUSuitability", "EUSustainabilityAssessmentShape", None),
     ("BadTaxonomyPreference", "SustainabilityPreferenceShape", None),

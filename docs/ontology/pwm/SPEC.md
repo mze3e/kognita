@@ -3190,6 +3190,8 @@ Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMA
 
 Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
+- call agent: at most 1
+- system trigger: at most 1
 - Record inRun (roadmap milestone 0.3).
 - Record governedByDecision (roadmap milestone 0.3).
 - Record clientConfiguration (roadmap milestone 0.3).
@@ -3374,13 +3376,13 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 ## Verification for 0.3
 
-There are 112 node shapes: 55 written targeted shapes, 56 generated targeted shapes and one untargeted helper. The negative fixture file contains 66 records: 60 violating records and six supporting records, yielding 67 expected violations. The positive example contains 124 typed records.
+There are 112 node shapes: 55 written targeted shapes, 56 generated targeted shapes and one untargeted helper. The negative fixture file contains 68 records: 62 violating records and six supporting records, yielding 69 expected violations. The positive example contains 124 typed records.
 
 The unversioned shapes IRI `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. The immutable 0.3 shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl`. The existing host excludes www. Publication is separate from this build.
 
 All 55 written rules are exercised by the negative fixture; two generated code-list rules are exercised there and all 56 generated rules are exercised by regression tests. The positive example conforms and its chain is unbroken. ROBOT verifies the ontology DL profile and HermiT consistency; HermiT also checks the merged positive example. The data uses xsd:date and xsd:duration, which are outside the OWL 2 DL datatype map, so no DL profile conformance is claimed for the example data. SHACL validates recorded structure; the synthetic content store references are not fetched and content hashes are not recomputed. Runtime gateways and reconstruction must enforce dispatch and verify retained payload bytes.
 
-PWM version N aligns to roadmap milestone N. Version 0.3 models milestone 0.3, not the software release number. New specialised records and fields are marked NEW, with item-level KOG grounds. Run specialises PROV-O Activity; other records reuse Entity and Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.
+PWM version N aligns to roadmap milestone N. Version 0.3 models milestone 0.3, not the software release number. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.
 
 Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. Item locators retain the roadmap section numbers at that commit.
 

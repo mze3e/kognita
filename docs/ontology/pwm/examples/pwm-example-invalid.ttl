@@ -298,3 +298,11 @@ ex:BadSuspendedApproval a pwm:ApprovalRequest ; pwm:requestsDecision ex:PolicyDe
 ex:WrongCheckpoint a pwm:RunCheckpoint ; pwm:inRun ex:Run ; pwm:contentHash "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" ; pwm:runState pwm:RunReady .
 
 ex:BadGatewayConfig pwm:approvedJurisdiction "SG" ; pwm:isMediated true .
+
+# A matching identity must not allow a second, unbound identity through.
+ex:BadMultipleCallAgents a pwm:GovernedCall ;
+    pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ;
+    pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent, ex:BadAgentOverreach .
+ex:BadMultipleSystemTriggers a pwm:GovernedCall ;
+    pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ;
+    pwm:clientConfiguration ex:GatewayClient ; pwm:systemTrigger ex:ScheduledTrigger, ex:UnlistedTrigger .

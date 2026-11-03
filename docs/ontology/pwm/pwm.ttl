@@ -81,7 +81,7 @@
     dcterms:alternative "PWM"@en ;
     dcterms:description """A generic ontology for private banking and wealth management. It models parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, client interactions, and the governance of AI that acts on them: use cases, agents, delegated authority, claims and evidence. Business concepts reuse or specialise the Financial Industry Business Ontology (FIBO) and the OMG Commons library. Governance concepts follow the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) and the Kognita roadmap. Every term cites the references it is grounded in. Institution-specific detail belongs in an extension that imports this ontology."""@en ;
     dcterms:creator "Ahmed Muzammil" ;
-    dcterms:created "2026-11-03"^^xsd:date ;
+    dcterms:created "2026-11-02"^^xsd:date ;
     dcterms:modified "2026-11-03"^^xsd:date ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
     dcterms:source <https://github.com/edmcouncil/fibo> , <https://github.com/mze3e/kognita> ;

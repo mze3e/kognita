@@ -121,8 +121,8 @@ def test_version_and_counts(tmp_path):
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (150, 140, 83, 44, 55, 56)
-    assert sum(validator.EXPECTED.values()) == 67
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 66
+    assert sum(validator.EXPECTED.values()) == 69
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 68
 
 
 def test_every_generated_code_list_rule():
