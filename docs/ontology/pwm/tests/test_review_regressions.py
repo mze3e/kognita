@@ -116,7 +116,7 @@ def test_version_and_counts(tmp_path):
     assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.4/pwm-shapes.ttl')
     assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 235
     assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 190
-    assert len(set(example().subjects(RDF.type, None))) == 178
+    assert len(set(example().subjects(RDF.type, None))) == 179
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
@@ -124,9 +124,9 @@ def test_version_and_counts(tmp_path):
     shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (187, 216, 183, 48, 123, 66)
-    assert sum(validator.EXPECTED.values()) == 154
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 178
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (187, 216, 185, 48, 123, 66)
+    assert sum(validator.EXPECTED.values()) == 157
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 182
 
 
 def test_every_generated_code_list_rule():
@@ -325,7 +325,7 @@ def test_ingestion_edit_and_scope_required_fields():
     g = example()
     cases = [('Passage', 'pageNumber'), ('Passage', 'classification'),
              ('Passage', 'contentHash'), ('Edit', 'beforeHash'),
-             ('Edit', 'afterHash'), ('Edit', 'editDiffHash'),
+             ('Edit', 'afterHash'), ('Edit', 'editDiffHash'), ('Edit', 'diffLocator'),
              ('Trip', 'scopeModel'), ('Trip', 'flagThreshold'),
              ('PolicyScenario', 'expectedOutcome')]
     for i, (source, missing) in enumerate(cases):
@@ -600,3 +600,20 @@ def test_05_irreversible_approval_with_maximum_autonomy_only():
     assert not validate_05(g, ['IrreversibleApprovalShape'])
     g.set((E('MaxOnlyDecision'), P('humanApproval'), E('Resolution')))
     assert validate_05(g, ['IrreversibleApprovalShape'])
+
+
+def test_review_date_without_timestamp_is_not_evaluated():
+    from pyshacl import validate
+    g = Graph()
+    g.add((E('UntimedDecision'), RDF.type, P('PolicyDecision')))
+    g.add((E('UntimedDecision'), P('underUseCase'), E('ExpiredUseCase')))
+    g.add((E('UntimedDecision'), P('decisionOutcome'), P('OutcomeAllow')))
+    g.add((E('ExpiredUseCase'), P('nextReviewDate'), Literal('2000-01-01', datatype=XSD.date)))
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    for shape in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if shape != URIRef(validator.PWMSH + 'PastReviewDecisionShape'):
+            shapes.add((shape, validator.SH.deactivated, Literal(True)))
+    assert validate(g, shacl_graph=shapes)[0]
+    g.add((E('UntimedDecision'), URIRef('http://www.w3.org/ns/prov#generatedAtTime'),
+           Literal('2026-11-03T00:00:00Z', datatype=XSD.dateTime)))
+    assert not validate(g, shacl_graph=shapes)[0]

@@ -261,7 +261,7 @@ ex:BadCheckpoint a pwm:RunCheckpoint ; pwm:inRun ex:Run .
 ex:BadApprovalRequest a pwm:ApprovalRequest ; pwm:requestsDecision ex:PolicyDecisionRelease .
 ex:BadResolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:Approval ; pwm:approvalResolution pwm:ApprovalApproved ; prov:generatedAtTime "2026-11-03T10:00:00Z"^^xsd:dateTime .
 ex:BadResumption a pwm:RunResumption ; pwm:inRun ex:Run ; pwm:resumedFrom ex:Checkpoint .
-ex:BadModelCall a pwm:ModelCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:providedBy ex:Provider ; pwm:modelName "fictional" ; pwm:modelVersion "1" ; pwm:promptTemplateVersion "1" ; pwm:promptHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ; pwm:inputTokens "1"^^xsd:nonNegativeInteger ; pwm:outputTokens "1"^^xsd:nonNegativeInteger .
+ex:BadModelCall a pwm:ModelCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:providedBy ex:Provider ; pwm:modelName "fictional" ; pwm:modelVersion "model-2026-09" ; pwm:promptTemplateVersion "1" ; pwm:promptHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ; pwm:inputTokens "1"^^xsd:nonNegativeInteger ; pwm:outputTokens "1"^^xsd:nonNegativeInteger .
 ex:BadToolCall a pwm:ToolCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead .
 ex:BadMCP a pwm:MCPProxiedCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionRelease ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:responseHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" .
 ex:BadClassifier a pwm:ClassifierOutput ; pwm:classifierModelId "local" ; pwm:classifierLabel "C2" ; pwm:inputHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ; pwm:confidence 0.9 .
@@ -1223,3 +1223,69 @@ ex:MultiRunCallDecision pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:reliesOnDeleg
         <https://example.org/pwm-example#ToolPortfolioRead> ;
     ns1:registeredForUseCase <https://example.org/pwm-example#UseCaseMeetingPrep> ;
     ns1:workloadIdentity <https://example.org/pwm-example#MaxOnlyIdentity> .
+ex:Bad04RMReviewEditShape pwm:diffLocator "urn:synthetic:review-diff"^^xsd:anyURI .
+
+ex:BadModelCall pwm:usesModel ex:Model .
+
+ex:BadPinnedDecision prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime .
+
+ex:DeniedCallDecision prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime .
+
+ex:NoRequestCallDecision prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime .
+
+ex:BadLowConfidence prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime .
+
+ex:PendingCallDecision prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime .
+
+ex:CrossRunCallDecision prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime .
+
+
+ex:BadPolicyDecision prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime .
+
+<https://example.org/pwm-example#BadDiffLocator> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#RMReviewEdit> ;
+    <https://ahmedmuzammil.com/ontology/pwm#beforeHash> "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ;
+    <https://ahmedmuzammil.com/ontology/pwm#afterHash> "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ;
+    <https://ahmedmuzammil.com/ontology/pwm#editDiffHash> "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
+
+<https://example.org/pwm-example#BadMissingModel> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#ModelCall> ;
+    <https://ahmedmuzammil.com/ontology/pwm#inRun> <https://example.org/pwm-example#Run> ;
+    <https://ahmedmuzammil.com/ontology/pwm#governedByDecision> <https://example.org/pwm-example#PolicyDecisionModelAllow> ;
+    <https://ahmedmuzammil.com/ontology/pwm#clientConfiguration> <https://example.org/pwm-example#GatewayClient> ;
+    <https://ahmedmuzammil.com/ontology/pwm#callAgent> <https://example.org/pwm-example#Agent> ;
+    <https://ahmedmuzammil.com/ontology/pwm#providedBy> <https://example.org/pwm-example#Provider> ;
+    <https://ahmedmuzammil.com/ontology/pwm#modelName> "fictional-meeting-model" ;
+    <https://ahmedmuzammil.com/ontology/pwm#modelVersion> "model-2026-09" ;
+    <https://ahmedmuzammil.com/ontology/pwm#promptTemplateVersion> "meeting-v3" ;
+    <https://ahmedmuzammil.com/ontology/pwm#promptHash> "sha256:7dc7222a66cbd84f39d0f9aa418ddb550b82b80785e9183ec67339831773ccfc" ;
+    <https://ahmedmuzammil.com/ontology/pwm#responseHash> "sha256:813776e604662a411b5febca6cd96d4f5917400024609a219f07cec53b472101" ;
+    <https://ahmedmuzammil.com/ontology/pwm#inputTokens> "100"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> ;
+    <https://ahmedmuzammil.com/ontology/pwm#outputTokens> "20"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> ;
+    <https://ahmedmuzammil.com/ontology/pwm#hasAttribute> <https://example.org/pwm-example#Attribute> ;
+    <https://ahmedmuzammil.com/ontology/pwm#hasAttribute> <https://example.org/pwm-example#ResponseAttribute> ;
+    <https://ahmedmuzammil.com/ontology/pwm#retrievedItem> <https://example.org/pwm-example#Snapshot> ;
+    <https://ahmedmuzammil.com/ontology/pwm#retainedIn> <https://example.org/pwm-example#RetainedPrompt> ;
+    <https://ahmedmuzammil.com/ontology/pwm#retainedIn> <https://example.org/pwm-example#RetainedResponse> ;
+    <https://ahmedmuzammil.com/ontology/pwm#hasModelCard> <https://example.org/pwm-example#ModelCard> .
+
+ex:BadAffectedRecipient a pwm:AffectedClientResult ; pwm:resultCount "1"^^xsd:nonNegativeInteger ; pwm:affectedCommunication ex:Communication, ex:RecipientlessCommunication .
+
+ex:BadModelCall pwm:hasModelCard ex:ModelCard .
+
+ex:RecipientlessCommunication <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#ClientCommunication> ;
+    <http://www.w3.org/2000/01/rdf-schema#label> "Client note proposing the reinvestment (fictional)"@en ;
+    <https://ahmedmuzammil.com/ontology/pwm#partOfInteraction> <https://example.org/pwm-example#Interaction> ;
+    <https://ahmedmuzammil.com/ontology/pwm#derivedFromDecision> <https://example.org/pwm-example#Decision> ;
+    <https://ahmedmuzammil.com/ontology/pwm#communicationLevel> <https://ahmedmuzammil.com/ontology/pwm#CommProductRecommendation> ;
+    <https://ahmedmuzammil.com/ontology/pwm#contentProvenance> <https://ahmedmuzammil.com/ontology/pwm#ProvenanceAIHumanEdited> ;
+    <https://ahmedmuzammil.com/ontology/pwm#aiDisclosureGiven> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> ;
+    <https://ahmedmuzammil.com/ontology/pwm#disclosureTrigger> <https://ahmedmuzammil.com/ontology/pwm#TriggerAIGeneratedContent> ;
+    <https://ahmedmuzammil.com/ontology/pwm#viaChannel> <https://example.org/pwm-example#SecurePortal> ;
+    <https://ahmedmuzammil.com/ontology/pwm#contentHash> "sha256:a31d9e3b6d17980928d9435f48751f4af20f8d43a3060e069768e454c23173c8" ;
+    <http://www.w3.org/ns/prov#generatedAtTime> "2026-11-03T10:20:00+08:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+    <https://ahmedmuzammil.com/ontology/pwm#requiresTwoSignatures> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> ;
+    <https://ahmedmuzammil.com/ontology/pwm#communicationSigner> <https://example.org/pwm-example#PersonRM> ;
+    <https://ahmedmuzammil.com/ontology/pwm#communicationSigner> <https://example.org/pwm-example#PersonModelRisk> ;
+    <https://ahmedmuzammil.com/ontology/pwm#underUseCase> <https://example.org/pwm-example#UseCaseMeetingPrep> .
+
+# Required 0.5 authority metadata; usesModel is deliberately absent.
+ex:BadMissingModel pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation .

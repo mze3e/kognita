@@ -132,6 +132,9 @@ EXPECTED.update([('Bad04CircuitBreakerConfigurationShape', 'CircuitBreakerConfig
  ('Bad04AffectedClientResultShape', 'AffectedClientResultShape', 'resultCount'),
  ('Bad04AffectedClientCountShape', 'AffectedClientCountShape', None),
  ('Bad04ModelCallCardShape', 'ModelCallCardShape', None)])
+EXPECTED.update([("BadDiffLocator", "RMReviewEditShape", "diffLocator"),
+                 ("BadMissingModel", "ModelCallShape", "usesModel"),
+                 ("BadAffectedRecipient", "AffectedClientCountShape", None)])
 EXPECTED.update([("OutsideAppetite", "LiveRiskAppetiteShape", None)])
 
 # 0.5: explicit negative fixtures for every new written constraint.

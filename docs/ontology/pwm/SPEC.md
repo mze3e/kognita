@@ -22,7 +22,7 @@ A generic ontology for private banking and wealth management. It models parties 
 
 Draft for comment. Version 0.5 aligns with roadmap milestone 0.5: agents, authority and fleets. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
 
-Size: 187 classes, 216 object properties, 183 datatype properties, 48 code lists with 235 codes, 123 data rules plus 66 generated code-list rules, 47 references and 1294 citations. 39 FIBO terms are specialised or mapped.
+Size: 187 classes, 216 object properties, 185 datatype properties, 48 code lists with 235 codes, 123 data rules plus 66 generated code-list rules, 47 references and 1298 citations. 39 FIBO terms are specialised or mapped.
 
 ## Scope
 
@@ -92,7 +92,7 @@ Classes carry a context speed:
 | 7 | [Interactions, advice and communication](#ModuleInteractions) | Why a client was approached, what was recommended, who decided, and what reached the client. | 9 | 16 | 6 |
 | 8 | [AI use cases, authority and accountability](#ModuleGovernance) | The AI inventory, risk materiality, agents, delegated authority, autonomy and the people accountable for them. | 24 | 40 | 11 |
 | 9 | [Information governance, claims and evidence](#ModuleEvidence) | Governed documents and definitions, facts and claims, policy decisions and the evidence that reconstructs them. | 37 | 98 | 14 |
-| 10 | [Ingestion, policy and lifecycle controls](#ModuleLifecycle) | Structured ingestion and the missing policy, review and monitoring records for milestone 0.4. | 17 | 66 | 2 |
+| 10 | [Ingestion, policy and lifecycle controls](#ModuleLifecycle) | Structured ingestion and the missing policy, review and monitoring records for milestone 0.4. | 17 | 68 | 2 |
 | 11 | [Agents, authority and fleets](#ModuleAgents) | Workload identities, scoped human authority, autonomy evidence, containment and fleet controls. | 20 | 110 | 2 |
 
 <a id="ModuleCore"></a>
@@ -2717,6 +2717,7 @@ Evidence export manifest for recorded runs and interactions, with a content hash
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** medium context, default classification C1
+- **Properties:** [`exportLocator`](#exportLocator)
 - **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified
 
 <a id="Replay"></a>
@@ -2729,12 +2730,13 @@ Verification of a recorder session against retained evidence, producing an exist
 - **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified
 
 <a id="RMReviewEdit"></a>
-#### rmreview edit (`pwm:RMReviewEdit`)
+#### RM review edit (`pwm:RMReviewEdit`)
 
 Structured edit captured during HumanReview, preserving hashes of what the RM saw, what was approved and the retained diff.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** medium context, default classification C1
+- **Properties:** [`diffLocator`](#diffLocator)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified
 
 <a id="ReviewQueue"></a>
@@ -2828,7 +2830,7 @@ Classified outcome linked to the originating interaction, exact output, model an
 | <a id="hasOutcomeMetric"></a>`pwm:hasOutcomeMetric` has outcome metric | any → [outcome metric](#OutcomeMetric) | Versioned primary metric definition with baseline and target for a use case. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 | <a id="hasModelCard"></a>`pwm:hasModelCard` has model card | any → [model card](#ModelCard) | Approved model card for a model or pinned model call. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.5 to 4.13: inventory and materiality; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 | <a id="creditedControl"></a>`pwm:creditedControl` credited control | any → [policy rule](#PolicyRule) | Control credited in reducing inherent to residual materiality. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.5 to 4.13: inventory and materiality; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
-| <a id="reviewEdit"></a>`pwm:reviewEdit` review edit | any → [rmreview edit](#RMReviewEdit) | Structured edit produced in a human review or referenced by a final decision. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
+| <a id="reviewEdit"></a>`pwm:reviewEdit` review edit | any → [RM review edit](#RMReviewEdit) | Structured edit produced in a human review or referenced by a final decision. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 | <a id="communicationSigner"></a>`pwm:communicationSigner` communication signer | any → [person](https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person) (FIBO, Release) | Named human signing the exact communication content hash. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 | <a id="inReviewQueue"></a>`pwm:inReviewQueue` in review queue | any → [review queue](#ReviewQueue) | Queue receiving a risk-selected interaction. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; 5.23: monitoring; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 | <a id="scopeUseCase"></a>`pwm:scopeUseCase` scope use case | any → [AI use case](#AIUseCase) | Use-case dimension of a breaker or affected-client query scope. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(b): incidents and monitoring; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
@@ -2879,6 +2881,8 @@ Classified outcome linked to the originating interaction, exact output, model an
 | <a id="windowStart"></a>`pwm:windowStart` window start | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Inclusive start of a monitoring or query window. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(b): incidents and monitoring; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 | <a id="windowEnd"></a>`pwm:windowEnd` window end | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Exclusive end of a monitoring or query window. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(b): incidents and monitoring; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 | <a id="resultCount"></a>`pwm:resultCount` result count | any → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Number of distinct affected clients returned by a query. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(b): incidents and monitoring; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
+| <a id="exportLocator"></a>`pwm:exportLocator` export locator | [flight recorder session](#FlightRecorderSession) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Retrieval location of the recorder export manifest. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
+| <a id="diffLocator"></a>`pwm:diffLocator` diff locator | [RM review edit](#RMReviewEdit) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Retrieval location of the structured edit diff; retention is established separately. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified |
 
 ### Code lists
 
@@ -2893,13 +2897,13 @@ References: **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(d): incidents and near misses;
 
 | Code | Concept | Definition |
 |---|---|---|
-|  | <a id="ClientComplaint"></a>client complaint (`pwm:ClientComplaint`) | Client complaint recorded against the originating interaction. |
-|  | <a id="Correction"></a>correction (`pwm:Correction`) | Correction recorded against the originating interaction. |
-|  | <a id="WrongClientTargeting"></a>wrong client targeting (`pwm:WrongClientTargeting`) | Wrong client targeting recorded against the originating interaction. |
-|  | <a id="UnsuitableSuggestion"></a>unsuitable suggestion (`pwm:UnsuitableSuggestion`) | Unsuitable suggestion recorded against the originating interaction. |
-|  | <a id="CommunicationError"></a>communication error (`pwm:CommunicationError`) | Communication error recorded against the originating interaction. |
-|  | <a id="PolicyBreach"></a>policy breach (`pwm:PolicyBreach`) | Policy breach recorded against the originating interaction. |
-|  | <a id="OperationalIncident"></a>operational incident (`pwm:OperationalIncident`) | Operational incident recorded against the originating interaction. |
+|  | <a id="ClientComplaint"></a>client complaint (`pwm:ClientComplaint`) | A client expresses dissatisfaction with the interaction or its output. |
+|  | <a id="Correction"></a>correction (`pwm:Correction`) | An error in an earlier output is rectified. |
+|  | <a id="WrongClientTargeting"></a>wrong client targeting (`pwm:WrongClientTargeting`) | An output or action is directed to an unintended client. |
+|  | <a id="UnsuitableSuggestion"></a>unsuitable suggestion (`pwm:UnsuitableSuggestion`) | A suggestion conflicts with the client suitability requirements. |
+|  | <a id="CommunicationError"></a>communication error (`pwm:CommunicationError`) | A delivered communication contains incorrect or misleading content. |
+|  | <a id="PolicyBreach"></a>policy breach (`pwm:PolicyBreach`) | An action or output violates an applicable policy rule. |
+|  | <a id="OperationalIncident"></a>operational incident (`pwm:OperationalIncident`) | An operational failure disrupts the interaction or its controls. |
 
 <a id="NearMissKindScheme"></a>
 #### near miss kind scheme (`pwm:NearMissKindScheme`)
@@ -2912,11 +2916,11 @@ References: **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(d): incidents and near misses;
 
 | Code | Concept | Definition |
 |---|---|---|
-|  | <a id="BlockedAction"></a>blocked action (`pwm:BlockedAction`) | Blocked action recorded against the originating interaction. |
-|  | <a id="VerifierBlock"></a>verifier block (`pwm:VerifierBlock`) | Verifier block recorded against the originating interaction. |
-|  | <a id="RMRejection"></a>rmrejection (`pwm:RMRejection`) | Rmrejection recorded against the originating interaction. |
-|  | <a id="UnsafeDraft"></a>unsafe draft (`pwm:UnsafeDraft`) | Unsafe draft recorded against the originating interaction. |
-|  | <a id="UnusualAgentBehaviour"></a>unusual agent behaviour (`pwm:UnusualAgentBehaviour`) | Unusual agent behaviour recorded against the originating interaction. |
+|  | <a id="BlockedAction"></a>blocked action (`pwm:BlockedAction`) | A control prevents a potentially harmful action from executing. |
+|  | <a id="VerifierBlock"></a>verifier block (`pwm:VerifierBlock`) | A verifier rejects an output before it proceeds. |
+|  | <a id="RMRejection"></a>RM rejection (`pwm:RMRejection`) | A relationship manager rejects an AI draft or proposed action. |
+|  | <a id="UnsafeDraft"></a>unsafe draft (`pwm:UnsafeDraft`) | A potentially harmful draft is identified before delivery. |
+|  | <a id="UnusualAgentBehaviour"></a>unusual agent behaviour (`pwm:UnusualAgentBehaviour`) | Unexpected agent behaviour is detected before harm occurs. |
 
 <a id="ModuleAgents"></a>
 
@@ -3647,6 +3651,7 @@ Applies to [run resumption](#RunResumption). Sources: [Kognita roadmap](#ref-KOG
 
 Applies to [model call](#ModelCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
+- Record usesModel (Kognita 0.4 item 8).
 - Record modelName (roadmap milestone 0.3).
 - Record modelVersion (roadmap milestone 0.3).
 - Record promptTemplateVersion (roadmap milestone 0.3).
@@ -3897,8 +3902,9 @@ Applies to [policy pack](#PolicyPack). Sources: [Kognita roadmap](#ref-KOG-ROADM
 <a id="RMReviewEditShape"></a>
 ### RMReviewEditShape
 
-Applies to [rmreview edit](#RMReviewEdit). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+Applies to [RM review edit](#RMReviewEdit). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
+- Record diffLocator (Kognita 0.4 item 11).
 - Record beforeHash (Kognita 0.4 item 11).
 - Record afterHash (Kognita 0.4 item 11).
 - Record editDiffHash (Kognita 0.4 item 11).
@@ -3956,7 +3962,7 @@ Applies to [interaction outcome](#InteractionOutcome). Sources: [Kognita roadmap
 - Record outcomeKind (Kognita 0.4 item 15).
 - Record partOfInteraction (Kognita 0.4 item 15).
 - Record affectedOutput (Kognita 0.4 item 15).
-- Record usesModel (Kognita 0.4 item 15).
+- Record implicatedModel (Kognita 0.4 item 15).
 - Record outcomeApprover (Kognita 0.4 item 15).
 
 <a id="BreakerScopeShape"></a>
@@ -4056,6 +4062,7 @@ Applies to [affected client result](#AffectedClientResult). Sources: [Kognita ro
 Applies to [affected client result](#AffectedClientResult). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 - Affected-client count must equal distinct recipients of the returned communications (0.4 item 14).
+- Each affected communication must record withClient (Kognita 0.4 item 14).
 
 <a id="ModelCallCardShape"></a>
 ### ModelCallCardShape
@@ -4731,11 +4738,11 @@ Compared with the inherited PWM 0.3 vocabulary and shapes before adding terms. P
 | 3 | Effective-dated PolicyRule, versionId, ruleCitation, PolicyCheck and pinned policy hash | DeclarativePolicy containing existing rules, PolicyChange with base artefact, delta and lifecycle stage. Serialization is data, not a new rule engine. |
 | 4 | DecisionOutcomeScheme | PolicyTestCase with rule, given attributes, requested action and expectedOutcome; artefacts link tests. |
 | 5 | Existing private-banking policy references and rules | Versioned PolicyPack links policies, tests through their artefacts, fixtures and optional shadowed built-in pack. |
-| 7 | Run, EvidenceRecord, ReconstructionReport, ten-question coverage, OutcomeMetric with baseline/target | FlightRecorderSession export manifest and Replay verification activity reusing the report; hasOutcomeMetric binds a use case to its versioned primary measure. |
+| 7 | Run, EvidenceRecord, ReconstructionReport, ten-question coverage, OutcomeMetric with baseline/target | FlightRecorderSession export manifest with exportLocator and Replay verification activity reusing the report; hasOutcomeMetric binds a use case to its versioned primary measure. |
 | 8 | AIUseCase; purpose, status, jurisdiction, mediation, dependencies, owners and review date; six-axis RiskMaterialityAssessment (data sensitivity can use classification), inherent/residual ratings, AIRiskAppetite, ModelCard, tier and control-function approval | hasModelCard links models and exact pinned calls. creditedControl records mitigation. riskAppetiteStatement and appetitePermits record versioned appetite and evaluation. Decision shapes require DENY after review expiry or explicit failed appetite evaluation; an explicitly failed evaluation also prevents live activation. Existing axes and ratings are reused. |
 | 9 | ClientInteraction, partOfInteraction and Run | No new journey class or identifier property. Existing RDF identifiers and interaction links span the example. |
 | 10 | Origination, trigger, rationale, cited facts, candidate-set fields and do-not-contact codes and constraints | No new origination vocabulary. Reconstruction now answers why-client and why-product from existing origination and recommendation records. |
-| 11 | HumanReview, FinalDecision, decision results, contentHash and contentProvenance | RMReviewEdit, reviewEdit, beforeHash, afterHash and editDiffHash preserve rendered input, approved output and structured diff. Existing retention fields locate the diff. |
+| 11 | HumanReview, FinalDecision, decision results, contentHash and contentProvenance | RMReviewEdit, reviewEdit, beforeHash, afterHash and editDiffHash preserve rendered input, approved output and structured diff. Hashes identify edit content. Required diffLocator supports retention/retrieval of the structured diff; retention is established separately. |
 | 12 | ClientCommunication, channel, recipient, content hash, final-decision lineage, communication levels, approved-channel flag and disclosure; written approved-channel and missing-decision constraints | requiresTwoSignatures and communicationSigner with distinct-human constraint. Existing channel and lineage constraints are reused without duplicates. |
 | 13 | HumanReview, classifier evidence, use-case tier | ReviewQueue, ReviewQueueEntry, low-risk sampling fraction, reason and timing, delivery boundary, ReviewCoverageReport with counts, reporting window and latency. Counts permit coverage fractions per use case and its risk tier; impossible count order is rejected. |
 | 14 | KillSwitch, KillSwitchDrill, AIIncident, versioned models/rules and evidence | CircuitBreaker configuration and CircuitBreakerTrip incident with scoped use case, exact model, prompt or policy, threshold, window, flags and prohibiting rule. AffectedClientQuery and explicit AffectedClientResult retain recipients and communications with a checked distinct-client count, including zero results. |
@@ -4786,7 +4793,7 @@ New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGra
 
 There are 190 node shapes: 123 written targeted shapes, 66 generated targeted shapes and one untargeted helper.
 
-The positive example contains 178 typed records. The negative fixture contains 178 typed records. There are 134 typed violating records, 44 typed supporting records and 4 untyped violating subjects, yielding 154 expected violations across 138 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 179 typed records. The negative fixture contains 182 typed records. There are 137 typed violating records, 45 typed supporting records and 4 untyped violating subjects, yielding 157 expected violations across 141 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
 The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 

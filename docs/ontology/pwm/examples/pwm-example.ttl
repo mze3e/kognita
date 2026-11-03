@@ -571,7 +571,7 @@ ex:PolicyArtefact a pwm:DeclarativePolicy ; pwm:versionId "1" ; pwm:containsRule
 ex:PolicyDelta a pwm:PolicyChange ; pwm:changesPolicy ex:PolicyArtefact ; pwm:deltaText "ADDED model-access" ; pwm:changeStage "applied" ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
 ex:PolicyScenario a pwm:PolicyTestCase ; pwm:testsRule ex:RuleModelAccess ; pwm:givenAttributes "classification: C2" ; pwm:whenAction "model_call" ; pwm:expectedOutcome pwm:OutcomeAllow .
 ex:PrivateBankingPack a pwm:PolicyPack ; pwm:versionId "1" ; pwm:packPolicy ex:PolicyArtefact ; pwm:fixtureLocator "urn:synthetic:pack-fixtures"^^xsd:anyURI .
-ex:Recorder a pwm:FlightRecorderSession ; pwm:recordedRun ex:Run ; pwm:partOfInteraction ex:Interaction ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:storeLocator "urn:synthetic:recorder-export"^^xsd:anyURI .
+ex:Recorder a pwm:FlightRecorderSession ; pwm:recordedRun ex:Run ; pwm:partOfInteraction ex:Interaction ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:exportLocator "urn:synthetic:recorder-export"^^xsd:anyURI .
 ex:Replay a pwm:Replay ; pwm:replaysSession ex:Recorder ; pwm:replayReport ex:Report .
 ex:Metric a pwm:OutcomeMetric ; pwm:primaryMetric pwm:MetricDecisionQuality ; pwm:versionId "1" ; pwm:baselineValue 0.85 ; pwm:targetValue 0.95 .
 ex:UseCaseMeetingPrep pwm:hasOutcomeMetric ex:Metric ; pwm:appetitePermits true ; pwm:dependsOn ex:Provider ; pwm:lowRiskSamplingRate 0.10 .
@@ -581,12 +581,12 @@ ex:ModelCard a pwm:ModelCard ; pwm:providedBy ex:Provider ; rdfs:label "fictiona
 ex:Model pwm:hasModelCard ex:ModelCard .
 ex:GatewayCall pwm:hasModelCard ex:ModelCard .
 ex:Review a pwm:HumanReview ; pwm:partOfInteraction ex:Interaction ; pwm:reviewEdit ex:Edit ; prov:wasAssociatedWith ex:PersonRM .
-ex:Edit a pwm:RMReviewEdit ; pwm:beforeHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:afterHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:editDiffHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:storeLocator "urn:synthetic:review-diff"^^xsd:anyURI .
+ex:Edit a pwm:RMReviewEdit ; pwm:beforeHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:afterHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:editDiffHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:diffLocator "urn:synthetic:review-diff"^^xsd:anyURI .
 ex:Decision pwm:reviewEdit ex:Edit ; pwm:partOfInteraction ex:Interaction .
 ex:Communication pwm:requiresTwoSignatures true ; pwm:communicationSigner ex:PersonRM, ex:PersonModelRisk .
 ex:Queue a pwm:ReviewQueue ; pwm:underUseCase ex:UseCaseMeetingPrep .
 ex:QueuedReview a pwm:ReviewQueueEntry ; pwm:inReviewQueue ex:Queue ; pwm:partOfInteraction ex:Interaction ; pwm:queueReason "Advice-level output" ; pwm:queuedAt "2026-11-03T10:02:00+08:00"^^xsd:dateTime ; pwm:reviewBeforeDelivery true ; pwm:reviewedAt "2026-11-03T10:12:00+08:00"^^xsd:dateTime ; prov:wasDerivedFrom ex:Review .
-ex:Coverage a pwm:ReviewCoverageReport ; pwm:eligibleCount "1"^^xsd:nonNegativeInteger ; pwm:screenedCount "1"^^xsd:nonNegativeInteger ; pwm:queuedCount "1"^^xsd:nonNegativeInteger ; pwm:reviewedCount "1"^^xsd:nonNegativeInteger ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime ; pwm:meanReviewSeconds 600.0 ; pwm:citesSource ex:QueuedReview .
+ex:ReviewCoverage a pwm:ReviewCoverageReport ; pwm:eligibleCount "1"^^xsd:nonNegativeInteger ; pwm:screenedCount "1"^^xsd:nonNegativeInteger ; pwm:queuedCount "1"^^xsd:nonNegativeInteger ; pwm:reviewedCount "1"^^xsd:nonNegativeInteger ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime ; pwm:meanReviewSeconds 600.0 ; pwm:citesSource ex:QueuedReview .
 ex:Breaker a pwm:CircuitBreaker ; pwm:scopeModel ex:Model ; pwm:flagThreshold "3"^^xsd:positiveInteger ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
 ex:HaltRule a pwm:PolicyRule ; pwm:versionId "1" ; pwm:ruleCitation "Synthetic model-version halt after three flags" ; pwm:validFrom "2026-11-03T11:00:00Z"^^xsd:dateTime .
 ex:Trip a pwm:CircuitBreakerTrip ; pwm:trippedBreaker ex:Breaker ; pwm:scopeModel ex:Model ; pwm:flagThreshold "3"^^xsd:positiveInteger ; pwm:observedFlags "3"^^xsd:nonNegativeInteger ; pwm:prohibitingRule ex:HaltRule ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
@@ -595,8 +595,6 @@ ex:Affected a pwm:AffectedClientResult ; pwm:resultCount "1"^^xsd:nonNegativeInt
 ex:Correction a pwm:InteractionOutcome ; pwm:outcomeKind pwm:Correction ; pwm:partOfInteraction ex:Interaction ; pwm:affectedOutput ex:Recommendation ; pwm:implicatedModel ex:Model ; pwm:outcomeApprover ex:PersonRM .
 ex:Avoided a pwm:NearMiss ; pwm:nearMissKind pwm:RMRejection ; pwm:partOfInteraction ex:Interaction ; pwm:affectedOutput ex:Recommendation ; pwm:implicatedModel ex:Model ; pwm:underUseCase ex:UseCaseMeetingPrep .
 
-ex:Recorder pwm:underUseCase ex:UseCaseMeetingPrep .
-ex:Edit pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
 
 ex:Recommendation pwm:implicatedModel ex:Model .
 ex:Communication pwm:underUseCase ex:UseCaseMeetingPrep .
