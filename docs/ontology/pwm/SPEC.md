@@ -3467,7 +3467,7 @@ Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-R
 - Record governedByDecision (roadmap milestone 0.3).
 - Record clientConfiguration (roadmap milestone 0.3).
 - Call identity must be an agent bound to the authenticated client or a listed system trigger (0.3 Tier 0).
-- A call governed by a held decision requires that decision in the same run and an ApprovalRequest with an ApprovalApproved resolution (KOG roadmap 0.3 item 2; MAS AIRG 5.9).
+- A call governed by a held decision requires that decision in the same run and an ApprovalRequest at a checkpoint in the call's run with an ApprovalApproved resolution (KOG roadmap 0.3 item 2; MAS AIRG 5.9).
 
 *Roadmap milestone 0.3 items 2 and 3; MAS AIRG 5.9 human oversight.*
 
@@ -3871,7 +3871,7 @@ Other code lists may require changes to handwritten constraints and code-depende
 | Version | Date | Change |
 |---|---|---|
 | 0.4 | 2026-11-03 | Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
-| 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
+| 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
 
@@ -3906,7 +3906,7 @@ The Definition of Done describes software behaviour as well as records. These ar
 
 There are 141 node shapes: 81 written targeted shapes, 59 generated targeted shapes and one untargeted helper.
 
-The positive example contains 146 typed records. The negative fixture contains 105 typed records. There are 88 typed violating records, seventeen typed supporting records and four untyped violating subjects, yielding 99 expected violations across 92 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 146 typed records. The negative fixture contains 109 typed records. There are 89 typed violating records, twenty typed supporting records and four untyped violating subjects, yielding 100 expected violations across 93 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
 The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 
