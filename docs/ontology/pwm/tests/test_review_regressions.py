@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 from rdflib import Graph, Literal, URIRef
 from rdflib.namespace import RDF, XSD
 
@@ -123,8 +125,8 @@ def test_version_and_counts(tmp_path):
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (167, 171, 118, 46, 81, 59)
-    assert sum(validator.EXPECTED.values()) == 96
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 94
+    assert sum(validator.EXPECTED.values()) == 99
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 105
 
 
 def test_every_generated_code_list_rule():
@@ -381,23 +383,39 @@ def test_04_reconstruction_and_zero_affected_clients():
                     ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')[0]
 
 
-def test_denied_approval_cannot_authorize_governed_calls():
-    """All call types reject denial while an approved held decision still passes."""
+@pytest.mark.parametrize('case', ['denied', 'pending', 'no_request', 'cross_run', 'no_run'])
+def test_held_approval_cannot_authorize_governed_calls(case):
+    """All call types require an approved held decision in their own run."""
     from pyshacl import validate
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     ontology = Graph().parse(BASE / 'pwm.ttl')
     for kind in ('ModelCall', 'ToolCall', 'MCPProxiedCall'):
         g = example()
+        g.set((E('ProxyCall'), P('governedByDecision'), E('PolicyDecisionModelAllow')))
         call = E('GatewayCall')
         g.set((call, RDF.type, P(kind)))
         g.set((call, P('governedByDecision'), E('PolicyDecisionRelease')))
         g.add((call, P('invokedTool'), E('ToolPortfolioRead')))
         g.add((call, P('mcpBackend'), Literal('portfolio-local')))
         assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
-        g.set((E('Resolution'), P('approvalResolution'), P('ApprovalDenied')))
+        if case == 'denied':
+            g.set((E('Resolution'), P('approvalResolution'), P('ApprovalDenied')))
+        elif case == 'pending':
+            g.remove((E('Resolution'), None, None))
+        elif case == 'no_request':
+            g.remove((E('Resolution'), None, None))
+            g.remove((E('Approval'), None, None))
+        elif case == 'cross_run':
+            other = E('OtherRun')
+            for predicate, value in list(g.predicate_objects(E('Run'))):
+                g.add((other, predicate, value))
+            g.set((E('PolicyDecisionRelease'), P('inRun'), other))
+        else:
+            g.remove((E('PolicyDecisionRelease'), P('inRun'), None))
         conforms, report, _ = validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
         assert not conforms
         failures = {(report.value(r, validator.SH.focusNode),
                      report.value(r, validator.SH.sourceShape))
-                    for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
+                    for r in report.subjects(RDF.type, validator.SH.ValidationResult)
+                    if report.value(r, validator.SH.sourceShape) == URIRef(validator.PWMSH + 'GovernedCallShape')}
         assert failures == {(call, URIRef(validator.PWMSH + 'GovernedCallShape'))}
