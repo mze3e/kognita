@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.2 example data
+#  PWM 0.3 example data
 #
 #  Synthetic data for a fictional firm, Example Private Bank. No real client,
 #  person, firm or security appears here. Identifiers are well formed but
@@ -28,9 +28,9 @@
 @prefix ex:       <https://example.org/pwm-example#> .
 
 <https://example.org/pwm-example> a owl:Ontology ;
-    dcterms:title "PWM 0.2 example data"@en ;
+    dcterms:title "PWM 0.3 example data"@en ;
     dcterms:description "Synthetic data for a fictional firm, Example Private Bank. No real client, person, firm or security."@en ;
-    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.2/pwm-shapes.ttl> ;
+    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl> ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
 
 # --- People (fictional) --------------------------------------------------------------------
@@ -297,8 +297,8 @@ ex:Delegation a pwm:DelegatedAuthority ;
     pwm:permitsDataClass pwm:C2 ;
     pwm:jurisdictionCode "SG" ;
     pwm:approvalThreshold "Any draft for the client needs RM approval" ;
-    pwm:validFrom "2026-11-02T08:00:00+08:00"^^xsd:dateTime ;
-    pwm:validUntil "2026-11-02T18:00:00+08:00"^^xsd:dateTime ;
+    pwm:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime ;
     pwm:endsOnTaskCompletion true .
 
 # --- Facts and claims ------------------------------------------------------------------------------
@@ -311,7 +311,7 @@ ex:FactRiskProfile a pwm:Fact ;
     pwm:aboutClient ex:Client ;
     prov:wasDerivedFrom ex:RiskProfileV2 ;
     prov:wasAttributedTo ex:SuitabilitySystem ;
-    pwm:asOf "2026-11-02T09:58:00+08:00"^^xsd:dateTime ;
+    pwm:asOf "2026-11-03T09:58:00+08:00"^^xsd:dateTime ;
     pwm:freshnessThreshold "P1D"^^xsd:duration ;
     pwm:staleAction pwm:StaleSuppress ;
     pwm:classification pwm:C2 .
@@ -349,14 +349,14 @@ ex:ClaimReinvestment a pwm:Claim ;
 ex:Interaction a pwm:ClientInteraction ;
     rdfs:label "Interaction 0001: reinvesting a maturing bond (fictional)"@en ;
     pwm:withClient ex:Client ;
-    prov:startedAtTime "2026-11-02T09:55:00+08:00"^^xsd:dateTime .
+    prov:startedAtTime "2026-11-03T09:55:00+08:00"^^xsd:dateTime .
 
 ex:Origination a pwm:Origination ;
     pwm:partOfInteraction ex:Interaction ;
     pwm:withClient ex:Client ;
     pwm:originationTrigger pwm:OriginationEvent ;
     pwm:rationale "A bond holding matures in December 2026, and the current house view is overweight SGD investment-grade credit." ;
-    prov:startedAtTime "2026-11-02T09:55:00+08:00"^^xsd:dateTime .
+    prov:startedAtTime "2026-11-03T09:55:00+08:00"^^xsd:dateTime .
 
 ex:Recommendation a pwm:Recommendation ;
     rdfs:label "Recommendation: SGD 100,000 of the Example Corp 3.5% 2031 bond (fictional)"@en ;
@@ -369,7 +369,7 @@ ex:Recommendation a pwm:Recommendation ;
     pwm:rationale "Reinvest part of the December maturity in SGD investment-grade credit, in line with the house view, at 4% of portfolio value." ;
     pwm:underUseCase ex:UseCaseMeetingPrep ;
     prov:wasAttributedTo ex:Agent ;
-    prov:generatedAtTime "2026-11-02T10:01:00+08:00"^^xsd:dateTime .
+    prov:generatedAtTime "2026-11-03T10:01:00+08:00"^^xsd:dateTime .
 
 ex:Suitability a pwm:SuitabilityAssessment ;
     pwm:assessesRecommendation ex:Recommendation ;
@@ -379,14 +379,14 @@ ex:Suitability a pwm:SuitabilityAssessment ;
     pwm:suitabilityOutcome pwm:Suitable ;
     pwm:rationale "Product risk level RP3 matches the client's risk profile in force (RP3, version 2). The position would be 4% of portfolio value, inside the 20% single-issuer limit. The seven-year horizon covers the 2031 maturity." ;
     prov:wasAttributedTo ex:RM ;
-    prov:generatedAtTime "2026-11-02T10:04:00+08:00"^^xsd:dateTime .
+    prov:generatedAtTime "2026-11-03T10:04:00+08:00"^^xsd:dateTime .
 
 ex:Decision a pwm:FinalDecision ;
     pwm:decisionOn ex:Recommendation ;
     pwm:decisionResult pwm:DecisionApprove ;
     prov:wasDerivedFrom ex:Suitability ;
     prov:wasAttributedTo ex:RM ;
-    prov:generatedAtTime "2026-11-02T10:12:00+08:00"^^xsd:dateTime .
+    prov:generatedAtTime "2026-11-03T10:12:00+08:00"^^xsd:dateTime .
 
 ex:SecurePortal a pwm:CommunicationChannel ;
     rdfs:label "Secure client portal (fictional)"@en ;
@@ -403,7 +403,7 @@ ex:Communication a pwm:ClientCommunication ;
     pwm:disclosureTrigger pwm:TriggerAIGeneratedContent ;
     pwm:viaChannel ex:SecurePortal ;
     pwm:contentHash "sha256:a31d9e3b6d17980928d9435f48751f4af20f8d43a3060e069768e454c23173c8" ;
-    prov:generatedAtTime "2026-11-02T10:20:00+08:00"^^xsd:dateTime .
+    prov:generatedAtTime "2026-11-03T10:20:00+08:00"^^xsd:dateTime .
 
 # --- Policy rules, the decision to release, and evidence ----------------------------------------------------
 
@@ -429,23 +429,23 @@ ex:PolicyDecisionRelease a pwm:PolicyDecision ;
     pwm:decidedByRule ex:RuleClientCommunication ;
     pwm:underUseCase ex:UseCaseMeetingPrep ;
     pwm:reliesOnDelegation ex:Delegation ;
-    prov:generatedAtTime "2026-11-02T10:05:00+08:00"^^xsd:dateTime .
+    prov:generatedAtTime "2026-11-03T10:05:00+08:00"^^xsd:dateTime .
 
 ex:Evidence1 a pwm:EvidenceRecord ;
     pwm:eventType pwm:EventPolicyDecision ;
     pwm:evidenceFor ex:PolicyDecisionRelease ;
     pwm:underUseCase ex:UseCaseMeetingPrep ;
-    pwm:previousRecordHash "sha256:c140e13fed2c22a17ecd816f9abc01e038c2b1919166ed32aceb384c6331d4d1" ;
+    pwm:previousRecordHash "sha256:65ca518065e6ae3d5139a751dd6d9b5ca90392f416bae1f21e8ed658fcd548b2" ;
     pwm:recordHash "sha256:3ba5c9c03fd8837278576b83f283e79962f9bea54eb1e016503e73dcaddbc583" ;
-    prov:generatedAtTime "2026-11-02T10:05:00+08:00"^^xsd:dateTime .
+    prov:generatedAtTime "2026-11-03T10:05:00+08:00"^^xsd:dateTime .
 
 ex:Evidence2 a pwm:EvidenceRecord ;
     pwm:eventType pwm:EventFinalDecision ;
     pwm:evidenceFor ex:Decision ;
     pwm:underUseCase ex:UseCaseMeetingPrep ;
-    pwm:previousRecordHash "sha256:3ba5c9c03fd8837278576b83f283e79962f9bea54eb1e016503e73dcaddbc583" ;
+    pwm:previousRecordHash "sha256:46e21a48fe84875e427918f3e7028b12ff39de119db4cb01dc30f369d183e672" ;
     pwm:recordHash "sha256:d31e7840f241e116b99a0fe72adf3f4ec3dd344067200992158ed5048114d54b" ;
-    prov:generatedAtTime "2026-11-02T10:12:00+08:00"^^xsd:dateTime .
+    prov:generatedAtTime "2026-11-03T10:12:00+08:00"^^xsd:dateTime .
 
 ex:Evidence3 a pwm:EvidenceRecord ;
     pwm:eventType pwm:EventClientCommunication ;
@@ -453,7 +453,7 @@ ex:Evidence3 a pwm:EvidenceRecord ;
     pwm:underUseCase ex:UseCaseMeetingPrep ;
     pwm:previousRecordHash "sha256:d31e7840f241e116b99a0fe72adf3f4ec3dd344067200992158ed5048114d54b" ;
     pwm:recordHash "sha256:be1a8668fcf9c8c98fcf2f9266e5505b58be5d034f9c8e8ffe335bd077a435d7" ;
-    prov:generatedAtTime "2026-11-02T10:20:00+08:00"^^xsd:dateTime .
+    prov:generatedAtTime "2026-11-03T10:20:00+08:00"^^xsd:dateTime .
 
 # An EU assessment is illustrative, separate from the SG client journey above.
 ex:EUClientPerson a fibo-fnd-aap-ppl:Person ; rdfs:label "EU client (fictional person)"@en .
@@ -468,12 +468,12 @@ ex:EURM a pwm:RelationshipManager ;
 
 ex:EURiskProfile a pwm:InvestorRiskProfile ;
     pwm:assesses ex:EUClient ; pwm:riskProfileLevel pwm:RP3 ;
-    pwm:validFrom "2026-11-02T00:00:00Z"^^xsd:dateTime ;
+    pwm:validFrom "2026-11-03T00:00:00Z"^^xsd:dateTime ;
     prov:wasAttributedTo ex:EURM .
 
 ex:EUMandate a pwm:AdvisoryMandate ;
     rdfs:label "EU advisory mandate (fictional)"@en ;
-    pwm:validFrom "2026-11-02T00:00:00Z"^^xsd:dateTime .
+    pwm:validFrom "2026-11-03T00:00:00Z"^^xsd:dateTime .
 
 ex:EUProduct a pwm:Product ;
     rdfs:label "EU investment product pending sustainability evidence (fictional)"@en ;
@@ -489,7 +489,7 @@ ex:SustainabilityChoice a pwm:SustainabilityPreference ;
     pwm:minimumTaxonomyAlignedProportion 0.20 ;
     pwm:minimumSFDRSustainableProportion 0.40 ;
     pwm:paiConsiderationElements "Client requests consideration of greenhouse gas emissions intensity." ;
-    pwm:validFrom "2026-11-02T00:00:00Z"^^xsd:dateTime ;
+    pwm:validFrom "2026-11-03T00:00:00Z"^^xsd:dateTime ;
     prov:wasAttributedTo ex:EUClient .
 
 ex:EUSuitability a pwm:SuitabilityAssessment ;
@@ -500,3 +500,65 @@ ex:EUSuitability a pwm:SuitabilityAssessment ;
     pwm:suitabilityOutcome pwm:InsufficientInformation ;
     pwm:rationale "Preferences recorded; product sustainability evidence is still required before a suitable outcome can be reached." ;
     prov:wasAttributedTo ex:EURM .
+
+# PWM 0.3 run, gateway and replay journey. Hashes identify synthetic content.
+ex:Run a pwm:Run ; pwm:hasBudget ex:Budget ; pwm:runState pwm:RunResumed ; pwm:partOfInteraction ex:Interaction ; pwm:underUseCase ex:UseCaseMeetingPrep .
+ex:Budget a pwm:RunBudget ; pwm:maxCalls "20"^^xsd:nonNegativeInteger ; pwm:maxTokens "10000"^^xsd:nonNegativeInteger ; pwm:maxCostUSD 2.0 ; pwm:wallClockSeconds 3600.0 ; pwm:classificationCeiling pwm:C2 ; pwm:consumedCalls "2"^^xsd:nonNegativeInteger ; pwm:consumedTokens "120"^^xsd:nonNegativeInteger ; pwm:consumedCostUSD 0.02 ; pwm:elapsedSeconds 30.0 .
+ex:GatewayClient a pwm:AuthenticatedClientConfiguration ; pwm:boundAgent ex:Agent ; pwm:listedTrigger ex:ScheduledTrigger .
+ex:ScheduledTrigger a pwm:SystemTrigger ; rdfs:label "Authenticated meeting preparation scheduler"@en .
+ex:UseCaseMeetingPrep pwm:gatewayFailureMode pwm:FailClosed ; pwm:retentionPolicy ex:ContentPolicy .
+ex:ContentPolicy a pwm:RetentionPolicy ; pwm:retentionDuration "P7Y"^^xsd:duration .
+ex:GatewayCall a pwm:ModelCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionModelAllow ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:usesModel ex:Model ; pwm:providedBy ex:Provider ; pwm:modelName "fictional-meeting-model" ; pwm:modelVersion "model-2026-09" ; pwm:promptTemplateVersion "meeting-v3" ; pwm:promptHash "sha256:7dc7222a66cbd84f39d0f9aa418ddb550b82b80785e9183ec67339831773ccfc" ; pwm:responseHash "sha256:813776e604662a411b5febca6cd96d4f5917400024609a219f07cec53b472101" ; pwm:inputTokens "100"^^xsd:nonNegativeInteger ; pwm:outputTokens "20"^^xsd:nonNegativeInteger ; pwm:hasAttribute ex:Attribute ; pwm:retrievedItem ex:Snapshot ; pwm:retainedIn ex:RetainedPrompt .
+ex:ProxyCall a pwm:MCPProxiedCall ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionModelAllow ; pwm:clientConfiguration ex:GatewayClient ; pwm:systemTrigger ex:ScheduledTrigger ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:mcpBackend "portfolio-local" ; pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" .
+ex:Attribute a pwm:EnvelopeAttribute ; pwm:attributeName "classification" ; pwm:attributeValue "C2" ; pwm:attributeSource pwm:AttributeClassifierDerived ; pwm:derivedFromClassifier ex:Classifier .
+ex:Classifier a pwm:ClassifierOutput ; pwm:classifierModelId "local-envelope-classifier" ; pwm:classifierVersion "1.0" ; pwm:classifierLabel "C2" ; pwm:confidence 0.94 ; pwm:inputHash "sha256:7dc7222a66cbd84f39d0f9aa418ddb550b82b80785e9183ec67339831773ccfc" .
+ex:PolicyDecisionRelease pwm:hasAttribute ex:Attribute ; pwm:escalationThreshold 0.90 ; pwm:hasCheck ex:Check ; pwm:inRun ex:Run .
+ex:Check a pwm:PolicyCheck ; pwm:checkedRule ex:RuleClientCommunication ; pwm:policyContentHash "sha256:1b93cbae52e30c4169272628d1d4e85748a05c7dc07c0a4d731fa0e22c299412" .
+ex:Snapshot a pwm:RetrievedItem ; prov:wasDerivedFrom ex:HouseView ; pwm:contentHash "sha256:a902b79b50c675e8fa46f2ed02790d2b73e09e080395efe9dc6d21ff9aca942f" ; pwm:embeddingModel "fictional-embedding-v1" .
+ex:RetainedPrompt a pwm:RetentionEntry ; pwm:contentHash "sha256:7dc7222a66cbd84f39d0f9aa418ddb550b82b80785e9183ec67339831773ccfc" ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:storeLocator "urn:synthetic:content:prompt"^^xsd:anyURI .
+ex:Checkpoint a pwm:RunCheckpoint ; pwm:inRun ex:Run ; pwm:contentHash "sha256:7755c6a35112601fc1664e9bf33c62e566d20c5545f67a7538b5bf6ebe84b321" ; pwm:retainedIn ex:RetainedContinuation .
+ex:Approval a pwm:ApprovalRequest ; pwm:requestsDecision ex:PolicyDecisionRelease ; pwm:atCheckpoint ex:Checkpoint .
+ex:Resolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:Approval ; pwm:approvalResolution pwm:ApprovalApproved ; prov:wasAttributedTo ex:PersonRM ; prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime .
+ex:Resumption a pwm:RunResumption ; pwm:inRun ex:Run ; pwm:resumedFrom ex:Checkpoint ; pwm:resolvedApproval ex:Resolution .
+ex:Report a pwm:ReconstructionReport ; pwm:partOfInteraction ex:Interaction ; pwm:chainVerified true ; pwm:pinnedHashesVerified true ; pwm:questionCoverage ex:Coverage0, ex:Coverage1, ex:Coverage2, ex:Coverage3, ex:Coverage4, ex:Coverage5, ex:Coverage6, ex:Coverage7, ex:Coverage8, ex:Coverage9 .
+ex:Coverage0 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionWhyClient ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
+ex:Coverage1 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionWhyProduct ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
+ex:Coverage2 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionInformation ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence4 .
+ex:Coverage3 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionModelAgent ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence4 .
+ex:Coverage4 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionAuthority ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence1 .
+ex:Coverage5 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionControls ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence1 .
+ex:Coverage6 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionRMChanges ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
+ex:Coverage7 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionFinalDecision ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
+ex:Coverage8 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionCommunication ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
+ex:Coverage9 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionReproduction ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence1 .
+
+ex:Checkpoint pwm:runState pwm:RunSuspended .
+ex:ErasedSnapshot a pwm:RetentionEntry ; pwm:contentHash "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:erased true .
+ex:Erasure a pwm:ErasureEvent ; pwm:erasedEntry ex:ErasedSnapshot ; pwm:contentHash "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" .
+ex:Evidence4 a pwm:EvidenceRecord ; pwm:eventType pwm:EventModelCall ; pwm:evidenceFor ex:GatewayCall ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:previousRecordHash "sha256:c140e13fed2c22a17ecd816f9abc01e038c2b1919166ed32aceb384c6331d4d1" ; pwm:recordHash "sha256:0b2d51b46feeec2bd3841edc4443126afe380cdc92acccc932f7f50bc75951f5" ; prov:generatedAtTime "2026-11-03T09:59:00+08:00"^^xsd:dateTime .
+ex:Evidence5 a pwm:EvidenceRecord ; pwm:eventType pwm:EventToolCall ; pwm:evidenceFor ex:ProxyCall ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:previousRecordHash "sha256:0b2d51b46feeec2bd3841edc4443126afe380cdc92acccc932f7f50bc75951f5" ; pwm:recordHash "sha256:65ca518065e6ae3d5139a751dd6d9b5ca90392f416bae1f21e8ed658fcd548b2" ; prov:generatedAtTime "2026-11-03T10:00:00+08:00"^^xsd:dateTime .
+ex:Evidence6 a pwm:EvidenceRecord ; pwm:eventType pwm:EventApproval ; pwm:evidenceFor ex:Approval ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:previousRecordHash "sha256:3ba5c9c03fd8837278576b83f283e79962f9bea54eb1e016503e73dcaddbc583" ; pwm:recordHash "sha256:fe6ae01df1a39e437427756c332f0537b8d3af3665b79156be58beebbe7c8806" ; prov:generatedAtTime "2026-11-03T10:05:01+08:00"^^xsd:dateTime .
+ex:Evidence7 a pwm:EvidenceRecord ; pwm:eventType pwm:EventApproval ; pwm:evidenceFor ex:Resolution ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:previousRecordHash "sha256:fe6ae01df1a39e437427756c332f0537b8d3af3665b79156be58beebbe7c8806" ; pwm:recordHash "sha256:bb1d0ac90b5afc258cb5eade8ea15c61df6aff3d253835b5d2de3c84c6c31b54" ; prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime .
+ex:Evidence8 a pwm:EvidenceRecord ; pwm:eventType pwm:EventIntervention ; pwm:evidenceFor ex:Resumption ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:previousRecordHash "sha256:bb1d0ac90b5afc258cb5eade8ea15c61df6aff3d253835b5d2de3c84c6c31b54" ; pwm:recordHash "sha256:46e21a48fe84875e427918f3e7028b12ff39de119db4cb01dc30f369d183e672" ; prov:generatedAtTime "2026-11-03T10:07:00+08:00"^^xsd:dateTime .
+ex:Evidence9 a pwm:EvidenceRecord ; pwm:eventType pwm:EventErasure ; pwm:evidenceFor ex:Erasure ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:previousRecordHash "sha256:be1a8668fcf9c8c98fcf2f9266e5505b58be5d034f9c8e8ffe335bd077a435d7" ; pwm:recordHash "sha256:2c2983ea89237bd266d2ceb3eef67a34f59ded1c563fff105d84669bdb750b1a" ; prov:generatedAtTime "2026-11-03T10:21:00+08:00"^^xsd:dateTime ; pwm:contentHash "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" .
+ex:RetainedResponse a pwm:RetentionEntry ; pwm:contentHash "sha256:813776e604662a411b5febca6cd96d4f5917400024609a219f07cec53b472101" ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:storeLocator "urn:synthetic:content:response"^^xsd:anyURI .
+ex:RetainedToolResponse a pwm:RetentionEntry ; pwm:contentHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:storeLocator "urn:synthetic:content:tool-response"^^xsd:anyURI .
+ex:RetainedSource a pwm:RetentionEntry ; pwm:contentHash "sha256:a902b79b50c675e8fa46f2ed02790d2b73e09e080395efe9dc6d21ff9aca942f" ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:storeLocator "urn:synthetic:content:snapshot"^^xsd:anyURI .
+ex:RetainedContinuation a pwm:RetentionEntry ; pwm:contentHash "sha256:7755c6a35112601fc1664e9bf33c62e566d20c5545f67a7538b5bf6ebe84b321" ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:storeLocator "urn:synthetic:content:continuation"^^xsd:anyURI .
+ex:GatewayCall pwm:retainedIn ex:RetainedResponse .
+ex:ProxyCall pwm:retainedIn ex:RetainedToolResponse .
+ex:Snapshot pwm:retainedIn ex:RetainedSource .
+ex:Evidence4 pwm:evidenceFor ex:Budget .
+
+# Model access is allowed before drafting; release of the resulting note is held separately.
+ex:PolicyDecisionModelAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:decidedByRule ex:RuleModelAccess ; pwm:hasCheck ex:ModelAccessCheck ;
+    pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:inRun ex:Run ; pwm:escalationThreshold 0.90 .
+ex:RuleModelAccess a pwm:PolicyRule ; pwm:ruleCitation "Synthetic meeting-preparation policy: permitted model and confidential-data ceiling, with redaction" ;
+    pwm:versionId "1.0" ; pwm:validFrom "2026-11-03T00:00:00Z"^^xsd:dateTime .
+ex:ModelAccessCheck a pwm:PolicyCheck ; pwm:checkedRule ex:RuleModelAccess ; pwm:policyContentHash "sha256:19775574be9254a8b7059aa09f1689766046c388609a57c07c32cca56b6ca795" .
+ex:ResponseClassifier a pwm:ClassifierOutput ; pwm:classifierModelId "local-envelope-classifier" ;
+    pwm:classifierVersion "1.0" ; pwm:classifierLabel "C1" ; pwm:confidence 0.97 ; pwm:inputHash "sha256:813776e604662a411b5febca6cd96d4f5917400024609a219f07cec53b472101" .
+ex:ResponseAttribute a pwm:EnvelopeAttribute ; pwm:attributeName "response.classification" ; pwm:attributeValue "C1" ;
+    pwm:attributeSource pwm:AttributeClassifierDerived ; pwm:derivedFromClassifier ex:ResponseClassifier .
+ex:GatewayCall pwm:hasAttribute ex:ResponseAttribute .

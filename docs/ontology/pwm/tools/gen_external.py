@@ -69,6 +69,7 @@ OTHER = {
     CMNS + "BusinessAuthorizations/Authorization": ("authorization", "Class"),
     CMNS + "Documents/Document": ("document", "Class"),
     CMNS + "RolesAndCompositions/isPlayedBy": ("is played by", "ObjectProperty"),
+    PROV + "Agent": ("Agent", "Class"),
     PROV + "Entity": ("Entity", "Class"),
     PROV + "Activity": ("Activity", "Class"),
     PROV + "SoftwareAgent": ("SoftwareAgent", "Class"),

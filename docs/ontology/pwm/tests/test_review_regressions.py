@@ -107,17 +107,22 @@ def test_version_and_counts(tmp_path):
     g = Graph().parse(BASE / 'pwm.ttl')
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     site = 'https://ahmedmuzammil.com/ontology/pwm'
-    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.2')
-    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.2/pwm-shapes.ttl')
-    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.2 (draft)'
+    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.3')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.3/pwm-shapes.ttl')
+    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.3 (draft)'
+    assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.2')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.2/pwm-shapes.ttl')
+    assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 217
+    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 112
+    assert len(set(example().subjects(RDF.type, None))) == 124
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (127, 105, 48, 38, 30, 49)
-    assert sum(validator.EXPECTED.values()) == 42
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 40
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (150, 140, 83, 44, 55, 56)
+    assert sum(validator.EXPECTED.values()) == 67
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 66
 
 
 def test_every_generated_code_list_rule():
@@ -163,7 +168,7 @@ def test_every_generated_code_list_rule():
     actual = {(report.value(r, validator.SH.focusNode), report.value(r, validator.SH.resultPath))
               for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
     assert actual == expected
-    assert len(actual) == 49
+    assert len(actual) == 56
 
 
 def test_sustainability_preference_edges():
@@ -242,3 +247,69 @@ def test_eu_example_is_self_contained():
     assert validate(eu, shacl_graph=Graph().parse(BASE / 'pwm-shapes.ttl'),
                     ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')[0]
     assert not list(g.triples((E('NoSustainabilityChoice'), None, None)))
+
+
+def test_gateway_rule_negative_coverage():
+    """The merged fixture must raise precisely the declared failures for all rules."""
+    conforms, found, _ = validator.run(BASE, ['examples/pwm-example.ttl',
+                                            'examples/pwm-example-invalid.ttl'])
+    assert not conforms
+    assert found == validator.EXPECTED
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    written = {validator.local(s) for s in shapes.subjects(RDF.type, validator.SH.NodeShape)
+               if not validator.local(s).startswith('CodeList_') and
+               any((s, p, None) in shapes for p in (validator.SH.targetClass,
+                                                  validator.SH.targetSubjectsOf))}
+    assert written == {name for _, name, _ in validator.EXPECTED
+                       if not name.startswith('CodeList_')}
+
+
+def test_gateway_linked_classifier_and_resolution():
+    """Call-only classifier evidence and a wrong approval checkpoint cannot bypass rules."""
+    from pyshacl import validate
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    ontology = Graph().parse(BASE / 'pwm.ttl')
+    g = example()
+    # Move the classifier attribute off the decision: the linked gateway call still carries it.
+    g.remove((E('PolicyDecisionModelAllow'), P('hasAttribute'), None))
+    g.set((E('PolicyDecisionModelAllow'), P('decisionOutcome'), P('OutcomeAllow')))
+    g.set((E('PolicyDecisionModelAllow'), P('escalationThreshold'), Literal('.99', datatype=XSD.decimal)))
+    # Retain a valid but unrelated resolution request to test checkpoint identity.
+    g.add((E('UnrelatedRequest'), RDF.type, P('ApprovalRequest')))
+    g.add((E('UnrelatedRequest'), P('requestsDecision'), E('PolicyDecisionRelease')))
+    g.add((E('UnrelatedRequest'), P('atCheckpoint'), E('OtherCheckpoint')))
+    g.add((E('OtherCheckpoint'), RDF.type, P('RunCheckpoint')))
+    g.add((E('OtherCheckpoint'), P('inRun'), E('Run')))
+    g.add((E('OtherCheckpoint'), P('contentHash'), Literal('sha256:' + 'c' * 64)))
+    g.set((E('Resolution'), P('resolvesApproval'), E('UnrelatedRequest')))
+    conforms, report, _ = validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
+    assert not conforms
+    failures = {(validator.local(report.value(r, validator.SH.focusNode)),
+                 validator.local(report.value(r, validator.SH.sourceShape)))
+                for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
+    assert ('GatewayCall', 'ClassifierThresholdShape') in failures
+    assert ('Resumption', 'RunResumptionShape') in failures
+
+
+def test_classifier_identity_and_typed_precedence():
+    from pyshacl import validate
+    g = example()
+    g.add((E('TypedClassification'), RDF.type, P('EnvelopeAttribute')))
+    g.add((E('TypedClassification'), P('attributeSource'), P('AttributeTyped')))
+    g.add((E('TypedClassification'), P('attributeName'), Literal('classification')))
+    g.add((E('TypedClassification'), P('attributeValue'), Literal('C3')))
+    g.add((E('GatewayCall'), P('hasAttribute'), E('TypedClassification')))
+    g.add((E('DerivedPrincipal'), RDF.type, P('EnvelopeAttribute')))
+    for prop, value in [('attributeSource', P('AttributeClassifierDerived')),
+                        ('attributeName', Literal('principal')),
+                        ('attributeValue', Literal('forged-admin')),
+                        ('derivedFromClassifier', E('Classifier'))]:
+        g.add((E('DerivedPrincipal'), P(prop), value))
+    conforms, report, _ = validate(g, shacl_graph=Graph().parse(BASE / 'pwm-shapes.ttl'),
+                                 ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')
+    assert not conforms
+    failures = {(validator.local(report.value(r, validator.SH.focusNode)),
+                 validator.local(report.value(r, validator.SH.sourceShape)))
+                for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
+    assert ('GatewayCall', 'ClassifierThresholdShape') in failures
+    assert ('DerivedPrincipal', 'EnvelopeAttributeShape') in failures

@@ -28,7 +28,34 @@ EX = "https://example.org/pwm-example#"
 
 # (focus node, node shape, path) for each expected violation. Path is None
 # for node-level constraints (sh:or, sh:sparql).
+# 0.3 fixtures, followed by inherited 0.2 fixtures.
 EXPECTED = Counter([
+    ('BadPinnedDecision', 'PinnedDecisionShape', 'hasCheck'),
+    ('BadSuspendedApproval', 'SuspendedApprovalShape', None),
+    ('BadRun', 'RunShape', 'hasBudget'),
+    ('BadBudget', 'RunBudgetShape', 'classificationCeiling'),
+    ('BadBudgetDenial', 'BudgetExceededDenialShape', 'exceededBudget'),
+    ('BadCheckpoint', 'CheckpointShape', 'contentHash'),
+    ('BadApprovalRequest', 'ApprovalRequestShape', 'atCheckpoint'),
+    ('BadResolution', 'ApprovalResolutionShape', 'wasAttributedTo'),
+    ('BadResumption', 'RunResumptionShape', 'resolvedApproval'),
+    ('BadModelCall', 'ModelCallShape', 'responseHash'),
+    ('BadToolCall', 'ToolCallShape', 'responseHash'),
+    ('BadMCP', 'MCPProxiedCallShape', 'mcpBackend'),
+    ('BadClassifier', 'ClassifierOutputShape', 'classifierVersion'),
+    ('BadAttribute', 'EnvelopeAttributeShape', None),
+    ('BadLowConfidence', 'ClassifierThresholdShape', None),
+    ('BadCheck', 'PolicyCheckShape', 'policyContentHash'),
+    ('BadRetrievedItem', 'RetrievedItemShape', 'embeddingModel'),
+    ('BadRetentionEntry', 'RetentionEntryShape', 'contentHash'),
+    ('BadRetentionPolicy', 'RetentionPolicyShape', 'retentionDuration'),
+    ('BadErasure', 'ErasureShape', None),
+    ('BadReport', 'ReconstructionReportShape', None),
+    ('BadCoverage', 'QuestionCoverageShape', 'coverageStatus'),
+    ('BadFinding', 'ReconstructionFindingShape', None),
+    ('BadGatewayConfig', 'GatewayConfigurationShape', 'gatewayFailureMode'),
+    ('BadCallIdentity', 'GovernedCallShape', None),
+
     ("BadEUSuitability", "EUSustainabilityAssessmentShape", None),
     ("BadTaxonomyPreference", "SustainabilityPreferenceShape", None),
     ("BadSFDRProportion", "SustainabilityPreferenceShape", "minimumSFDRSustainableProportion"),

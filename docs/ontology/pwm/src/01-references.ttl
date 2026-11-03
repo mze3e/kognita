@@ -42,7 +42,8 @@ pwmref:W3C-PROV-O a pwm:Reference ;
     rdfs:seeAlso <https://www.w3.org/TR/prov-o/> ;
     pwm:sourceType pwm:SourceStandardOntology ;
     pwm:jurisdiction "Global" ;
-    pwm:verificationStatus "instrument-level" .
+    pwm:verificationStatus "verified" ;
+    skos:note "Section 3.1 Activity and Agent definitions verified against the W3C Recommendation on 3 November 2026 for Run and SystemTrigger. Other PROV-O terms retain their existing instrument-level grounding." .
 
 pwmref:W3C-SKOS a pwm:Reference ;
     dcterms:alternative "SKOS" ;
