@@ -206,7 +206,10 @@ EXPECTED.update([('Bad05ActionStopShape', 'ActionStopShape', 'stopOutcome'),
  ('Bad05LiveEntitlementCoverage', 'LiveAuthorityDecisionShape', None),
 ])
 
-EXPECTED.update([('BadLiveStatus', 'LegacyAuthorityLiveStatusShape', None),
+EXPECTED.update([('Bad05CeilingBelowScope', 'DelegationCeilingShape', None),
+ ('Bad05ChildAboveParent', 'DelegationCeilingShape', None),
+ ('Bad05EffectiveAboveMax', 'AgentAutonomyShape', None),
+ ('BadRankChild', 'DelegationCeilingShape', None),
  ('BadLimitApproval', 'RiskControlApprovalShape', 'riskControlApproval'),
  ('BadGateApproval', 'RiskControlApprovalShape', 'riskControlApproval'),
  ('BadApprover', 'RiskControlApprovalRecordShape', 'approverRole'),

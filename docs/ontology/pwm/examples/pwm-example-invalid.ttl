@@ -1051,15 +1051,6 @@ ex:BadLimitApproval a ns1:BlastRadiusLimit ;
     ns1:limitUnit "clients" ;
     ns1:limitWindowBasis "minute" .
 
-ex:BadLiveStatus a ns1:AuthorityLiveStatus ;
-    ns1:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
-    ns1:liveStatusSubject ex:Delegation ;
-    ns1:liveStatusValue "armed" ;
-    ns1:observedAt "2026-11-03T02:00:00+00:00"^^xsd:dateTime ;
-    ns1:observedBy ex:Agent ;
-    ns1:revoked false ;
-    ns1:statusOf ex:Delegation .
-
 ex:BadLiveStatusDate a ns1:AuthorityLiveStatus ;
     ns1:asOf "2026-11-03"^^xsd:date ;
     ns1:observedBy ex:LiveObserver ;
@@ -2414,3 +2405,54 @@ ex:GatewayClient ns1:boundAgent ex:HighAgent,
         ex:MaxOnlyAgent .
 
 ex:Agent ns1:permittedTool ex:MultiVerbTool .
+
+# PWM 0.5 review: the delegation's permitted data class is a real ceiling.
+ex:Bad05CeilingBelowScope a ns1:DelegatedAuthority ;
+    ns1:aboutClient ex:Client ;
+    ns1:actionVerb ns1:VerbRead ;
+    ns1:authorityScope ex:Scope ;
+    ns1:delegatedBy ex:PersonRM ;
+    ns1:delegatedTo ex:Agent ;
+    ns1:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:maxDelegationDepth "1"^^xsd:nonNegativeInteger ;
+    ns1:permitsDataClass ns1:C0 ;
+    ns1:validFrom "2026-11-03T02:00:00+00:00"^^xsd:dateTime ;
+    ns1:validUntil "2026-11-03T09:00:00+00:00"^^xsd:dateTime .
+
+ex:Bad05ChildAboveParent a ns1:DelegatedAuthority ;
+    ns1:aboutClient ex:Client ;
+    ns1:actionVerb ns1:VerbRead ;
+    ns1:authorityScope ex:ReadScope ;
+    ns1:delegatedBy ex:PersonRM ;
+    ns1:delegatedTo ex:Worker ;
+    ns1:delegationDepth "1"^^xsd:nonNegativeInteger ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:maxDelegationDepth "1"^^xsd:nonNegativeInteger ;
+    ns1:parentDelegation ex:Delegation ;
+    ns1:permitsDataClass ns1:C3 ;
+    ns1:validFrom "2026-11-03T02:00:00+00:00"^^xsd:dateTime ;
+    ns1:validUntil "2026-11-03T09:00:00+00:00"^^xsd:dateTime .
+
+ex:Bad05EffectiveAboveMax a ns1:AIAgent ;
+    ns1:agentIdentifier "AGENT-RM-OVER-AUTONOMOUS-01" ;
+    ns1:agentOwner ex:PersonHeadOfAdvisory ;
+    ns1:agentStatus ns1:StatusLive ;
+    ns1:approvedDeploymentVersion "over-v1" ;
+    ns1:deploymentDate "2026-11-03T00:00:00+00:00"^^xsd:dateTime ;
+    ns1:deploymentEnvironment "production" ;
+    ns1:deploymentModel ex:Model ;
+    ns1:deploymentVersion "over-v1" ;
+    ns1:effectiveAutonomyLevel ns1:L3Draft ;
+    ns1:hasPurpose ex:PurposeMeetingPrep ;
+    ns1:maxAutonomyLevel ns1:L1Explain ;
+    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:operatesFor ex:PersonRM ;
+    ns1:registeredForUseCase ex:UseCaseMeetingPrep ;
+    ns1:workloadIdentity ex:Bad05EffectiveAboveMaxIdentity .
+
+ex:Bad05EffectiveAboveMaxIdentity a ns1:WorkloadIdentity ;
+    ns1:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ;
+    ns1:credentialReference "urn:synthetic:credential:over-01"^^xsd:anyURI ;
+    ns1:deploymentEnvironment "production" ;
+    ns1:workloadSubject "over-01-production" .

@@ -1162,15 +1162,18 @@ pwmsh:ExclusiveWorkloadShape a sh:NodeShape ; rdfs:label "Exclusive workload ide
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Each registered agent has its own workload identity (Kognita 0.5 item 1)." ;
         sh:select """SELECT DISTINCT $this WHERE { $this pwm:workloadIdentity ?i . ?other a pwm:AIAgent ; pwm:workloadIdentity ?i . FILTER(?other != $this) }""" ] .
 
-# Ahmed design decisions, 3 Nov 2026.
-pwmsh:LegacyAuthorityLiveStatusShape a sh:NodeShape ; rdfs:label "Legacy authority live status"@en ;
-    sh:targetSubjectsOf pwm:liveStatusValue ; dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;
-    rdfs:comment "Kognita 0.5 live revocation and kill-switch observations; durable definitions remain SlowContext."@en ;
-    sh:property [ sh:path pwm:liveStatusSubject ; sh:minCount 1 ; sh:maxCount 1 ; sh:or ( [ sh:class pwm:DelegatedAuthority ] [ sh:class pwm:KillSwitch ] ) ; sh:message "Record exactly one liveStatusSubject, a DelegatedAuthority or KillSwitch." ] ;
-    sh:property [ sh:path pwm:observedAt ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:message "pwm:observedAt: minimum count 1, maximum count 1, datatype xsd:dateTime." ] ;
-    sh:property [ sh:path pwm:liveStatusValue ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "pwm:liveStatusValue: minimum count 1, maximum count 1, datatype xsd:string." ] ;
-    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Delegation liveStatusValue must be active or revoked; kill-switch liveStatusValue must be armed or tripped." ;
-        sh:select """SELECT $this WHERE { $this pwm:liveStatusSubject ?s ; pwm:liveStatusValue ?v . FILTER(!((EXISTS { ?s a pwm:DelegatedAuthority } && ?v IN ("active", "revoked")) || (EXISTS { ?s a pwm:KillSwitch } && ?v IN ("armed", "tripped")))) }""" ] .
+# Review additions, 4 Nov 2026.
+pwmsh:DelegationCeilingShape a sh:NodeShape ; rdfs:label "DelegationCeilingShape"@en ; sh:targetClass pwm:DelegatedAuthority ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 2. The permitted data class is the delegation's ceiling. Classes C0 to C3 are compared by their IRIs, which sort in rank order. Checks recorded evidence; runtime enforcement remains external."@en ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "A delegation's permitted data class must cover the classification of its authority scope, and a child delegation cannot permit a higher class than its parent (Kognita 0.5 item 2)." ;
+        sh:select """SELECT DISTINCT $this WHERE {
+            { $this pwm:permitsDataClass ?c ; pwm:authorityScope ?s . ?s pwm:classification ?sc . FILTER(STR(?c) < STR(?sc)) }
+            UNION { $this pwm:permitsDataClass ?c ; pwm:parentDelegation ?p . ?p pwm:permitsDataClass ?pc . FILTER(STR(?c) > STR(?pc)) } }""" ] .
+
+pwmsh:AgentAutonomyShape a sh:NodeShape ; rdfs:label "AgentAutonomyShape"@en ; sh:targetClass pwm:AIAgent ;
+    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 3. Levels L0 to L6 are compared by their IRIs, which sort in rank order. Checks recorded evidence; runtime enforcement remains external."@en ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "An agent's effective autonomy level cannot exceed its maximum autonomy level (Kognita 0.5 item 3)." ;
+        sh:select """SELECT DISTINCT $this WHERE { $this pwm:effectiveAutonomyLevel ?e ; pwm:maxAutonomyLevel ?m . FILTER(STR(?e) > STR(?m)) }""" ] .
 
 pwmsh:RiskControlApprovalShape a sh:NodeShape ; rdfs:label "RiskControlApprovalShape"@en ;
     sh:targetClass pwm:BlastRadiusLimit, pwm:AutonomyPromotionGate ; dcterms:source pwmref:KOG-ROADMAP, pwmref:MAS-AIRG ;

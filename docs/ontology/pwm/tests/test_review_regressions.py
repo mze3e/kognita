@@ -115,7 +115,7 @@ def test_version_and_counts(tmp_path):
     assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.4')
     assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.4/pwm-shapes.ttl')
     assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 235
-    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 196
+    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 197
     assert len(set(example().subjects(RDF.type, None))) == 191
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
@@ -124,9 +124,9 @@ def test_version_and_counts(tmp_path):
     shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 221, 190, 48, 129, 66)
-    assert sum(validator.EXPECTED.values()) == 189
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 249
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 220, 188, 48, 130, 66)
+    assert sum(validator.EXPECTED.values()) == 192
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 252
     assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
     negative_count = len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None)))
     assert f'negative fixture contains {negative_count} typed records' in (tmp_path / 'SPEC.md').read_text()
@@ -650,15 +650,6 @@ def test_05_approving_authority_roles(role_class):
     assert not validate_05(g, names)
 
 
-@pytest.mark.parametrize('subject,state', [('Delegation', 'active'), ('Delegation', 'revoked'),
-                                         ('Breaker', 'armed'), ('Breaker', 'tripped')])
-def test_05_live_authority_status(subject, state):
-    g = example()
-    g.set((E('DelegationLive'), P('liveStatusSubject'), E(subject)))
-    g.set((E('DelegationLive'), P('liveStatusValue'), Literal(state)))
-    assert validate_05(g, ['LegacyAuthorityLiveStatusShape'])
-    g.remove((E('DelegationLive'), P('observedAt'), None))
-    assert not validate_05(g, ['LegacyAuthorityLiveStatusShape'])
 @pytest.mark.parametrize('timestamp,expired', [
     ('2026-11-03T23:30:00-02:00', True),
     ('2026-11-04T00:30:00+02:00', False),
@@ -905,3 +896,38 @@ def test_irreversible_approval_coexists_with_suspended_checkpoint():
     g.remove((E('Resolution'), P('approvalResolution'), None))
     assert not validate_05(g, ['IrreversibleApprovalShape'])
     assert validate_05(g, ['SuspendedApprovalShape'])
+
+
+@pytest.mark.parametrize('level,conforms', [('C3', True), ('C2', True), ('C1', False), ('C0', False)])
+def test_05_delegation_ceiling_covers_scope_and_children(level, conforms):
+    g = example()
+    # The scope is C2 and the child delegation permits C2, so a lower parent ceiling fails on both counts.
+    g.set((E('Delegation'), P('permitsDataClass'), P(level)))
+    assert validate_05(g, ['DelegationCeilingShape']) == conforms
+
+
+@pytest.mark.parametrize('level,conforms', [('C1', True), ('C2', True), ('C3', False), ('C0', False)])
+def test_05_child_delegation_cannot_exceed_parent_or_undercut_scope(level, conforms):
+    g = example()
+    g.set((E('ChildDelegation'), P('permitsDataClass'), P(level)))
+    assert validate_05(g, ['DelegationCeilingShape']) == conforms
+
+
+@pytest.mark.parametrize('effective,conforms', [('L0Retrieve', True), ('L1Explain', False), ('L3Draft', False)])
+def test_05_effective_autonomy_cannot_exceed_maximum(effective, conforms):
+    g = example()
+    g.set((E('Worker'), P('effectiveAutonomyLevel'), P(effective)))
+    assert validate_05(g, ['AgentAutonomyShape']) == conforms
+
+
+def test_05_one_live_status_format():
+    ontology = (BASE / 'pwm.ttl').read_text(encoding='utf-8')
+    for removed in ('liveStatusSubject', 'liveStatusValue', 'pwm:observedAt a '):
+        assert removed not in ontology
+    assert 'pwm:statusOf a owl:ObjectProperty' in ontology
+
+
+def test_05_spec_names_union_ranges():
+    spec = (BASE / 'SPEC.md').read_text(encoding='utf-8')
+    row = next(line for line in spec.splitlines() if line.startswith('| <a id="statusOf">'))
+    assert '[delegated authority](#DelegatedAuthority), [kill switch](#KillSwitch)' in row
