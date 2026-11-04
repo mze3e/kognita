@@ -1,3 +1,4 @@
+@prefix pwm: <https://ahmedmuzammil.com/ontology/pwm#> .
 @prefix cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix ex: <https://example.org/pwm-example#> .
@@ -2456,3 +2457,7 @@ ex:Bad05EffectiveAboveMaxIdentity a ns1:WorkloadIdentity ;
     ns1:credentialReference "urn:synthetic:credential:over-01"^^xsd:anyURI ;
     ns1:deploymentEnvironment "production" ;
     ns1:workloadSubject "over-01-production" .
+
+# Reset the shared switch after the negative decision so later fixtures stay isolated.
+ex:ResetLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:LiveSwitch ; pwm:engaged false ;
+    pwm:asOf "2027-01-01T00:00:00Z"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .

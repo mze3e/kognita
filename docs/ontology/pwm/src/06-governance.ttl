@@ -640,7 +640,7 @@ pwm:RiskOwnership a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos
 pwm:AuthorityLiveStatus a owl:Class ;
     rdfs:label "authority live status"@en ;
     skos:definition "Live observation of the revocation state of a DelegatedAuthority or the engaged state of a KillSwitch, effective from asOf until superseded. Read from the system of record at decision time, never from cache."@en ;
-    skos:scopeNote "For each subject, use the latest observation at or before the decision time. Conflicting observations at that time fail closed. SHACL checks recorded observations; runtime must obtain fresh state."@en ;
+    skos:scopeNote "The single live-status vocabulary for delegation revocation and kill-switch state, retained for reuse in 0.5 without a parallel class or code list. DelegatedAuthority and KillSwitch definitions remain in SlowContext. For each subject, use the latest observation at or before the decision time. Conflicting observations at that time fail closed. SHACL checks recorded observations; runtime must obtain fresh state."@en ;
     rdfs:subClassOf prov:Entity ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ;
     pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
 

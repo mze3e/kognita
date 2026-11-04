@@ -40,7 +40,8 @@
         [ sh:prefix "xsd" ; sh:namespace "http://www.w3.org/2001/XMLSchema#"^^xsd:anyURI ] ,
         [ sh:prefix "pwm" ; sh:namespace "https://ahmedmuzammil.com/ontology/pwm#"^^xsd:anyURI ] ,
         [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ,
-        [ sh:prefix "cmns-rlcmp" ; sh:namespace "https://www.omg.org/spec/Commons/RolesAndCompositions/"^^xsd:anyURI ] .
+        [ sh:prefix "cmns-rlcmp" ; sh:namespace "https://www.omg.org/spec/Commons/RolesAndCompositions/"^^xsd:anyURI ] ,
+        [ sh:prefix "prov" ; sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] .
 
 # --- Accountability: a named person, never an agent --------------------------------------
 

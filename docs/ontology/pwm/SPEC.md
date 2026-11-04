@@ -1706,7 +1706,7 @@ Test activation of a kill switch, recording who activated it, how long until the
 
 Live observation of the revocation state of a DelegatedAuthority or the engaged state of a KillSwitch, effective from asOf until superseded. Read from the system of record at decision time, never from cache.
 
-*Note:* For each subject, use the latest observation at or before the decision time. Conflicting observations at that time fail closed. SHACL checks recorded observations; runtime must obtain fresh state.
+*Note:* The single live-status vocabulary for delegation revocation and kill-switch state, retained for reuse in 0.5 without a parallel class or code list. DelegatedAuthority and KillSwitch definitions remain in SlowContext. For each subject, use the latest observation at or before the decision time. Conflicting observations at that time fail closed. SHACL checks recorded observations; runtime must obtain fresh state.
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** fast context, default classification C2
@@ -4946,7 +4946,7 @@ New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGra
 
 There are 197 node shapes: 130 written targeted shapes, 66 generated targeted shapes and one untargeted helper.
 
-The positive example contains 191 typed records. The negative fixture contains 252 typed records. There are 168 typed violating records, 84 typed supporting records and 4 untyped violating subjects, yielding 192 expected violations across 172 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 191 typed records. The negative fixture contains 253 typed records. There are 168 typed violating records, 85 typed supporting records and 4 untyped violating subjects, yielding 191 expected violations across 172 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
 The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 

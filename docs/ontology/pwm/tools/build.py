@@ -249,11 +249,10 @@ def build(base: Path, site_path):
         t["matches"] = matches
         if kind != "class":
             def expand(o):
-                # A union class is a blank node; list its members so the spec shows their names, not a generated ID.
                 union = g.value(o, OWL.unionOf) if isinstance(o, BNode) else None
-                return [link(m) for m in Collection(g, union)] if union is not None else [link(o)]
-            t["domain"] = [m for o in g.objects(x, RDFS.domain) for m in expand(o)]
-            t["range"] = [m for o in g.objects(x, RDFS.range) for m in expand(o)]
+                return list(Collection(g, union)) if union is not None else [o]
+            t["domain"] = [link(m) for m in sorted({m for o in g.objects(x, RDFS.domain) for m in expand(o)}, key=str)]
+            t["range"] = [link(m) for m in sorted({m for o in g.objects(x, RDFS.range) for m in expand(o)}, key=str)]
             vf = g.value(x, P("valuesFrom"))
             if vf is not None:
                 t["valuesFrom"] = link(vf)
