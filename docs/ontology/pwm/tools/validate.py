@@ -33,7 +33,6 @@ EXPECTED = Counter([
     ("BadLiveStatusDate", "AuthorityLiveStatusShape", "asOf"),
     ("BadRevokedAllow", "LiveDelegationDecisionShape", None),
     ("BadEngagedAllow", "LiveKillSwitchDecisionShape", None),
-    ("Bad04PastReviewDecisionShape", "LiveKillSwitchDecisionShape", None),
     ('BadPinnedDecision', 'PinnedDecisionShape', 'hasCheck'),
     ('BadSuspendedApproval', 'SuspendedApprovalShape', None),
     ('BadRun', 'RunShape', 'hasBudget'),

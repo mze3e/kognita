@@ -249,7 +249,11 @@ def build(base: Path, site_path):
         t["matches"] = matches
         if kind != "class":
             t["domain"] = [link(o) for o in g.objects(x, RDFS.domain)]
-            t["range"] = [link(o) for o in g.objects(x, RDFS.range)]
+            ranges = []
+            for o in g.objects(x, RDFS.range):
+                union = g.value(o, OWL.unionOf) if isinstance(o, BNode) else None
+                ranges.extend(Collection(g, union) if union is not None else [o])
+            t["range"] = [link(o) for o in sorted(ranges, key=str)]
             vf = g.value(x, P("valuesFrom"))
             if vf is not None:
                 t["valuesFrom"] = link(vf)

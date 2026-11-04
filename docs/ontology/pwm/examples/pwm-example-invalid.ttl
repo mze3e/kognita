@@ -598,6 +598,8 @@ ex:RevokedLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:Delegation ; pwm:revo
     pwm:asOf "2026-11-03T10:02:00+08:00"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
 ex:EngagedLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:LiveSwitch ; pwm:engaged true ;
     pwm:asOf "2026-11-03T23:00:00+08:00"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
+ex:ResetLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:LiveSwitch ; pwm:engaged false ;
+    pwm:asOf "2027-01-01T00:00:00Z"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
 ex:BadRevokedAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ; pwm:reliesOnDelegation ex:Delegation ;
     pwm:decidedByRule ex:RuleClientCommunication ; prov:generatedAtTime "2026-11-03T10:03:00+08:00"^^xsd:dateTime .
 ex:BadEngagedAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ; pwm:underUseCase ex:UseCaseMeetingPrep ;

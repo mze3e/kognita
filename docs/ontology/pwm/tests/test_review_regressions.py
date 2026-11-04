@@ -126,6 +126,15 @@ def test_version_and_counts(tmp_path):
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (168, 173, 122, 46, 84, 59)
     assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
+    first_spec = (tmp_path / 'SPEC.md').read_text()
+    status_row = next(row for row in first_spec.splitlines() if '<a id="statusOf"></a>' in row)
+    assert '[delegated authority](#DelegatedAuthority), [kill switch](#KillSwitch)' in status_row
+    governance = tmp_path / 'src/06-governance.ttl'
+    governance.write_text(governance.read_text().replace(
+        'owl:unionOf ( pwm:DelegatedAuthority pwm:KillSwitch )',
+        'owl:unionOf ( pwm:KillSwitch pwm:DelegatedAuthority )'))
+    builder.build(tmp_path, None)
+    assert (tmp_path / 'SPEC.md').read_text() == first_spec
     negative_count = len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None)))
     assert f'negative fixture contains {negative_count} typed records' in (tmp_path / 'SPEC.md').read_text()
 
