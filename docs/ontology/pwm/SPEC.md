@@ -3962,7 +3962,7 @@ The Definition of Done describes software behaviour as well as records. These ar
 
 There are 144 node shapes: 84 written targeted shapes, 59 generated targeted shapes and one untargeted helper.
 
-The positive example contains 152 typed records. The negative fixture contains 127 typed records. There are 101 typed violating records, 26 typed supporting records and 4 untyped violating subjects, yielding 112 expected violations across 105 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 152 typed records. The negative fixture contains 128 typed records. There are 102 typed violating records, 26 typed supporting records and 4 untyped violating subjects, yielding 113 expected violations across 106 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
 The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 

@@ -32,6 +32,7 @@ EX = "https://example.org/pwm-example#"
 EXPECTED = Counter([
     ("BadLiveStatusDate", "AuthorityLiveStatusShape", "asOf"),
     ("BadRevokedAllow", "LiveDelegationDecisionShape", None),
+    ("BadNoLiveStatusAllow", "LiveDelegationDecisionShape", None),
     ("BadEngagedAllow", "LiveKillSwitchDecisionShape", None),
     ('BadPinnedDecision', 'PinnedDecisionShape', 'hasCheck'),
     ('BadSuspendedApproval', 'SuspendedApprovalShape', None),

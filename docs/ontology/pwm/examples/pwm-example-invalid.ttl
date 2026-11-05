@@ -607,3 +607,8 @@ ex:BadEngagedAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ;
 ex:BadRevokedAllow pwm:hasCheck ex:Check .
 ex:BadEngagedAllow pwm:hasCheck ex:Check .
 ex:BadRevokedAllow pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:BadNoLiveStatusAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:reliesOnDelegation ex:Delegation ; pwm:decidedByRule ex:RuleClientCommunication ;
+    pwm:hasCheck ex:Check ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    prov:generatedAtTime "2026-11-03T09:59:00+08:00"^^xsd:dateTime .

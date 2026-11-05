@@ -602,3 +602,18 @@ def test_live_decision_requires_explicit_timezones(timestamp, explicit, property
                         for r in report.subjects(validator.SH.sourceConstraintComponent,
                                                  validator.SH.PatternConstraintComponent)}
     assert ((focus, path) in pattern_failures) == (not explicit)
+
+
+def test_flight_recorder_session_with_two_runs():
+    from pyshacl import validate
+    g = Graph()
+    g.add((E('Recorder'), RDF.type, P('FlightRecorderSession')))
+    g.add((E('Recorder'), P('contentHash'), Literal('sha256:' + 'a' * 64)))
+    for name in ('FirstRun', 'SecondRun'):
+        g.add((E(name), RDF.type, P('Run')))
+        g.add((E('Recorder'), P('recordedRun'), E(name)))
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    for shape in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if shape != URIRef(validator.PWMSH + 'FlightRecorderSessionShape'):
+            shapes.add((shape, validator.SH.deactivated, Literal(True)))
+    assert validate(g, shacl_graph=shapes)[0]
