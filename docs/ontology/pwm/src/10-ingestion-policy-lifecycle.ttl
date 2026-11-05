@@ -1,0 +1,375 @@
+
+# PWM 0.4: missing ingestion, declarative policy and lifecycle records.
+# Versioned policy artefacts and breaker configuration are SlowContext.
+# Recorded evidence and review state are MediumContext; FastContext is reserved for live data.
+pwm:ModuleLifecycle a pwm:Module ; rdfs:label "Ingestion, policy and lifecycle controls"@en ; pwm:moduleOrder 10 ; skos:definition "Structured ingestion and the missing policy, review and monitoring records for milestone 0.4."@en .
+
+pwm:IngestedDocument a owl:Class ; rdfs:label "ingested document"@en ;
+    skos:definition "Immutable source-file ingestion record identifying the parser and its exact version. Reuses contentHash and versionId."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:DocumentElement a owl:Class ; rdfs:label "document element"@en ;
+    skos:definition "Parser-derived passage or structural element of an ingested document, with page, section path, character span, classification and content hash. Parent links preserve the parsed tree."@en ; rdfs:subClassOf pwm:DocumentSection ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:DeclarativePolicy a owl:Class ; rdfs:label "declarative policy"@en ;
+    skos:definition "Versioned declarative artefact serialising existing PolicyRule records; not a replacement rule engine."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 3" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:PolicyChange a owl:Class ; rdfs:label "policy change"@en ;
+    skos:definition "Archived proposed, reviewed, strictly validated and applied delta against a policy version, containing added, modified or removed rule identifiers."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 3" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:PolicyTestCase a owl:Class ; rdfs:label "policy test case"@en ;
+    skos:definition "Named scenario under a policy rule, with given attributes, requested action and expected decision outcome."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 4" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:PolicyPack a owl:Class ; rdfs:label "policy pack"@en ;
+    skos:definition "Named versioned bundle of policy artefacts, scenarios and fixture references; a private overlay may shadow a built-in pack."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 5" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:FlightRecorderSession a owl:Class ; rdfs:label "flight recorder session"@en ;
+    skos:definition "Evidence export manifest for recorded runs and interactions, with a content hash and retained export locator. Reuses Run and ReconstructionReport rather than duplicating their evidence."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:Replay a owl:Class ; rdfs:label "replay"@en ;
+    skos:definition "Verification of a recorder session against retained evidence, producing an existing ReconstructionReport; does not mean re-executing client actions."@en ; rdfs:subClassOf prov:Activity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:RMReviewEdit a owl:Class ; rdfs:label "RM review edit"@en ;
+    skos:definition "Structured edit captured during HumanReview, preserving hashes of what the RM saw, what was approved and the retained diff."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ] .
+
+pwm:ReviewQueue a owl:Class ; rdfs:label "review queue"@en ;
+    skos:definition "Use-case review queue receiving high-risk and sampled low-risk interactions for human review."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:ReviewQueueEntry a owl:Class ; rdfs:label "review queue entry"@en ;
+    skos:definition "Risk-selected interaction awaiting or completing human review, with reason, queue time and delivery boundary."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:ReviewCoverageReport a owl:Class ; rdfs:label "review coverage report"@en ;
+    skos:definition "Evidence-derived counts of eligible, screened, queued and reviewed interactions over a window, with review latency; grouped by use case and its risk tier."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:CircuitBreaker a owl:Class ; rdfs:label "circuit breaker"@en ;
+    skos:definition "Automatic halt configuration specifying flag threshold, time window and scope; trips create a prohibiting policy and incident, and reset requires accountable-owner approval."@en ; rdfs:subClassOf pwm:KillSwitch ;
+    pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:CircuitBreakerTrip a owl:Class ; rdfs:label "circuit breaker trip"@en ;
+    skos:definition "Recorded threshold crossing with exact scope, threshold, observed flags, window and inserted prohibiting rule."@en ; rdfs:subClassOf pwm:AIIncident ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:AffectedClientQuery a owl:Class ; rdfs:label "affected client query"@en ;
+    skos:definition "Version-scoped and time-bounded query for clients receiving output, with an explicit result even when no clients match."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:AffectedClientResult a owl:Class ; rdfs:label "affected client result"@en ;
+    skos:definition "Affected-client query result with matching communication and interaction links and result count; zero results is distinct from no result."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:InteractionOutcome a owl:Class ; rdfs:label "interaction outcome"@en ;
+    skos:definition "Classified outcome linked to the originating interaction, exact output, model and approver; includes complaints, corrections and operational failures."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+
+pwm:ingestedFrom a owl:ObjectProperty ; rdfs:label "ingested from"@en ;
+    skos:definition "Source-file ingestion record for a parser-derived element."@en ; rdfs:range pwm:IngestedDocument ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:parserName a owl:DatatypeProperty ; rdfs:label "parser name"@en ;
+    skos:definition "Parser implementation used for ingestion."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:parserVersion a owl:DatatypeProperty ; rdfs:label "parser version"@en ;
+    skos:definition "Exact ingestion parser version."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:pageNumber a owl:DatatypeProperty ; rdfs:label "page number"@en ;
+    skos:definition "One-based source page number."@en ; rdfs:range xsd:positiveInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:sectionPath a owl:DatatypeProperty ; rdfs:label "section path"@en ;
+    skos:definition "Ordered source heading path; use root for a document without headings."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:characterStart a owl:DatatypeProperty ; rdfs:label "character start"@en ;
+    skos:definition "Inclusive character offset within the source element text."@en ; rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:characterEnd a owl:DatatypeProperty ; rdfs:label "character end"@en ;
+    skos:definition "Exclusive character offset within the source element text."@en ; rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:boundingBox a owl:DatatypeProperty ; rdfs:label "bounding box"@en ;
+    skos:definition "Parser bounding box with coordinate system and units."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:parentElement a owl:ObjectProperty ; rdfs:label "parent element"@en ;
+    skos:definition "Parser-derived parent element in the document tree."@en ; rdfs:range pwm:DocumentElement ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 1" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:containsRule a owl:ObjectProperty ; rdfs:label "contains rule"@en ;
+    skos:definition "Existing rule serialised by a declarative policy."@en ; rdfs:range pwm:PolicyRule ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 3" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:policySerialization a owl:DatatypeProperty ; rdfs:label "policy serialization"@en ;
+    skos:definition "Retained declarative rule text, normally YAML."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 3" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:changesPolicy a owl:ObjectProperty ; rdfs:label "changes policy"@en ;
+    skos:definition "Policy version against which a delta is validated."@en ; rdfs:range pwm:DeclarativePolicy ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 3" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:deltaText a owl:DatatypeProperty ; rdfs:label "delta text"@en ;
+    skos:definition "Added, modified and removed rule delta; identifiers must resolve against the base policy."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 3" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:changeStage a owl:DatatypeProperty ; rdfs:label "change stage"@en ;
+    skos:definition "Policy delta stage: propose, review, validated or applied."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 3" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:testsRule a owl:ObjectProperty ; rdfs:label "tests rule"@en ;
+    skos:definition "Named rule exercised by a scenario."@en ; rdfs:range pwm:PolicyRule ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 4" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:givenAttributes a owl:DatatypeProperty ; rdfs:label "given attributes"@en ;
+    skos:definition "Serialised scenario input attributes."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 4" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:whenAction a owl:DatatypeProperty ; rdfs:label "when action"@en ;
+    skos:definition "Requested action in the scenario."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 4" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:expectedOutcome a owl:ObjectProperty ; rdfs:label "expected outcome"@en ;
+    skos:definition "Expected deterministic decision outcome."@en ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 4" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] ; pwm:valuesFrom pwm:DecisionOutcomeScheme .
+
+pwm:hasPolicyTest a owl:ObjectProperty ; rdfs:label "has policy test"@en ;
+    skos:definition "Scenario validating a policy artefact."@en ; rdfs:range pwm:PolicyTestCase ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 4" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:packPolicy a owl:ObjectProperty ; rdfs:label "pack policy"@en ;
+    skos:definition "Policy artefact in a versioned pack."@en ; rdfs:range pwm:DeclarativePolicy ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 5" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:fixtureLocator a owl:DatatypeProperty ; rdfs:label "fixture locator"@en ;
+    skos:definition "Location of a pack fixture bundle."@en ; rdfs:range xsd:anyURI ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 5" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:shadowsPack a owl:ObjectProperty ; rdfs:label "shadows pack"@en ;
+    skos:definition "Built-in pack shadowed by a private overlay with the same name."@en ; rdfs:range pwm:PolicyPack ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 5" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:recordedRun a owl:ObjectProperty ; rdfs:label "recorded run"@en ;
+    skos:definition "Run included in a recorder export manifest."@en ; rdfs:range pwm:Run ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:replaysSession a owl:ObjectProperty ; rdfs:label "replays session"@en ;
+    skos:definition "Recorder manifest verified by a replay."@en ; rdfs:range pwm:FlightRecorderSession ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:replayReport a owl:ObjectProperty ; rdfs:label "replay report"@en ;
+    skos:definition "Existing reconstruction report produced by a replay."@en ; rdfs:range pwm:ReconstructionReport ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:hasOutcomeMetric a owl:ObjectProperty ; rdfs:label "has outcome metric"@en ;
+    skos:definition "Versioned primary metric definition with baseline and target for a use case."@en ; rdfs:range pwm:OutcomeMetric ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:hasModelCard a owl:ObjectProperty ; rdfs:label "has model card"@en ;
+    skos:definition "Approved model card for a model or pinned model call."@en ; rdfs:range pwm:ModelCard ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.5 to 4.13: inventory and materiality" ] .
+
+pwm:appetitePermits a owl:DatatypeProperty ; rdfs:label "appetite permits"@en ;
+    skos:definition "Recorded risk-appetite evaluation permits registration and activation, including residual materiality."@en ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.5 to 4.13: inventory and materiality" ] .
+
+pwm:riskAppetiteStatement a owl:DatatypeProperty ; rdfs:label "risk appetite statement"@en ;
+    skos:definition "Versioned institutional AI appetite, including allowed categories, impact, authority and quantitative measures."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.5 to 4.13: inventory and materiality" ] .
+
+pwm:creditedControl a owl:ObjectProperty ; rdfs:label "credited control"@en ;
+    skos:definition "Control credited in reducing inherent to residual materiality."@en ; rdfs:range pwm:PolicyRule ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.5 to 4.13: inventory and materiality" ] .
+
+pwm:reviewEdit a owl:ObjectProperty ; rdfs:label "review edit"@en ;
+    skos:definition "Structured edit produced in a human review or referenced by a final decision."@en ; rdfs:range pwm:RMReviewEdit ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ] .
+
+pwm:beforeHash a owl:DatatypeProperty ; rdfs:label "before hash"@en ;
+    skos:definition "Hash of the exact recommendation rendered before RM edits."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: version ID or content hash; keep the hash when content is deleted" ] .
+
+pwm:afterHash a owl:DatatypeProperty ; rdfs:label "after hash"@en ;
+    skos:definition "Hash of the content approved after RM edits."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: version ID or content hash; keep the hash when content is deleted" ] .
+
+pwm:editDiffHash a owl:DatatypeProperty ; rdfs:label "edit diff hash"@en ;
+    skos:definition "Content hash of the retained structured edit diff."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: version ID or content hash; keep the hash when content is deleted" ] .
+
+pwm:requiresTwoSignatures a owl:DatatypeProperty ; rdfs:label "requires two signatures"@en ;
+    skos:definition "Whether this communication requires two distinct human signatures."@en ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 12" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:communicationSigner a owl:ObjectProperty ; rdfs:label "communication signer"@en ;
+    skos:definition "Named human signing the exact communication content hash."@en ; rdfs:range fibo-fnd-aap-ppl:Person ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 12" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:lowRiskSamplingRate a owl:DatatypeProperty ; rdfs:label "low risk sampling rate"@en ;
+    skos:definition "Low-risk sampling fraction between zero and one, set per use case."@en ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:inReviewQueue a owl:ObjectProperty ; rdfs:label "in review queue"@en ;
+    skos:definition "Queue receiving a risk-selected interaction."@en ; rdfs:range pwm:ReviewQueue ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:queueReason a owl:DatatypeProperty ; rdfs:label "queue reason"@en ;
+    skos:definition "Risk criterion or low-risk sampling reason for selection."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:queuedAt a owl:DatatypeProperty ; rdfs:label "queued at"@en ;
+    skos:definition "Time the interaction entered review."@en ; rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:reviewedAt a owl:DatatypeProperty ; rdfs:label "reviewed at"@en ;
+    skos:definition "Time human review completed."@en ; rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:reviewBeforeDelivery a owl:DatatypeProperty ; rdfs:label "review before delivery"@en ;
+    skos:definition "Whether review must finish before client delivery."@en ; rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:eligibleCount a owl:DatatypeProperty ; rdfs:label "eligible count"@en ;
+    skos:definition "Number of interactions eligible in the reporting window."@en ; rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:screenedCount a owl:DatatypeProperty ; rdfs:label "screened count"@en ;
+    skos:definition "Number of eligible interactions screened."@en ; rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:queuedCount a owl:DatatypeProperty ; rdfs:label "queued count"@en ;
+    skos:definition "Number of screened interactions selected for review."@en ; rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:reviewedCount a owl:DatatypeProperty ; rdfs:label "reviewed count"@en ;
+    skos:definition "Number of queued interactions reviewed."@en ; rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:meanReviewSeconds a owl:DatatypeProperty ; rdfs:label "mean review seconds"@en ;
+    skos:definition "Mean queue-to-review latency in seconds for completed reviews."@en ; rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 13" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight; 5.23: monitoring" ] .
+
+pwm:scopeUseCase a owl:ObjectProperty ; rdfs:label "scope use case"@en ;
+    skos:definition "Use-case dimension of a breaker or affected-client query scope."@en ; rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:scopeModel a owl:ObjectProperty ; rdfs:label "scope model"@en ;
+    skos:definition "Pinned model entity identifying the exact modelVersion in scope."@en ; rdfs:range pwm:AIModel ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:scopePolicy a owl:ObjectProperty ; rdfs:label "scope policy"@en ;
+    skos:definition "Versioned policy rule in scope."@en ; rdfs:range pwm:PolicyRule ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:scopePromptVersion a owl:DatatypeProperty ; rdfs:label "scope prompt version"@en ;
+    skos:definition "Prompt version in scope."@en ; rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:flagThreshold a owl:DatatypeProperty ; rdfs:label "flag threshold"@en ;
+    skos:definition "Flag count at which a breaker trips within its window."@en ; rdfs:range xsd:positiveInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:observedFlags a owl:DatatypeProperty ; rdfs:label "observed flags"@en ;
+    skos:definition "Flag count observed at the trip."@en ; rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:windowStart a owl:DatatypeProperty ; rdfs:label "window start"@en ;
+    skos:definition "Inclusive start of a monitoring or query window."@en ; rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:windowEnd a owl:DatatypeProperty ; rdfs:label "window end"@en ;
+    skos:definition "Exclusive end of a monitoring or query window."@en ; rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:trippedBreaker a owl:ObjectProperty ; rdfs:label "tripped breaker"@en ;
+    skos:definition "Breaker whose threshold crossing generated an incident."@en ; rdfs:range pwm:CircuitBreaker ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:prohibitingRule a owl:ObjectProperty ; rdfs:label "prohibiting rule"@en ;
+    skos:definition "Inserted rule denying subsequent actions in the tripped scope."@en ; rdfs:range pwm:PolicyRule ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:queryResult a owl:ObjectProperty ; rdfs:label "query result"@en ;
+    skos:definition "Explicit affected-client query result."@en ; rdfs:range pwm:AffectedClientResult ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:affectedCommunication a owl:ObjectProperty ; rdfs:label "affected communication"@en ;
+    skos:definition "Communication that delivered affected output to a client."@en ; rdfs:range pwm:ClientCommunication ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:resultCount a owl:DatatypeProperty ; rdfs:label "result count"@en ;
+    skos:definition "Number of distinct affected clients returned by a query."@en ; rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(b): incidents and monitoring" ] .
+
+pwm:outcomeKind a owl:ObjectProperty ; rdfs:label "outcome kind"@en ;
+    skos:definition "Classification of an interaction outcome."@en ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] ; pwm:valuesFrom pwm:InteractionOutcomeKindScheme .
+
+pwm:nearMissKind a owl:ObjectProperty ; rdfs:label "near miss kind"@en ;
+    skos:definition "Classification of a harm-avoiding event."@en ; rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] ; pwm:valuesFrom pwm:NearMissKindScheme .
+
+pwm:affectedOutput a owl:ObjectProperty ; rdfs:label "affected output"@en ;
+    skos:definition "Exact retained output implicated in an outcome or near miss."@en ; rdfs:range pwm:Recommendation ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+
+pwm:outcomeApprover a owl:ObjectProperty ; rdfs:label "outcome approver"@en ;
+    skos:definition "Human approver associated with the implicated output."@en ; rdfs:range fibo-fnd-aap-ppl:Person ;
+    pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+
+pwm:InteractionOutcomeKindScheme a skos:ConceptScheme ; skos:prefLabel "interaction outcome kind scheme"@en ; skos:definition "Classifications recorded under roadmap item 15."@en ; pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:ClientComplaint a skos:Concept ; skos:inScheme pwm:InteractionOutcomeKindScheme ; skos:prefLabel "client complaint"@en ; skos:definition "A client expresses dissatisfaction with the interaction or its output."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:Correction a skos:Concept ; skos:inScheme pwm:InteractionOutcomeKindScheme ; skos:prefLabel "correction"@en ; skos:definition "An error in an earlier output is rectified."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:WrongClientTargeting a skos:Concept ; skos:inScheme pwm:InteractionOutcomeKindScheme ; skos:prefLabel "wrong client targeting"@en ; skos:definition "An output or action is directed to an unintended client."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:UnsuitableSuggestion a skos:Concept ; skos:inScheme pwm:InteractionOutcomeKindScheme ; skos:prefLabel "unsuitable suggestion"@en ; skos:definition "A suggestion conflicts with the client suitability requirements."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:CommunicationError a skos:Concept ; skos:inScheme pwm:InteractionOutcomeKindScheme ; skos:prefLabel "communication error"@en ; skos:definition "A delivered communication contains incorrect or misleading content."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:PolicyBreach a skos:Concept ; skos:inScheme pwm:InteractionOutcomeKindScheme ; skos:prefLabel "policy breach"@en ; skos:definition "An action or output violates an applicable policy rule."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:OperationalIncident a skos:Concept ; skos:inScheme pwm:InteractionOutcomeKindScheme ; skos:prefLabel "operational incident"@en ; skos:definition "An operational failure disrupts the interaction or its controls."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:NearMissKindScheme a skos:ConceptScheme ; skos:prefLabel "near miss kind scheme"@en ; skos:definition "Classifications recorded under roadmap item 15."@en ; pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:BlockedAction a skos:Concept ; skos:inScheme pwm:NearMissKindScheme ; skos:prefLabel "blocked action"@en ; skos:definition "A control prevents a potentially harmful action from executing."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:VerifierBlock a skos:Concept ; skos:inScheme pwm:NearMissKindScheme ; skos:prefLabel "verifier block"@en ; skos:definition "A verifier rejects an output before it proceeds."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:RMRejection a skos:Concept ; skos:inScheme pwm:NearMissKindScheme ; skos:prefLabel "RM rejection"@en ; skos:definition "A relationship manager rejects an AI draft or proposed action."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:UnsafeDraft a skos:Concept ; skos:inScheme pwm:NearMissKindScheme ; skos:prefLabel "unsafe draft"@en ; skos:definition "A potentially harmful draft is identified before delivery."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+pwm:UnusualAgentBehaviour a skos:Concept ; skos:inScheme pwm:NearMissKindScheme ; skos:prefLabel "unusual agent behaviour"@en ; skos:definition "Unexpected agent behaviour is detected before harm occurs."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9(d): incidents and near misses; 5.23(b)" ] .
+
+pwm:implicatedModel a owl:ObjectProperty ; rdfs:label "implicated model"@en ; skos:definition "Pinned model implicated in an outcome or near miss, without asserting that the outcome is itself a model call."@en ; rdfs:range pwm:AIModel ; pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 15" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "NEW specialised link" ] .
+
+pwm:evaluatedAgainstAppetite a owl:ObjectProperty ;
+    rdfs:label "evaluated against appetite"@en ;
+    skos:definition "Versioned institutional appetite against which registration and residual materiality were evaluated."@en ;
+    rdfs:range pwm:AIRiskAppetite ; pwm:inModule pwm:ModuleLifecycle ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: risk appetite" ],
+                 [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.11: residual materiality" ],
+                 [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "NEW specialised evaluation link" ] .
+
+pwm:exportLocator a owl:DatatypeProperty ; rdfs:label "export locator"@en ; skos:definition "Retrieval location of the recorder export manifest."@en ; rdfs:domain pwm:FlightRecorderSession ; rdfs:range xsd:anyURI ; pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 7" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:diffLocator a owl:DatatypeProperty ; rdfs:label "diff locator"@en ; skos:definition "Retrieval location of the structured edit diff; retention is established separately."@en ; rdfs:domain pwm:RMReviewEdit ; rdfs:range xsd:anyURI ; pwm:inModule pwm:ModuleLifecycle ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .

@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.3 example data
+#  PWM 0.4 example data
 #
 #  Synthetic data for a fictional firm, Example Private Bank. No real client,
 #  person, firm or security appears here. Identifiers are well formed but
@@ -28,9 +28,9 @@
 @prefix ex:       <https://example.org/pwm-example#> .
 
 <https://example.org/pwm-example> a owl:Ontology ;
-    dcterms:title "PWM 0.3 example data"@en ;
+    dcterms:title "PWM 0.4 example data"@en ;
     dcterms:description "Synthetic data for a fictional firm, Example Private Bank. No real client, person, firm or security."@en ;
-    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl> ;
+    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl> ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
 
 # --- People (fictional) --------------------------------------------------------------------
@@ -521,15 +521,15 @@ ex:Approval a pwm:ApprovalRequest ; pwm:requestsDecision ex:PolicyDecisionReleas
 ex:Resolution a pwm:ApprovalResolution ; pwm:resolvesApproval ex:Approval ; pwm:approvalResolution pwm:ApprovalApproved ; prov:wasAttributedTo ex:PersonRM ; prov:generatedAtTime "2026-11-03T10:06:00+08:00"^^xsd:dateTime .
 ex:Resumption a pwm:RunResumption ; pwm:inRun ex:Run ; pwm:resumedFrom ex:Checkpoint ; pwm:resolvedApproval ex:Resolution .
 ex:Report a pwm:ReconstructionReport ; pwm:partOfInteraction ex:Interaction ; pwm:chainVerified true ; pwm:pinnedHashesVerified true ; pwm:questionCoverage ex:Coverage0, ex:Coverage1, ex:Coverage2, ex:Coverage3, ex:Coverage4, ex:Coverage5, ex:Coverage6, ex:Coverage7, ex:Coverage8, ex:Coverage9 .
-ex:Coverage0 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionWhyClient ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
-ex:Coverage1 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionWhyProduct ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
+ex:Coverage0 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionWhyClient ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Origination .
+ex:Coverage1 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionWhyProduct ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Recommendation .
 ex:Coverage2 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionInformation ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence4 .
 ex:Coverage3 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionModelAgent ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence4 .
 ex:Coverage4 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionAuthority ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence1 .
 ex:Coverage5 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionControls ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence1 .
-ex:Coverage6 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionRMChanges ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
-ex:Coverage7 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionFinalDecision ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
-ex:Coverage8 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionCommunication ; pwm:coverageStatus pwm:QuestionNotRecorded ; pwm:answerText "Not recorded by the 0.3 gateway evidence boundary" .
+ex:Coverage6 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionRMChanges ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Review .
+ex:Coverage7 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionFinalDecision ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Decision .
+ex:Coverage8 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionCommunication ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Communication .
 ex:Coverage9 a pwm:QuestionCoverage ; pwm:reconstructionQuestion pwm:QuestionReproduction ; pwm:coverageStatus pwm:QuestionAnswered ; pwm:citesSource ex:Evidence1 .
 
 ex:Checkpoint pwm:runState pwm:RunSuspended .
@@ -562,3 +562,55 @@ ex:ResponseClassifier a pwm:ClassifierOutput ; pwm:classifierModelId "local-enve
 ex:ResponseAttribute a pwm:EnvelopeAttribute ; pwm:attributeName "response.classification" ; pwm:attributeValue "C1" ;
     pwm:attributeSource pwm:AttributeClassifierDerived ; pwm:derivedFromClassifier ex:ResponseClassifier .
 ex:GatewayCall pwm:hasAttribute ex:ResponseAttribute .
+
+# PWM 0.4: synthetic ingestion, policy artefacts and lifecycle evidence.
+ex:Ingestion a pwm:IngestedDocument ; pwm:parserName "docling-slim" ; pwm:parserVersion "2.60.0 (synthetic pinned example)" ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:versionId "1" .
+ex:Passage a pwm:DocumentElement ; pwm:ingestedFrom ex:Ingestion ; pwm:pageNumber "1"^^xsd:positiveInteger ; pwm:sectionPath "root/credit" ; pwm:characterStart "0"^^xsd:nonNegativeInteger ; pwm:characterEnd "30"^^xsd:nonNegativeInteger ; pwm:classification pwm:C1 ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:boundingBox "page-points: 0,0,200,100" .
+ex:Snapshot prov:wasDerivedFrom ex:Passage .
+ex:PolicyArtefact a pwm:DeclarativePolicy ; pwm:versionId "1" ; pwm:containsRule ex:RuleModelAccess ; pwm:policySerialization "rules: [model-access]" ; pwm:hasPolicyTest ex:PolicyScenario ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
+ex:PolicyDelta a pwm:PolicyChange ; pwm:changesPolicy ex:PolicyArtefact ; pwm:deltaText "ADDED model-access" ; pwm:changeStage "applied" ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
+ex:PolicyScenario a pwm:PolicyTestCase ; pwm:testsRule ex:RuleModelAccess ; pwm:givenAttributes "classification: C2" ; pwm:whenAction "model_call" ; pwm:expectedOutcome pwm:OutcomeAllow .
+ex:PrivateBankingPack a pwm:PolicyPack ; pwm:versionId "1" ; pwm:packPolicy ex:PolicyArtefact ; pwm:fixtureLocator "urn:synthetic:pack-fixtures"^^xsd:anyURI .
+ex:Recorder a pwm:FlightRecorderSession ; pwm:recordedRun ex:Run ; pwm:partOfInteraction ex:Interaction ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:exportLocator "urn:synthetic:recorder-export"^^xsd:anyURI .
+ex:Replay a pwm:Replay ; pwm:replaysSession ex:Recorder ; pwm:replayReport ex:Report .
+ex:Metric a pwm:OutcomeMetric ; pwm:primaryMetric pwm:MetricDecisionQuality ; pwm:versionId "1" ; pwm:baselineValue 0.85 ; pwm:targetValue 0.95 .
+ex:UseCaseMeetingPrep pwm:hasOutcomeMetric ex:Metric ; pwm:appetitePermits true ; pwm:dependsOn ex:Provider ; pwm:lowRiskSamplingRate 0.10 .
+ex:Appetite a pwm:AIRiskAppetite ; pwm:versionId "1" ; pwm:riskAppetiteStatement "RM assistance and advice drafts only; no autonomous transactions; maximum residual medium; incident count limit 3 per day; single-provider material use cases limit 2." .
+ex:Materiality pwm:creditedControl ex:RuleClientCommunication ; pwm:classification pwm:C2 .
+ex:ModelCard a pwm:ModelCard ; pwm:providedBy ex:Provider ; rdfs:label "fictional-meeting-model" ; pwm:modelVersion "model-2026-09" ; pwm:rationale "Meeting preparation only. No autonomous advice; synthetic evaluation quality 0.96." ; pwm:approvedBy ex:Validator ; prov:generatedAtTime "2026-10-15T00:00:00Z"^^xsd:dateTime .
+ex:Model pwm:hasModelCard ex:ModelCard .
+ex:GatewayCall pwm:hasModelCard ex:ModelCard .
+ex:Review a pwm:HumanReview ; pwm:partOfInteraction ex:Interaction ; pwm:reviewEdit ex:Edit ; prov:wasAssociatedWith ex:PersonRM .
+ex:Edit a pwm:RMReviewEdit ; pwm:beforeHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:afterHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:editDiffHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:diffLocator "urn:synthetic:review-diff"^^xsd:anyURI .
+ex:Decision pwm:reviewEdit ex:Edit ; pwm:partOfInteraction ex:Interaction .
+ex:Communication pwm:requiresTwoSignatures true ; pwm:communicationSigner ex:PersonRM, ex:PersonModelRisk .
+ex:Queue a pwm:ReviewQueue ; pwm:underUseCase ex:UseCaseMeetingPrep .
+ex:QueuedReview a pwm:ReviewQueueEntry ; pwm:inReviewQueue ex:Queue ; pwm:partOfInteraction ex:Interaction ; pwm:queueReason "Advice-level output" ; pwm:queuedAt "2026-11-03T10:02:00+08:00"^^xsd:dateTime ; pwm:reviewBeforeDelivery true ; pwm:reviewedAt "2026-11-03T10:12:00+08:00"^^xsd:dateTime ; prov:wasDerivedFrom ex:Review .
+ex:ReviewCoverage a pwm:ReviewCoverageReport ; pwm:eligibleCount "1"^^xsd:nonNegativeInteger ; pwm:screenedCount "1"^^xsd:nonNegativeInteger ; pwm:queuedCount "1"^^xsd:nonNegativeInteger ; pwm:reviewedCount "1"^^xsd:nonNegativeInteger ; pwm:underUseCase ex:UseCaseMeetingPrep ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime ; pwm:meanReviewSeconds 600.0 ; pwm:citesSource ex:QueuedReview .
+ex:Breaker a pwm:CircuitBreaker ; pwm:scopeModel ex:Model ; pwm:flagThreshold "3"^^xsd:positiveInteger ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
+ex:HaltRule a pwm:PolicyRule ; pwm:versionId "1" ; pwm:ruleCitation "Synthetic model-version halt after three flags" ; pwm:validFrom "2026-11-03T11:00:00Z"^^xsd:dateTime .
+ex:Trip a pwm:CircuitBreakerTrip ; pwm:trippedBreaker ex:Breaker ; pwm:scopeModel ex:Model ; pwm:flagThreshold "3"^^xsd:positiveInteger ; pwm:observedFlags "3"^^xsd:nonNegativeInteger ; pwm:prohibitingRule ex:HaltRule ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime .
+ex:AffectedQuery a pwm:AffectedClientQuery ; pwm:scopeModel ex:Model ; pwm:windowStart "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-04T00:00:00Z"^^xsd:dateTime ; pwm:queryResult ex:Affected .
+ex:Affected a pwm:AffectedClientResult ; pwm:resultCount "1"^^xsd:nonNegativeInteger ; pwm:affectedCommunication ex:Communication ; pwm:partOfInteraction ex:Interaction ; pwm:withClient ex:Client .
+ex:Correction a pwm:InteractionOutcome ; pwm:outcomeKind pwm:Correction ; pwm:partOfInteraction ex:Interaction ; pwm:affectedOutput ex:Recommendation ; pwm:implicatedModel ex:Model ; pwm:outcomeApprover ex:PersonRM .
+ex:Avoided a pwm:NearMiss ; pwm:nearMissKind pwm:RMRejection ; pwm:partOfInteraction ex:Interaction ; pwm:affectedOutput ex:Recommendation ; pwm:implicatedModel ex:Model ; pwm:underUseCase ex:UseCaseMeetingPrep .
+
+
+ex:Recommendation pwm:implicatedModel ex:Model .
+ex:Communication pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:UseCaseMeetingPrep pwm:evaluatedAgainstAppetite ex:Appetite .
+
+ex:PolicyDecisionModelAllow prov:generatedAtTime "2026-11-03T09:58:00+08:00"^^xsd:dateTime .
+
+# Live reads obtained at decision time, separate from the cached definitions.
+ex:DelegationLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:Delegation ;
+    pwm:revoked false ; pwm:asOf "2026-11-03T10:00:00+08:00"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
+ex:LiveObserver a prov:Agent .
+ex:LiveSwitch a pwm:KillSwitch ; pwm:scopeUseCase ex:UseCaseMeetingPrep .
+ex:SwitchLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:LiveSwitch ;
+    pwm:engaged false ; pwm:asOf "2026-11-03T10:00:00+08:00"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
+ex:LiveAuthorityAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:reliesOnDelegation ex:Delegation ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    pwm:decidedByRule ex:RuleClientCommunication ; prov:generatedAtTime "2026-11-03T10:01:00+08:00"^^xsd:dateTime .
+ex:LiveAuthorityAllow pwm:hasCheck ex:Check .

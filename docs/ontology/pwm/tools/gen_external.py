@@ -16,7 +16,7 @@ out = src / "90-external.ttl"
 
 g = Graph()
 # Section files share the prefix block in 00-header.ttl, so parse them as one document.
-g.parse(data="\n".join(f.read_text(encoding="utf-8") for f in sorted(src.glob("[0-8]*.ttl"))), format="turtle")
+g.parse(data="\n".join(f.read_text(encoding="utf-8") for f in sorted(f for f in src.glob("*.ttl") if f.name != "90-external.ttl")), format="turtle")
 
 PWM = "https://ahmedmuzammil.com/ontology/pwm#"
 FIBO = "https://spec.edmcouncil.org/fibo/ontology/"

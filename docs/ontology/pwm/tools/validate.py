@@ -30,6 +30,10 @@ EX = "https://example.org/pwm-example#"
 # for node-level constraints (sh:or, sh:sparql).
 # 0.3 fixtures, followed by inherited 0.2 fixtures.
 EXPECTED = Counter([
+    ("BadLiveStatusDate", "AuthorityLiveStatusShape", "asOf"),
+    ("BadRevokedAllow", "LiveDelegationDecisionShape", None),
+    ("BadNoLiveStatusAllow", "LiveDelegationDecisionShape", None),
+    ("BadEngagedAllow", "LiveKillSwitchDecisionShape", None),
     ('BadPinnedDecision', 'PinnedDecisionShape', 'hasCheck'),
     ('BadSuspendedApproval', 'SuspendedApprovalShape', None),
     ('BadRun', 'RunShape', 'hasBudget'),
@@ -107,6 +111,42 @@ EXPECTED = Counter([
     ("BadRiskProfileWrongCode", "CodeList_riskProfileLevel", "riskProfileLevel"),
 ])
 
+EXPECTED.update([('Bad04IngestedDocumentShape', 'IngestedDocumentShape', 'parserVersion'),
+ ('Bad04DocumentElementShape', 'DocumentElementShape', 'sectionPath'),
+ ('Bad04DeclarativePolicyShape', 'DeclarativePolicyShape', 'policySerialization'),
+ ('Bad04PolicyTestCaseShape', 'PolicyTestCaseShape', 'expectedOutcome'),
+ ('Bad04PolicyPackShape', 'PolicyPackShape', 'versionId'),
+ ('Bad04RMReviewEditShape', 'RMReviewEditShape', 'afterHash'),
+ ('Bad04ReviewQueueEntryShape', 'ReviewQueueEntryShape', 'queueReason'),
+ ('Bad04ReviewCoverageReportShape', 'ReviewCoverageReportShape', 'reviewedCount'),
+ ('Bad04CircuitBreakerTripShape', 'CircuitBreakerTripShape', 'flagThreshold'),
+ ('Bad04AffectedClientQueryShape', 'AffectedClientQueryShape', 'queryResult'),
+ ('Bad04InteractionOutcomeShape', 'InteractionOutcomeShape', 'outcomeKind'),
+ ('Bad04BreakerScopeShape', 'BreakerScopeShape', None),
+ ('Bad04TwoSignatureShape', 'TwoSignatureShape', None),
+ ('Bad04PastReviewDecisionShape', 'PastReviewDecisionShape', None),
+ ('Bad04RiskAppetiteDecisionShape', 'RiskAppetiteDecisionShape', None),
+ ('Bad04CoverageCountsShape', 'CoverageCountsShape', None)])
+EXPECTED.update([('Bad04CircuitBreakerConfigurationShape', 'CircuitBreakerConfigurationShape', 'flagThreshold'),
+ ('Bad04FlightRecorderSessionShape', 'FlightRecorderSessionShape', 'contentHash'),
+ ('Bad04ReplayShape', 'ReplayShape', 'replayReport'),
+ ('Bad04PolicyChangeShape', 'PolicyChangeShape', 'changeStage'),
+ ('Bad04NearMissClassificationShape', 'NearMissClassificationShape', 'nearMissKind'),
+ ('Bad04ReviewSamplingRateShape', 'ReviewSamplingRateShape', 'lowRiskSamplingRate'),
+ ('Bad04AffectedClientResultShape', 'AffectedClientResultShape', 'resultCount'),
+ ('Bad04AffectedClientCountShape', 'AffectedClientCountShape', None),
+ ('Bad04ModelCallCardShape', 'ModelCallCardShape', None)])
+EXPECTED.update([("BadDiffLocator", "RMReviewEditShape", "diffLocator"),
+                 ("BadMissingModel", "ModelCallShape", "usesModel"),
+                 ("BadAffectedRecipient", "AffectedClientCountShape", None)])
+EXPECTED.update([("OutsideAppetite", "LiveRiskAppetiteShape", None)])
+
+EXPECTED.update([("BadMultipleModels", "ModelCallShape", "usesModel"),
+                 ("BadEmptyDiffLocator", "RMReviewEditShape", "diffLocator"),
+                 ("BadMissingDecisionTime", "PolicyDecisionShape", "generatedAtTime"),
+                 ("BadDecisionTimeType", "PolicyDecisionShape", "generatedAtTime"),
+                 ("BadMultipleDecisionTimes", "PolicyDecisionShape", "generatedAtTime"),
+                 ("BadTypedDateExpiry", "PastReviewDecisionShape", None)])
 
 def local(term):
     if term is None:

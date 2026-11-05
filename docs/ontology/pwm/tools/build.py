@@ -3,7 +3,7 @@
     python3 tools/build.py [--site PATH]
 
 1. Concatenates src/*.ttl into pwm.ttl.
-2. Reads pwm.ttl and pwm-shapes.ttl.
+2. Copies src/shapes/pwm-shapes.ttl and regenerates code-list shapes.
 3. Writes SPEC.md, the human-readable specification.
 4. With --site, writes the TypeScript data module the website page renders.
 
@@ -36,7 +36,7 @@ SOURCES = [
 MARK_ORDER = ["ONT", "ISO", "REG", "KOG", "AM", "NEW"]
 
 STATUS = (
-    "Draft for comment. Version 0.3 aligns with roadmap milestone 0.3: gateways, runs, budgets, durable approvals and replay evidence. Terms, code lists and rules may change "
+    "Draft for comment. Version 0.4 aligns with roadmap milestone 0.4: ingestion, declarative policy and the client lifecycle. Terms, code lists and rules may change "
     "before 1.0, and every change will be recorded in the change log. It is not legal advice: the "
     "regulatory citations show where a term comes from, not how a rule applies to a given firm."
 )
@@ -73,7 +73,7 @@ PRINCIPLES = [
     ("Generic core, firm extension",
      "No institution's data, thresholds or names appear here. A firm adds them in its own ontology that imports PWM."),
 ]
-CHANGELOG = [("0.3", "2026-11-03", "Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9)."), ("0.2", "2026-11-03", "Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link."), ("0.1", "2026-11-02", "First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests.")]
+CHANGELOG = [("0.4", "2026-11-03", "Context review: durable execution evidence, snapshots and checkpoints use MediumContext; DelegatedAuthority and KillSwitch use SlowContext; AuthorityLiveStatus is NEW and uses FastContext for live revocation and kill-switch state; definitions remain cached SlowContext. Build now rejects broken evidence chains. Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing."), ("0.3", "2026-11-03", "Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9)."), ("0.2", "2026-11-03", "Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link."), ("0.1", "2026-11-02", "First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests.")]
 
 EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -84,7 +84,7 @@ EXTENSION_TTL = """@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix firm: <https://example.org/firm/ontology#> .
 
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.3> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.4> .
 
 # The firm's own risk scale, in place of the illustrative one
 firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
@@ -146,6 +146,7 @@ def build(base: Path, site_path):
         order.setdefault(m.group(1), m.start())
 
     g = Graph().parse(base / "pwm.ttl")
+    (base / "pwm-shapes.ttl").write_text((base / "src/shapes/pwm-shapes.ttl").read_text(encoding="utf-8"), encoding="utf-8")
     write_code_list_shapes(g, base / "pwm-shapes.ttl")
     sg = Graph().parse(base / "pwm-shapes.ttl")
     ont = URIRef(SITE)
@@ -248,7 +249,11 @@ def build(base: Path, site_path):
         t["matches"] = matches
         if kind != "class":
             t["domain"] = [link(o) for o in g.objects(x, RDFS.domain)]
-            t["range"] = [link(o) for o in g.objects(x, RDFS.range)]
+            ranges = []
+            for o in g.objects(x, RDFS.range):
+                union = g.value(o, OWL.unionOf) if isinstance(o, BNode) else None
+                ranges.extend(Collection(g, union) if union is not None else [o])
+            t["range"] = [link(o) for o in sorted(ranges, key=str)]
             vf = g.value(x, P("valuesFrom"))
             if vf is not None:
                 t["valuesFrom"] = link(vf)
@@ -397,13 +402,45 @@ def build(base: Path, site_path):
 
     (base / "SPEC.md").write_text(spec_md(data, refs), encoding="utf-8")
     with (base / "SPEC.md").open("a", encoding="utf-8") as spec:
-        spec.write("\n## Verification for 0.3\n\n")
-        spec.write("There are 112 node shapes: 55 written targeted shapes, 56 generated targeted shapes and one untargeted helper. The negative fixture file contains 87 records: 67 violating records and twenty supporting records, yielding 74 expected violations. The positive example contains 124 typed records.\n\n")
-        spec.write("The unversioned shapes IRI `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. "
-                   "The immutable 0.3 shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.3/pwm-shapes.ttl`. "
-                   "The existing host excludes www. Publication is separate from this build.\n\n")
-        spec.write("All 55 written rules are exercised by the negative fixture; two generated code-list rules are exercised there and all 56 generated rules are exercised by regression tests. The positive example conforms and its chain is unbroken. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency; HermiT also checks the merged positive example. The data uses xsd:date and xsd:duration, which are outside the OWL 2 DL datatype map, so no DL profile conformance is claimed for the example data. SHACL validates recorded structure; the synthetic content store references are not fetched and content hashes are not recomputed. Runtime gateways and reconstruction must enforce dispatch and verify retained payload bytes.\n\n")
-        spec.write("PWM version N aligns to roadmap milestone N. Version 0.3 models milestone 0.3, not the software release number. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.\n\n")
+        gap_path = base / "GAP_ANALYSIS.md"
+        if gap_path.exists():
+            spec.write("\n" + gap_path.read_text(encoding="utf-8").replace("# PWM 0.4 gap analysis", "## Gap analysis for 0.4", 1) + "\n")
+        spec.write("\n## Verification for 0.4\n\n")
+        node_count = len(set(sg.subjects(RDF.type, SH.NodeShape)))
+        spec.write(f"There are {node_count} node shapes: {counts['rules']} written targeted shapes, {counts['codeListRules']} generated targeted shapes and one untargeted helper.\n\n")
+        positive = base / "examples/pwm-example.ttl"
+        negative = base / "examples/pwm-example-invalid.ttl"
+        if positive.exists() and negative.exists():
+            pg, ng = Graph().parse(positive), Graph().parse(negative)
+            import importlib.util
+            validator_spec = importlib.util.spec_from_file_location("pwm_validate", Path(__file__).with_name("validate.py"))
+            validator = importlib.util.module_from_spec(validator_spec)
+            validator_spec.loader.exec_module(validator)
+            problems = validator.chain_problems(pg, g)
+            if problems:
+                raise ValueError("Broken example evidence chain: " + "; ".join(problems))
+            conforms, _, messages = validator.run(base, ["examples/pwm-example.ttl"])
+            if not conforms:
+                raise ValueError("Positive example does not conform: " + "; ".join(messages))
+            run = validator.run
+            _, found, _ = run(base, ["examples/pwm-example.ttl", "examples/pwm-example-invalid.ttl"])
+            if found != validator.EXPECTED:
+                raise ValueError("Validation counts differ from the registered negative fixtures")
+            focus = {URIRef("https://example.org/pwm-example#" + k[0]) for k in found}
+            typed = set(ng.subjects(RDF.type, None))
+            spec.write(f"The positive example contains {len(set(pg.subjects(RDF.type, None)))} typed records. The negative fixture contains {len(set(ng.subjects(RDF.type, None)))} typed records. There are {len(typed & focus)} typed violating records, {len(typed - focus)} typed supporting records and {len(focus - typed)} untyped violating subjects, yielding {sum(found.values())} expected violations across {len(focus)} focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.\n\n")
+        readme = base / "README.md"
+        if readme.exists() and positive.exists() and negative.exists():
+            summary = (f"The positive example contains {len(set(pg.subjects(RDF.type, None)))} typed records. "
+                       f"The negative fixture contains {len(typed)} typed records: {len(typed & focus)} violating records "
+                       f"and {len(typed - focus)} supporting records, plus {len(focus - typed)} untyped violating subjects, "
+                       f"raising {sum(found.values())} expected violations across {len(focus)} focus nodes.")
+            readme.write_text(re.sub(r"The positive example contains .*? focus nodes\.", summary,
+                                    readme.read_text(encoding="utf-8")), encoding="utf-8")
+        spec.write("The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.\n\n")
+        spec.write(f"All {counts['rules']} written rules have negative fixtures. Two generated code-list rules are exercised there; all {counts['codeListRules']} generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. Review dates remain valid through the end of that day; absent timezones are interpreted as UTC. A decision on an expired use case must be DENY.\n\n")
+        spec.write("New 0.4 PROV specialisations: IngestedDocument, DeclarativePolicy, PolicyChange, PolicyTestCase, PolicyPack, FlightRecorderSession, RMReviewEdit, ReviewQueue, ReviewQueueEntry, ReviewCoverageReport, AffectedClientQuery, AffectedClientResult and InteractionOutcome specialise prov:Entity. Replay specialises prov:Activity. DocumentElement specialises existing DocumentSection (OMG Commons Document); CircuitBreaker specialises KillSwitch; CircuitBreakerTrip specialises AIIncident (prov:Entity). No PROV activity parent is asserted for recorder manifests, edits or trips.\n\n")
+        spec.write("PWM version N aligns to roadmap milestone N. Version 0.4 models milestone 0.4, not the software release number. The inherited 0.3 PROV specialisations remain as follows. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.\n\n")
         spec.write("Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. "
                    "Item locators retain the roadmap section numbers at that commit.\n\n")
         spec.write("EUR-Lex CELEX 32021R1253 (EN/ALL text and relationship table) confirms that 2021/1253 Art. 1(1) "
@@ -492,7 +529,7 @@ def spec_md(d, refs):
            f"| Version IRI | {m['versionIri']} |",
            f"| Namespace | `pwm:` {m['namespace']} |",
            f"| Shapes | {m['shapesIri']} (`pwm-shapes.ttl`), latest pointer |",
-           f"| Shapes version IRI | {SITE}/0.3/pwm-shapes.ttl |",
+           f"| Shapes version IRI | {SITE}/0.4/pwm-shapes.ttl |",
            f"| Licence | [CC BY-SA 4.0]({m['license']}) |",
            f"| Author | {m['creator']} |",
            f"| Web page | {m['ontologyIri']} |", "",
@@ -501,7 +538,7 @@ def spec_md(d, refs):
            f"Size: {c['classes']} classes, {c['objectProperties']} object properties, {c['datatypeProperties']} datatype properties, "
            f"{c['codeLists']} code lists with {c['concepts']} codes, {c['rules']} data rules plus {c['codeListRules']} generated code-list rules, {c['references']} references and "
            f"{c['citations']} citations. {m['fiboAligned']} FIBO terms are specialised or mapped.", "",
-           "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.3:", ""] + \
+           "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.4:", ""] + \
           [f"- {s}" for s in d["scopeOut"]] + ["", "## Design principles", ""] + \
           [f"{i}. **{p['title']}.** {p['body']}" for i, p in enumerate(d["principles"], 1)] + \
           ["", "## How references are marked", "",
@@ -510,8 +547,8 @@ def spec_md(d, refs):
           [f"| **{k['mark']}** | {k['label']} | {cell(k['definition'])} |" for k in d["marks"]] + \
           ["", "Each reference in the register has a verification status. **verified**: checked against the source file, official text or regulator page while drafting this version. **instrument-level**: cited from the published instrument; article and paragraph numbers are to be re-checked before formal use.", "",
            "FIBO terms show their maturity, Release or Provisional, as read from the FIBO file that defines them.", "",
-           "Classes carry a context speed:", ""] + [f"- **{s['label']}**: {s['definition']}" for s in d["speeds"]] + \
-          ["", "## Modules", "", "| # | Module | Covers | Classes | Properties | Code lists |", "|---|---|---|---|---|---|"]
+           "## Context", "", "Classes carry a context speed:", ""] + [f"- **{s['label']}**: {s['definition']}" for s in d["speeds"]] + \
+          ["", "DelegatedAuthority and KillSwitch definitions are cached policy/config in SlowContext. Live revocation and kill-switch state must be read from AuthorityLiveStatus (FastContext) at decision time, never from cache. Use the latest asOf observation at or before the decision time; conflicting observations fail closed. Runtime must obtain fresh observations; SHACL validates the recorded state only (KOG roadmap 0.4 item 14; 0.3 item 2; MAS AIRG 5.9).", "", "## Modules", "", "| # | Module | Covers | Classes | Properties | Code lists |", "|---|---|---|---|---|---|"]
     for i, mod in enumerate(d["modules"]):
         out.append(f"| {i} | [{mod['label']}](#{mod['id']}) | {cell(mod['definition'])} | {len(mod['classes'])} | "
                    f"{len(mod['objectProperties']) + len(mod['datatypeProperties'])} | {len(mod['codeLists'])} |")

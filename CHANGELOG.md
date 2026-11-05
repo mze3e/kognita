@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- PWM 0.4: add NEW FastContext AuthorityLiveStatus for decision-time revocation and kill-switch checks, with SHACL rules and negative fixtures. Keep authority and switch definitions in SlowContext. Fail ontology builds on broken example evidence chains.
+
 ## [0.7.0] - 2026-10-31
 
 ### Documentation

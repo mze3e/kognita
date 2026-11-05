@@ -83,7 +83,7 @@ pwm:PolicyDecision a owl:Class ;
     skos:definition "Deterministic outcome of evaluating every applicable rule for a request, allow, deny, escalate or hold for human approval, citing the deciding rule and its version, the use case and any delegation relied on. One failing rule denies."@en ;
     rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleEvidence ;
-    pwm:contextSpeed pwm:FastContext ;
+    pwm:contextSpeed pwm:MediumContext ;
     pwm:defaultClassification pwm:C1 ;
     pwm:citation [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 9: runtime policy enforcement outside the LLM" ] ,
                  [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.Outcome, OUTCOME_PRECEDENCE" ] ,
@@ -95,7 +95,7 @@ pwm:EvidenceRecord a owl:Class ;
     skos:scopeNote "Record a model refusal separately from a policy denial. Otherwise the evidence shows only that the model usually behaves, not that the controls work."@en ;
     rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleEvidence ;
-    pwm:contextSpeed pwm:FastContext ;
+    pwm:contextSpeed pwm:MediumContext ;
     pwm:defaultClassification pwm:C1 ;
     pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.23(d): logging of prompts, responses, model versions; 5.17 reproducibility" ] ,
                  [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 12: complete action audit trail" ] ,
@@ -234,7 +234,7 @@ pwm:calculatedBy a owl:ObjectProperty ;
 
 pwm:asOf a owl:DatatypeProperty ;
     rdfs:label "as of"@en ;
-    skos:definition "Time at which a fact or valuation was true in its system of record."@en ;
+    skos:definition "Time at which a fact, valuation or live authority status was true in its system of record."@en ;
     rdfs:range xsd:dateTime ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: as-of date" ] .
