@@ -37,7 +37,7 @@ Kognita's own published targets are Q3 2027 for 0.6, Q4 2027 for 0.7 and Q1 2028
 
 ## 0.1 to 0.5: built
 
-0.1 set the shape: 10 modules, every term cited, OWL 2 DL, SHACL rules and tests. 0.2 grounded the main classes in FIBO against a pinned commit and added EU sustainability preferences. 0.3 to 0.5 each add a module for the Kognita milestone of the same number, with a gap analysis per roadmap item in [GAP_ANALYSIS.md](GAP_ANALYSIS.md).
+0.1 set the shape: 10 modules, every term cited, OWL 2 DL (ROBOT DL profile validation passes; the legacy xsd:date and xsd:duration ranges sit outside the OWL 2 datatype map, see [README.md](README.md)), SHACL rules and tests. 0.2 grounded the main classes in FIBO against a pinned commit and added EU sustainability preferences. 0.3 to 0.5 each add a module for the Kognita milestone of the same number, with a gap analysis per roadmap item in [GAP_ANALYSIS.md](GAP_ANALYSIS.md).
 
 PWM 0.5 ([pwm.ttl](pwm.ttl)) uses one FastContext live-status vocabulary, `AuthorityLiveStatus`. Blast-radius limits and autonomy gates are set by the firm's risk committee, data governance committee or CRO.
 
