@@ -30,8 +30,10 @@ EX = "https://example.org/pwm-example#"
 # for node-level constraints (sh:or, sh:sparql).
 # 0.3 fixtures, followed by inherited 0.2 fixtures.
 EXPECTED = Counter([
+    ("BadDelegatedAutonomyCall", "AutonomyCallShape", None),
     ("BadLiveStatusDate", "AuthorityLiveStatusShape", "asOf"),
     ("BadRevokedAllow", "LiveDelegationDecisionShape", None),
+    ("BadNoLiveStatusAllow", "LiveDelegationDecisionShape", None),
     ("BadEngagedAllow", "LiveKillSwitchDecisionShape", None),
     ('BadPinnedDecision', 'PinnedDecisionShape', 'hasCheck'),
     ('BadSuspendedApproval', 'SuspendedApprovalShape', None),

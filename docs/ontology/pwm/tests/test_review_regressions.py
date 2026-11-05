@@ -125,8 +125,8 @@ def test_version_and_counts(tmp_path):
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 220, 188, 48, 130, 66)
-    assert sum(validator.EXPECTED.values()) == 191
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 253
+    assert sum(validator.EXPECTED.values()) == 193
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 259
     assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
     first_spec = (tmp_path / 'SPEC.md').read_text()
     status_row = next(row for row in first_spec.splitlines() if '<a id="statusOf"></a>' in row)
@@ -992,3 +992,56 @@ def test_review_isolated_negative_fixtures():
         (E('ReviewExceededDecision'), URIRef(validator.PWMSH + 'BlastRadiusDecisionShape')),
         (E('ReviewUseCaseCall'), URIRef(validator.PWMSH + 'AgentDecisionShape')),
     }
+
+@pytest.mark.parametrize('timestamp,explicit', [
+    ('2026-11-03T10:00:00', False),
+    ('2026-11-03T10:00:00Z', True),
+    ('2026-11-03T10:00:00+00:00', True),
+])
+@pytest.mark.parametrize('property_name', ['asOf', 'generatedAtTime'])
+def test_live_decision_requires_explicit_timezones(timestamp, explicit, property_name):
+    from pyshacl import validate
+    g = example()
+    time = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    g.set((E('LiveAuthorityAllow'), time,
+           Literal('2026-11-03T10:05:00Z', datatype=XSD.dateTime)))
+    g.set((E('SwitchLive'), P('engaged'), Literal(True)))
+    g.set((E('SwitchLive'), P('asOf'),
+           Literal('2026-11-03T10:00:00Z', datatype=XSD.dateTime)))
+    focus, path = ((E('SwitchLive'), P('asOf')) if property_name == 'asOf'
+                   else (E('LiveAuthorityAllow'), time))
+    g.set((focus, path, Literal(timestamp, datatype=XSD.dateTime)))
+    conforms, report, _ = validate(g, shacl_graph=Graph().parse(BASE / 'pwm-shapes.ttl'),
+                                 ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')
+    # An engaged switch still blocks ALLOW when the timezone pattern passes.
+    assert not conforms
+    pattern_failures = {(report.value(r, validator.SH.focusNode),
+                         report.value(r, validator.SH.resultPath))
+                        for r in report.subjects(validator.SH.sourceConstraintComponent,
+                                                 validator.SH.PatternConstraintComponent)}
+    assert ((focus, path) in pattern_failures) == (not explicit)
+
+
+def test_flight_recorder_session_with_two_runs():
+    from pyshacl import validate
+    g = Graph()
+    g.add((E('Recorder'), RDF.type, P('FlightRecorderSession')))
+    g.add((E('Recorder'), P('contentHash'), Literal('sha256:' + 'a' * 64)))
+    for name in ('FirstRun', 'SecondRun'):
+        g.add((E(name), RDF.type, P('Run')))
+        g.add((E('Recorder'), P('recordedRun'), E(name)))
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    for shape in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if shape != URIRef(validator.PWMSH + 'FlightRecorderSessionShape'):
+            shapes.add((shape, validator.SH.deactivated, Literal(True)))
+    assert validate(g, shacl_graph=shapes)[0]
+
+
+@pytest.mark.parametrize('level,allowed', [('L0Retrieve', False), ('L3Draft', True), ('L5BoundedAutonomy', True)])
+@pytest.mark.parametrize('outcome', ['OutcomeAllow', 'OutcomeDeny'])
+def test_call_respects_delegated_scope_autonomy(level, allowed, outcome):
+    g = example()
+    g.set((E('ProxyCall'), P('invokedTool'), E('ToolDraftNote')))
+    g.set((E('Scope'), P('scopeAutonomyLevel'), P(level)))
+    g.set((E('PolicyDecisionModelAllow'), P('decisionOutcome'), P(outcome)))
+    assert validate_05(g, ['AutonomyCallShape']) == (allowed or outcome == 'OutcomeDeny')

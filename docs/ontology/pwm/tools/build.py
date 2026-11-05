@@ -399,8 +399,9 @@ def build(base: Path, site_path):
             "metaTerms": meta_terms, "rules": rules, "references": ref_list, "extensionExample": EXTENSION_TTL,
             "changelog": [{"version": v, "date": d, "note": n} for v, d, n in CHANGELOG]}
 
-    (base / "SPEC.md").write_text(spec_md(data, refs), encoding="utf-8")
-    with (base / "SPEC.md").open("a", encoding="utf-8") as spec:
+    from io import StringIO
+    with StringIO() as spec:
+        spec.write(spec_md(data, refs))
         gap_path = base / "GAP_ANALYSIS.md"
         if gap_path.exists():
             spec.write("\n" + gap_path.read_text(encoding="utf-8").replace("# PWM 0.5 gap analysis", "## Gap analysis for 0.5", 1).replace("# PWM 0.4 gap analysis", "## Gap analysis for 0.4", 1).replace("## PWM 0.5 gap analysis", "## Gap analysis for 0.5", 1) + "\n")
@@ -471,9 +472,10 @@ def build(base: Path, site_path):
         for term in sorted(g.subjects(P("fiboMaturity"), None)):
             relative = str(term).split("/ontology/", 1)[1].rsplit("/", 1)[0] + ".rdf"
             spec.write(f"| {term} | {g.value(term, P('fiboMaturity'))} | [RDF source](https://raw.githubusercontent.com/edmcouncil/fibo/33a92cd34285d532c158da97bb42add089f135d3/{relative}) |\n")
+        spec_text = spec.getvalue()
     if site_path:
         Path(site_path).write_text(site_ts(data), encoding="utf-8")
-    (base / "SPEC.md").write_text((base / "SPEC.md").read_text(encoding="utf-8").rstrip() + "\n", encoding="utf-8")
+    (base / "SPEC.md").write_text(spec_text.rstrip() + "\n", encoding="utf-8")
     return data
 
 

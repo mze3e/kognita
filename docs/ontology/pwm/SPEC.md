@@ -3560,7 +3560,7 @@ Applies to [cross-border rule](#CrossBorderRule). Sources: [Kognita private-bank
 
 Applies to [policy decision](#PolicyDecision). Sources: [Filing Cabinet talk](#ref-AM-FILING-CABINET), [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- Record exactly one decision timestamp.
+- Record exactly one decision timestamp with an explicit timezone (Z or an offset).
 - decisionOutcome: minimum count 1; maximum count 1; allowed values OutcomeDeny, OutcomeEscalate, OutcomeHumanApproval, OutcomeAllow, OutcomeObserve.
 - Every decision names the rule and rule version that decided it (Filing Cabinet, slide 14).
 - Every decision references a registered use case (Kognita 0.4 item 8).
@@ -4608,7 +4608,7 @@ Applies to subjects of [parent delegation](#parentDelegation). Sources: [Kognita
 
 Applies to [tool call](#ToolCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- Calls cannot exceed effective or maximum autonomy; L4 routes to human approval (Kognita 0.5 item 3).
+- Calls cannot exceed effective or maximum autonomy or the delegated scope ceiling; L4 routes to human approval (Kognita 0.5 item 3).
 
 *Roadmap milestone 0.5 item 3. Checks recorded evidence; runtime enforcement remains external.*
 
@@ -4683,7 +4683,7 @@ Applies to [risk control approval](#RiskControlApproval). Sources: [Kognita road
 Applies to [authority live status](#AuthorityLiveStatus). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
 
 - statusOf: minimum count 1; maximum count 1; one of classes DelegatedAuthority, KillSwitch.
-- asOf: minimum count 1; maximum count 1; datatype dateTime.
+- asOf must carry an explicit timezone (Z or an offset) so decision-time comparison cannot use an implicit timezone.
 - observedBy: minimum count 1; class Agent.
 - revoked: maximum count 1; datatype boolean.
 - engaged: maximum count 1; datatype boolean.
@@ -4911,7 +4911,7 @@ Compared with inherited PWM 0.4 before adding terms. PWM version N follows roadm
 | 10 Capability grants | Delegation and validity/evidence patterns | CapabilityGrant with agent grantee, granted tool, subject scope, mandatory expiry and revocation via the common revocation record. Grants are optional. LiveGrantShape targets calls that have reliesOnGrant; when a call relies on a grant, live checks match tool, agent, time and revocation. Existing evidence records capture issue, use, expiry and revoke events. |
 | 11 Fleets | Agents, gateway call identity, Run isolation and classifier evidence | AgentFleet with members, quota and isolation boundary; FleetHalt with mandatory scope and timestamp. Non-DENY decisions after fleet halt fail. Agent messages use inputContent and trust labels; external senders are recorded as untrusted. Actual inter-agent routing, quota admission and isolation remain gateway responsibilities. |
 | 12 Sandbox output | PolicyDecision and outcome codes | SandboxConstraints linked from the decision, with credential handles, network destinations, filesystem/API/command scopes, export/persistence flags, auto-stop, CPU/memory/disk caps. An empty network allow-list means block all. The ontology does not ship a sandbox. |
-| 13 Reversibility | Tool, HumanReview, ApprovalRequest/Resolution, recover intervention evidence | ReversibilityScheme and CompensatingAction, original-call reference and reverse recovery order. Reversible/compensatable tools register compensation. High-autonomy irreversible ALLOW requires approved human evidence in the same run, using effectiveAutonomyLevel when recorded and maxAutonomyLevel otherwise. The approved ApprovalRequest must request this call's governing decision. Runtime recovery order and exact transaction approval binding require gateway verification. |
+| 13 Reversibility | Tool, HumanReview, ApprovalRequest/Resolution, recover intervention evidence | ReversibilityScheme and CompensatingAction, original-call reference and reverse recovery order. Reversible/compensatable tools register compensation. High-autonomy irreversible ALLOW requires approved human evidence in the same run, using effectiveAutonomyLevel when recorded and maxAutonomyLevel otherwise. The approved ApprovalRequest must request a separate held OutcomeHumanApproval decision sharing the allowed decision's run, use case and decidedByRule; it cannot request the ALLOW decision itself. Runtime recovery order and exact transaction approval binding require gateway verification. |
 | 14 Adversarial suite | PolicyTestCase, testsRule, givenAttributes, whenAction, expectedOutcome and PolicyPack | AdversarialTestCase specialises the existing test record with attack kind and versioned ThreatModel reference. Test-to-rule links map attacks to controls. SHACL validates these declarations; the software conformance suite must execute the attacks. |
 | 15 Enforcement | Use-case register, isMediated, gateways and MCP calls | Deployment mode and attributed EnforcementAttestation with gateway credential custody, egress restriction and evidence-store isolation. Tier 2+ use cases require gateway mode and affirmative attestation. A false attestation remains an operational finding, not proof of enforcement. |
 | 16 Stop in flight | KillSwitch, Run wall clock, tool/call and evidence records | Maximum tool-call duration, cancellation support, decision-separated steps, observed duration and ActionStop with cancellation/completion/timeout/unsupported result. Uncancellable tools require compensation or intervening decisions. Exceeding duration requires recorded timeout. Positive fixtures include completion, cancellation and timeout. |
@@ -4931,9 +4931,9 @@ Ahmed's 3 Nov 2026 design decisions add AuthorityLiveStatus in FastContext. Each
 Firm-specific BlastRadiusLimit and AutonomyPromotionGate records each require exactly one riskControlApproval. The RiskControlApproval record identifies approverRole and approvedAt. ApprovingAuthorityRole specialises OMG Commons PartyRole; its permitted subclasses are RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer. The role sets and approves the limit or gate. This configuration approval is distinct from an individual transition's ownerApproval and independentValidation. The positive example includes risk-committee approval for its limit and gate; negative fixtures reject missing control approval, an unauthorized approver and missing approval time.
 
 
-Review validation for 0.5: 193 domain classes, 408 properties (220 object, 188 datatype), 48 code lists and 235 codes. The 130 written rules and 66 generated code-list rules form 197 node shapes, including one untargeted helper. The positive example has 191 typed records. The negative fixture has 253 typed records, 168 violating and 85 supporting, plus 4 untyped violating subjects. It raises 191 expected violations across 172 focus nodes and exercises all 130 written rules and two generated rules; regression tests cover all 66 generated rules.
+Review validation for 0.5: 193 domain classes, 408 properties (220 object, 188 datatype), 48 code lists and 235 codes. The 130 written rules and 66 generated code-list rules form 197 node shapes, including one untargeted helper. The positive example has 191 typed records. The negative fixture has 259 typed records, 170 violating and 89 supporting, plus 4 untyped violating subjects. It raises 193 expected violations across 174 focus nodes and exercises all 130 written rules and two generated rules; regression tests cover all 66 generated rules.
 
-Classification comparisons use the DataClassificationScheme sensitivity rank. Child scopes may narrow from C2 to C1; a C3 human entitlement can back a C2 delegation, while a C1 entitlement cannot. Irreversible approvals must precede their calls, and step-up approvals must request the exact decision at a checkpoint in the same run. ALLOW decisions cover every calling-agent limit and delegation scope cap exactly once and reject observations of unrelated limits. The anomaly's Incident is explicitly an AIIncident; no additional AIIncident property shape is declared. Every positive governed call has a recorded timestamp after its governing decision.
+Classification comparisons use the DataClassificationScheme sensitivity rank. Child scopes may narrow from C2 to C1; a C3 human entitlement can back a C2 delegation, while a C1 entitlement cannot. Irreversible approvals must precede their calls, and step-up approvals must request a separate held OutcomeHumanApproval decision sharing the allowed decision's run, use case and decidedByRule, at a checkpoint in that run; the request cannot point at the ALLOW itself. Exact transaction approval binding still requires gateway verification. ALLOW decisions cover every calling-agent limit and delegation scope cap exactly once and reject observations of unrelated limits. The anomaly's Incident is explicitly an AIIncident; no additional AIIncident property shape is declared. Every positive governed call has a recorded timestamp after its governing decision.
 
 ### Review additions (4 Nov 2026)
 
@@ -4948,7 +4948,7 @@ New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGra
 
 There are 197 node shapes: 130 written targeted shapes, 66 generated targeted shapes and one untargeted helper.
 
-The positive example contains 191 typed records. The negative fixture contains 253 typed records. There are 168 typed violating records, 85 typed supporting records and 4 untyped violating subjects, yielding 191 expected violations across 172 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 191 typed records. The negative fixture contains 259 typed records. There are 170 typed violating records, 89 typed supporting records and 4 untyped violating subjects, yielding 193 expected violations across 174 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
 The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 

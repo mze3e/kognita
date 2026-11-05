@@ -503,7 +503,7 @@ ex:EUSuitability a pwm:SuitabilityAssessment ;
 
 # PWM 0.3 run, gateway and replay journey. Hashes identify synthetic content.
 ex:Run a pwm:Run ; pwm:hasBudget ex:Budget ; pwm:runState pwm:RunResumed ; pwm:partOfInteraction ex:Interaction ; pwm:underUseCase ex:UseCaseMeetingPrep .
-ex:Budget a pwm:RunBudget ; pwm:maxCalls "20"^^xsd:nonNegativeInteger ; pwm:maxTokens "10000"^^xsd:nonNegativeInteger ; pwm:maxCostUSD 2.0 ; pwm:wallClockSeconds 3600.0 ; pwm:classificationCeiling pwm:C2 ; pwm:consumedCalls "2"^^xsd:nonNegativeInteger ; pwm:consumedTokens "120"^^xsd:nonNegativeInteger ; pwm:consumedCostUSD 0.02 ; pwm:elapsedSeconds 30.0 .
+ex:Budget a pwm:RunBudget ; pwm:maxCalls "20"^^xsd:nonNegativeInteger ; pwm:maxTokens "10000"^^xsd:nonNegativeInteger ; pwm:maxCostUSD 2.0 ; pwm:wallClockSeconds 3600.0 ; pwm:classificationCeiling pwm:C2 ; pwm:consumedCalls "5"^^xsd:nonNegativeInteger ; pwm:consumedTokens "120"^^xsd:nonNegativeInteger ; pwm:consumedCostUSD 0.02 ; pwm:elapsedSeconds 30.0 .
 ex:GatewayClient a pwm:AuthenticatedClientConfiguration ; pwm:boundAgent ex:Agent ; pwm:listedTrigger ex:ScheduledTrigger .
 ex:ScheduledTrigger a pwm:SystemTrigger ; rdfs:label "Authenticated meeting preparation scheduler"@en .
 ex:UseCaseMeetingPrep pwm:gatewayFailureMode pwm:FailClosed ; pwm:retentionPolicy ex:ContentPolicy .
@@ -564,14 +564,14 @@ ex:ResponseAttribute a pwm:EnvelopeAttribute ; pwm:attributeName "response.class
 ex:GatewayCall pwm:hasAttribute ex:ResponseAttribute .
 
 # PWM 0.5: synthetic ingestion, policy artefacts and lifecycle evidence.
-ex:Ingestion a pwm:IngestedDocument ; pwm:parserName "docling-slim" ; pwm:parserVersion "2.60.0 (synthetic pinned example)" ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:versionId "1" .
-ex:Passage a pwm:DocumentElement ; pwm:ingestedFrom ex:Ingestion ; pwm:pageNumber "1"^^xsd:positiveInteger ; pwm:sectionPath "root/credit" ; pwm:characterStart "0"^^xsd:nonNegativeInteger ; pwm:characterEnd "30"^^xsd:nonNegativeInteger ; pwm:classification pwm:C1 ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:boundingBox "page-points: 0,0,200,100" .
+ex:Ingestion a pwm:IngestedDocument ; pwm:parserName "docling-slim" ; pwm:parserVersion "2.60.0 (synthetic pinned example)" ; pwm:contentHash "sha256:2bee6b8c11586ab16ecac5406f18d26da8d8e614dabb031b28cc6882cd417531" ; pwm:versionId "1" .
+ex:Passage a pwm:DocumentElement ; pwm:ingestedFrom ex:Ingestion ; pwm:pageNumber "1"^^xsd:positiveInteger ; pwm:sectionPath "root/credit" ; pwm:characterStart "0"^^xsd:nonNegativeInteger ; pwm:characterEnd "30"^^xsd:nonNegativeInteger ; pwm:classification pwm:C1 ; pwm:contentHash "sha256:c2c9ee0cc6ad32a11f9b18970c20bc1705381855f13e15add3771c26383d652b" ; pwm:boundingBox "page-points: 0,0,200,100" .
 ex:Snapshot prov:wasDerivedFrom ex:Passage .
-ex:PolicyArtefact a pwm:DeclarativePolicy ; pwm:versionId "1" ; pwm:containsRule ex:RuleModelAccess ; pwm:policySerialization "rules: [model-access]" ; pwm:hasPolicyTest ex:PolicyScenario ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" .
+ex:PolicyArtefact a pwm:DeclarativePolicy ; pwm:versionId "1" ; pwm:containsRule ex:RuleModelAccess ; pwm:policySerialization "rules: [model-access]" ; pwm:hasPolicyTest ex:PolicyScenario ; pwm:contentHash "sha256:26f8a94cff65e877c4c04cfc943e242e138a0a4eb16f8f954998e060030af74e" .
 ex:PolicyDelta a pwm:PolicyChange ; pwm:changesPolicy ex:PolicyArtefact ; pwm:deltaText "ADDED model-access" ; pwm:changeStage "applied" ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
 ex:PolicyScenario a pwm:PolicyTestCase ; pwm:testsRule ex:RuleModelAccess ; pwm:givenAttributes "classification: C2" ; pwm:whenAction "model_call" ; pwm:expectedOutcome pwm:OutcomeAllow .
 ex:PrivateBankingPack a pwm:PolicyPack ; pwm:versionId "1" ; pwm:packPolicy ex:PolicyArtefact ; pwm:fixtureLocator "urn:synthetic:pack-fixtures"^^xsd:anyURI .
-ex:Recorder a pwm:FlightRecorderSession ; pwm:recordedRun ex:Run ; pwm:partOfInteraction ex:Interaction ; pwm:contentHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:exportLocator "urn:synthetic:recorder-export"^^xsd:anyURI .
+ex:Recorder a pwm:FlightRecorderSession ; pwm:recordedRun ex:Run ; pwm:partOfInteraction ex:Interaction ; pwm:contentHash "sha256:c4df54c1ea9c5b12a3e42b23d0ae6603f35c605d52b855e88d19959508bf474f" ; pwm:exportLocator "urn:synthetic:recorder-export"^^xsd:anyURI .
 ex:Replay a pwm:Replay ; pwm:replaysSession ex:Recorder ; pwm:replayReport ex:Report .
 ex:Metric a pwm:OutcomeMetric ; pwm:primaryMetric pwm:MetricDecisionQuality ; pwm:versionId "1" ; pwm:baselineValue 0.85 ; pwm:targetValue 0.95 .
 ex:UseCaseMeetingPrep pwm:hasOutcomeMetric ex:Metric ; pwm:appetitePermits true ; pwm:dependsOn ex:Provider ; pwm:lowRiskSamplingRate 0.10 .
@@ -581,7 +581,7 @@ ex:ModelCard a pwm:ModelCard ; pwm:providedBy ex:Provider ; rdfs:label "fictiona
 ex:Model pwm:hasModelCard ex:ModelCard .
 ex:GatewayCall pwm:hasModelCard ex:ModelCard .
 ex:Review a pwm:HumanReview ; pwm:partOfInteraction ex:Interaction ; pwm:reviewEdit ex:Edit ; prov:wasAssociatedWith ex:PersonRM .
-ex:Edit a pwm:RMReviewEdit ; pwm:beforeHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:afterHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:editDiffHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:diffLocator "urn:synthetic:review-diff"^^xsd:anyURI .
+ex:Edit a pwm:RMReviewEdit ; pwm:beforeHash "sha256:ba0d2629d03bc7c8eaf1b97a44f2e40e17a0cce039686555c4ed11eb6d8d4445" ; pwm:afterHash "sha256:1659806507ceb49d77437ec6ceff4add40551ec56cfd276cfaec959ab1352bea" ; pwm:editDiffHash "sha256:855899ea8f78e6b4bcb38e508e2ecf1de419d2e59ff901dd198a0f03aedf1c8f" ; pwm:diffLocator "urn:synthetic:review-diff"^^xsd:anyURI .
 ex:Decision pwm:reviewEdit ex:Edit ; pwm:partOfInteraction ex:Interaction .
 ex:Communication pwm:requiresTwoSignatures true ; pwm:communicationSigner ex:PersonRM, ex:PersonModelRisk .
 ex:Queue a pwm:ReviewQueue ; pwm:underUseCase ex:UseCaseMeetingPrep .
@@ -680,7 +680,7 @@ ex:ReadScope pwm:scopeAutonomyLevel pwm:L0Retrieve ; pwm:scopeLimit ex:Limit .
 ex:ProxyCall pwm:aboutClient ex:Client ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:callDurationSeconds 2.0 .
 ex:PolicyDecisionModelAllow pwm:hasPurpose ex:PurposeMeetingPrep ; prov:generatedAtTime "2026-11-03T01:58:00Z"^^xsd:dateTime .
 
-ex:CancelledCall a pwm:MCPProxiedCall ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionModelAllow ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:mcpBackend "portfolio-local" ; pwm:responseHash "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:aboutClient ex:Client ; pwm:callDurationSeconds 10.0 .
+ex:CancelledCall a pwm:MCPProxiedCall ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionModelAllow ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:mcpBackend "portfolio-local" ; pwm:responseHash "sha256:4c82030edafc461867f62679e611e2aebde7acf7c6fb150192928cc30e391ec8" ; pwm:aboutClient ex:Client ; pwm:callDurationSeconds 10.0 .
 ex:Cancelled a pwm:ActionStop ; pwm:stoppedCall ex:CancelledCall ; pwm:stopOutcome "cancelled" ; pwm:stopReason "pause" ; prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
 ex:TimedOutCall a pwm:MCPProxiedCall ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionModelAllow ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:mcpBackend "portfolio-local" ; pwm:responseHash "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" ; pwm:aboutClient ex:Client ; pwm:callDurationSeconds 31.0 .
 ex:TimedOut a pwm:ActionStop ; pwm:stoppedCall ex:TimedOutCall ; pwm:stopOutcome "timed-out" ; pwm:stopReason "maximum duration" ; prov:generatedAtTime "2026-11-03T02:00:31Z"^^xsd:dateTime .

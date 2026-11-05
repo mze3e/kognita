@@ -937,7 +937,7 @@ ex:BadCrossRunApprovalCall a ns1:ToolCall ;
     ns1:workloadIdentity ex:Workload .
 
 ex:BadDecisionTimeType a ns1:PolicyDecision ;
-    prov:generatedAtTime "2026-11-03"^^xsd:date ;
+    prov:generatedAtTime "2026-11-03T10:00:00Z"^^xsd:string ;
     ns1:decidedByRule ex:RuleModelAccess ;
     ns1:decisionOutcome ns1:OutcomeAllow ;
     ns1:escalationThreshold 0.90 ;
@@ -1053,7 +1053,7 @@ ex:BadLimitApproval a ns1:BlastRadiusLimit ;
     ns1:limitWindowBasis "minute" .
 
 ex:BadLiveStatusDate a ns1:AuthorityLiveStatus ;
-    ns1:asOf "2026-11-03"^^xsd:date ;
+    ns1:asOf "2026-11-03T10:00:00Z"^^xsd:string ;
     ns1:observedBy ex:LiveObserver ;
     ns1:revoked false ;
     ns1:statusOf ex:Delegation .
@@ -2461,3 +2461,87 @@ ex:Bad05EffectiveAboveMaxIdentity a ns1:WorkloadIdentity ;
 # Reset the shared switch after the negative decision so later fixtures stay isolated.
 ex:ResetLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:LiveSwitch ; pwm:engaged false ;
     pwm:asOf "2027-01-01T00:00:00Z"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
+
+ex:BadNoLiveStatusAllow a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:reliesOnDelegation ex:Delegation ; pwm:decidedByRule ex:RuleClientCommunication ;
+    pwm:hasCheck ex:Check ; pwm:underUseCase ex:UseCaseMeetingPrep ;
+    prov:generatedAtTime "2026-11-03T01:56:00Z"^^xsd:dateTime .
+
+# A permitted draft tool exceeds the delegated autonomy ceiling.
+@prefix ex: <https://example.org/pwm-example#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix pwm: <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:BadDelegatedAutonomyCall a pwm:MCPProxiedCall ;
+    prov:generatedAtTime "2026-11-03T01:58:30+00:00"^^xsd:dateTime ;
+    pwm:aboutClient ex:Client ;
+    pwm:callAgent ex:Agent ;
+    pwm:callDurationSeconds 2.0 ;
+    pwm:classification pwm:C2 ;
+    pwm:clientConfiguration ex:GatewayClient ;
+    pwm:governedByDecision ex:LowAutonomyDecision ;
+    pwm:inRun ex:Run ;
+    pwm:invokedTool ex:ToolDraftNote ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:mcpBackend "portfolio-local" ;
+    pwm:reliesOnDelegation ex:LowAutonomyDelegation ;
+    pwm:requestedField "riskProfile" ;
+    pwm:responseHash "sha256:04b83a68185e12cee336ee20d73efefe381ad5945790c2c64c8b76041a434966" ;
+    pwm:retainedIn ex:RetainedToolResponse ;
+    pwm:workloadIdentity ex:Workload .
+
+ex:LowAutonomyLive a pwm:AuthorityLiveStatus ;
+    pwm:asOf "2026-11-03T01:57:00+00:00"^^xsd:dateTime ;
+    pwm:observedBy ex:Agent,
+        ex:LiveObserver ;
+    pwm:revoked false ;
+    pwm:statusOf ex:LowAutonomyDelegation .
+
+ex:LowAutonomyDecision a pwm:PolicyDecision ;
+    prov:generatedAtTime "2026-11-03T01:58:00+00:00"^^xsd:dateTime ;
+    pwm:decidedByRule ex:RuleModelAccess ;
+    pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:escalationThreshold 0.90 ;
+    pwm:hasCheck ex:ModelAccessCheck ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:inRun ex:Run ;
+    pwm:limitObservation ex:Observation ;
+    pwm:reliesOnDelegation ex:LowAutonomyDelegation ;
+    pwm:sandboxConstraints ex:Sandbox ;
+    pwm:underUseCase ex:UseCaseMeetingPrep .
+
+ex:LowAutonomyScope a pwm:AuthorityScope ;
+    pwm:aboutClient ex:Client ;
+    pwm:accessEvent "Meeting within 24 hours" ;
+    pwm:actionVerb pwm:VerbDraft,
+        pwm:VerbRead ;
+    pwm:classification pwm:C2 ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:scopeAutonomyLevel pwm:L0Retrieve ;
+    pwm:scopeField "riskProfile" ;
+    pwm:scopeLimit ex:Limit ;
+    pwm:scopeProduct ex:Product ;
+    pwm:scopeSystem "urn:synthetic:portfolio"^^xsd:anyURI ;
+    pwm:scopeTool ex:ToolDraftNote,
+        ex:ToolPortfolioRead .
+
+ex:LowAutonomyDelegation a pwm:DelegatedAuthority ;
+    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    pwm:aboutClient ex:Client ;
+    pwm:actionVerb pwm:VerbDraft,
+        pwm:VerbRead ;
+    pwm:approvalThreshold "Any draft for the client needs RM approval" ;
+    pwm:authorityScope ex:LowAutonomyScope ;
+    pwm:delegatedBy ex:PersonRM ;
+    pwm:delegatedTo ex:Agent ;
+    pwm:delegationDepth "0"^^xsd:nonNegativeInteger ;
+    pwm:endsOnTaskCompletion true ;
+    pwm:hasPurpose ex:PurposeMeetingPrep ;
+    pwm:jurisdictionCode "SG" ;
+    pwm:maxDelegationDepth "2"^^xsd:nonNegativeInteger ;
+    pwm:permitsDataClass pwm:C2 ;
+    pwm:validFrom "2026-11-03T08:00:00+08:00"^^xsd:dateTime ;
+    pwm:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
