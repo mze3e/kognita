@@ -39,7 +39,7 @@ Kognita's own published targets are Q3 2027 for 0.6, Q4 2027 for 0.7 and Q1 2028
 
 0.1 set the shape: 10 modules, every term cited, OWL 2 DL, SHACL rules and tests. 0.2 grounded the main classes in FIBO against a pinned commit and added EU sustainability preferences. 0.3 to 0.5 each add a module for the Kognita milestone of the same number, with a gap analysis per roadmap item in [GAP_ANALYSIS.md](GAP_ANALYSIS.md).
 
-PWM 0.5 uses one FastContext live-status vocabulary, `AuthorityLiveStatus`. Blast-radius limits and autonomy gates are set by the firm's risk committee, data governance committee or CRO.
+PWM 0.5 ([pwm.ttl](pwm.ttl)) uses one FastContext live-status vocabulary, `AuthorityLiveStatus`. Blast-radius limits and autonomy gates are set by the firm's risk committee, data governance committee or CRO.
 
 What the first plan listed for 0.2 and did not get built is carried forward below, in 0.8.
 
@@ -101,7 +101,7 @@ PWM already has a basic claim record from 0.1. The first step is a gap analysis 
 - **Jurisdiction profiles.** Data packages, not ontology changes, for SG, HK, CH, the EU and the UK: investor categories, disclosure triggers and cross-border defaults, each with citations.
 - **Code-list profiles.** A profile file that rebinds code lists and switches off generated shapes, with a worked example.
 
-**Exit:** every MAS Section 2 to 6 paragraph mapped; the inventory profile and report query run on Kognita's exported register; Kognita CI produces PWM data that conforms.
+**Exit:** every MAS Section 2 to 6 paragraph mapped; the inventory profile and report query run on Kognita's exported register; the reconstruction queries, mapping table, JSON-LD context and round trip, jurisdiction profiles, and code-list profiles are complete and checked; Kognita CI produces PWM data that conforms.
 
 ## 1.0-rc "Release candidates"
 
