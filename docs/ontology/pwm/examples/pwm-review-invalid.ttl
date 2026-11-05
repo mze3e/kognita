@@ -1,0 +1,47 @@
+# Additional isolated review cases, merged with pwm-example.ttl by regression tests.
+@prefix pwm: <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix ex: <https://example.org/pwm-example#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:ReviewDelegation pwm:authorityScope ex:ReviewScope .
+ex:ReviewScope pwm:scopeLimit ex:ReviewCap .
+ex:ReviewCap pwm:limitMaximum 2.0 .
+
+# Missing scope-cap observation must fail, despite the agent observation.
+ex:ReviewMissingDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:limitObservation ex:Observation .
+ex:ReviewMissingCall pwm:callAgent ex:Agent ; pwm:governedByDecision ex:ReviewMissingDecision ;
+    pwm:reliesOnDelegation ex:ReviewDelegation .
+
+# Recording consumption of 4 against a cap of 2 must also fail.
+ex:ReviewExceededDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:limitObservation ex:Observation, ex:ReviewExceededObservation .
+ex:ReviewExceededObservation pwm:observedLimit ex:ReviewCap ; pwm:projectedConsumption 4.0 .
+ex:ReviewExceededCall pwm:callAgent ex:Agent ; pwm:governedByDecision ex:ReviewExceededDecision ;
+    pwm:reliesOnDelegation ex:ReviewDelegation .
+
+# A scope-cap observation within the cap must be accepted as related.
+ex:ReviewWithinDecision a pwm:PolicyDecision ; pwm:decisionOutcome pwm:OutcomeAllow ;
+    pwm:limitObservation ex:Observation, ex:ReviewWithinObservation .
+ex:ReviewWithinObservation pwm:observedLimit ex:ReviewCap ; pwm:projectedConsumption 1.0 .
+ex:ReviewWithinCall pwm:callAgent ex:Agent ; pwm:governedByDecision ex:ReviewWithinDecision ;
+    pwm:reliesOnDelegation ex:ReviewDelegation .
+
+# A live agent cannot act under a use case it is not registered for.
+ex:ReviewUseCaseCall a pwm:GovernedCall ; pwm:callAgent ex:Agent ;
+    pwm:workloadIdentity ex:Workload ; pwm:governedByDecision ex:ReviewUseCaseDecision .
+ex:ReviewUseCaseDecision pwm:decisionOutcome pwm:OutcomeAllow ; pwm:underUseCase ex:UnregisteredUseCase ;
+    prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
+
+ex:ReviewMissingCall pwm:workloadIdentity ex:Workload .
+ex:ReviewExceededCall pwm:workloadIdentity ex:Workload .
+ex:ReviewWithinCall pwm:workloadIdentity ex:Workload .
+ex:ReviewMissingDecision pwm:underUseCase ex:UseCaseMeetingPrep ;
+    prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
+ex:ReviewExceededDecision pwm:underUseCase ex:UseCaseMeetingPrep ;
+    prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
+ex:ReviewWithinDecision pwm:underUseCase ex:UseCaseMeetingPrep ;
+    prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
+# This case isolates the use-case check while still satisfying limit coverage.
+ex:ReviewUseCaseDecision pwm:limitObservation ex:Observation .

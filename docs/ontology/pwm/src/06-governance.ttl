@@ -171,7 +171,7 @@ pwm:DelegatedAuthority a owl:Class ;
     skos:scopeNote "A request is allowed only if the person holds the entitlement and the agent holds a live delegation for it."@en ;
     rdfs:subClassOf cmns-bauth:Authorization ;
     pwm:inModule pwm:ModuleGovernance ;
-    pwm:contextSpeed pwm:FastContext ;
+    pwm:contextSpeed pwm:SlowContext ;
     pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 2: delegated authority" ] ,
                  [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 2: explicit delegated authority" ] .
@@ -208,7 +208,7 @@ pwm:KillSwitch a owl:Class ;
     rdfs:label "kill switch"@en ;
     skos:definition "Mechanism that deactivates an AI system expeditiously when it exceeds risk tolerances, effective on the next decision, with a tested activation protocol and fallback."@en ;
     pwm:inModule pwm:ModuleGovernance ;
-    pwm:contextSpeed pwm:FastContext ;
+    pwm:contextSpeed pwm:SlowContext ;
     pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.3 and fn 29; 5.23(b)" ] , [ pwm:cites pwmref:KOG-CONTROLS ; pwm:locator "Non-negotiable 12" ] .
 
 pwm:KillSwitchDrill a owl:Class ;
@@ -635,3 +635,19 @@ pwm:RiskEvidence a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:
 pwm:RiskOperational a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "operational"@en ; skos:definition "Agents loop, stall, call the wrong tool or keep moving when they should stop."@en .
 pwm:RiskChange a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "change"@en ; skos:definition "Behaviour changes with a prompt, tool, source or silent model update."@en .
 pwm:RiskOwnership a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "ownership"@en ; skos:definition "No named person is accountable for what the agent did."@en .
+
+# Live control state is separate from cached governance configuration.
+pwm:AuthorityLiveStatus a owl:Class ;
+    rdfs:label "authority live status"@en ;
+    skos:definition "Live observation of the revocation state of a DelegatedAuthority or the engaged state of a KillSwitch, effective from asOf until superseded. Read from the system of record at decision time, never from cache."@en ;
+    skos:scopeNote "The single live-status vocabulary for delegation revocation and kill-switch state, retained for reuse in 0.5 without a parallel class or code list. DelegatedAuthority and KillSwitch definitions remain in SlowContext. For each subject, use the latest observation at or before the decision time. Conflicting observations at that time fail closed. SHACL checks recorded observations; runtime must obtain fresh state."@en ;
+    rdfs:subClassOf prov:Entity ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:statusOf a owl:ObjectProperty ; rdfs:label "status of"@en ; skos:definition "Authority or kill switch whose live state is observed."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range [ a owl:Class ; owl:unionOf ( pwm:DelegatedAuthority pwm:KillSwitch ) ] ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:observedBy a owl:ObjectProperty ; rdfs:label "observed by"@en ; skos:definition "Agent that obtained the live observation from the system of record."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range prov:Agent ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:revoked a owl:DatatypeProperty ; rdfs:label "revoked"@en ; skos:definition "Whether the delegated authority is currently revoked."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:boolean ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+
+pwm:engaged a owl:DatatypeProperty ; rdfs:label "engaged"@en ; skos:definition "Whether the kill switch is currently engaged."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:boolean ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .

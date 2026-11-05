@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- PWM 0.5 review fixes (4 Nov 2026): remove the duplicate liveStatusSubject, liveStatusValue and observedAt fields so every live authority observation uses one format; make a delegation's permitted data class a checked ceiling (DelegationCeilingShape); reject an agent whose effective autonomy exceeds its maximum (AgentAutonomyShape); list union range members in SPEC instead of a generated ID; derive the README counts in the build. Rebuild the ontology and specification.
+
+- PWM 0.5 review: merge the 0.4 live-status and evidence-chain checks; require dated risk committee, data governance committee or CRO approval for firm limits and promotion gates; correct classification ranks, UTC review expiry and completed human approval checks; clarify field scope and constraint messages. Rebuild the ontology and specification.
+
+- PWM 0.4: add NEW FastContext AuthorityLiveStatus for decision-time revocation and kill-switch checks, with SHACL rules and negative fixtures. Keep authority and switch definitions in SlowContext. Fail ontology builds on broken example evidence chains.
+
 ## [0.7.0] - 2026-10-31
 
 ### Documentation
