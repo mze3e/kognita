@@ -3157,7 +3157,7 @@ Applies to [cross-border rule](#CrossBorderRule). Sources: [Kognita private-bank
 
 Applies to [policy decision](#PolicyDecision). Sources: [Filing Cabinet talk](#ref-AM-FILING-CABINET), [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- Record exactly one decision timestamp.
+- Record exactly one decision timestamp with an explicit timezone (Z or an offset).
 - decision outcome: exactly one, one of deny, escalate, human approval, allow, observe
 - Every decision names the rule and rule version that decided it (Filing Cabinet, slide 14).
 - Every decision references a registered use case (Kognita 0.4 item 8).
@@ -3751,7 +3751,7 @@ Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMA
 Applies to [authority live status](#AuthorityLiveStatus). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
 
 - status of: exactly one
-- as of: exactly one, of type dateTime
+- asOf must carry an explicit timezone (Z or an offset) so decision-time comparison cannot use an implicit timezone.
 - observed by: at least 1, an instance of Agent
 - revoked: at most 1, of type boolean
 - engaged: at most 1, of type boolean

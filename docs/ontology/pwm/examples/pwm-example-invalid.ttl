@@ -547,7 +547,7 @@ ex:BadEmptyDiffLocator pwm:diffLocator ""^^xsd:anyURI .
 <https://example.org/pwm-example#BadDecisionTimeType> <https://ahmedmuzammil.com/ontology/pwm#underUseCase> <https://example.org/pwm-example#UseCaseMeetingPrep> .
 <https://example.org/pwm-example#BadDecisionTimeType> <https://ahmedmuzammil.com/ontology/pwm#inRun> <https://example.org/pwm-example#Run> .
 <https://example.org/pwm-example#BadDecisionTimeType> <https://ahmedmuzammil.com/ontology/pwm#escalationThreshold> "0.90"^^<http://www.w3.org/2001/XMLSchema#decimal> .
-ex:BadDecisionTimeType prov:generatedAtTime "2026-11-03"^^xsd:date .
+ex:BadDecisionTimeType prov:generatedAtTime "2026-11-03T10:00:00Z"^^xsd:string .
 <https://example.org/pwm-example#BadMultipleDecisionTimes> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ahmedmuzammil.com/ontology/pwm#PolicyDecision> .
 <https://example.org/pwm-example#BadMultipleDecisionTimes> <https://ahmedmuzammil.com/ontology/pwm#decisionOutcome> <https://ahmedmuzammil.com/ontology/pwm#OutcomeAllow> .
 <https://example.org/pwm-example#BadMultipleDecisionTimes> <https://ahmedmuzammil.com/ontology/pwm#decidedByRule> <https://example.org/pwm-example#RuleModelAccess> .
@@ -593,7 +593,7 @@ ex:Bad04RiskAppetiteDecisionShape prov:generatedAtTime "2026-11-03T09:58:00+08:0
 ex:BadBudgetDenial prov:generatedAtTime "2026-11-03T09:58:00+08:00"^^xsd:dateTime .
 
 ex:BadLiveStatusDate a pwm:AuthorityLiveStatus ; pwm:statusOf ex:Delegation ; pwm:revoked false ;
-    pwm:asOf "2026-11-03"^^xsd:date ; pwm:observedBy ex:LiveObserver .
+    pwm:asOf "2026-11-03T10:00:00Z"^^xsd:string ; pwm:observedBy ex:LiveObserver .
 ex:RevokedLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:Delegation ; pwm:revoked true ;
     pwm:asOf "2026-11-03T10:02:00+08:00"^^xsd:dateTime ; pwm:observedBy ex:LiveObserver .
 ex:EngagedLive a pwm:AuthorityLiveStatus ; pwm:statusOf ex:LiveSwitch ; pwm:engaged true ;

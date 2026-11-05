@@ -573,3 +573,32 @@ def test_engaged_switch_scope(dimension):
         g.remove((switch, P(dimension), None))
         g.add((switch, P(dimension), Literal('other') if dimension == 'scopePromptVersion' else E('Other')))
         assert validate(g, shacl_graph=shapes)[0]
+
+
+@pytest.mark.parametrize('timestamp,explicit', [
+    ('2026-11-03T10:00:00', False),
+    ('2026-11-03T10:00:00Z', True),
+    ('2026-11-03T10:00:00+00:00', True),
+])
+@pytest.mark.parametrize('property_name', ['asOf', 'generatedAtTime'])
+def test_live_decision_requires_explicit_timezones(timestamp, explicit, property_name):
+    from pyshacl import validate
+    g = example()
+    time = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
+    g.set((E('LiveAuthorityAllow'), time,
+           Literal('2026-11-03T10:05:00Z', datatype=XSD.dateTime)))
+    g.set((E('SwitchLive'), P('engaged'), Literal(True)))
+    g.set((E('SwitchLive'), P('asOf'),
+           Literal('2026-11-03T10:00:00Z', datatype=XSD.dateTime)))
+    focus, path = ((E('SwitchLive'), P('asOf')) if property_name == 'asOf'
+                   else (E('LiveAuthorityAllow'), time))
+    g.set((focus, path, Literal(timestamp, datatype=XSD.dateTime)))
+    conforms, report, _ = validate(g, shacl_graph=Graph().parse(BASE / 'pwm-shapes.ttl'),
+                                 ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')
+    # An engaged switch still blocks ALLOW when the timezone pattern passes.
+    assert not conforms
+    pattern_failures = {(report.value(r, validator.SH.focusNode),
+                         report.value(r, validator.SH.resultPath))
+                        for r in report.subjects(validator.SH.sourceConstraintComponent,
+                                                 validator.SH.PatternConstraintComponent)}
+    assert ((focus, path) in pattern_failures) == (not explicit)
