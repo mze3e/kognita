@@ -804,9 +804,10 @@ pwmsh:WorkloadIdentityShape a sh:NodeShape ; rdfs:label "WorkloadIdentityShape"@
 
 pwmsh:AgentDecisionShape a sh:NodeShape ; rdfs:label "AgentDecisionShape"@en ; sh:targetClass pwm:GovernedCall ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 1. Checks recorded evidence; runtime enforcement remains external."@en ;
-    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Agent calls require live approved deployment, current review and unrevoked own workload identity (Kognita 0.5 item 1)." ;
+    sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Agent calls require live approved deployment, current review, registered decision use case and unrevoked own workload identity (Kognita 0.5 item 1)." ;
         sh:select """SELECT DISTINCT $this WHERE { $this pwm:callAgent ?agent ; pwm:governedByDecision ?decision . ?decision pwm:decisionOutcome ?out . FILTER (?out != pwm:OutcomeDeny)
- FILTER NOT EXISTS { ?agent pwm:deploymentVersion ?v ; pwm:approvedDeploymentVersion ?v ; pwm:agentStatus pwm:StatusLive ; pwm:nextReviewDate ?due ; pwm:workloadIdentity ?identity .
+ FILTER NOT EXISTS { ?agent pwm:deploymentVersion ?v ; pwm:approvedDeploymentVersion ?v ; pwm:agentStatus pwm:StatusLive ; pwm:nextReviewDate ?due ; pwm:workloadIdentity ?identity ; pwm:registeredForUseCase ?uc .
+ ?decision pwm:underUseCase ?uc .
  $this pwm:workloadIdentity ?identity . ?decision <http://www.w3.org/ns/prov#generatedAtTime> ?at .
  BIND(IF(REGEX(STR(?due), "(Z|[+-][0-9]{2}:[0-9]{2})$"), STR(?due), CONCAT(STR(?due), "Z")) AS ?dueZone)
  BIND(xsd:dateTime(REPLACE(?dueZone, "^([0-9]{4}-[0-9]{2}-[0-9]{2})(.*)$", "$1T00:00:00$2")) + "P1D"^^xsd:dayTimeDuration AS ?expires)
@@ -961,11 +962,12 @@ pwmsh:BlastRadiusDecisionShape a sh:NodeShape ; rdfs:label "BlastRadiusDecisionS
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 4. Checks recorded evidence; runtime enforcement remains external."@en ;
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Projected consumption exceeding any agent blast-radius cap cannot be ALLOW (Kognita 0.5 item 4)." ;
         sh:select """SELECT DISTINCT $this WHERE { $this pwm:decisionOutcome pwm:OutcomeAllow ; pwm:limitObservation ?o . ?o pwm:observedLimit/pwm:limitMaximum ?max ; pwm:projectedConsumption ?n . FILTER (?n > ?max) }""" ]  ;
- sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "ALLOW requires exactly one observation for each calling agent limit and no unrelated limits." ; sh:select """SELECT DISTINCT $this WHERE {
- $this pwm:decisionOutcome pwm:OutcomeAllow . ?call pwm:governedByDecision $this ; pwm:callAgent ?agent . ?agent pwm:hasBlastRadiusLimit ?limit .
+ sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "ALLOW requires exactly one observation for each calling agent and delegation scope limit and no unrelated limits." ; sh:select """SELECT DISTINCT $this WHERE {
+ $this pwm:decisionOutcome pwm:OutcomeAllow . ?call pwm:governedByDecision $this ; pwm:callAgent ?agent .
+ { ?agent pwm:hasBlastRadiusLimit ?limit } UNION { ?call pwm:reliesOnDelegation/pwm:authorityScope/pwm:scopeLimit ?limit }
  FILTER (NOT EXISTS { $this pwm:limitObservation ?obs . ?obs pwm:observedLimit ?limit } ||
  EXISTS { $this pwm:limitObservation ?obs1, ?obs2 . ?obs1 pwm:observedLimit ?limit . ?obs2 pwm:observedLimit ?limit . FILTER(?obs1 != ?obs2) } ||
- EXISTS { $this pwm:limitObservation/pwm:observedLimit ?other . FILTER NOT EXISTS { ?agent pwm:hasBlastRadiusLimit ?other } })
+ EXISTS { $this pwm:limitObservation/pwm:observedLimit ?other . FILTER NOT EXISTS { ?agent pwm:hasBlastRadiusLimit ?other } FILTER NOT EXISTS { ?call pwm:reliesOnDelegation/pwm:authorityScope/pwm:scopeLimit ?other } })
  }""" ] .
 
 pwmsh:ToolAllowListShape a sh:NodeShape ; rdfs:label "ToolAllowListShape"@en ; sh:targetClass pwm:ToolCall ;

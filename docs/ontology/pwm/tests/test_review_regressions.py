@@ -125,8 +125,8 @@ def test_version_and_counts(tmp_path):
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
             counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 220, 188, 48, 130, 66)
-    assert sum(validator.EXPECTED.values()) == 192
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 252
+    assert sum(validator.EXPECTED.values()) == 191
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 253
     assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
     first_spec = (tmp_path / 'SPEC.md').read_text()
     status_row = next(row for row in first_spec.splitlines() if '<a id="statusOf"></a>' in row)
@@ -940,3 +940,55 @@ def test_05_spec_names_union_ranges():
     spec = (BASE / 'SPEC.md').read_text(encoding='utf-8')
     row = next(line for line in spec.splitlines() if line.startswith('| <a id="statusOf">'))
     assert '[delegated authority](#DelegatedAuthority), [kill switch](#KillSwitch)' in row
+
+
+def test_review_agent_requires_registered_decision_use_case():
+    g = example()
+    assert validate_05(g, ['AgentDecisionShape'])
+    g.set((E('Agent'), P('registeredForUseCase'), E('UnregisteredUseCase')))
+    assert not validate_05(g, ['AgentDecisionShape'])
+    g.add((E('Agent'), P('registeredForUseCase'), E('UseCaseMeetingPrep')))
+    assert validate_05(g, ['AgentDecisionShape'])
+
+
+@pytest.mark.parametrize('observation', ['absent', 'exceeded', 'within', 'duplicate'])
+@pytest.mark.parametrize('agent_limits', [True, False])
+def test_review_delegation_scope_cap(observation, agent_limits):
+    g = example()
+    # This separate delegation cap is tighter than the agent's own limit.
+    g.add((E('Scope'), P('scopeLimit'), E('TightScopeCap')))
+    g.add((E('TightScopeCap'), P('limitMaximum'), Literal('2', datatype=XSD.decimal)))
+    if not agent_limits:
+        g.remove((E('Agent'), P('hasBlastRadiusLimit'), None))
+    if observation != 'absent':
+        for decision in set(g.subjects(P('decisionOutcome'), P('OutcomeAllow'))):
+            obs = URIRef(str(decision) + 'ScopeObservation')
+            g.add((decision, P('limitObservation'), obs))
+            g.add((obs, P('observedLimit'), E('TightScopeCap')))
+            g.add((obs, P('projectedConsumption'), Literal('1' if observation == 'within' else '4', datatype=XSD.decimal)))
+            if observation == 'duplicate':
+                other = URIRef(str(obs) + 'Duplicate')
+                g.add((decision, P('limitObservation'), other))
+                g.add((other, P('observedLimit'), E('TightScopeCap')))
+    assert validate_05(g, ['BlastRadiusDecisionShape']) == (observation == 'within')
+
+
+def test_review_isolated_negative_fixtures():
+    from pyshacl import validate
+    g = example()
+    g += Graph().parse(BASE / 'examples/pwm-review-invalid.ttl')
+    shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
+    names = {'BlastRadiusDecisionShape', 'AgentDecisionShape'}
+    for shape in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
+        if str(shape).split('#')[-1] not in names:
+            shapes.add((shape, validator.SH.deactivated, Literal(True)))
+    conforms, report, _ = validate(g, shacl_graph=shapes,
+                                   ont_graph=Graph().parse(BASE / 'pwm.ttl'), inference='rdfs')
+    assert not conforms
+    failures = {(report.value(r, validator.SH.focusNode), report.value(r, validator.SH.sourceShape))
+                for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
+    assert failures == {
+        (E('ReviewMissingDecision'), URIRef(validator.PWMSH + 'BlastRadiusDecisionShape')),
+        (E('ReviewExceededDecision'), URIRef(validator.PWMSH + 'BlastRadiusDecisionShape')),
+        (E('ReviewUseCaseCall'), URIRef(validator.PWMSH + 'AgentDecisionShape')),
+    }
