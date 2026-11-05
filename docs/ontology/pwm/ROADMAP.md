@@ -2,7 +2,7 @@
 
 Revised 5 November 2026. The first version of this plan was written on 2 November, before 0.2 to 0.5 were built. This version follows what was actually built.
 
-**PWM version N follows Kognita roadmap milestone N** ([docs/ROADMAP.md](../../ROADMAP.md)). Versions 0.1 to 0.5 exist as drafts. The business items from the first plan that no milestone covered are scheduled in 0.8 and 0.9, and the release candidates come after.
+**Where a matching Kognita milestone exists, PWM version N follows Kognita roadmap milestone N** ([docs/ROADMAP.md](../../ROADMAP.md)). Versions 0.1 to 0.5 exist as drafts. The business items from the first plan that no milestone covered are scheduled in 0.8 and 0.9, and the release candidates come after.
 
 ## Where 1.0 should land
 
@@ -38,6 +38,8 @@ Kognita's own published targets are Q3 2027 for 0.6, Q4 2027 for 0.7 and Q1 2028
 ## 0.1 to 0.5: built
 
 0.1 set the shape: 10 modules, every term cited, OWL 2 DL, SHACL rules and tests. 0.2 grounded the main classes in FIBO against a pinned commit and added EU sustainability preferences. 0.3 to 0.5 each add a module for the Kognita milestone of the same number, with a gap analysis per roadmap item in [GAP_ANALYSIS.md](GAP_ANALYSIS.md).
+
+PWM 0.5 uses one FastContext live-status vocabulary, `AuthorityLiveStatus`. Blast-radius limits and autonomy gates are set by the firm's risk committee, data governance committee or CRO.
 
 What the first plan listed for 0.2 and did not get built is carried forward below, in 0.8.
 
@@ -91,7 +93,7 @@ PWM already has a basic claim record from 0.1. The first step is a gap analysis 
 
 **Goal:** produce from PWM data what MAS expects under Sections 3 and 4, and make PWM the data contract Kognita actually uses.
 
-- **AIRG paragraph map.** Every paragraph of Sections 3 to 6 mapped to PWM terms and shapes, or marked out of scope, in a table published with the spec.
+- **AIRG paragraph map.** Every paragraph of Sections 2 to 6 mapped to PWM terms and shapes, or marked out of scope, in a table published with the spec.
 - **Inventory profile.** A SHACL profile that checks a full AI inventory against the 4.7 attributes and footnote 25, and a query that produces the senior-management report: material AI by classification, owner, status and open findings, filterable by jurisdiction.
 - **Reconstruction queries.** A published SPARQL query set for each question in the reconstruction test: who decided, under which rule and delegation, with which data and model version, and what the client received.
 - **Mapping table.** A machine-readable mapping from every Kognita vocabulary value and every private-banking policy pack to its PWM IRI. A Kognita test fails when a value has no mapping.
@@ -99,7 +101,7 @@ PWM already has a basic claim record from 0.1. The first step is a gap analysis 
 - **Jurisdiction profiles.** Data packages, not ontology changes, for SG, HK, CH, the EU and the UK: investor categories, disclosure triggers and cross-border defaults, each with citations.
 - **Code-list profiles.** A profile file that rebinds code lists and switches off generated shapes, with a worked example.
 
-**Exit:** every MAS Section 3 to 6 paragraph mapped; the inventory profile and report query run on Kognita's exported register; Kognita CI produces PWM data that conforms.
+**Exit:** every MAS Section 2 to 6 paragraph mapped; the inventory profile and report query run on Kognita's exported register; Kognita CI produces PWM data that conforms.
 
 ## 1.0-rc "Release candidates"
 
@@ -125,7 +127,7 @@ Release candidates are named `1.0.0-rc.1`, `1.0.0-rc.2` and so on. **Exit:** fou
 ## Versioning policy
 
 - **Before 1.0**, a minor version can rename or remove terms. Each removal is listed in the change log with its replacement, and the old IRI stays declared with `owl:deprecated true` for one version.
-- **From 1.0**, PWM follows semantic versioning. Minor versions only add terms, code-list values and shapes. Major versions may remove terms, after at least one minor version in which they are deprecated. Patch versions change definitions, citations and examples only.
+- **From 1.0**, PWM follows semantic versioning. Minor versions only add validation-compatible terms, code-list values and shapes. Any change that rejects data conforming to the prior version requires a major version or a separately versioned profile. Major versions may remove terms, after at least one minor version in which they are deprecated. Patch versions change definitions, citations and examples only.
 - Each version publishes its own version IRI and files, and older versions stay online.
 - Generated code-list shapes follow the code lists. Adding a code value is a minor change; removing one is a major change.
 
@@ -133,7 +135,7 @@ Release candidates are named `1.0.0-rc.1`, `1.0.0-rc.2` and so on. **Exit:** fou
 
 These run through every release:
 
-- **Kognita coupling.** Each PWM release follows the Kognita milestone of the same number. When Kognita adds a vocabulary value or policy pack, the PWM mapping and shapes follow in the next release.
+- **Kognita coupling.** Each PWM release with a matching Kognita milestone follows that milestone; 0.8, 0.9 and 1.0-rc have no matching milestone. When Kognita adds a vocabulary value or policy pack, the PWM mapping and shapes follow in the next release.
 - **Review by breaking things.** Before a release, break the example one fact at a time and check that a rule catches it. The 0.5 review found three rules that let bad data through this way.
 - **Regulatory watch.** Track MAS consultations, including the planned 2027 guidance on agentic AI, the EU AI Act implementing acts, and FCA and SFC updates. Each change becomes a citation update or a new term.
 - **FIBO tracking.** Re-run the integrity check against each FIBO quarterly release, and adopt Provisional terms as they reach Release.
