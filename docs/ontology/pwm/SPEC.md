@@ -1,15 +1,15 @@
-# Private Wealth Management Ontology (PWM) 0.4
+# Private Wealth Management Ontology (PWM) 0.5
 
 > Generated from the Turtle sources by `tools/build.py`. Do not edit by hand.
 
 | | |
 |---|---|
-| Version | 0.4 (draft), 2026-11-03 |
+| Version | 0.5 (draft), 2026-11-04 |
 | Ontology IRI | https://ahmedmuzammil.com/ontology/pwm |
-| Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.4 |
+| Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.5 |
 | Namespace | `pwm:` https://ahmedmuzammil.com/ontology/pwm# |
 | Shapes | https://ahmedmuzammil.com/ontology/pwm/shapes (`pwm-shapes.ttl`), latest pointer |
-| Shapes version IRI | https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl |
+| Shapes version IRI | https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl |
 | Licence | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | Author | Ahmed Muzammil |
 | Web page | https://ahmedmuzammil.com/ontology/pwm |
@@ -20,9 +20,9 @@ A generic ontology for private banking and wealth management. It models parties 
 
 ## Status
 
-Draft for comment. Version 0.4 aligns with roadmap milestone 0.4: ingestion, declarative policy and the client lifecycle. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
+Draft for comment. Version 0.5 aligns with roadmap milestone 0.5: agents, authority and fleets. Terms, code lists and rules may change before 1.0, and every change will be recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
 
-Size: 168 classes, 173 object properties, 122 datatype properties, 46 code lists with 229 codes, 84 data rules plus 59 generated code-list rules, 47 references and 1028 citations. 39 FIBO terms are specialised or mapped.
+Size: 193 classes, 220 object properties, 188 datatype properties, 48 code lists with 235 codes, 130 data rules plus 66 generated code-list rules, 47 references and 1338 citations. 39 FIBO terms are specialised or mapped.
 
 ## Scope
 
@@ -38,7 +38,7 @@ In scope:
 - AI governance: the use-case inventory, risk materiality, accountability, agents, tools, delegated authority and autonomy
 - Information governance, facts and claims, policy decisions and hash-chained evidence
 
-Not in 0.4:
+Not in 0.5:
 
 - Orders, execution and the trade lifecycle; corporate actions
 - Performance and attribution methods (only the provenance of figures is modelled)
@@ -97,6 +97,7 @@ DelegatedAuthority and KillSwitch definitions are cached policy/config in SlowCo
 | 8 | [AI use cases, authority and accountability](#ModuleGovernance) | The AI inventory, risk materiality, agents, delegated authority, autonomy and the people accountable for them. | 25 | 44 | 11 |
 | 9 | [Information governance, claims and evidence](#ModuleEvidence) | Governed documents and definitions, facts and claims, policy decisions and the evidence that reconstructs them. | 37 | 98 | 14 |
 | 10 | [Ingestion, policy and lifecycle controls](#ModuleLifecycle) | Structured ingestion and the missing policy, review and monitoring records for milestone 0.4. | 17 | 68 | 2 |
+| 11 | [Agents, authority and fleets](#ModuleAgents) | Workload identities, scoped human authority, autonomy evidence, containment and fleet controls. | 25 | 113 | 2 |
 
 <a id="ModuleCore"></a>
 
@@ -1484,7 +1485,7 @@ Specific real-world context that an AI model or system is applied to, registered
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** slow context, default classification C1
-- **Properties:** [`approvedJurisdiction`](#approvedJurisdiction), [`modelType`](#modelType), [`lifecycleStatus`](#lifecycleStatus), [`isMediated`](#isMediated), [`riskTier`](#riskTier), [`hasMaterialityAssessment`](#hasMaterialityAssessment), [`retentionPolicy`](#retentionPolicy)
+- **Properties:** [`approvedJurisdiction`](#approvedJurisdiction), [`modelType`](#modelType), [`lifecycleStatus`](#lifecycleStatus), [`isMediated`](#isMediated), [`riskTier`](#riskTier), [`hasMaterialityAssessment`](#hasMaterialityAssessment), [`retentionPolicy`](#retentionPolicy), [`enforcementAttestation`](#enforcementAttestation), [`deploymentMode`](#deploymentMode)
 - **References:** **ISO** [ISO/IEC 42001](#ref-ISO-IEC-42001) AI management system; **REG** [MAS AIRG](#ref-MAS-AIRG) 1.4(c) use case; 4.5 to 4.9 inventory; 4.7 attributes; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: use-case register; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 19: an unregistered use case is refused
 
 <a id="AISystem"></a>
@@ -1519,7 +1520,7 @@ Software agent that plans and takes actions with tools on behalf of a person, ho
 - **Specialises:** [SoftwareAgent](http://www.w3.org/ns/prov#SoftwareAgent) (PROV-O), [software agent](https://www.omg.org/spec/Commons/PartiesAndSituations/SoftwareAgent) (OMG Commons)
 - **Close match:** [AI Agent](https://w3id.org/dpv/ai#AIAgent) (DPV-AI)
 - **Handling:** slow context
-- **Properties:** [`registeredForUseCase`](#registeredForUseCase), [`agentIdentifier`](#agentIdentifier), [`deploymentVersion`](#deploymentVersion), [`maxAutonomyLevel`](#maxAutonomyLevel), [`permittedTool`](#permittedTool)
+- **Properties:** [`registeredForUseCase`](#registeredForUseCase), [`agentIdentifier`](#agentIdentifier), [`deploymentVersion`](#deploymentVersion), [`maxAutonomyLevel`](#maxAutonomyLevel), [`permittedTool`](#permittedTool), [`deploymentDate`](#deploymentDate), [`agentOwner`](#agentOwner), [`operatesFor`](#operatesFor), [`agentStatus`](#agentStatus), [`approvedDeploymentVersion`](#approvedDeploymentVersion), [`effectiveAutonomyLevel`](#effectiveAutonomyLevel), [`hasBlastRadiusLimit`](#hasBlastRadiusLimit), [`permittedField`](#permittedField), [`deploymentModel`](#deploymentModel)
 - **References:** **REG** [IMDA agentic AI framework](#ref-IMDA-MGF-AGENTIC) Agentic AI governance; **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 (agent risks); fn 25 (agent identifiers, tools, components, guardrails); **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 1: agent identity
 
 <a id="ThirdPartyAI"></a>
@@ -1554,7 +1555,7 @@ Capability an agent can invoke, such as an MCP tool or API, declaring the action
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** slow context
-- **Properties:** [`requiredAutonomyLevel`](#requiredAutonomyLevel)
+- **Properties:** [`requiredAutonomyLevel`](#requiredAutonomyLevel), [`publicContentTool`](#publicContentTool), [`reversibilityClass`](#reversibilityClass), [`compensatingAction`](#compensatingAction), [`maximumDurationSeconds`](#maximumDurationSeconds), [`supportsCancellation`](#supportsCancellation), [`decisionSeparatedSteps`](#decisionSeparatedSteps)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.16(c): govern plugins and APIs; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3 (per-verb permissions), item 5 (allow-lists), item 16 (maximum duration)
 
 <a id="RiskMaterialityAssessment"></a>
@@ -1653,7 +1654,7 @@ Authorisation that binds a person, an agent, a purpose, a client, permitted acti
 
 - **Specialises:** [authorization](https://www.omg.org/spec/Commons/BusinessAuthorizations/Authorization) (OMG Commons)
 - **Handling:** slow context, default classification C2
-- **Properties:** [`delegatedBy`](#delegatedBy), [`delegatedTo`](#delegatedTo), [`permitsDataClass`](#permitsDataClass), [`endsOnTaskCompletion`](#endsOnTaskCompletion), [`approvalThreshold`](#approvalThreshold)
+- **Properties:** [`delegatedBy`](#delegatedBy), [`delegatedTo`](#delegatedTo), [`permitsDataClass`](#permitsDataClass), [`endsOnTaskCompletion`](#endsOnTaskCompletion), [`approvalThreshold`](#approvalThreshold), [`parentDelegation`](#parentDelegation), [`delegationDepth`](#delegationDepth), [`maxDelegationDepth`](#maxDelegationDepth)
 - **References:** **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 2: explicit delegated authority; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 2: delegated authority
 
 <a id="AutonomyPromotionGate"></a>
@@ -1663,7 +1664,7 @@ Evidence thresholds an agent must meet over a minimum sample and window before i
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** slow context
-- **Properties:** [`qualityThreshold`](#qualityThreshold), [`exceptionRateThreshold`](#exceptionRateThreshold), [`requiresFullTraceability`](#requiresFullTraceability)
+- **Properties:** [`qualityThreshold`](#qualityThreshold), [`exceptionRateThreshold`](#exceptionRateThreshold), [`requiresFullTraceability`](#requiresFullTraceability), [`minimumSample`](#minimumSample), [`minimumWindowSeconds`](#minimumWindowSeconds), [`stepDownThreshold`](#stepDownThreshold)
 - **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3: evidence gates for promotion; automatic step-down; **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 04: autonomy is a licence, not a launch setting; **AM** [EVOLVE](#ref-EVOLVE) Stage 4: allow more autonomy only when quality metrics improve
 
 <a id="OutcomeMetric"></a>
@@ -1710,7 +1711,7 @@ Live observation of the revocation state of a DelegatedAuthority or the engaged 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** fast context, default classification C2
 - **Properties:** [`statusOf`](#statusOf), [`observedBy`](#observedBy), [`revoked`](#revoked), [`engaged`](#engaged)
-- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialised record or field; no exact standard term identified
 
 ### Properties
 
@@ -1768,7 +1769,7 @@ Live observation of the revocation state of a DelegatedAuthority or the engaged 
 
 Early private-banking deployments are expected at L1 to L4. Raising a level is a governed change needing the accountable owner and independent validation. The four-step gate in the Filing Cabinet talk (suggest, draft, act with approval, act alone) corresponds to L2, L3, L4 and L5 or above.
 
-Used by: [`maxAutonomyLevel`](#maxAutonomyLevel), [`requiredAutonomyLevel`](#requiredAutonomyLevel)
+Used by: [`effectiveAutonomyLevel`](#effectiveAutonomyLevel), [`fromAutonomyLevel`](#fromAutonomyLevel), [`maxAutonomyLevel`](#maxAutonomyLevel), [`requiredAutonomyLevel`](#requiredAutonomyLevel), [`scopeAutonomyLevel`](#scopeAutonomyLevel), [`toAutonomyLevel`](#toAutonomyLevel)
 
 References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3: autonomy levels; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 12: reading is not the same as acting
 
@@ -1821,7 +1822,7 @@ References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3: read, analys
 
 
 
-Used by: [`lifecycleStatus`](#lifecycleStatus)
+Used by: [`agentStatus`](#agentStatus), [`lifecycleStatus`](#lifecycleStatus)
 
 References: **REG** [MAS AIRG](#ref-MAS-AIRG) 4.7; 5.2 fn 28 (pilots); 5.26 (decommissioning); **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) usecases.STATUSES
 
@@ -2042,7 +2043,7 @@ Deterministic outcome of evaluating every applicable rule for a request, allow, 
 
 - **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** medium context, default classification C1
-- **Properties:** [`decisionOutcome`](#decisionOutcome), [`decidedByRule`](#decidedByRule), [`hasCheck`](#hasCheck)
+- **Properties:** [`decisionOutcome`](#decisionOutcome), [`decidedByRule`](#decidedByRule), [`hasCheck`](#hasCheck), [`limitObservation`](#limitObservation), [`instructionEvidence`](#instructionEvidence), [`requiresStepUp`](#requiresStepUp), [`sandboxConstraints`](#sandboxConstraints), [`humanApproval`](#humanApproval)
 - **References:** **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Non-negotiable 9: runtime policy enforcement outside the LLM; **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) vocabulary.Outcome, OUTCOME_PRECEDENCE; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 14: the AI answer receipt, for approvals and denials
 
 <a id="EvidenceRecord"></a>
@@ -2191,7 +2192,7 @@ Governed tool invocation with response hash and retained response reference.
 
 - **Specialises:** [governed call](#GovernedCall)
 - **Handling:** medium context, default classification C2
-- **Properties:** [`invokedTool`](#invokedTool)
+- **Properties:** [`invokedTool`](#invokedTool), [`requestedField`](#requestedField), [`callDurationSeconds`](#callDurationSeconds)
 - **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.23(d): record keeping; 5.17: reproducibility; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialised record or property; no exact standard term identified
 
 <a id="MCPProxiedCall"></a>
@@ -2941,6 +2942,408 @@ References: **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(d): incidents and near misses;
 |  | <a id="UnsafeDraft"></a>unsafe draft (`pwm:UnsafeDraft`) | A potentially harmful draft is identified before delivery. |
 |  | <a id="UnusualAgentBehaviour"></a>unusual agent behaviour (`pwm:UnusualAgentBehaviour`) | Unexpected agent behaviour is detected before harm occurs. |
 
+<a id="ModuleAgents"></a>
+
+## Module 11: Agents, authority and fleets
+
+Workload identities, scoped human authority, autonomy evidence, containment and fleet controls.
+
+### Classes
+
+<a id="WorkloadIdentity"></a>
+#### workload identity (`pwm:WorkloadIdentity`)
+
+Registry of an individual agent workload credential reference, issuer, subject and environment. Stores no private key or token. Gateways verify possession on every call.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`credentialReference`](#credentialReference), [`credentialIssuer`](#credentialIssuer), [`workloadSubject`](#workloadSubject)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; fn 25 agent identifiers and components; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="AuthorityScope"></a>
+#### authority scope (`pwm:AuthorityScope`)
+
+Explicit finite sets of clients, purposes, verbs, tools, fields, systems, products and jurisdictions. Omission grants nothing for dimensions checked by the written narrowing rules. Numeric caps and autonomy may only narrow.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`scopeTool`](#scopeTool), [`scopeField`](#scopeField), [`scopeSystem`](#scopeSystem), [`scopeProduct`](#scopeProduct), [`accessEvent`](#accessEvent), [`scopeLimit`](#scopeLimit), [`scopeAutonomyLevel`](#scopeAutonomyLevel)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="HumanEntitlement"></a>
+#### human entitlement (`pwm:HumanEntitlement`)
+
+Time-bounded entitlement held by a named person, with explicit subject scope. An agent delegation cannot enlarge this scope.
+
+- **Specialises:** [authorization](https://www.omg.org/spec/Commons/BusinessAuthorizations/Authorization) (OMG Commons)
+- **Handling:** slow context, default classification C2
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="AuthorityRevocation"></a>
+#### authority revocation (`pwm:AuthorityRevocation`)
+
+Record that authority or a credential was revoked at a stated time, including task completion. Revocation is effective on the next decision.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`revokedAuthority`](#revokedAuthority), [`revokedAt`](#revokedAt)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="AutonomyTransition"></a>
+#### autonomy transition (`pwm:AutonomyTransition`)
+
+Evidenced promotion or automatic one-level step-down for an agent, with before and after levels, evaluation window, metric sample, approval and notification records. Restoration requires promotion again.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`transitionAgent`](#transitionAgent), [`fromAutonomyLevel`](#fromAutonomyLevel), [`toAutonomyLevel`](#toAutonomyLevel), [`promotionGate`](#promotionGate), [`sampleCount`](#sampleCount), [`observedQuality`](#observedQuality), [`observedExceptionRate`](#observedExceptionRate), [`fullyReconstructable`](#fullyReconstructable), [`transitionApproved`](#transitionApproved), [`ownerApproval`](#ownerApproval), [`independentValidation`](#independentValidation), [`qualityDrift`](#qualityDrift)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9 human oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 04: autonomy is a licence, not a launch setting; **AM** [EVOLVE](#ref-EVOLVE) Stage 4: quality metrics before more autonomy; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="BlastRadiusLimit"></a>
+#### blast radius limit (`pwm:BlastRadiusLimit`)
+
+Agent-wide damage limits independent of RunBudget. Each limit names a dimension, unit, aggregation basis, time window and maximum. Decisions carry projected consumption including the proposed action.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`limitDimension`](#limitDimension), [`limitWindowBasis`](#limitWindowBasis), [`limitUnit`](#limitUnit), [`limitMaximum`](#limitMaximum)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="BlastRadiusObservation"></a>
+#### blast radius observation (`pwm:BlastRadiusObservation`)
+
+Recorded projected cumulative consumption against one agent limit, including the requested action. Window and dimension are inherited from that exact limit.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`observedLimit`](#observedLimit), [`projectedConsumption`](#projectedConsumption)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="ExternalContent"></a>
+#### external content (`pwm:ExternalContent`)
+
+Content from outside the institution, including agent messages, PDFs and API responses. Its trust label never conveys instruction authority.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11: agent risks; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 6; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="AuthenticatedInstruction"></a>
+#### authenticated instruction (`pwm:AuthenticatedInstruction`)
+
+Instruction with authenticated human, assurance level, source and transaction context. A signature reference is evidence to verify, never a secret or a substitute for step-up authorization.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`instructionSource`](#instructionSource), [`instructionPrincipal`](#instructionPrincipal), [`assuranceLevel`](#assuranceLevel), [`signatureReference`](#signatureReference), [`transactionContext`](#transactionContext)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="BehaviourBaseline"></a>
+#### behaviour baseline (`pwm:BehaviourBaseline`)
+
+Versioned per-agent expected behaviour and containment threshold for a named metric over a window.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`baselineAgent`](#baselineAgent), [`baselineMetric`](#baselineMetric), [`baselineExpected`](#baselineExpected), [`anomalyThreshold`](#anomalyThreshold)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="BehaviourAnomaly"></a>
+#### behaviour anomaly (`pwm:BehaviourAnomaly`)
+
+Observed deviation from an agent baseline, with automatic containment and incident links. Human release follows containment.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`anomalyBaseline`](#anomalyBaseline), [`anomalyValue`](#anomalyValue), [`containmentApplied`](#containmentApplied), [`anomalyIncident`](#anomalyIncident)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="CapabilityGrant"></a>
+#### capability grant (`pwm:CapabilityGrant`)
+
+Explicit expiring and revocable capability assigned to an agent within a subject scope. Issue, use, expiry and revocation are evidenced.
+
+- **Specialises:** [authorization](https://www.omg.org/spec/Commons/BusinessAuthorizations/Authorization) (OMG Commons)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`grantee`](#grantee), [`grantedCapability`](#grantedCapability)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 10; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="AgentFleet"></a>
+#### agent fleet (`pwm:AgentFleet`)
+
+Registered group of agents under common quotas, isolation and halt controls. External members are untrusted principals.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`fleetMember`](#fleetMember), [`fleetIsolation`](#fleetIsolation), [`fleetQuota`](#fleetQuota)
+- **References:** **REG** [IMDA agentic AI framework](#ref-IMDA-MGF-AGENTIC) Agentic AI governance (instrument-level); multi-agent controls; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="FleetHalt"></a>
+#### fleet halt (`pwm:FleetHalt`)
+
+Recorded fleet-wide stop instruction with explicit fleet scope and time. Runtime dispatch and cancellation are performed by the gateway.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`haltScope`](#haltScope)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="SandboxConstraints"></a>
+#### sandbox constraints (`pwm:SandboxConstraints`)
+
+Decision output specifying the permitted credential references, network destinations, filesystem scope, APIs, commands, export, persistence, auto-stop interval and resource caps. Kognita emits constraints, not a sandbox.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`networkDestination`](#networkDestination), [`filesystemScope`](#filesystemScope), [`permittedCommand`](#permittedCommand), [`permittedAPI`](#permittedAPI), [`sandboxCredential`](#sandboxCredential), [`permitsExport`](#permitsExport), [`permitsPersistence`](#permitsPersistence), [`autoStopSeconds`](#autoStopSeconds), [`cpuSeconds`](#cpuSeconds), [`memoryBytes`](#memoryBytes), [`diskBytes`](#diskBytes)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="CompensatingAction"></a>
+#### compensating action (`pwm:CompensatingAction`)
+
+Registered recovery action for a reversible tool; recovery records reference the original call and an explicit reverse execution order.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`compensatesCall`](#compensatesCall), [`recoveryOrder`](#recoveryOrder)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="AdversarialTestCase"></a>
+#### adversarial test case (`pwm:AdversarialTestCase`)
+
+Attack scenario specialising the existing policy test case, linked to a versioned threat model and the control tested. Passing requires denial, escalation or containment.
+
+- **Specialises:** [policy test case](#PolicyTestCase)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`threatModel`](#threatModel), [`attackKind`](#attackKind)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="ThreatModel"></a>
+#### threat model (`pwm:ThreatModel`)
+
+Versioned threat model covering own-agent failures and hostile external agents, mapping attack scenarios to controls.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`threatModelReference`](#threatModelReference)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="EnforcementAttestation"></a>
+#### enforcement attestation (`pwm:EnforcementAttestation`)
+
+Attributed time-stamped evidence about gateway mediation, credential custody, egress routing and evidence-store isolation for a use case. The attestation is a claim to verify operationally.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`attestedUseCase`](#attestedUseCase), [`gatewayOnlyCredentials`](#gatewayOnlyCredentials), [`egressRestricted`](#egressRestricted), [`evidenceStoreIsolated`](#evidenceStoreIsolated)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 15; **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 03: boundaries enforced in permissions; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="ActionStop"></a>
+#### action stop (`pwm:ActionStop`)
+
+Recorded stop or cancellation request for an in-flight tool call with outcome cancelled, completed, timed out or unsupported; unsupported cancellation requires compensation or decision-separated steps.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`stoppedCall`](#stoppedCall), [`stopOutcome`](#stopOutcome), [`stopReason`](#stopReason)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="ApprovingAuthorityRole"></a>
+#### approving authority role (`pwm:ApprovingAuthorityRole`)
+
+Firm role empowered to set and approve blast-radius limits and autonomy promotion gates.
+
+- **Specialises:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
+- **Handling:** slow context, default classification C2
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; 5.9 autonomy oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="RiskCommittee"></a>
+#### risk committee (`pwm:RiskCommittee`)
+
+Firm risk committee acting as approving authority.
+
+- **Specialises:** [approving authority role](#ApprovingAuthorityRole)
+- **Handling:** slow context, default classification C2
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; 5.9 autonomy oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="DataGovernanceCommittee"></a>
+#### data governance committee (`pwm:DataGovernanceCommittee`)
+
+Firm data governance committee acting as approving authority.
+
+- **Specialises:** [approving authority role](#ApprovingAuthorityRole)
+- **Handling:** slow context, default classification C2
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; 5.9 autonomy oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="ChiefRiskOfficer"></a>
+#### chief risk officer (`pwm:ChiefRiskOfficer`)
+
+Firm chief risk officer acting as approving authority.
+
+- **Specialises:** [approving authority role](#ApprovingAuthorityRole)
+- **Handling:** slow context, default classification C2
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; 5.9 autonomy oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+<a id="RiskControlApproval"></a>
+#### risk control approval (`pwm:RiskControlApproval`)
+
+Recorded approval of a firm-specific blast-radius limit or autonomy promotion gate, identifying the approving role and time.
+
+- **Specialises:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C2
+- **Properties:** [`approverRole`](#approverRole), [`approvedAt`](#approvedAt)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; 5.9 autonomy oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="workloadIdentity"></a>`pwm:workloadIdentity` workload identity | any → [workload identity](#WorkloadIdentity) | Workload identity assigned exclusively to this agent. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="agentOwner"></a>`pwm:agentOwner` agent owner | [AI agent](#AIAgent) → [person](https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person) (FIBO, Release) | Named human accountable for this agent deployment. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="operatesFor"></a>`pwm:operatesFor` operates for | [AI agent](#AIAgent) → [person](https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person) (FIBO, Release) | Human principal on whose behalf an agent operates. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="agentStatus"></a>`pwm:agentStatus` agent status | [AI agent](#AIAgent) → [use-case lifecycle statuses](#UseCaseStatusScheme) | Agent lifecycle state, reusing the use-case status codes without inferring an agent is a use case. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="authorityScope"></a>`pwm:authorityScope` authority scope | any → [authority scope](#AuthorityScope) | Explicit scope of an entitlement, delegation or capability grant. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="holdsEntitlement"></a>`pwm:holdsEntitlement` holds entitlement | any → [human entitlement](#HumanEntitlement) | Entitlement held by a human grantor. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="scopeTool"></a>`pwm:scopeTool` scope tool | [authority scope](#AuthorityScope) → [tool](#Tool) | Tool permitted within an authority scope. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.16(c): govern plugins and APIs; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="scopeProduct"></a>`pwm:scopeProduct` scope product | [authority scope](#AuthorityScope) → [product](#Product) | Product permitted within a scope. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="revokedAuthority"></a>`pwm:revokedAuthority` revoked authority | [authority revocation](#AuthorityRevocation) → [thing](http://www.w3.org/2002/07/owl#Thing) | Delegation, capability, entitlement or credential invalidated by this record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="parentDelegation"></a>`pwm:parentDelegation` parent delegation | [delegated authority](#DelegatedAuthority) → [delegated authority](#DelegatedAuthority) | Immediate parent authorization; the root human remains delegatedBy and parent delegatedTo identifies the sub-delegating agent. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 9; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="transitionAgent"></a>`pwm:transitionAgent` transition agent | [autonomy transition](#AutonomyTransition) → [AI agent](#AIAgent) | Agent whose effective autonomy changes. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="fromAutonomyLevel"></a>`pwm:fromAutonomyLevel` from autonomy level | [autonomy transition](#AutonomyTransition) → [agent autonomy levels](#AutonomyLevelScheme) | Effective autonomy before a transition. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="toAutonomyLevel"></a>`pwm:toAutonomyLevel` to autonomy level | [autonomy transition](#AutonomyTransition) → [agent autonomy levels](#AutonomyLevelScheme) | Effective autonomy after a transition. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="effectiveAutonomyLevel"></a>`pwm:effectiveAutonomyLevel` effective autonomy level | [AI agent](#AIAgent) → [agent autonomy levels](#AutonomyLevelScheme) | Current evidenced level, no higher than the registered maximum. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="promotionGate"></a>`pwm:promotionGate` promotion gate | [autonomy transition](#AutonomyTransition) → [autonomy promotion gate](#AutonomyPromotionGate) | Evidence gate evaluated for this transition. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="ownerApproval"></a>`pwm:ownerApproval` owner approval | [autonomy transition](#AutonomyTransition) → [person](https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person) (FIBO, Release) | Human owner approving this transition. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="independentValidation"></a>`pwm:independentValidation` independent validation | [autonomy transition](#AutonomyTransition) → [independent validator](#IndependentValidator) | Independent validation role approving this transition. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="notifiedRole"></a>`pwm:notifiedRole` notified role | any → [accountability role](#AccountabilityRole) | Accountable role alerted about a step-down, drift or containment. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="hasBlastRadiusLimit"></a>`pwm:hasBlastRadiusLimit` has blast radius limit | [AI agent](#AIAgent) → [blast radius limit](#BlastRadiusLimit) | Agent-wide cap, separate from a run budget. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="limitObservation"></a>`pwm:limitObservation` limit observation | [policy decision](#PolicyDecision) → [blast radius observation](#BlastRadiusObservation) | Projected consumption evaluated by a policy decision. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="observedLimit"></a>`pwm:observedLimit` observed limit | [blast radius observation](#BlastRadiusObservation) → [blast radius limit](#BlastRadiusLimit) | Exact limit evaluated. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="trustLabel"></a>`pwm:trustLabel` trust label | any → [Content trust and taint labels](#ContentTrustScheme) | Trust or taint label on content, distinct from confidentiality classification. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 6; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="inputContent"></a>`pwm:inputContent` input content | any → [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O) | Content consumed by a call or run, including agent-to-agent messages. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 6; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="instructionPrincipal"></a>`pwm:instructionPrincipal` instruction principal | [authenticated instruction](#AuthenticatedInstruction) → [person](https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person) (FIBO, Release) | Authenticated human behind the instruction. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="instructionEvidence"></a>`pwm:instructionEvidence` instruction evidence | [policy decision](#PolicyDecision) → [authenticated instruction](#AuthenticatedInstruction) | Authenticated instruction relied on by a decision. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="baselineAgent"></a>`pwm:baselineAgent` baseline agent | [behaviour baseline](#BehaviourBaseline) → [AI agent](#AIAgent) | Agent to which a behavioural baseline applies. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="anomalyBaseline"></a>`pwm:anomalyBaseline` anomaly baseline | [behaviour anomaly](#BehaviourAnomaly) → [behaviour baseline](#BehaviourBaseline) | Baseline against which deviation was detected. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="anomalyIncident"></a>`pwm:anomalyIncident` anomaly incident | [behaviour anomaly](#BehaviourAnomaly) → [AI incident](#AIIncident) | Incident opened by automatic anomaly containment. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="grantee"></a>`pwm:grantee` grantee | [capability grant](#CapabilityGrant) → [AI agent](#AIAgent) | Agent receiving a capability grant. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 10; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="grantedCapability"></a>`pwm:grantedCapability` granted capability | [capability grant](#CapabilityGrant) → [tool](#Tool) | Tool granted within the subject scope. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 10; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="reliesOnGrant"></a>`pwm:reliesOnGrant` relies on grant | any → [capability grant](#CapabilityGrant) | Capability grant a call or decision relied on. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 10; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="fleetMember"></a>`pwm:fleetMember` fleet member | [agent fleet](#AgentFleet) → [AI agent](#AIAgent) | Agent registered in a fleet. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="haltScope"></a>`pwm:haltScope` halt scope | [fleet halt](#FleetHalt) → [agent fleet](#AgentFleet) | Explicit fleet stopped by this halt. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="sandboxConstraints"></a>`pwm:sandboxConstraints` sandbox constraints | [policy decision](#PolicyDecision) → [sandbox constraints](#SandboxConstraints) | Sandbox constraints emitted by an ALLOW decision. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="reversibilityClass"></a>`pwm:reversibilityClass` reversibility class | [tool](#Tool) → [Tool reversibility classes](#ReversibilityScheme) | Whether tool effects are reversible, compensatable or irreversible. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="compensatingAction"></a>`pwm:compensatingAction` compensating action | [tool](#Tool) → [compensating action](#CompensatingAction) | Registered action restoring or compensating tool effects. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="compensatesCall"></a>`pwm:compensatesCall` compensates call | [compensating action](#CompensatingAction) → [tool call](#ToolCall) | Original call whose effects are compensated. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="humanApproval"></a>`pwm:humanApproval` human approval | [policy decision](#PolicyDecision) → [approval resolution](#ApprovalResolution) | Exact human approval resolution relied on by an action decision. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="threatModel"></a>`pwm:threatModel` threat model | [adversarial test case](#AdversarialTestCase) → [threat model](#ThreatModel) | Versioned threat model grounding an adversarial scenario. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="enforcementAttestation"></a>`pwm:enforcementAttestation` enforcement attestation | [AI use case](#AIUseCase) → [enforcement attestation](#EnforcementAttestation) | Evidence of non-bypassable enforcement for a use case. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 15; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="attestedUseCase"></a>`pwm:attestedUseCase` attested use case | [enforcement attestation](#EnforcementAttestation) → [AI use case](#AIUseCase) | Use case covered by the enforcement attestation. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 15; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="stoppedCall"></a>`pwm:stoppedCall` stopped call | [action stop](#ActionStop) → [tool call](#ToolCall) | In-flight call addressed by a stop request. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="deploymentModel"></a>`pwm:deploymentModel` deployment model | [AI agent](#AIAgent) → [AI model](#AIModel) | Model approved as part of this agent deployment, distinct from the provider-reported model of a call. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1: model used at deployment; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW deployment field |
+| <a id="scopeLimit"></a>`pwm:scopeLimit` scope limit | [authority scope](#AuthorityScope) → [blast radius limit](#BlastRadiusLimit) | Quantitative cap attached to authority scope; child scopes must retain every parent cap with the same dimension, basis and unit and an equal or lower maximum. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 9: budget and scope only narrow; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW scope cap binding |
+| <a id="scopeAutonomyLevel"></a>`pwm:scopeAutonomyLevel` scope autonomy level | [authority scope](#AuthorityScope) → [agent autonomy levels](#AutonomyLevelScheme) | Highest autonomy delegated within an authority scope. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 9: autonomy only narrows; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW scope autonomy binding |
+| <a id="riskControlApproval"></a>`pwm:riskControlApproval` risk control approval | any → [risk control approval](#RiskControlApproval) | Approval setting and authorizing this firm-specific limit or promotion gate. | **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; 5.9 autonomy oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="approverRole"></a>`pwm:approverRole` approver role | [risk control approval](#RiskControlApproval) → [approving authority role](#ApprovingAuthorityRole) | Approving authority role that set and approved the control. | **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; 5.9 autonomy oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="credentialReference"></a>`pwm:credentialReference` credential reference | [workload identity](#WorkloadIdentity) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Non-secret opaque credential handle held by the gateway. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="credentialIssuer"></a>`pwm:credentialIssuer` credential issuer | [workload identity](#WorkloadIdentity) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Issuer of the workload identity. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="workloadSubject"></a>`pwm:workloadSubject` workload subject | [workload identity](#WorkloadIdentity) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Authenticated subject bound to exactly one workload. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="deploymentEnvironment"></a>`pwm:deploymentEnvironment` deployment environment | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Environment in which a workload or agent is deployed. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="deploymentDate"></a>`pwm:deploymentDate` deployment date | [AI agent](#AIAgent) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Time of the owner-approved deployment. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="approvedDeploymentVersion"></a>`pwm:approvedDeploymentVersion` approved deployment version | [AI agent](#AIAgent) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Exact deployment hash approved by the owner. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="scopeField"></a>`pwm:scopeField` scope field | [authority scope](#AuthorityScope) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Exact field name permitted for reading or writing through the scoped tools, systems and products, for the scoped clients, purposes, action verbs and jurisdictions. Each requestedField must be explicitly listed as scopeField; permission for one field grants no access to other fields or the whole record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="scopeSystem"></a>`pwm:scopeSystem` scope system | [authority scope](#AuthorityScope) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | System identifier permitted within a scope. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="revokedAt"></a>`pwm:revokedAt` revoked at | [authority revocation](#AuthorityRevocation) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Effective revocation time, including completion of the authorized task. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 2; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="delegationDepth"></a>`pwm:delegationDepth` delegation depth | [delegated authority](#DelegatedAuthority) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Depth from root human authorization, zero at the root. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 9; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="maxDelegationDepth"></a>`pwm:maxDelegationDepth` max delegation depth | [delegated authority](#DelegatedAuthority) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Maximum total depth allowed by the root, preserved or reduced by children. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 9; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="minimumSample"></a>`pwm:minimumSample` minimum sample | [autonomy promotion gate](#AutonomyPromotionGate) → [positiveInteger](http://www.w3.org/2001/XMLSchema#positiveInteger) (XSD) | Minimum observations for a promotion gate. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="minimumWindowSeconds"></a>`pwm:minimumWindowSeconds` minimum window seconds | [autonomy promotion gate](#AutonomyPromotionGate) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Minimum evidence window in seconds. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="sampleCount"></a>`pwm:sampleCount` sample count | [autonomy transition](#AutonomyTransition) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Number of evaluated metric observations. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="observedQuality"></a>`pwm:observedQuality` observed quality | [autonomy transition](#AutonomyTransition) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Fraction meeting the quality standard in the evaluation window. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="observedExceptionRate"></a>`pwm:observedExceptionRate` observed exception rate | [autonomy transition](#AutonomyTransition) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Exception fraction in the evaluation window. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="fullyReconstructable"></a>`pwm:fullyReconstructable` fully reconstructable | [autonomy transition](#AutonomyTransition) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether every action in the evidence window is reconstructable. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="stepDownThreshold"></a>`pwm:stepDownThreshold` step down threshold | [autonomy promotion gate](#AutonomyPromotionGate) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Lower quality threshold triggering automatic step-down. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="transitionApproved"></a>`pwm:transitionApproved` transition approved | [autonomy transition](#AutonomyTransition) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the proposed autonomy change was approved. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="qualityDrift"></a>`pwm:qualityDrift` quality drift | [autonomy transition](#AutonomyTransition) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether sustained declining quality contributed to this transition. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 3; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="limitDimension"></a>`pwm:limitDimension` limit dimension | [blast radius limit](#BlastRadiusLimit) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Measured dimension: records, clients, value, actions, transactions or clients-contacted. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="limitWindowBasis"></a>`pwm:limitWindowBasis` limit window basis | [blast radius limit](#BlastRadiusLimit) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Aggregation basis: action, run, minute, hour or UTC-day. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="limitUnit"></a>`pwm:limitUnit` limit unit | [blast radius limit](#BlastRadiusLimit) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Unit for the dimension, including currency for monetary limits. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="limitMaximum"></a>`pwm:limitMaximum` limit maximum | [blast radius limit](#BlastRadiusLimit) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Maximum permitted consumption for the stated dimension and window. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="projectedConsumption"></a>`pwm:projectedConsumption` projected consumption | [blast radius observation](#BlastRadiusObservation) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Projected consumption including the proposed action in the limit window. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 4; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="permittedField"></a>`pwm:permittedField` permitted field | [AI agent](#AIAgent) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Field name this agent may receive for its purpose. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="requestedField"></a>`pwm:requestedField` requested field | [tool call](#ToolCall) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Field requested by a tool call. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="accessEvent"></a>`pwm:accessEvent` access event | [authority scope](#AuthorityScope) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Event boundary constraining a delegation, for example a meeting within 24 hours. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 5; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="publicContentTool"></a>`pwm:publicContentTool` public content tool | [tool](#Tool) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether a tool publishes or prepares public content that must never receive client data. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 6; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="instructionSource"></a>`pwm:instructionSource` instruction source | [authenticated instruction](#AuthenticatedInstruction) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Source URI of an authenticated instruction. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="assuranceLevel"></a>`pwm:assuranceLevel` assurance level | [authenticated instruction](#AuthenticatedInstruction) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Authentication assurance: channel-only, authenticated or step-up. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="signatureReference"></a>`pwm:signatureReference` signature reference | [authenticated instruction](#AuthenticatedInstruction) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Opaque reference to a verified signed instruction source; signature checking is external. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="transactionContext"></a>`pwm:transactionContext` transaction context | [authenticated instruction](#AuthenticatedInstruction) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash or reference identifying the exact transaction authenticated. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="requiresStepUp"></a>`pwm:requiresStepUp` requires step up | [policy decision](#PolicyDecision) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether policy requires step-up and independent authorization for this decision. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 7; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="baselineMetric"></a>`pwm:baselineMetric` baseline metric | [behaviour baseline](#BehaviourBaseline) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Named metric such as distinct clients per day or denied calls per minute. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="baselineExpected"></a>`pwm:baselineExpected` baseline expected | [behaviour baseline](#BehaviourBaseline) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Expected metric value. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="anomalyThreshold"></a>`pwm:anomalyThreshold` anomaly threshold | [behaviour baseline](#BehaviourBaseline) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Containment threshold for the baseline metric. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="anomalyValue"></a>`pwm:anomalyValue` anomaly value | [behaviour anomaly](#BehaviourAnomaly) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Observed value crossing the baseline threshold. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="containmentApplied"></a>`pwm:containmentApplied` containment applied | [behaviour anomaly](#BehaviourAnomaly) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether quarantine, credential revocation and tool stop were applied automatically before human release. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="fleetIsolation"></a>`pwm:fleetIsolation` fleet isolation | [agent fleet](#AgentFleet) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Declared isolation boundary for fleet runs. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="fleetQuota"></a>`pwm:fleetQuota` fleet quota | [agent fleet](#AgentFleet) → [positiveInteger](http://www.w3.org/2001/XMLSchema#positiveInteger) (XSD) | Maximum concurrent fleet runs. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="networkDestination"></a>`pwm:networkDestination` network destination | [sandbox constraints](#SandboxConstraints) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Allowed network destination; an empty set means block all. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="filesystemScope"></a>`pwm:filesystemScope` filesystem scope | [sandbox constraints](#SandboxConstraints) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Permitted filesystem paths and access modes. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="permittedCommand"></a>`pwm:permittedCommand` permitted command | [sandbox constraints](#SandboxConstraints) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Command allowed by the sandbox. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="permittedAPI"></a>`pwm:permittedAPI` permitted API | [sandbox constraints](#SandboxConstraints) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | API allowed by the sandbox. | **REG** [MAS AIRG](#ref-MAS-AIRG) 5.16(c): govern plugins and APIs; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="sandboxCredential"></a>`pwm:sandboxCredential` sandbox credential | [sandbox constraints](#SandboxConstraints) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Opaque gateway credential handle available within the sandbox. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="permitsExport"></a>`pwm:permitsExport` permits export | [sandbox constraints](#SandboxConstraints) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether sandbox data export is permitted. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="permitsPersistence"></a>`pwm:permitsPersistence` permits persistence | [sandbox constraints](#SandboxConstraints) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether sandbox state may persist after execution. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="autoStopSeconds"></a>`pwm:autoStopSeconds` auto stop seconds | [sandbox constraints](#SandboxConstraints) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Maximum sandbox lifetime in seconds. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="cpuSeconds"></a>`pwm:cpuSeconds` cpu seconds | [sandbox constraints](#SandboxConstraints) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | CPU time ceiling in seconds. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="memoryBytes"></a>`pwm:memoryBytes` memory bytes | [sandbox constraints](#SandboxConstraints) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Memory ceiling in bytes. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="diskBytes"></a>`pwm:diskBytes` disk bytes | [sandbox constraints](#SandboxConstraints) → [nonNegativeInteger](http://www.w3.org/2001/XMLSchema#nonNegativeInteger) (XSD) | Disk ceiling in bytes. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 12; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="recoveryOrder"></a>`pwm:recoveryOrder` recovery order | [compensating action](#CompensatingAction) → [positiveInteger](http://www.w3.org/2001/XMLSchema#positiveInteger) (XSD) | Execution order for compensation, in reverse original-call order. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="threatModelReference"></a>`pwm:threatModelReference` threat model reference | [threat model](#ThreatModel) → [anyURI](http://www.w3.org/2001/XMLSchema#anyURI) (XSD) | Resolvable reference to the published threat model. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="attackKind"></a>`pwm:attackKind` attack kind | [adversarial test case](#AdversarialTestCase) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Attack scenario, such as injection, poisoned retrieval, theft or bypass. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="deploymentMode"></a>`pwm:deploymentMode` deployment mode | [AI use case](#AIUseCase) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Deployment mode: gateway or library. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 15; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="gatewayOnlyCredentials"></a>`pwm:gatewayOnlyCredentials` gateway only credentials | [enforcement attestation](#EnforcementAttestation) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Attested provider and tool credentials are held only by gateways. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 15; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="egressRestricted"></a>`pwm:egressRestricted` egress restricted | [enforcement attestation](#EnforcementAttestation) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Attested routing prevents direct access to providers or tools. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 15; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="evidenceStoreIsolated"></a>`pwm:evidenceStoreIsolated` evidence store isolated | [enforcement attestation](#EnforcementAttestation) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Attested agent has no write access to the evidence store. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 15; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="maximumDurationSeconds"></a>`pwm:maximumDurationSeconds` maximum duration seconds | [tool](#Tool) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Maximum duration of each tool call in seconds. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="supportsCancellation"></a>`pwm:supportsCancellation` supports cancellation | [tool](#Tool) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the proxy can cancel this tool in flight. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="decisionSeparatedSteps"></a>`pwm:decisionSeparatedSteps` decision separated steps | [tool](#Tool) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether an uncancellable action is split into steps with a decision between them. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="stopOutcome"></a>`pwm:stopOutcome` stop outcome | [action stop](#ActionStop) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Cancellation result: cancelled, completed, timed-out or unsupported. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="stopReason"></a>`pwm:stopReason` stop reason | [action stop](#ActionStop) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Trigger: pause, revocation, kill switch or duration timeout. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+| <a id="callDurationSeconds"></a>`pwm:callDurationSeconds` call duration seconds | [tool call](#ToolCall) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Observed tool-call duration in seconds; exceeding the registered maximum must be recorded as a timeout. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16: bounded tool calls; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW call timing evidence |
+| <a id="approvedAt"></a>`pwm:approvedAt` approved at | [risk control approval](#RiskControlApproval) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Time the approving authority approved the risk control. | **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 agent risks; 5.9 autonomy oversight; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 items 2, 3, 4 and 16; Ahmed design decisions 3 Nov 2026; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified |
+
+### Code lists
+
+<a id="ContentTrustScheme"></a>
+#### Content trust and taint labels (`pwm:ContentTrustScheme`)
+
+Content trust and taint labels.
+
+Used by: [`trustLabel`](#trustLabel)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 6; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="TrustInternal"></a>internal content (`pwm:TrustInternal`) | Approved internal content, subject to ordinary entitlements. |
+|  | <a id="TrustExternal"></a>external content (`pwm:TrustExternal`) | Potentially hostile external content; never authority to act. |
+|  | <a id="TrustClientData"></a>client data (`pwm:TrustClientData`) | Client data taint; cannot reach public-content tools. |
+
+<a id="ReversibilityScheme"></a>
+#### Tool reversibility classes (`pwm:ReversibilityScheme`)
+
+Tool reversibility classes.
+
+Used by: [`reversibilityClass`](#reversibilityClass)
+
+References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialised record or property; no exact standard term identified
+
+| Code | Concept | Definition |
+|---|---|---|
+|  | <a id="Reversible"></a>reversible (`pwm:Reversible`) | Effects can be undone by a registered compensating action. |
+|  | <a id="Compensatable"></a>compensatable (`pwm:Compensatable`) | Effects can be mitigated by a registered compensation, without claiming exact reversal. |
+|  | <a id="Irreversible"></a>irreversible (`pwm:Irreversible`) | No registered reversal; stronger pre-execution controls required. |
+
 <a id="rules"></a>
 
 ## Data rules (SHACL)
@@ -3035,7 +3438,7 @@ Applies to [delegated authority](#DelegatedAuthority). Sources: [Kognita roadmap
 - A delegation is granted to one registered agent (Kognita 0.5 item 2).
 - A delegation is bound to a purpose (Kognita 0.5 item 2).
 - A delegation names the actions it allows (Kognita 0.5 item 2).
-- A delegation is temporary: it has an end time, or ends when its task completes (Kognita 0.5 item 2).
+- A delegation must expire even when it also ends on task completion (Kognita 0.5 item 2).
 
 <a id="ClientCommunicationShape"></a>
 ### Client communication
@@ -3062,7 +3465,7 @@ Applies to [client communication](#ClientCommunication). Sources: [Kognita priva
 Applies to [claim](#Claim). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 - Unlabelled claims cannot be shown to an RM or sent to a client (Kognita 0.6 item 5).
-- validator status: at most 1
+- validatorStatus: maximum count 1.
 - A claim typed as verified fact must cite a source and carry the validator status verified. The model's own knowledge is never a source, and an inference cannot become a fact without verification (Kognita 0.6 items 3, 5 and 7).
 
 <a id="FactShape"></a>
@@ -3080,9 +3483,9 @@ Applies to [fact](#Fact). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 Applies to [valuation](#Valuation). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- amount: exactly one, of type decimal
-- currency: exactly one
-- as of: at least 1, of type dateTime
+- amount: minimum count 1; maximum count 1; datatype decimal.
+- currency: minimum count 1; maximum count 1.
+- asOf: minimum count 1; datatype dateTime.
 - A figure presented as authoritative must cite a registered calculation service (Kognita 0.6 item 6).
 
 <a id="SuitabilityAssessmentShape"></a>
@@ -3093,7 +3496,7 @@ Applies to [suitability assessment](#SuitabilityAssessment). Sources: [MiFID II]
 - Name the recommendation being assessed.
 - Cite the one risk profile in force when the assessment was made (MiFID II Art. 25(2); Delegated Regulation (EU) 2017/565 Art. 54).
 - Check the recommendation against the recorded mandate (Kognita private-banking pack, mandate).
-- suitability outcome: exactly one, one of suitable, suitable with conditions, not suitable, insufficient information
+- suitabilityOutcome: minimum count 1; maximum count 1; allowed values Suitable, SuitableWithConditions, NotSuitable, InsufficientInformation.
 - Record how the recommendation meets the client's objectives and characteristics, not a bare score (MiFID II Art. 25(6)).
 - Record who made the assessment.
 
@@ -3102,18 +3505,18 @@ Applies to [suitability assessment](#SuitabilityAssessment). Sources: [MiFID II]
 
 Applies to [investor risk profile](#InvestorRiskProfile). Sources: [MiFID II Delegated Regulation](#ref-EU-MIFID2-DR).
 
-- risk profile level: exactly one
-- valid from: at least 1, of type dateTime
-- wasAttributedTo: at least 1
+- riskProfileLevel: minimum count 1; maximum count 1.
+- validFrom: minimum count 1; datatype dateTime.
+- wasAttributedTo: minimum count 1.
 
 <a id="InvestorClassificationShape"></a>
 ### Investor classification
 
 Applies to [investor classification](#InvestorClassification). Sources: [FinSA](#ref-CH-FINSA), [MiFID II](#ref-EU-MIFID2), [Securities and Futures Act (SG)](#ref-SG-SFA).
 
-- investor category: exactly one
+- investorCategory: minimum count 1; maximum count 1.
 - A classification is made under one jurisdiction's rules.
-- opt status: at most 1
+- optStatus: maximum count 1.
 
 <a id="GovernedInformationAssetShape"></a>
 ### Governed information asset
@@ -3147,8 +3550,8 @@ Applies to [policy rule](#PolicyRule). Sources: [Kognita roadmap](#ref-KOG-ROADM
 
 Applies to [cross-border rule](#CrossBorderRule). Sources: [Kognita private-banking pack](#ref-KOG-PB-PACK).
 
-- applies to activity: at least 1
-- permitted: exactly one, of type boolean
+- appliesToActivity: minimum count 1.
+- permitted: minimum count 1; maximum count 1; datatype boolean.
 - Client domicile is an ISO 3166-1 alpha-2 code.
 - Booking centre is an ISO 3166-1 alpha-2 code.
 
@@ -3158,7 +3561,7 @@ Applies to [cross-border rule](#CrossBorderRule). Sources: [Kognita private-bank
 Applies to [policy decision](#PolicyDecision). Sources: [Filing Cabinet talk](#ref-AM-FILING-CABINET), [Kognita roadmap](#ref-KOG-ROADMAP).
 
 - Record exactly one decision timestamp with an explicit timezone (Z or an offset).
-- decision outcome: exactly one, one of deny, escalate, human approval, allow, observe
+- decisionOutcome: minimum count 1; maximum count 1; allowed values OutcomeDeny, OutcomeEscalate, OutcomeHumanApproval, OutcomeAllow, OutcomeObserve.
 - Every decision names the rule and rule version that decided it (Filing Cabinet, slide 14).
 - Every decision references a registered use case (Kognita 0.4 item 8).
 
@@ -3167,10 +3570,10 @@ Applies to [policy decision](#PolicyDecision). Sources: [Filing Cabinet talk](#r
 
 Applies to [evidence record](#EvidenceRecord). Sources: [Kognita regulations library](#ref-KOG-CONTROLS), [MAS AIRG](#ref-MAS-AIRG).
 
-- event type: exactly one
+- eventType: minimum count 1; maximum count 1.
 - Evidence records are hash-chained (Kognita control frameworks).
 - An evidence record states when the event happened (MAS AIRG 5.23(d)).
-- previous record hash: at most 1
+- previousRecordHash: maximum count 1.
 - Every evidence record names the hash of the record before it, except the first record of a chain, which is marked chain start (Kognita control frameworks: hash-chained evidence).
 
 <a id="CurrencyCodeShape"></a>
@@ -3224,10 +3627,10 @@ Applies to [suitability assessment](#SuitabilityAssessment). Sources: [MiFID sus
 
 Applies to [sustainability preference](#SustainabilityPreference). Sources: [MiFID sustainability preferences](#ref-EU-SUSTAINABILITY).
 
-- sustainability preference kind: at least 1
-- minimum taxonomy aligned proportion: at most 1, of type decimal
-- minimum SFDR sustainable proportion: at most 1, of type decimal
-- PAI consideration elements: of type string
+- sustainabilityPreferenceKind: minimum count 1.
+- minimumTaxonomyAlignedProportion: maximum count 1; datatype decimal; minimum inclusive 0.0; maximum inclusive 1.0.
+- minimumSFDRSustainableProportion: maximum count 1; datatype decimal; minimum inclusive 0.0; maximum inclusive 1.0.
+- paiConsiderationElements: datatype string.
 - Record the minimum proportion for each selected category and client-determined PAI elements; no preference is exclusive and has no category details (2017/565 Art. 2(7)(a)-(c)).
 
 <a id="RunShape"></a>
@@ -3265,7 +3668,7 @@ Applies to [budget exceeded denial](#BudgetExceededDenial). Sources: [Kognita ro
 
 - Record exceededBudget (roadmap milestone 0.3).
 - Record budgetDimension (roadmap milestone 0.3).
-- decision outcome: checked
+- decisionOutcome: required value OutcomeDeny.
 
 *Roadmap milestone 0.3 item 1.*
 
@@ -3296,8 +3699,8 @@ Applies to [approval resolution](#ApprovalResolution). Sources: [Kognita roadmap
 
 - Record resolvesApproval (roadmap milestone 0.3).
 - Record approvalResolution (roadmap milestone 0.3).
-- wasAttributedTo: exactly one, an instance of Person
-- generated at time: exactly one, of type dateTime
+- wasAttributedTo: minimum count 1; maximum count 1; class Person.
+- generatedAtTime: minimum count 1; maximum count 1; datatype dateTime.
 
 *Roadmap milestone 0.3 item 2.*
 
@@ -3380,7 +3783,7 @@ Applies to [envelope attribute](#EnvelopeAttribute). Sources: [Kognita roadmap](
 
 Applies to subjects of [has attribute](#hasAttribute), subjects of [escalation threshold](#escalationThreshold). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- escalation threshold: at most 1, of type decimal
+- escalationThreshold: maximum count 1; datatype decimal; minimum inclusive 0.0; maximum inclusive 1.0.
 - Below-threshold or missing-threshold classifier evidence cannot yield ALLOW (0.3 item 4).
 - Classifier fills gaps only; a typed attribute remains authoritative (0.3 item 4).
 
@@ -3413,7 +3816,7 @@ Applies to [retention entry](#RetentionEntry). Sources: [Kognita roadmap](#ref-K
 
 - Record contentHash (roadmap milestone 0.3).
 - Record underUseCase (roadmap milestone 0.3).
-- store locator: at most 1, of type anyURI
+- storeLocator: maximum count 1; datatype anyURI.
 
 *Roadmap milestone 0.3 item 7.*
 
@@ -3478,7 +3881,7 @@ Applies to [reconstruction finding](#ReconstructionFinding). Sources: [Kognita r
 Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
 - Record gatewayFailureMode (roadmap milestone 0.3).
-- retention policy: exactly one, an instance of RetentionPolicy
+- retentionPolicy: minimum count 1; maximum count 1; class RetentionPolicy.
 
 *Roadmap milestone 0.3 item 9.*
 
@@ -3487,8 +3890,8 @@ Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMA
 
 Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
 
-- call agent: at most 1
-- system trigger: at most 1
+- callAgent: maximum count 1.
+- systemTrigger: maximum count 1.
 - Record inRun (roadmap milestone 0.3).
 - Record governedByDecision (roadmap milestone 0.3).
 - Record clientConfiguration (roadmap milestone 0.3).
@@ -3637,35 +4040,35 @@ Applies to [interaction outcome](#InteractionOutcome). Sources: [Kognita roadmap
 
 Applies to [circuit breaker trip](#CircuitBreakerTrip), [circuit breaker](#CircuitBreaker), [affected client query](#AffectedClientQuery). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- BreakerScopeShape: denied or incomplete record (Kognita 0.4 item 14).
+- A breaker, trip or affected-client query requires a use-case, model, policy or prompt-version scope (Kognita 0.4 item 14).
 
 <a id="TwoSignatureShape"></a>
 ### TwoSignatureShape
 
 Applies to subjects of [requires two signatures](#requiresTwoSignatures). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- TwoSignatureShape: denied or incomplete record (Kognita 0.4 item 12).
+- A communication requiring two signatures must name two distinct human signers (Kognita 0.4 item 12).
 
 <a id="PastReviewDecisionShape"></a>
 ### PastReviewDecisionShape
 
 Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- PastReviewDecisionShape: denied or incomplete record (Kognita 0.4 item 8).
+- A decision made after the use-case review date expires must be DENY (Kognita 0.4 item 8).
 
 <a id="RiskAppetiteDecisionShape"></a>
 ### RiskAppetiteDecisionShape
 
 Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- RiskAppetiteDecisionShape: denied or incomplete record (Kognita 0.4 item 8).
+- A decision outside the recorded risk appetite must be DENY (Kognita 0.4 item 8).
 
 <a id="CoverageCountsShape"></a>
 ### CoverageCountsShape
 
 Applies to [review coverage report](#ReviewCoverageReport). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- CoverageCountsShape: denied or incomplete record (Kognita 0.4 item 13).
+- Coverage counts must satisfy reviewed <= queued <= screened <= eligible (Kognita 0.4 item 13).
 
 <a id="CircuitBreakerConfigurationShape"></a>
 ### CircuitBreakerConfigurationShape
@@ -3745,16 +4148,545 @@ Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMA
 
 - An explicit failed risk-appetite evaluation prevents activation (Kognita 0.4 item 8; MAS AIRG 4.11).
 
+<a id="AgentIdentityShape"></a>
+### AgentIdentityShape
+
+Applies to [AI agent](#AIAgent). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:workloadIdentity: minimum count 1, maximum count 1, class pwm:WorkloadIdentity.
+- pwm:agentOwner: minimum count 1, maximum count 1, class fibo-fnd-aap-ppl:Person.
+- pwm:operatesFor: minimum count 1, maximum count 1, class fibo-fnd-aap-ppl:Person.
+- pwm:hasPurpose: minimum count 1, class pwm:Purpose.
+- pwm:deploymentDate: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:deploymentModel: minimum count 1, maximum count 1, class pwm:AIModel.
+- pwm:deploymentEnvironment: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:agentStatus: minimum count 1, maximum count 1.
+- pwm:approvedDeploymentVersion: minimum count 1, maximum count 1, datatype xsd:string.
+
+*Roadmap milestone 0.5 item 1. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="WorkloadIdentityShape"></a>
+### WorkloadIdentityShape
+
+Applies to [workload identity](#WorkloadIdentity). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:credentialReference: minimum count 1, maximum count 1, datatype xsd:anyURI.
+- pwm:credentialIssuer: minimum count 1, maximum count 1, datatype xsd:anyURI.
+- pwm:workloadSubject: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:deploymentEnvironment: minimum count 1, maximum count 1, datatype xsd:string.
+- Workload subjects must not be shared (Kognita 0.5 item 1).
+- Credential references must not be shared by distinct workload identities (Kognita 0.5 item 1).
+
+*Roadmap milestone 0.5 item 1. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AgentDecisionShape"></a>
+### AgentDecisionShape
+
+Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Agent calls require live approved deployment, current review, registered decision use case and unrevoked own workload identity (Kognita 0.5 item 1).
+
+*Roadmap milestone 0.5 item 1. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AuthorityScopeShape"></a>
+### AuthorityScopeShape
+
+Applies to [authority scope](#AuthorityScope). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:aboutClient: minimum count 1, class pwm:Client.
+- pwm:hasPurpose: minimum count 1, class pwm:Purpose.
+- pwm:actionVerb: minimum count 1.
+- pwm:classification: minimum count 1.
+- pwm:scopeTool: minimum count 1, class pwm:Tool.
+- pwm:scopeField: minimum count 1, datatype xsd:string.
+- pwm:jurisdictionCode: minimum count 1, datatype xsd:string.
+- scopeAutonomyLevel: minimum count 1; maximum count 1.
+
+*Roadmap milestone 0.5 item 2. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="HumanEntitlementShape"></a>
+### HumanEntitlementShape
+
+Applies to [human entitlement](#HumanEntitlement). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:authorityScope: minimum count 1, maximum count 1, class pwm:AuthorityScope.
+- pwm:validFrom: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:validUntil: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- validFrom must be earlier than validUntil (Kognita 0.5 item 2).
+
+*Roadmap milestone 0.5 item 2. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="DelegationScopeShape"></a>
+### DelegationScopeShape
+
+Applies to [delegated authority](#DelegatedAuthority). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:authorityScope: minimum count 1, maximum count 1, class pwm:AuthorityScope.
+- pwm:validFrom: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:delegationDepth: minimum count 1, maximum count 1, datatype xsd:nonNegativeInteger.
+- pwm:maxDelegationDepth: minimum count 1, maximum count 1, datatype xsd:nonNegativeInteger.
+- validFrom must be earlier than validUntil (Kognita 0.5 item 2).
+- delegationDepth must not exceed maxDelegationDepth (Kognita 0.5 item 2).
+- Grantor must hold an entitlement covering the complete explicit delegation scope and time (Kognita 0.5 item 2).
+
+*Roadmap milestone 0.5 item 2. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AuthorityRevocationShape"></a>
+### AuthorityRevocationShape
+
+Applies to [authority revocation](#AuthorityRevocation). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:revokedAuthority: minimum count 1, maximum count 1.
+- pwm:revokedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:rationale: minimum count 1, maximum count 1, datatype xsd:string.
+
+*Roadmap milestone 0.5 item 2. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="LiveAuthorityDecisionShape"></a>
+### LiveAuthorityDecisionShape
+
+Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Both call and decision must cite the same live delegation to this agent and a live, unrevoked human entitlement covering the complete delegation scope (Kognita 0.5 item 2).
+
+*Roadmap milestone 0.5 item 2. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="SubDelegationShape"></a>
+### SubDelegationShape
+
+Applies to subjects of [parent delegation](#parentDelegation). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- parentDelegation: maximum count 1; class DelegatedAuthority.
+- Sub-delegation must be acyclic, narrow every explicit scope set and period, and respect depth (Kognita 0.5 item 9).
+
+*Roadmap milestone 0.5 item 9. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="PromotionGateShape"></a>
+### PromotionGateShape
+
+Applies to [autonomy promotion gate](#AutonomyPromotionGate). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:minimumSample: minimum count 1, maximum count 1, datatype xsd:positiveInteger.
+- pwm:minimumWindowSeconds: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:qualityThreshold: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:exceptionRateThreshold: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:requiresFullTraceability: minimum count 1, maximum count 1, datatype xsd:boolean.
+- pwm:stepDownThreshold: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:qualityThreshold: minimum inclusive 0, maximum inclusive 1.
+- pwm:exceptionRateThreshold: minimum inclusive 0, maximum inclusive 1.
+- pwm:stepDownThreshold: minimum inclusive 0, must be earlier or lower than pwm:qualityThreshold.
+- pwm:minimumWindowSeconds: minimum exclusive 0.
+
+*Roadmap milestone 0.5 item 3. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AutonomyTransitionShape"></a>
+### AutonomyTransitionShape
+
+Applies to [autonomy transition](#AutonomyTransition). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:transitionAgent: minimum count 1, maximum count 1, class pwm:AIAgent.
+- pwm:promotionGate: minimum count 1, maximum count 1, class pwm:AutonomyPromotionGate.
+- pwm:fromAutonomyLevel: minimum count 1, maximum count 1.
+- pwm:toAutonomyLevel: minimum count 1, maximum count 1.
+- pwm:sampleCount: minimum count 1, maximum count 1, datatype xsd:nonNegativeInteger.
+- pwm:observedQuality: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:observedExceptionRate: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:fullyReconstructable: minimum count 1, maximum count 1, datatype xsd:boolean.
+- pwm:transitionApproved: minimum count 1, maximum count 1, datatype xsd:boolean.
+- pwm:windowStart: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:windowEnd: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:windowStart: must be earlier or lower than pwm:windowEnd.
+- pwm:observedQuality: minimum inclusive 0, maximum inclusive 1.
+- pwm:observedExceptionRate: minimum inclusive 0, maximum inclusive 1.
+
+*Roadmap milestone 0.5 item 3. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AutonomyEvidenceShape"></a>
+### AutonomyEvidenceShape
+
+Applies to [autonomy transition](#AutonomyTransition). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Promotion requires evidence thresholds, sample/window, owner and independent validation; step-down is one level and alerts owners (Kognita 0.5 item 3).
+
+*Roadmap milestone 0.5 item 3. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="BlastRadiusLimitShape"></a>
+### BlastRadiusLimitShape
+
+Applies to [blast radius limit](#BlastRadiusLimit). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:limitDimension: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:limitWindowBasis: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:limitUnit: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:limitMaximum: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:limitMaximum: minimum inclusive 0.
+- pwm:limitDimension: allowed values ( 'records' 'clients' 'value' 'actions' 'transactions' 'clients-contacted' ).
+- pwm:limitWindowBasis: allowed values ( 'action' 'run' 'minute' 'hour' 'UTC-day' ).
+
+*Roadmap milestone 0.5 item 4. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="BlastRadiusObservationShape"></a>
+### BlastRadiusObservationShape
+
+Applies to [blast radius observation](#BlastRadiusObservation). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:observedLimit: minimum count 1, maximum count 1, class pwm:BlastRadiusLimit.
+- pwm:projectedConsumption: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:projectedConsumption: minimum inclusive 0.
+
+*Roadmap milestone 0.5 item 4. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="BlastRadiusDecisionShape"></a>
+### BlastRadiusDecisionShape
+
+Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Projected consumption exceeding any agent blast-radius cap cannot be ALLOW (Kognita 0.5 item 4).
+- ALLOW requires exactly one observation for each calling agent and delegation scope limit and no unrelated limits.
+
+*Roadmap milestone 0.5 item 4. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ToolAllowListShape"></a>
+### ToolAllowListShape
+
+Applies to [tool call](#ToolCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- A tool outside the agent allow-list must be DENY (Kognita 0.5 item 5).
+
+*Roadmap milestone 0.5 item 5. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="FieldMinimizationShape"></a>
+### FieldMinimizationShape
+
+Applies to [tool call](#ToolCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Requested fields outside purpose-specific agent permissions must be DENY (Kognita 0.5 item 5).
+
+*Roadmap milestone 0.5 item 5. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ExternalContentShape"></a>
+### ExternalContentShape
+
+Applies to [external content](#ExternalContent). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:trustLabel: minimum count 1.
+- pwm:trustLabel: required value pwm:TrustExternal.
+- pwm:contentHash: minimum count 1, maximum count 1, datatype xsd:string.
+
+*Roadmap milestone 0.5 item 6. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ContentIsolationShape"></a>
+### ContentIsolationShape
+
+Applies to [tool call](#ToolCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Externally tainted runs cannot write; client-data taint cannot reach public-content tools (Kognita 0.5 item 6).
+
+*Roadmap milestone 0.5 item 6. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AuthenticatedInstructionShape"></a>
+### AuthenticatedInstructionShape
+
+Applies to [authenticated instruction](#AuthenticatedInstruction). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:instructionSource: minimum count 1, maximum count 1, datatype xsd:anyURI.
+- pwm:instructionPrincipal: minimum count 1, maximum count 1, class fibo-fnd-aap-ppl:Person.
+- pwm:assuranceLevel: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:assuranceLevel: allowed values ( 'channel-only' 'authenticated' 'step-up' ).
+- pwm:transactionContext: minimum count 1, maximum count 1, datatype xsd:string.
+
+*Roadmap milestone 0.5 item 7. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="InstructionAssuranceShape"></a>
+### InstructionAssuranceShape
+
+Applies to subjects of [requires step up](#requiresStepUp). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Allowed high-risk instructions require signed step-up evidence and a completed approval of a held decision in the same run, strictly before the allowed decision (Kognita 0.5 item 7).
+
+*Roadmap milestone 0.5 item 7. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="BehaviourBaselineShape"></a>
+### BehaviourBaselineShape
+
+Applies to [behaviour baseline](#BehaviourBaseline). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:baselineAgent: minimum count 1, maximum count 1, class pwm:AIAgent.
+- pwm:versionId: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:baselineMetric: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:baselineExpected: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:anomalyThreshold: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:windowStart: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:windowEnd: minimum count 1, maximum count 1, datatype xsd:dateTime.
+
+*Roadmap milestone 0.5 item 8. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="BehaviourAnomalyShape"></a>
+### BehaviourAnomalyShape
+
+Applies to [behaviour anomaly](#BehaviourAnomaly). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:anomalyBaseline: minimum count 1, maximum count 1, class pwm:BehaviourBaseline.
+- pwm:anomalyValue: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:containmentApplied: required value true.
+- pwm:anomalyIncident: minimum count 1, maximum count 1, class pwm:AIIncident.
+- pwm:notifiedRole: minimum count 1, class pwm:AccountabilityRole.
+
+*Roadmap milestone 0.5 item 8. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="CapabilityGrantShape"></a>
+### CapabilityGrantShape
+
+Applies to [capability grant](#CapabilityGrant). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:grantee: minimum count 1, maximum count 1, class pwm:AIAgent.
+- pwm:grantedCapability: minimum count 1, maximum count 1, class pwm:Tool.
+- pwm:authorityScope: minimum count 1, maximum count 1, class pwm:AuthorityScope.
+- pwm:validFrom: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:validUntil: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:validFrom: must be earlier or lower than pwm:validUntil.
+
+*Roadmap milestone 0.5 item 10. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="LiveGrantShape"></a>
+### LiveGrantShape
+
+Applies to subjects of [relies on grant](#reliesOnGrant). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Used capability grants must match agent and tool and remain unexpired and unrevoked (Kognita 0.5 item 10).
+
+*Roadmap milestone 0.5 item 10. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AgentFleetShape"></a>
+### AgentFleetShape
+
+Applies to [agent fleet](#AgentFleet). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:fleetMember: minimum count 1, class pwm:AIAgent.
+- pwm:fleetQuota: minimum count 1, maximum count 1, datatype xsd:positiveInteger.
+- pwm:fleetIsolation: minimum count 1, maximum count 1, datatype xsd:string.
+
+*Roadmap milestone 0.5 item 11. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="FleetHaltShape"></a>
+### FleetHaltShape
+
+Applies to [fleet halt](#FleetHalt). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:haltScope: minimum count 1, maximum count 1, class pwm:AgentFleet.
+- prov:generatedAtTime: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:rationale: minimum count 1, maximum count 1, datatype xsd:string.
+
+*Roadmap milestone 0.5 item 11. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="SandboxConstraintsShape"></a>
+### SandboxConstraintsShape
+
+Applies to [sandbox constraints](#SandboxConstraints). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:filesystemScope: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:permitsExport: minimum count 1, maximum count 1, datatype xsd:boolean.
+- pwm:permitsPersistence: minimum count 1, maximum count 1, datatype xsd:boolean.
+- pwm:autoStopSeconds: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:cpuSeconds: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:memoryBytes: minimum count 1, maximum count 1, datatype xsd:nonNegativeInteger.
+- pwm:diskBytes: minimum count 1, maximum count 1, datatype xsd:nonNegativeInteger.
+- pwm:autoStopSeconds: minimum exclusive 0.
+- pwm:cpuSeconds: minimum exclusive 0.
+
+*Roadmap milestone 0.5 item 12. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ReversibilityShape"></a>
+### ReversibilityShape
+
+Applies to [tool](#Tool). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:reversibilityClass: minimum count 1, maximum count 1.
+- Reversible and compensatable tools register a compensating action (Kognita 0.5 item 13).
+
+*Roadmap milestone 0.5 item 13. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="IrreversibleApprovalShape"></a>
+### IrreversibleApprovalShape
+
+Applies to [tool call](#ToolCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- High-autonomy irreversible action requires human approval resolving a held HUMAN_APPROVAL decision at a suspended checkpoint in the call's run, strictly before the call (Kognita 0.5 item 13).
+
+*Roadmap milestone 0.5 item 13. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AdversarialTestShape"></a>
+### AdversarialTestShape
+
+Applies to [adversarial test case](#AdversarialTestCase). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:threatModel: minimum count 1, maximum count 1, class pwm:ThreatModel.
+- pwm:attackKind: minimum count 1, maximum count 1, datatype xsd:string.
+
+*Roadmap milestone 0.5 item 14. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ThreatModelShape"></a>
+### ThreatModelShape
+
+Applies to [threat model](#ThreatModel). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:versionId: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:threatModelReference: minimum count 1, maximum count 1, datatype xsd:anyURI.
+
+*Roadmap milestone 0.5 item 14. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="EnforcementAttestationShape"></a>
+### EnforcementAttestationShape
+
+Applies to [enforcement attestation](#EnforcementAttestation). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:attestedUseCase: minimum count 1, maximum count 1, class pwm:AIUseCase.
+- prov:generatedAtTime: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- prov:wasAttributedTo: minimum count 1, maximum count 1, class fibo-fnd-aap-ppl:Person.
+- pwm:gatewayOnlyCredentials: minimum count 1, maximum count 1, datatype xsd:boolean.
+- pwm:egressRestricted: minimum count 1, maximum count 1, datatype xsd:boolean.
+- pwm:evidenceStoreIsolated: minimum count 1, maximum count 1, datatype xsd:boolean.
+
+*Roadmap milestone 0.5 item 15. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="DeploymentEnforcementShape"></a>
+### DeploymentEnforcementShape
+
+Applies to [AI use case](#AIUseCase). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:deploymentMode: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:deploymentMode: allowed values ( 'gateway' 'library' ).
+- Tier 2 or above requires gateway mode and attestation of isolated credentials, routing and evidence (Kognita 0.5 item 15).
+
+*Roadmap milestone 0.5 item 15. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="BoundedToolShape"></a>
+### BoundedToolShape
+
+Applies to [tool](#Tool). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:maximumDurationSeconds: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:maximumDurationSeconds: minimum exclusive 0.
+- pwm:supportsCancellation: minimum count 1, maximum count 1, datatype xsd:boolean.
+- Uncancellable tools need compensation or steps with intervening decisions (Kognita 0.5 item 16).
+
+*Roadmap milestone 0.5 item 16. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ActionStopShape"></a>
+### ActionStopShape
+
+Applies to [action stop](#ActionStop). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:stoppedCall: minimum count 1, maximum count 1, class pwm:ToolCall.
+- pwm:stopOutcome: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:stopOutcome: allowed values ( 'cancelled' 'completed' 'timed-out' 'unsupported' ).
+- pwm:stopReason: minimum count 1, maximum count 1, datatype xsd:string.
+- prov:generatedAtTime: minimum count 1, maximum count 1, datatype xsd:dateTime.
+
+*Roadmap milestone 0.5 item 16. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AuthorityRequestScopeShape"></a>
+### AuthorityRequestScopeShape
+
+Applies to [tool call](#ToolCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- A live delegation must authorize this tool, every declared tool verb, purpose, client, fields, exactly one jurisdictionCode and exactly one classification at or below the scope ceiling by rank (Kognita 0.5 item 2).
+
+*Roadmap milestone 0.5 item 2. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ScopeNarrowingLimitsShape"></a>
+### ScopeNarrowingLimitsShape
+
+Applies to subjects of [parent delegation](#parentDelegation). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Sub-delegation retains all parent numeric caps and may not increase autonomy (Kognita 0.5 item 9).
+
+*Roadmap milestone 0.5 item 9. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AutonomyCallShape"></a>
+### AutonomyCallShape
+
+Applies to [tool call](#ToolCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Calls cannot exceed effective or maximum autonomy or the delegated scope ceiling; L4 routes to human approval (Kognita 0.5 item 3).
+
+*Roadmap milestone 0.5 item 3. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="FleetHaltDecisionShape"></a>
+### FleetHaltDecisionShape
+
+Applies to [governed call](#GovernedCall). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- A halted fleet member must be denied on the next decision (Kognita 0.5 item 11).
+
+*Roadmap milestone 0.5 item 11. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ToolDurationShape"></a>
+### ToolDurationShape
+
+Applies to subjects of [call duration seconds](#callDurationSeconds). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:callDurationSeconds: maximum count 1, datatype xsd:decimal, minimum inclusive 0.
+- A call beyond maximum duration needs an evidenced timeout (Kognita 0.5 item 16).
+
+*Roadmap milestone 0.5 item 16. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ExclusiveWorkloadShape"></a>
+### Exclusive workload identity
+
+Applies to [AI agent](#AIAgent). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- Each registered agent has its own workload identity (Kognita 0.5 item 1).
+
+*Roadmap milestone 0.5 item 1: credentials are never shared between agents.*
+
+<a id="DelegationCeilingShape"></a>
+### DelegationCeilingShape
+
+Applies to [delegated authority](#DelegatedAuthority). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- A delegation's permitted data class must cover the classification of its authority scope, and a child delegation cannot permit a higher class than its parent (Kognita 0.5 item 2).
+
+*Roadmap milestone 0.5 item 2. The permitted data class is the delegation's ceiling. Classes C0 to C3 are compared by their IRIs, which sort in rank order. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AgentAutonomyShape"></a>
+### AgentAutonomyShape
+
+Applies to [AI agent](#AIAgent). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- An agent's effective autonomy level cannot exceed its maximum autonomy level (Kognita 0.5 item 3).
+
+*Roadmap milestone 0.5 item 3. Levels L0 to L6 are compared by their IRIs, which sort in rank order. Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="RiskControlApprovalShape"></a>
+### RiskControlApprovalShape
+
+Applies to [blast radius limit](#BlastRadiusLimit), [autonomy promotion gate](#AutonomyPromotionGate). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- pwm:riskControlApproval: minimum count 1, maximum count 1, class pwm:RiskControlApproval.
+
+*Firm-specific limits and gates must be set and approved by the risk committee, data governance committee or chief risk officer (Ahmed, 3 Nov 2026).*
+
+<a id="RiskControlApprovalRecordShape"></a>
+### RiskControlApprovalRecordShape
+
+Applies to [risk control approval](#RiskControlApproval). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
+
+- Record exactly one approverRole: RiskCommittee, DataGovernanceCommittee or ChiefRiskOfficer.
+- pwm:approvedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+
+*Approval records identify a permitted firm approving role and approval time (Ahmed, 3 Nov 2026).*
+
 <a id="AuthorityLiveStatusShape"></a>
 ### Live authority status
 
 Applies to [authority live status](#AuthorityLiveStatus). Sources: [Kognita roadmap](#ref-KOG-ROADMAP), [MAS AIRG](#ref-MAS-AIRG).
 
-- status of: exactly one
+- statusOf: minimum count 1; maximum count 1; one of classes DelegatedAuthority, KillSwitch.
 - asOf must carry an explicit timezone (Z or an offset) so decision-time comparison cannot use an implicit timezone.
-- observed by: at least 1, an instance of Agent
-- revoked: at most 1, of type boolean
-- engaged: at most 1, of type boolean
+- observedBy: minimum count 1; class Agent.
+- revoked: maximum count 1; datatype boolean.
+- engaged: maximum count 1; datatype boolean.
 - Record the matching live boolean, subject, xsd:dateTime asOf and observer (KOG 0.4 item 14; 0.3 item 2; MAS AIRG 5.9).
 
 <a id="LiveDelegationDecisionShape"></a>
@@ -3778,7 +4710,7 @@ Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-K
 
 Applies to every coded property. Sources: [SKOS](#ref-W3C-SKOS).
 
-- Each of the 59 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
+- Each of the 66 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
 
 ## Extending PWM for an institution
 
@@ -3796,7 +4728,7 @@ Save as `firm.ttl`:
 @prefix firm: <https://example.org/firm/ontology#> .
 
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.4> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.5> .
 
 # The firm's own risk scale, in place of the illustrative one
 firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
@@ -3890,7 +4822,7 @@ Other code lists may require changes to handwritten constraints and code-depende
 | <a id="ref-US-REG-D"></a>SEC Regulation D | REG | [SEC Regulation D, Rule 501(a) definition of accredited investor (17 CFR 230.501)](https://www.ecfr.gov/current/title-17/section-230.501) | US Securities and Exchange Commission |  | US | instrument-level |  |
 | <a id="ref-US-REG-BI"></a>SEC Regulation Best Interest | REG | [SEC Regulation Best Interest (17 CFR 240.15l-1)](https://www.ecfr.gov/current/title-17/section-240.15l-1) | US Securities and Exchange Commission |  | US | instrument-level |  |
 | <a id="ref-EU-SUSTAINABILITY"></a>MiFID sustainability preferences | REG | [Commission Delegated Regulation (EU) 2021/1253 amending Delegated Regulation (EU) 2017/565](https://eur-lex.europa.eu/eli/reg_del/2021/1253/oj) | European Commission | 2021-04-21 | EU | verified | Verified against EUR-Lex CELEX 32021R1253, EN/ALL text and relationship table on 3 November 2026. Article 1(1) adds Article 2(7)(a)-(c) to 2017/565. Article 1(6)(a)-(f) amends Article 54(2)(a), (5), (9), (10), (12), (13). These are articles of the amended 2017/565, not Articles 2(7) and 54 of 2021/1253. No preference is an explicit PWM recording code, not a fourth statutory category. |
-| <a id="ref-KOG-ROADMAP"></a>Kognita roadmap | KOG | [Kognita Roadmap: From Governance Engine to Agent Harness (docs/ROADMAP.md)](https://github.com/mze3e/kognita/blob/9303769/docs/ROADMAP.md) | Kognita (open source, MIT) | 2026-09, at release 0.7.0 | Global | verified | Read at software release 0.7.0, commit 9303769, not roadmap milestone 0.7. Locators such as 0.4 item 8 refer to roadmap sections as recorded at that software release. |
+| <a id="ref-KOG-ROADMAP"></a>Kognita roadmap | KOG | [Kognita Roadmap: From Governance Engine to Agent Harness (docs/ROADMAP.md)](https://github.com/mze3e/kognita/blob/9303769/docs/ROADMAP.md) | Kognita (open source, MIT) | 2026-09, at release 0.7.0 | Global | verified | Read at software release 0.7.0, commit 9303769, not roadmap milestone 0.7. Locators such as 0.4 item 8 refer to roadmap sections as recorded at that software release. Milestone 0.5 items 1 to 16 and its Definition of Done were also re-read in the local docs/ROADMAP.md on 3 November 2026 for ontology 0.5; the original pinned software-release reference is retained. |
 | <a id="ref-KOG-CONTROLS"></a>Kognita regulations library | KOG | [AI Control Frameworks: Wealth Management and Agentic AI Coverage (docs/control-frameworks.md), the Kognita regulations library](https://github.com/mze3e/kognita/blob/main/docs/control-frameworks.md) | Kognita (open source, MIT) | 2026-10-12 | Global | verified | Consolidates the 40-domain bank-grade framework, the 70-control wealth management framework (MAS, PDPC, SFC, FCA, Bank of England, APRA, ASIC, CSBS, BIS/FSI, ESMA), a paragraph map of the MAS AI Risk Management Guidelines, and the trust-architecture principles. |
 | <a id="ref-KOG-VOCAB"></a>Kognita vocabularies | KOG | [Kognita controlled vocabularies (src/kognita/vocabulary.py, usecases.py, claims.py, memory.py, origination.py)](https://github.com/mze3e/kognita/blob/main/src/kognita/vocabulary.py) | Kognita (open source, MIT) | release 0.7.0 | Global | verified |  |
 | <a id="ref-KOG-PB-PACK"></a>Kognita private-banking pack | KOG | [Kognita private-banking policy pack 1.0.0 (src/kognita/packs/data/private-banking)](https://github.com/mze3e/kognita/tree/main/src/kognita/packs/data/private-banking) | Kognita (open source, MIT) |  | Global | verified |  |
@@ -3926,12 +4858,15 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 | Version | Date | Change |
 |---|---|---|
-| 0.4 | 2026-11-03 | Context review: durable execution evidence, snapshots and checkpoints use MediumContext; DelegatedAuthority and KillSwitch use SlowContext; AuthorityLiveStatus is NEW and uses FastContext for live revocation and kill-switch state; definitions remain cached SlowContext. Build now rejects broken evidence chains. Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
+| 0.5 | 2026-11-04 | Merged the 0.4 live authority observations and evidence-chain build check. Corrected delegation rank direction, typed review expiry, resolved held approvals before allowed actions, explicit field scope and PROV prefixes; refined constraint messages. Aligned to roadmap milestone 0.5: workload identity, explicit scoped and expiring human authority, autonomy evidence and step-down, blast-radius caps, content trust, instruction assurance, anomaly records, narrowing delegation chains, capability grants, fleets, sandbox output, reversibility, adversarial tests, enforcement attestations and stopping in-flight calls. Existing governance terms are reused. Configuration/grants are SlowContext; execution evidence and sandbox decision output are MediumContext. AuthorityLiveStatus uses FastContext for delegation revocation and kill-switch state; firm limits and promotion gates require dated approval by a risk committee, data governance committee or chief risk officer. Authority checks bind completed approval to the governing policy, use case and run, compare call classification by rank, cover every tool verb and require live entitlement scope coverage. Review fixes reject duplicate credential references on distinct workload identities, apply maximum autonomy as fallback for irreversible approval, and clarify that grant checks apply only when a call relies on a grant. Review of 4 Nov 2026: removed the duplicate liveStatusSubject, liveStatusValue and observedAt fields, keeping the canonical statusOf, revoked or engaged, asOf and observedBy; a delegation's permitted data class is now a checked ceiling (DelegationCeilingShape); an agent's effective autonomy cannot exceed its maximum (AgentAutonomyShape). |
+| 0.4 | 2026-11-03 | Context review: durable execution evidence, snapshots and checkpoints use MediumContext; DelegatedAuthority and KillSwitch use SlowContext; FastContext is reserved for live financial state. Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
 | 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
 
-## Gap analysis for 0.4
+## Gap analysis for 0.5
+
+## Inherited 0.4 coverage
 
 Compared with the inherited PWM 0.3 vocabulary and shapes before adding terms. PWM version N aligns with roadmap milestone N. Locators below refer to `docs/ROADMAP.md`, milestone 0.4, items 1 to 15 and its Definition of Done. Existing terms retain their original grounds.
 
@@ -3958,19 +4893,70 @@ Every new class, property and scheme has item-level KOG grounds and a NEW practi
 The Definition of Done describes software behaviour as well as records. These artefacts model the evidence and enforce the written structural constraints; they do not implement Docling, policy compilation, CLI delta resolution, strict validation of serialized YAML, telemetry export, adapters, automatic halt dispatch, query execution, revocation, approval-packet execution or rubber-stamp detection. Appetite evaluation and tier derivation remain external policy computations. An explicit failed appetite evaluation is denied; absence of that evaluation is not treated as proof of permission. Affected-client result counts are checked against recorded communications, not an external delivery system. A production query must establish completeness for the stated scope and window. New code-list replacement requires reviewing these constraints along with the existing ones.
 
 
-## Verification for 0.4
+## Added 0.5 coverage
 
-There are 144 node shapes: 84 written targeted shapes, 59 generated targeted shapes and one untargeted helper.
+Compared with inherited PWM 0.4 before adding terms. PWM version N follows roadmap milestone N. All sixteen items and the Definition of Done in `docs/ROADMAP.md`, 0.5 "Agents, Authority and Fleets", were reviewed. Additions live in `src/11-agents-authority-fleets.ttl`; the existing governance terms and their grounds remain in place.
 
-The positive example contains 152 typed records. The negative fixture contains 128 typed records. There are 102 typed violating records, 26 typed supporting records and 4 untyped violating subjects, yielding 113 expected violations across 106 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+| Item | Already present in 0.4 | Missing coverage added for 0.5 |
+|---|---|---|
+| 1 Agent identity | AIAgent, agentIdentifier, deploymentVersion, registeredForUseCase, nextReviewDate, hasPurpose, hasAccountabilityRole | WorkloadIdentity with issuer, subject, non-secret credential reference and environment; deployment date/model, named owner, operating principal, approved deployment hash and agentStatus using existing lifecycle codes. Calls bind their workload identity. Written checks reject duplicate credentialReference values on distinct workload identities, shared workload subjects or identities, stale review, unapproved version, inactive agent or a decision use case outside registeredForUseCase on non-DENY decisions. Agent status has its own property because lifecycleStatus has an AIUseCase domain. |
+| 2 Delegated authority | DelegatedAuthority, delegatedBy/To, aboutClient, actionVerb, permitsDataClass, purpose, jurisdiction, approvalThreshold, validFrom/Until, endsOnTaskCompletion and reliesOnDelegation | AuthorityScope and HumanEntitlement record the dual check explicitly; AuthorityRevocation records revocation including task completion. Expiry is mandatory even with task completion. Calls and decisions reference the same live delegation and its live human entitlement. Explicit client, purpose, verb, tool, data and field sets support request checks. The root human stays delegatedBy throughout lineage. |
+| 3 Autonomy | L0 to L6, maximum and required levels, per-verb codes, AutonomyPromotionGate, quality/exception thresholds and full traceability flag | Effective autonomy; AutonomyTransition with old/new levels, sample/window and observed quality/exception metrics, owner and independent validator approval, drift and notifications. Minimum sample/window and lower step-down threshold extend the existing gate. Approved promotions below gates fail; step-down must be one level with owner and Knowledge Lead alerts. Calls above effective/max levels fail and L4 routes to approval. Model version and deployment content hash identify the evaluated behaviour. |
+| 4 Blast radius | RunBudget, wall-clock and cost/call/token consumption; mandate concentration limits | BlastRadiusLimit and projected BlastRadiusObservation, independent of run budgets. Dimensions include records, distinct clients, value, actions, transactions and clients contacted; bases include action, run, minute, hour and UTC-day. Units identify currency for value. Agent limits and scope caps reuse these records. ALLOW requires exactly one observation for each agent limit and each cap on the call's delegation scope, permits observations of either kind, and rejects projected excess. Explicit products, systems and jurisdictions use scope sets. limitWindowBasis is distinct from existing concentration limitBasis. |
+| 5 Tool/data minimization | Tool, permittedTool, actionVerb, requiredAutonomyLevel | Purpose-specific permittedField and requestedField; scope field sets and event access window. Written rules require DENY for tools or fields outside the agent allow-list and reject requests outside delegated scope. |
+| 6 External content | RetrievedItem, classifier evidence and confidentiality classification | ExternalContent, ContentTrustScheme and trustLabel on content, inputContent on calls/runs, publicContentTool. External taint blocks write tools; client-data taint blocks public-content tools. Confidentiality and trust are separate. External content cannot become instruction authority. |
+| 7 Instruction authenticity | AuthenticatedClientConfiguration and classifier prohibition on asserting identity | AuthenticatedInstruction with source, authenticated human, assurance, transaction context and verified signature reference required for an ALLOW decision with requiresStepUp true (InstructionAssuranceShape), optional otherwise. High-risk ALLOW needs step-up and human authorization evidence; a channel identity alone is insufficient. Cryptographic verification remains external. |
+| 8 Behaviour anomalies | AIIncident, NearMiss, UnusualAgentBehaviour, CircuitBreaker and incident evidence | Versioned BehaviourBaseline and BehaviourAnomaly with metric, threshold, window, observed value, containment assertion, incident and owner notification. Containment means quarantine, credential revocation and tool stop before human release; SHACL checks the record, not dispatch. |
+| 9 Agent delegation | Human-to-agent authority, Run and evidence lineage | parentDelegation, depth and total depth cap; children retain the accountable root human. Written checks reject cycles, scope or period widening, depth excess, increased autonomy and omitted/increased parent numeric caps. Parent recipients identify the orchestrator in the authority chain. Budgets can be represented by scope caps on the same dimension/basis/unit. |
+| 10 Capability grants | Delegation and validity/evidence patterns | CapabilityGrant with agent grantee, granted tool, subject scope, mandatory expiry and revocation via the common revocation record. Grants are optional. LiveGrantShape targets calls that have reliesOnGrant; when a call relies on a grant, live checks match tool, agent, time and revocation. Existing evidence records capture issue, use, expiry and revoke events. |
+| 11 Fleets | Agents, gateway call identity, Run isolation and classifier evidence | AgentFleet with members, quota and isolation boundary; FleetHalt with mandatory scope and timestamp. Non-DENY decisions after fleet halt fail. Agent messages use inputContent and trust labels; external senders are recorded as untrusted. Actual inter-agent routing, quota admission and isolation remain gateway responsibilities. |
+| 12 Sandbox output | PolicyDecision and outcome codes | SandboxConstraints linked from the decision, with credential handles, network destinations, filesystem/API/command scopes, export/persistence flags, auto-stop, CPU/memory/disk caps. An empty network allow-list means block all. The ontology does not ship a sandbox. |
+| 13 Reversibility | Tool, HumanReview, ApprovalRequest/Resolution, recover intervention evidence | ReversibilityScheme and CompensatingAction, original-call reference and reverse recovery order. Reversible/compensatable tools register compensation. High-autonomy irreversible ALLOW requires approved human evidence in the same run, using effectiveAutonomyLevel when recorded and maxAutonomyLevel otherwise. The approved ApprovalRequest must request a separate held OutcomeHumanApproval decision sharing the allowed decision's run, use case and decidedByRule; it cannot request the ALLOW decision itself. Runtime recovery order and exact transaction approval binding require gateway verification. |
+| 14 Adversarial suite | PolicyTestCase, testsRule, givenAttributes, whenAction, expectedOutcome and PolicyPack | AdversarialTestCase specialises the existing test record with attack kind and versioned ThreatModel reference. Test-to-rule links map attacks to controls. SHACL validates these declarations; the software conformance suite must execute the attacks. |
+| 15 Enforcement | Use-case register, isMediated, gateways and MCP calls | Deployment mode and attributed EnforcementAttestation with gateway credential custody, egress restriction and evidence-store isolation. Tier 2+ use cases require gateway mode and affirmative attestation. A false attestation remains an operational finding, not proof of enforcement. |
+| 16 Stop in flight | KillSwitch, Run wall clock, tool/call and evidence records | Maximum tool-call duration, cancellation support, decision-separated steps, observed duration and ActionStop with cancellation/completion/timeout/unsupported result. Uncancellable tools require compensation or intervening decisions. Exceeding duration requires recorded timeout. Positive fixtures include completion, cancellation and timeout. |
 
-The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.4/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
+All new classes, properties, schemes and codes carry item-level KOG and NEW practitioner citations. Existing verified PROV Entity, OMG Authorization and PolicyTestCase parents are reused; no new FIBO, OMG or DPV matches are invented. MAS AIRG retains the registered 7 October 2026 instrument: 1.11/fn 25 for agent risks and identity, 5.16(c) for plugins/APIs and 5.9 for autonomy oversight. IMDA is retained at instrument level. EVOLVE Stage 4 and the Governing agentic AI essay Sections 03 and 04 ground boundaries, quality gates and autonomy. New specialised definitions remain NEW even when guidance motivates the control.
 
-All 84 written rules have negative fixtures. Two generated code-list rules are exercised there; all 59 generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. Review dates remain valid through the end of that day; absent timezones are interpreted as UTC. A decision on an expired use case must be DENY.
+Configuration, policies, grants, scopes, registry entries, baselines and limits are SlowContext. Recorded decisions, calls, transitions, revocations, attestations and evidence use MediumContext. FastContext covers live financial state and AuthorityLiveStatus observations of delegation revocation and kill-switch state. Reclassification of inherited configuration and evidence corrects the context-speed rule without changing their PROV parents.
+
+The Definition of Done includes executable software controls. These artefacts validate the recorded structure, comparisons and decision outcomes; they do not authenticate credentials, verify signatures, compile policy, derive tier caps, calculate complete consumption, infer taint over unrecorded inputs, detect trends, dispatch containment, enforce network isolation, cancel tools or execute compensation. Scope lists are finite and explicit, not wildcard entitlements. Delegation narrowing checks explicit data-class sets. Calls require exactly one classification at or below the delegated confidentiality ceiling by rank and exactly one covered jurisdictionCode; scope must cover every declared verb of the invoked tool. Grant and delegation effects are judged at the decision's recorded time. Completeness of runtime snapshots, metrics, authority lineage and enforcement attestations is the firm's responsibility.
+
+Open questions: migrate inherited date/duration ranges in a later compatibility change; choose firm-specific limits, assurance levels, tier/autonomy ceilings and threat-model publication locations; verify runtime proofs of custody, isolation, transaction-specific approval and compensation ordering. No new property uses xsd:date or xsd:duration.
+
+### Live authority state and approving authority (3 Nov 2026)
+
+Ahmed's 3 Nov 2026 design decisions add AuthorityLiveStatus in FastContext. Each observation names exactly one DelegatedAuthority or KillSwitch through statusOf, records revoked (delegation) or engaged (kill switch), asOf and observedBy. The 0.5 draft briefly added a second set of fields (liveStatusSubject, liveStatusValue, observedAt); they were removed on 4 Nov 2026 because decisions read only the first set, so a record could contradict itself and pass. DelegatedAuthority and KillSwitch definitions remain SlowContext. Gateways retrieve live observations at decision time; SHACL checks the record, not freshness against a remote system.
+
+Firm-specific BlastRadiusLimit and AutonomyPromotionGate records each require exactly one riskControlApproval. The RiskControlApproval record identifies approverRole and approvedAt. ApprovingAuthorityRole specialises OMG Commons PartyRole; its permitted subclasses are RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer. The role sets and approves the limit or gate. This configuration approval is distinct from an individual transition's ownerApproval and independentValidation. The positive example includes risk-committee approval for its limit and gate; negative fixtures reject missing control approval, an unauthorized approver and missing approval time.
+
+
+Review validation for 0.5: 193 domain classes, 408 properties (220 object, 188 datatype), 48 code lists and 235 codes. The 130 written rules and 66 generated code-list rules form 197 node shapes, including one untargeted helper. The positive example has 191 typed records. The negative fixture has 259 typed records, 170 violating and 89 supporting, plus 4 untyped violating subjects. It raises 193 expected violations across 174 focus nodes and exercises all 130 written rules and two generated rules; regression tests cover all 66 generated rules.
+
+Classification comparisons use the DataClassificationScheme sensitivity rank. Child scopes may narrow from C2 to C1; a C3 human entitlement can back a C2 delegation, while a C1 entitlement cannot. Irreversible approvals must precede their calls, and step-up approvals must request a separate held OutcomeHumanApproval decision sharing the allowed decision's run, use case and decidedByRule, at a checkpoint in that run; the request cannot point at the ALLOW itself. Exact transaction approval binding still requires gateway verification. ALLOW decisions cover every calling-agent limit and delegation scope cap exactly once and reject observations of unrelated limits. The anomaly's Incident is explicitly an AIIncident; no additional AIIncident property shape is declared. Every positive governed call has a recorded timestamp after its governing decision.
+
+### Review additions (4 Nov 2026)
+
+Three checks were added after testing the 0.5 shapes by breaking one fact at a time. DelegationCeilingShape makes a delegation's permitted data class cover its scope's classification and stops a child delegation from permitting a higher class than its parent (roadmap milestone 0.5 item 2). AgentAutonomyShape rejects an agent whose effective autonomy level exceeds its maximum (item 3). The duplicate live-status fields were removed. The build also now lists the members of a union range, so pwm:statusOf shows delegated authority and kill switch in SPEC instead of a generated identifier.
+
+Review regression fixtures in `examples/pwm-review-invalid.ttl` additionally isolate missing and exceeded delegation scope-cap observations and an unregistered decision use case. A within-cap observation provides the positive counterpart. These supplemental cases are tested separately from the counted main negative fixture.
+
+
+## Verification for 0.5
+
+New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGrant (OMG Commons Authorization), AdversarialTestCase (PolicyTestCase, itself a prov:Entity), and ApprovingAuthorityRole (OMG Commons PartyRole) with RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer subclasses. AuthorityRevocation, FleetHalt and ActionStop are records about interventions, not prov:Activity. AIAgent retains prov:SoftwareAgent and OMG SoftwareAgent. Existing Run, governed calls and Replay retain their activity parents. No new external matches are asserted. All new datatype-property ranges use OWL 2 datatype-map datatypes.
+
+There are 197 node shapes: 130 written targeted shapes, 66 generated targeted shapes and one untargeted helper.
+
+The positive example contains 191 typed records. The negative fixture contains 259 typed records. There are 170 typed violating records, 89 typed supporting records and 4 untyped violating subjects, yielding 193 expected violations across 174 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+
+The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
+
+All 130 written rules have negative fixtures. Two generated code-list rules are exercised there; all 66 generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. Review dates remain valid through the end of that day; absent timezones are interpreted as UTC. A decision on an expired use case must be DENY.
 
 New 0.4 PROV specialisations: IngestedDocument, DeclarativePolicy, PolicyChange, PolicyTestCase, PolicyPack, FlightRecorderSession, RMReviewEdit, ReviewQueue, ReviewQueueEntry, ReviewCoverageReport, AffectedClientQuery, AffectedClientResult and InteractionOutcome specialise prov:Entity. Replay specialises prov:Activity. DocumentElement specialises existing DocumentSection (OMG Commons Document); CircuitBreaker specialises KillSwitch; CircuitBreakerTrip specialises AIIncident (prov:Entity). No PROV activity parent is asserted for recorder manifests, edits or trips.
 
-PWM version N aligns to roadmap milestone N. Version 0.4 models milestone 0.4, not the software release number. The inherited 0.3 PROV specialisations remain as follows. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.
+PWM version N aligns to roadmap milestone N. Version 0.5 models milestone 0.5, not the software release number. The inherited 0.3 PROV specialisations remain as follows. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.
 
 Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. Item locators retain the roadmap section numbers at that commit.
 
