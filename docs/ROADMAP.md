@@ -2,9 +2,9 @@
 
 **Vision:** Transform Kognita from a policy decision engine into a complete agent harness: a framework anyone can adopt to build governed AI agents with proof of permission and tamper-evident audit logs.
 
-**Current Status:** v0.6.1 is the latest release. The 0.3 to 0.6 items below are implemented; 0.6.1 closes bypasses found in review of 0.6.0. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
+**Current Status:** v0.6.1 is the latest PyPI release. The 0.3 to 0.6 items below are released, and the 0.7 trust-and-resilience controls are implemented on main. 0.8 is the next feature release. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
 
-**Last revised:** September 2026. See [Decision Log](#decision-log) for what changed and why.
+**Last revised:** 6 November 2026. See [Decision Log](#decision-log) for what changed and why.
 
 ---
 
@@ -150,7 +150,7 @@ MAS issued its final Guidelines on Artificial Intelligence Risk Management on 7 
 | MAS deadline | Sections | Kognita releases before it |
 |---|---|---|
 | 7 October 2027 | 3 and 4 | 0.4 (Q1 2027) |
-| 7 October 2028 | 5 and 6 | 0.5 to 1.0 (Q2 2027 to Q1 2028) |
+| 7 October 2028 | 5 and 6 | 0.5 to 1.0 (Q2 2027 to Q2 2028), including 0.8 supervisory/runtime assurance |
 
 The guidelines are principles-based and proportionate. Kognita supplies enforcement and evidence that a bank meets an expectation; board duties and staff capability remain the bank's. Kognita sees only the AI it mediates, so the register must also hold AI that never passes through it (0.4 item 8).
 
@@ -165,13 +165,13 @@ The guidelines are principles-based and proportionate. Kognita supplies enforcem
 ## Release Timeline
 
 ```
-Q4 2026     Q1 2027     Q2 2027     Q3 2027     Q4 2027     Q1 2028
-│           │           │           │           │           │
-├─ 0.3 ─────┼─ 0.4 ─────┼─ 0.5 ─────┼─ 0.6 ─────┼─ 0.7 ─────┼─► 1.0
-  Gateways,   Ingestion,  Agents,     Claims      Trust &     Production
-  the Run &   Policy &    Authority               Resilience  ready and
-  Replay      Client      & Fleets                            examinable
-              Lifecycle
+Q4 2026     Q1 2027     Q2 2027     Q3 2027     Q4 2027     Q1 2028     Q2 2028
+│           │           │           │           │           │           │
+├─ 0.3 ─────┼─ 0.4 ─────┼─ 0.5 ─────┼─ 0.6 ─────┼─ 0.7 ─────┼─ 0.8 ─────┼─► 1.0
+  Gateways,   Ingestion,  Agents,     Claims      Trust &     Supervisory  Production
+  the Run &   Policy &    Authority               Resilience  Alignment &  ready and
+  Replay      Client      & Fleets                            Runtime      examinable
+              Lifecycle                                      Assurance
 ```
 
 ---
@@ -910,9 +910,191 @@ Each line is ticked only when the code and tests in this tree show it, with an e
 
 ---
 
+
+## 0.8 "Supervisory Alignment and Runtime Assurance"
+
+**Timeline:** Q1 2028  
+**Goal:** Close the gaps exposed by the October-November 2026 supervisory cycle: prove who an external agent is and what authority it carries, prove that runtime monitoring cannot be bypassed silently, validate real-world outcomes after deployment, gate third-party AI changes before they propagate, and turn cross-jurisdiction regulatory mappings into evidence-backed conformance profiles.
+
+This release does **not** turn Kognita into a sandbox, SOC, identity provider, software scanner or legal engine. Where a control belongs elsewhere, Kognita requires an attestation from the authoritative system and records it in the evidence chain.
+
+### A1. Material-Agent / Know Your Agent (KYA) Manifest
+
+- Export a signed, machine-readable manifest for every material agent:
+  - stable agent identity and behavioural version
+  - accountable business owner and use case
+  - principal and delegated authority
+  - autonomy level and client-impact class
+  - permitted tools, data classes, jurisdictions and action verbs
+  - model/provider and critical dependencies
+  - intervention/kill mechanism
+  - credential and authority expiry
+- The CLI emits JSON plus a signed digest.
+- A manifest can be compared with observed evidence; divergence is a finding.
+- A sector-wide or supervisory registry is outside Kognita. Kognita supplies the record that could populate one.
+
+**Driver:** HKMA ART Framework and Project SAGE/KYA.
+
+### A2. External-Agent Trust and Interoperability
+
+- Add a verifiable external-agent assertion carrying issuer, subject agent, principal, purpose, scopes, audience, issue/expiry time and delegation depth.
+- External trust is never transitive by default. A trusted orchestrator cannot confer broader rights to an untrusted child.
+- Unknown issuers, expired assertions, audience mismatch and authority expansion are DENY.
+- The assertion format is deliberately small and protocol-neutral so adapters can bind it to emerging agent identity standards.
+
+**Driver:** HKMA Project SAGE agent identity, KYA and interoperability work.
+
+### A3. Outcome Validation and Post-Deployment Assurance
+
+- Extend outcome records to bind:
+  - intended outcome
+  - actual downstream outcome
+  - client/customer impact
+  - complaint, correction or reversal
+  - RM/human override or escalation
+- A material use case can define post-deployment thresholds. Breach opens a finding and can trigger revalidation or autonomy step-down.
+- An assurance report shows pre-deployment evaluation beside production outcomes.
+- Outcome evidence is supplied by the bank's authoritative system; Kognita never invents the result.
+
+**Driver:** FCA 19-20 October good-practice observations; FSB Sound Practice 9.
+
+### A4. Third-Party AI Update Gate
+
+- High-materiality provider/model/guardrail updates require:
+  - provider change identifier
+  - regression-test evidence
+  - current evaluation result
+  - rollback target/plan
+  - accountable approval
+- A material update without the required packet does not become the approved deployment version.
+- Silent served-model changes continue to fail closed under 0.7 R7.
+
+**Driver:** Bank of England/FCA 2026 survey findings on regression testing, rollback and third-party AI oversight.
+
+### A5. Monitoring-Coverage Attestation
+
+- Reconcile Kognita's action evidence with an independent runtime telemetry source for high-risk agents.
+- Missing expected tool/network/action telemetry becomes a control finding; a configured high-risk profile may fail closed.
+- The agent cannot modify or suppress the attestation record through its own authority.
+- A coverage report shows observed actions, externally attested actions and unexplained gaps.
+
+**Driver:** CERT-In CIAD-2026-0049 and independent agent-monitoring red-team evidence.
+
+### A6. Privacy-Impact Re-Assessment Triggers
+
+- Add a privacy-approval record to material use cases.
+- Invalidate it when any of these change:
+  - purpose
+  - personal-data class
+  - tool or connector
+  - persistent memory behaviour
+  - external recipient/provider
+  - jurisdiction
+  - autonomy/client-impact level
+- Activation is denied when a policy requires a current privacy review and none exists.
+
+**Driver:** UK ICO agentic-AI call for evidence.
+
+### A7. Execution-Environment Attestation
+
+- High-risk agents may require an attestation that the external runtime enforced:
+  - network destination policy
+  - production/test isolation
+  - credential scope
+  - sandbox/container identity
+  - independent termination path
+- The runtime remains a boundary. Kognita checks and records the attestation before enabling the governed run.
+
+**Driver:** CERT-In CIAD-2026-0049; UK AISI incident evidence.
+
+### A8. AI-Enabled Cyber and Adversarial Drills
+
+Extend 0.7 failure drills with hostile-agent scenarios:
+
+- prompt injection leading to tool escalation
+- discovered third-party credentials
+- unauthorised external network access
+- machine-speed API probing and multi-technique attack
+- compromised model/provider
+- agent-to-agent privilege escalation
+- malicious retrieved content
+- emergency containment and recovery
+
+Every drill checks that policy, monitoring, containment and evidence remain intact.
+
+**Driver:** FSB Sound Practice 11; CERT-In CIAD-2026-0049 and CIAD-2026-0058; broader financial-sector AI cyber exercises.
+
+### A9. AI Software-Supply-Chain Attestation
+
+- Register approved AI-critical software components for a deployment:
+  - package name/version
+  - lockfile or SBOM digest
+  - container/image digest where used
+  - source/provenance reference
+- Deployment evidence records the component-set digest.
+- An operator-supplied compromised-component advisory can quarantine affected deployments and list impacted use cases.
+- Kognita records and gates on provenance; vulnerability scanning and artifact signing stay external.
+
+**Driver:** CERT-In CIAD-2026-0053 on the reported LiteLLM package/container compromise.
+
+### A10. Jurisdictional AI Technology-Transfer Controls
+
+- Extend provider/model metadata with:
+  - technology origin
+  - deployment jurisdiction
+  - transfer type: API/SaaS, model weights, licence, local deployment, ownership/control transfer
+  - operator-supplied restriction/registration policy reference
+- Policy can require a current legal/compliance approval before a governed deployment crosses a configured technology-transfer boundary.
+- Kognita does not determine whether a technology is legally controlled; it enforces the classification supplied by the institution.
+
+**Driver:** China MOFCOM/MOST Announcement No. 48 of 2026.
+
+### A11. High-Risk Instruction Authenticity
+
+- For configured high-risk actions, require independent instruction-authenticity evidence in addition to agent authority.
+- Support maker-checker / second-channel verification references for:
+  - payment or disbursement instructions
+  - account changes
+  - transaction execution
+  - credential/security changes
+- A voice, video, email or chat message alone is not proof of authority.
+- Verification is external; Kognita checks the evidence before execution.
+
+**Driver:** SEC FY2027 examination focus on synthetic/deepfake social engineering and identity theft; CERT-In BFSI API attack guidance.
+
+### A12. Supervisory Conformance Profiles
+
+- Versioned profiles for MAS, HKMA ART, FSB Sound Practices, OCC examiner considerations and selected SEC/FCA themes.
+- Each profile maps expectations to:
+  - Kognita evidence/events
+  - implemented control
+  - boundary evidence
+  - gap/not applicable
+- A point-in-time compliance report is produced from evidence and registers.
+- Profiles are mappings, not legal opinions. Updating a profile never silently changes runtime policy.
+
+**Driver:** the October-November 2026 move from principle-level AI governance toward evidence-based supervisory examination.
+
+### Definition of Done
+
+- [ ] A1 Signed material-agent/KYA manifest is exportable and differences from observed authority/dependencies are findings.
+- [ ] A2 External-agent assertions are verifiable, expiry/audience scoped and non-transitive by default.
+- [ ] A3 Production outcome validation can trigger a finding, revalidation and configured autonomy step-down.
+- [ ] A4 High-materiality third-party updates cannot become approved without regression evidence, rollback plan and approval.
+- [ ] A5 Monitoring-coverage report reconciles Kognita evidence with independent telemetry and detects missing coverage.
+- [ ] A6 Privacy approval is invalidated by configured material privacy changes and can gate activation.
+- [ ] A7 Required execution-environment attestation is checked before high-risk governed runs.
+- [ ] A8 Adversarial drills cover hostile-agent and machine-speed cyber scenarios with complete evidence.
+- [ ] A9 Component/SBOM/image digests are bound to deployments; affected deployments can be enumerated from an advisory.
+- [ ] A10 Jurisdiction/technology-transfer policy can gate model deployment without Kognita making the legal classification.
+- [ ] A11 High-risk instructions can require independent authenticity/maker-checker evidence before action.
+- [ ] A12 At least MAS, HKMA ART, FSB and OCC profiles produce point-in-time evidence-backed conformance reports.
+
+---
+
 ## 1.0 "Production Ready"
 
-**Timeline:** Q1 2028
+**Timeline:** Q2 2028
 
 - **Benchmarks:** decision latency p50 and p99, evidence write throughput, gateway overhead, resume time; published with hardware specs
 - **Docs rewrite:** lead with the problem ("prove an AI request was allowed before any data moved"), scenarios by industry, glossary, honest comparison with content guardrails and AI gateways
@@ -963,7 +1145,8 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 3. **0.5:** agent identity and delegated authority make multi-agent deployments safe
 4. **0.6:** typed, verified, current claims make agent output trustworthy to RMs
 5. **0.7:** signatures, external review and tested resilience satisfy regulated buyers
-6. **1.0:** production-ready, benchmarked, documented, examinable
+6. **0.8:** supervisory alignment, KYA/interoperability, runtime monitoring assurance and regulatory conformance profiles
+7. **1.0:** production-ready, benchmarked, documented, examinable
 
 ### Why Kognita Wins
 
@@ -992,6 +1175,13 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 ---
 
 ## Decision Log
+
+**6 November 2026: Post-12 October regulatory delta and 0.8 release**
+- Re-audited the control framework against primary-source developments since the previous full audit: FSB final Sound Practices; HKMA ART Framework and Project SAGE; FCA AI good-practice observations; Bank of England/FCA 2026 AI survey; SEC FY2027 examination priorities; OCC Bulletin 2026-54; ICO agentic-AI consultation; MAS Future of Finance Institute; CERT-In agent/BFSI/supply-chain advisories; and China MOFCOM/MOST Announcement No. 48.
+- Existing 0.3-0.7 controls already cover most governance, authority, intervention, resilience, evidence and third-party themes. The audit found twelve implementation gaps that are distinct enough to warrant a minor feature release rather than overloading 1.0.
+- Added **0.8 "Supervisory Alignment and Runtime Assurance"**: material-agent/KYA manifests; external-agent trust assertions; outcome validation; third-party update gates; monitoring-coverage attestation; privacy re-assessment triggers; execution-environment attestations; AI cyber/adversarial drills; AI software-supply-chain attestation; jurisdictional technology-transfer controls; high-risk instruction authenticity; and evidence-backed supervisory conformance profiles.
+- 1.0 moves from Q1 to **Q2 2028**. This still lands before the MAS Sections 5-6 deadline of 7 October 2028.
+- Not adopted as core: operating a regulator/industry agent registry, building a sandbox/SOC, deciding export-control legal classifications, performing identity verification, or running software vulnerability scanners. Kognita consumes and evidences attestations from those authoritative systems.
 
 **12 October 2026: Trust architecture (Satya Nadella)**
 - Mapped the roadmap against [Satya Nadella's post of 10 October 2026](https://x.com/satyanadella) on a trust architecture for AI systems. Full mapping in [control-frameworks.md](control-frameworks.md). His central principle, separating the supply of intelligence from the authority over it, is Kognita's design rule; most of his principles were already shipped or planned.
