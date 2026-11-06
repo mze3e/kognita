@@ -1,6 +1,6 @@
 # AI Control Frameworks: Wealth Management and Agentic AI Coverage
 
-**Last revised:** 12 October 2026. Companion to [ROADMAP.md](ROADMAP.md).
+**Last revised:** 6 November 2026. Companion to [ROADMAP.md](ROADMAP.md).
 
 **Attribution:** This document maps two control frameworks and one supervisory guideline against Kognita:
 - A **40-domain bank-grade agentic AI control framework** for wealth management and private banking, drawing on supervisory material (MAS, ABS), security references (NIST, OWASP), and production patterns described for large banks.
@@ -356,18 +356,70 @@ This is Kognita's design rule stated from the outside. The mapping below uses th
 
 ---
 
-## IX. What Kognita Deliberately Does Not Become
+
+## IX. Verified Regulatory and Supervisory Delta (8 October to 6 November 2026)
+
+This section records primary-source developments that were not in the 12 October audit. It deliberately separates **binding requirements**, **supervisory guidance or examination priorities**, **consultations/policy development**, and **security advisories or industry evidence**. A control is added to Kognita only where the development exposes a concrete implementation gap. A regulator mentioning a practice does not make that practice universally mandatory.
+
+| Source and date | Status | New signal | Kognita coverage before this audit | Gap / roadmap action |
+|---|---|---|---|---|
+| [UK ICO agentic AI call for evidence](https://ico.org.uk/about-the-ico/ico-and-stakeholder-consultations/2026/10/agentic-ai-call-for-evidence/), 8 Oct | Consultation; not binding | Agentic-AI privacy analysis across security, transparency, accountability, automated decision-making, fairness, purpose limitation and lawfulness | Purpose limitation, data classification, sensitive-data gates and use-case review exist | **Added 0.8 A6:** privacy-impact re-assessment triggered by new tools, memory, data classes, purposes, autonomy or jurisdictions |
+| [FSB Sound Practices for Responsible Adoption of AI](https://www.fsb.org/2026/10/sound-practices-for-responsible-adoption-of-artificial-intelligence-ai-final-report/), 15 Oct | Final non-binding international sound practices | Human oversight should reflect materiality, autonomy, complexity and explainability; AI cyber/ICT scenarios should enter tests and exercises; third-party AI risk includes supply chain, concentration and continuity | Governance, materiality, human review, dependency map, provider register and failure drills are strong | **Added 0.8 A8:** explicit AI-enabled cyber/adversarial exercise pack; FSB profile added to 0.8 A12 |
+| [HKMA ART Framework](https://www.hkma.gov.hk/eng/news-and-media/press-releases/2026/10/20261015-3/) and Supervisory Guidance, 15 Oct | Current supervisory guidance for Hong Kong authorised institutions; agentic concepts partly exploratory | Intent-anchored accountability, material-agent registry, effective intervention, dependency lineage, agent harness boundaries and possible kill switches | Internal agent registry, authority, dependency map and kill switches already exist | **Added 0.8 A1-A2:** exportable material-agent/KYA manifest and interoperable external-agent trust assertions |
+| [CERT-In CIAD-2026-0049](https://cert-in.org.in/s2cMainServlet?VLCODE=CIAD-2026-0049&pageid=PUBVLNOTES02), 15 Oct | Critical cybersecurity advisory; not financial regulation | Enforce network restrictions outside the model, isolate evaluations from production, monitor model-initiated network activity in real time, and give an independent operator termination authority | Tool allow-lists, blast radius, containment and kill switches exist; sandbox remains a boundary | **Added 0.8 A5/A7/A8:** monitoring-coverage attestation, execution-environment attestation and agent cyber exercises |
+| [China MOFCOM/MOST Announcement No. 48](https://www.mofcom.gov.cn/zwgk/zcfb/art/2026/art_0a31a3c9ac404f7a9b0e917ce3412997.html), 16 Oct | **Binding interim pre-export registration** for listed technologies; catalogue amendments under consultation | 23 proposed AI technologies include large models and intelligent agents. Certain transfers and overseas local deployment can be technology exports; ordinary API/SaaS access is generally treated differently | Provider register records residency and contracts, but not technology-transfer restrictions | **Added 0.8 A10:** jurisdictional model/technology-transfer policy metadata and pre-deployment enforcement |
+| [FCA AI good practice and areas for improvement](https://www.fca.org.uk/publications/good-poor-practice/ai-financial-services), 19-20 Oct | Supervisory examples; explicitly not new requirements | Monitor real-world outcomes, evidence whether humans actually reviewed/overrode/escalated, maintain escalation thresholds and fallback arrangements | RM edits, outcomes, review queue and provider failover exist | **Added 0.8 A3:** downstream outcome validation and continuous post-deployment assurance |
+| [SEC FY2027 Examination Priorities](https://www.sec.gov/newsroom/press-releases/2026-109-sec-announces-fiscal-year-2027-examination-priorities), 23 Oct | Examination priorities; not new rules | Advanced AI in client communications, advisory and portfolio management; AI-generated phishing/deepfake social engineering; automated recommendations must remain consistent with investor profiles and disclosures | Communication levels, suitability boundaries, deepfake incident playbook and client records exist | **Added 0.8 A11:** high-risk instruction authenticity / maker-checker evidence for sensitive client actions |
+| [CERT-In CIAD-2026-0053](https://cert-in.org.in/s2cMainServlet?VLCODE=CIAD-2026-0053&pageid=PUBVLNOTES02), 23 Oct | Cybersecurity advisory | Reported compromise of LiteLLM package/container distribution shows AI gateway/orchestration dependencies are software-supply-chain risk, not only vendor risk | Dependency map identifies frameworks/orchestration but does not attest package/image integrity | **Added 0.8 A9:** AI software-supply-chain attestation (SBOM/lockfile/image digest and approved component version) |
+| [Bank of England/FCA AI in UK Financial Services 2026](https://www.bankofengland.co.uk/report/2026/artificial-intelligence-in-uk-financial-services-2026), 26 Oct | Supervisory survey/evidence; not a rule | 80% of respondents reported deployed agents; post-deployment monitoring lags pre-deployment control; regression testing, rollback and exit planning for third-party updates are uneven | Silent model-change detection, failover and provider register exist | **Added 0.8 A4:** third-party AI update gate requiring regression evidence and rollback plan for material changes |
+| [HKMA Project SAGE](https://www.hkma.gov.hk/eng/news-and-media/press-releases/2026/11/20261102-4/), 2 Nov | Supervisory policy development / industry programme; discussion paper is not binding | Verify agent identities and delegated authority, explore **Know Your Agent (KYA)** practices, authentication, interoperability standards, governance, liability and consumer protection | Authenticated internal identity and delegated authority exist; external agents remain untrusted principals | **Added 0.8 A1-A2:** KYA manifest and cross-organisation agent trust/interoperability |
+| [MAS Future of Finance Institute](https://www.mas.gov.sg/news/media-releases/2026/future-of-finance-institute-commences-operations-starting-with-ai-in-finance), 3 Nov | MAS-led implementation initiative; not a new supervisory requirement | SafeFin.ai will develop practical resources for the MAS Guidelines; BuildFin.ai will develop practices/tools for safe agentic AI | MAS paragraph mapping already exists | No new enforcement feature. Track SafeFin/BuildFin outputs through **0.8 A12 supervisory profiles** |
+| [CERT-In CIAD-2026-0058](https://www.cert-in.org.in/s2cMainServlet?VLCODE=CIAD-2026-0058&pageid=PUBVLNOTES02), 4 Nov | Critical BFSI cybersecurity advisory | AI-assisted attacks operate at machine speed against payment/disbursement APIs; recommends maker-checker approval, zero trust, machine-speed detection and automated containment | Dual approval, runtime policy, anomaly containment and incident evidence exist | **0.8 A8/A11** make the attack scenarios and instruction-authenticity evidence explicit |
+| [OCC Bulletin 2026-54](https://occ.treas.gov/news-issuances/bulletins/2026/bulletin-2026-54.html), 4 Nov | Examiner framework; explicitly creates no new supervisory expectations | Examination intensity should reflect consequences, transfer of agency, human oversight, autonomy and complexity rather than model sophistication alone | Client-impact, autonomy, materiality and human-control dimensions already exist | No new core field required. Add OCC examination profile under **0.8 A12** |
+
+### New Controls Adopted by This Audit
+
+These are the implementation deltas that were not already explicit in the code or roadmap. They are grouped in the new **0.8 "Supervisory Alignment and Runtime Assurance"** release.
+
+| ID | Control | Why it is new | Boundary |
+|---|---|---|---|
+| A1 | **Material-agent / KYA manifest** | Existing registry is internal. Supervisory and cross-organisation use needs an exportable identity, owner, purpose, authority, autonomy, dependencies, intervention and expiry record | Kognita issues/exports the manifest; sector-wide registry operation belongs to supervisors/industry |
+| A2 | **External-agent trust and interoperability** | External agents are currently untrusted, but there is no positive trust assertion that can be independently verified | Kognita verifies identity/authority assertions; it does not become a universal identity provider |
+| A3 | **Outcome validation and post-deployment assurance** | Existing outcome metrics do not explicitly bind an AI recommendation/action to the downstream real-world outcome and validate that outcome against expectations | The bank owns business outcome truth; Kognita records and gates on supplied outcome evidence |
+| A4 | **Third-party update gate** | Silent changes are detected after the fact; high-materiality vendor updates need regression evidence and a rollback plan before they are accepted | Evaluation harness remains external; Kognita requires its evidence |
+| A5 | **Monitoring-coverage attestation** | An audit log is useful only if the bank can prove material agent actions could not bypass it | Out-of-band telemetry can be supplied by the runtime/security platform; Kognita reconciles it to evidence |
+| A6 | **Privacy-impact re-assessment triggers** | Generic revalidation exists, but privacy review must be specifically invalidated by new tools, memory, purposes, personal-data classes, jurisdictions or autonomy | DPIA/legal analysis belongs to the bank; Kognita requires a current approval record |
+| A7 | **Execution-environment attestation** | Sandbox/network enforcement is a boundary, but high-risk agents need evidence that required isolation and network policy were actually active | Kognita consumes attestations; it does not build the sandbox or network controls |
+| A8 | **AI-enabled cyber and adversarial drills** | Existing failure drills are availability-oriented and do not cover machine-speed hostile-agent attack chains | Kognita simulates governance/control paths; enterprise SOC/SOAR execution remains external |
+| A9 | **AI software-supply-chain attestation** | Provider governance does not prove the integrity of AI proxies, SDKs, containers and orchestration packages | Kognita records approved SBOM/lockfile/image digests; package scanning/signing tools remain external |
+| A10 | **Jurisdictional AI technology-transfer controls** | Data residency is not the same as model-weight, technology-license or local-deployment export control | Legal classification belongs to the bank; Kognita enforces supplied jurisdiction/transfer policy |
+| A11 | **High-risk instruction authenticity** | A deepfake/compromised channel can deliver a syntactically valid instruction; high-risk actions need independent authenticity/maker-checker evidence | Identity verification channel remains external; Kognita requires the evidence before action |
+| A12 | **Supervisory conformance profiles** | The repository maps controls in prose but cannot generate a current evidence-backed view for MAS/HKMA/FSB/OCC/SEC/FCA profiles | Kognita reports evidence against a profile; interpretation remains the institution's responsibility |
+
+### Technical Evidence That Strengthens A5-A8
+
+Two non-regulatory developments strengthen the case for the controls above:
+
+- The UK AI Security Institute's 2026 incident report on unsanctioned agent behaviour showed why evaluation agents need production isolation, independently enforced network boundaries and immediate termination authority.
+- Independent red-team work on agent-monitoring systems demonstrated that monitoring itself can become a bypass target. Kognita therefore treats **monitoring completeness as a control to prove**, not an architectural assumption.
+
+Neither item is a legal requirement. They are engineering evidence supporting the roadmap controls.
+
+---
+
+## X. What Kognita Deliberately Does Not Become
 
 Five domains are marked **Boundary**: the truth layer, calculation engines, evaluation harnesses, sandboxes and challenger models. Kognita's role in each is the same. It refuses to let an output through unless the authoritative system was used, and it records that it was. Building those systems inside Kognita would contradict the design rule above, because it would make Kognita the thing being governed.
 
 ---
 
-## X. Attribution and Licensing
+## XI. Attribution and Licensing
 
 - **40-domain bank-grade framework:** consolidated from supervisory material (MAS, ABS), security references (NIST, OWASP), and production patterns.
 - **MAS Guidelines on Artificial Intelligence Risk Management,** Monetary Authority of Singapore, 7 October 2026. Paragraph numbers in section VII refer to that document; the mapping is Kognita's reading, not MAS guidance.
 - **Trust architecture principles:** [Satya Nadella's post of 10 October 2026](https://x.com/satyanadella). Section VIII paraphrases and quotes it; the mapping is Kognita's reading, not the author's.
 - **70-control wealth management framework:** consolidated from MAS, PDPC, SFC, FCA, the Bank of England, APRA and ASIC, CSBS, BIS/FSI and ESMA.
+- **Post-12 October 2026 primary-source delta:** FSB Sound Practices (15 Oct); HKMA ART Framework and Supervisory Guidance (15 Oct); CERT-In CIAD-2026-0049 and CIAD-2026-0058; China MOFCOM/MOST Announcement No. 48; FCA AI good-practice observations (19-20 Oct); SEC FY2027 Examination Priorities; Bank of England/FCA 2026 AI survey; HKMA Project SAGE (2 Nov); MAS Future of Finance Institute (3 Nov); and OCC Bulletin 2026-54 (4 Nov). Status and applicability are stated row by row in section IX.
 - **EVOLVE framework integration:** The continuous learning loop, institutional memory, Knowledge Lead role, evidence-gated autonomy and drift tracking are based on the EVOLVE AI-native enterprise framework, authored by **Ahmed Muzammil**, licensed under **Creative Commons Attribution Share-Alike 4.0 (CC BY SA 4.0)**.
 
 This document and the referenced frameworks are published under the same license as Kognita (MIT). The EVOLVE contributions are used and adapted under CC BY SA 4.0.
