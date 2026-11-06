@@ -956,7 +956,9 @@ The 0.6 claims controls ship in v0.6.0: typed claims, freshness, approved source
 
 The 0.7 trust and resilience controls ship in v0.7.0. See [Trust and resilience](#trust-and-resilience-07) and the [0.7 checklist](docs/ROADMAP.md).
 
-The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop and institutional memory.
+**0.8 "Supervisory Alignment and Runtime Assurance" is planned**: material-agent/KYA manifests, external-agent trust assertions, outcome validation, third-party update gates, monitoring-coverage and execution-environment attestations, AI cyber drills, AI software-supply-chain evidence, jurisdictional technology-transfer controls, high-risk instruction authenticity and evidence-backed supervisory conformance profiles. See the [0.8 roadmap](docs/ROADMAP.md#08-supervisory-alignment-and-runtime-assurance).
+
+The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop, institutional memory, and a verified post-October-2026 regulatory/supervisory delta covering FSB, HKMA, FCA, SEC, OCC, ICO, MAS and relevant cyber/technology-transfer developments.
 
 The design rule behind all of it: **never rely on the LLM to enforce a control that can be enforced outside the LLM.**
 
