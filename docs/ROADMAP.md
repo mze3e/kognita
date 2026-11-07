@@ -1088,7 +1088,7 @@ Every drill checks that policy, monitoring, containment and evidence remain inta
 - [ ] A9 Component/SBOM/image digests are bound to deployments; affected deployments can be enumerated from an advisory.
 - [ ] A10 Jurisdiction/technology-transfer policy can gate model deployment without Kognita making the legal classification.
 - [ ] A11 High-risk instructions can require independent authenticity/maker-checker evidence before action.
-- [ ] A12 At least MAS, HKMA ART, FSB and OCC profiles produce point-in-time evidence-backed conformance reports.
+- [ ] A12 Profiles for at least MAS, HKMA ART, FSB, OCC and selected SEC/FCA themes produce point-in-time evidence-backed conformance reports.
 
 ---
 

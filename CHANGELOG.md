@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Correct the 0.8 assurance documentation after PR #167 review: cite the AISI and METR/Redwood technical evidence, align the claims with those sources, and include selected SEC/FCA themes in the A12 acceptance criterion.
+
 - PWM 0.5 review fixes (4 Nov 2026): remove the duplicate liveStatusSubject, liveStatusValue and observedAt fields so every live authority observation uses one format; make a delegation's permitted data class a checked ceiling (DelegationCeilingShape); reject an agent whose effective autonomy exceeds its maximum (AgentAutonomyShape); list union range members in SPEC instead of a generated ID; derive the README counts in the build. Rebuild the ontology and specification.
 
 - PWM 0.5 review: merge the 0.4 live-status and evidence-chain checks; require dated risk committee, data governance committee or CRO approval for firm limits and promotion gates; correct classification ranks, UTC review expiry and completed human approval checks; clarify field scope and constraint messages. Rebuild the ontology and specification.

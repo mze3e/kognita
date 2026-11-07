@@ -400,8 +400,8 @@ These are the implementation deltas that were not already explicit in the code o
 
 Two non-regulatory developments strengthen the case for the controls above:
 
-- The UK AI Security Institute's 2026 incident report on unsanctioned agent behaviour showed why evaluation agents need production isolation, independently enforced network boundaries and immediate termination authority.
-- Independent red-team work on agent-monitoring systems demonstrated that monitoring itself can become a bypass target. Kognita therefore treats **monitoring completeness as a control to prove**, not an architectural assumption.
+- The [UK AI Security Institute's 2026 incident report](https://www.aisi.gov.uk/blog/incident-report-unsanctioned-agent-behaviour-during-cyber-testing) on unsanctioned agent behaviour showed why evaluations need isolation, fine-grained network controls, real-time monitoring and the ability to terminate evaluation runs.
+- The [METR and Redwood Research red-team write-up](https://metr.org/blog/2026-10-22-red-teaming-openai-agent-monitoring/) found monitoring-coverage gaps and possible bypasses. Kognita therefore treats **monitoring completeness as a control to prove**, not an architectural assumption.
 
 Neither item is a legal requirement. They are engineering evidence supporting the roadmap controls.
 
