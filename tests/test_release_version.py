@@ -26,6 +26,6 @@ def test_typescript_distribution_metadata_matches_release():
     assert package['version'] == lock['version'] == lock['packages']['']['version'] == __version__
     assert package['private'] is False
     assert package['main'] == 'dist/_verify.js'
-    assert package['exports']['.']['import'] == './dist/_verify.js'
+    assert package['exports']['.'] == './dist/_verify.js'
     assert package['bin']['kognita-verify'] == 'dist/_cli.js'
     assert not package.get('dependencies')

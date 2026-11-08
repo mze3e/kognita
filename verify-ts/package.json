@@ -23,10 +23,7 @@
   "main": "dist/_verify.js",
   "types": "dist/_verify.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/_verify.d.ts",
-      "import": "./dist/_verify.js"
-    }
+    ".": "./dist/_verify.js"
   },
   "license": "MIT",
   "description": "Independent Kognita evidence verifier with zero runtime dependencies",
