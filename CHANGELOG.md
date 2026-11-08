@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Retained interactions are refreshed before outcome validation; externally deleted expired evidence objects still produce a chain break and an incident-recording attempt.
+
 - Concurrent outcome submissions serialize before governing-state reads, preventing duplicate acceptance, missed adverse thresholds and lost autonomy reductions. Real PostgreSQL process tests verify signed chains, exact sequence continuity, refreshed policy and atomic rollback.
 
 - Chain verification refreshes every stored event before hashing, including retained non-assurance ORM objects after raw database tampering.

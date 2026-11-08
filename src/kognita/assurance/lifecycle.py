@@ -115,7 +115,7 @@ def record_outcome(session, name, outcome, *, evidence, actor_id, now=None):
     agent = owner(session, name, actor_id)
     p = policy(session, name)
     result = ProductionOutcome.model_validate(outcome)
-    interaction = session.get(Interaction, result.interaction_id)
+    interaction = session.get(Interaction, result.interaction_id, populate_existing=True)
     if interaction is None or interaction.use_case != p.use_case:
         raise ValueError('A3: outcome must link to an interaction of the governed use case')
     rows = events(session, name)

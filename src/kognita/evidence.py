@@ -428,12 +428,21 @@ def _verify_chain(session, *, public_key=None):
     """Verify fresh stored rows without concealing resident-object corruption."""
     # Refuse corrupted resident objects before refreshing them from storage.
     # JSON mutations may be invisible to ORM dirty tracking, but still matter.
+    from sqlalchemy.orm.exc import ObjectDeletedError
     for event in list(session.identity_map.values()):
         if isinstance(event, EvidenceEvent):
-            if canonical_hash(event.payload) != event.payload_hash:
-                raise ChainBreak(event.sequence, "payload does not match its hash")
-            if recompute_event_hash(event) != event.event_hash:
-                raise ChainBreak(event.sequence, "event hash does not match its contents")
+            try:
+                payload, payload_hash = event.payload, event.payload_hash
+                sequence, event_hash = event.sequence, event.event_hash
+                header = _event_header(event)
+            except ObjectDeletedError:
+                # An expired attribute refreshed a row that no longer exists.
+                # The stored sequence/checkpoint checks below detect its removal.
+                continue
+            if canonical_hash(payload) != payload_hash:
+                raise ChainBreak(sequence, "payload does not match its hash")
+            if canonical_hash(header) != event_hash:
+                raise ChainBreak(sequence, "event hash does not match its contents")
     events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)
                           .execution_options(populate_existing=True)).all()
     required = public_key is not None or any(event.signature is not None for event in events)
