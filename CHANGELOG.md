@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Chain verification refreshes every stored event before hashing, including retained non-assurance ORM objects after raw database tampering.
+
 - Offline drill transcripts preserve the configured payload redaction hook before simulated evidence is retained.
 
 - Signed assurance CLI writes accept a separate evidence-chain signer; mapped tool subjects cannot replace the invoked tool in external trust checks. A4 reports require the current policy digest, and drill evidence omissions raise explicit errors.

@@ -421,7 +421,17 @@ def verify_chain(session: Session, *, public_key: bytes | None = None) -> int:
 
 
 def _verify_chain(session, *, public_key=None):
-    events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
+    """Verify fresh stored rows without concealing resident-object corruption."""
+    # Refuse corrupted resident objects before refreshing them from storage.
+    # JSON mutations may be invisible to ORM dirty tracking, but still matter.
+    for event in list(session.identity_map.values()):
+        if isinstance(event, EvidenceEvent):
+            if canonical_hash(event.payload) != event.payload_hash:
+                raise ChainBreak(event.sequence, "payload does not match its hash")
+            if recompute_event_hash(event) != event.event_hash:
+                raise ChainBreak(event.sequence, "event hash does not match its contents")
+    events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)
+                          .execution_options(populate_existing=True)).all()
     required = public_key is not None or any(event.signature is not None for event in events)
     from kognita.signing import _registry
     _registry(export_chain(session)['events'], public_key)

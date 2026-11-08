@@ -143,6 +143,28 @@ def test_same_head_tamper_is_rejected_after_previous_snapshot(session, setup):
         load_state(session, [a.name], utcnow())
 
 
+@pytest.mark.parametrize('reader', ['snapshot', 'chain'])
+def test_raw_sql_tamper_of_retained_non_assurance_event_is_rejected(session, setup, reader):
+    """Verification refreshes retained ORM rows across all evidence event types."""
+    from sqlalchemy import text
+    from evidence_guard import lift_evidence_guard
+    from kognita.evidence import _verify_chain
+    a, w, _, _, _, _, config = setup
+    config()
+    retained = w.emit(session, correlation_id='retained-action', event_type=EventType.TOOL_CALL,
+                      actor_id=a.name, payload={'tool': 'original'})
+    load_state(session, [a.name], utcnow())
+    lift_evidence_guard(session)
+    session.execute(text('UPDATE evidence_events SET payload = :payload WHERE sequence = :sequence'),
+                    {'payload': '{"tool":"rewritten"}', 'sequence': retained.sequence})
+    assert retained.payload == {'tool': 'original'}
+    with pytest.raises(ChainBreak, match='payload does not match its hash'):
+        if reader == 'snapshot':
+            load_state(session, [a.name], utcnow())
+        else:
+            _verify_chain(session)
+
+
 @pytest.mark.parametrize('later_seconds', [0, 60])
 def test_monitoring_replay_excludes_later_actions_and_live_still_denies(session, evidence, later_seconds):
     """A later action, even at the same clock tick, cannot change a past decision."""
