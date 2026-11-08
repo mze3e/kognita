@@ -336,3 +336,20 @@ def test_outcome_preserves_pending_interaction_with_autoflush_disabled(session, 
             assert record_outcome(session, a.name, outcome, evidence=writer, actor_id='owner')['breached']
         assert session.get(Interaction, interaction.id, populate_existing=True).use_case == ('different' if existing else 'p')
         verify_chain(session)
+
+
+
+def test_outcome_preserves_nonconflicting_pending_interaction_edit(session, setup):
+    """An uncontested caller edit remains valid with autoflush disabled."""
+    a, writer, _, _, _, _, config = setup
+    config()
+    interaction = Interaction(id='edited-interaction', client_id='client', use_case='initial')
+    session.add(interaction)
+    session.flush()
+    interaction.use_case = 'p'
+    with session.no_autoflush:
+        outcome = ProductionOutcome(interaction_id=interaction.id, intended='correct', actual='adverse',
+            client_impact='loss', adverse=True, source_reference='bank:edited', outcome_id='edited')
+        assert record_outcome(session, a.name, outcome, evidence=writer, actor_id='owner')['breached']
+        assert session.get(Interaction, interaction.id, populate_existing=True).use_case == 'p'
+        verify_chain(session)

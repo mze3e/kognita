@@ -98,6 +98,30 @@ class ProductionOutcome(Record):
     outcome_id: str = Field(min_length=1)
 
 
+def _flush_outcome_state(session):
+    """Preserve pending interaction edits without overwriting committed conflicts."""
+    from sqlalchemy import inspect
+    for interaction in tuple(session.dirty):
+        if not isinstance(interaction, Interaction):
+            continue
+        state = inspect(interaction)
+        changes = {column.key: state.attrs[column.key].history
+                   for column in state.mapper.columns
+                   if state.attrs[column.key].history.has_changes()}
+        if not changes:
+            continue
+        # Lock fresh scalar values without replacing the caller's pending edits.
+        with session.no_autoflush:
+            stored = session.execute(select(*Interaction.__table__.columns)
+                .where(Interaction.id == state.identity[0]).with_for_update()).mappings().one_or_none()
+        if stored is None or any(
+                getattr(interaction, key) != stored[key] and
+                (not history.deleted or history.deleted[0] != stored[key])
+                for key, history in changes.items()):
+            raise ValueError('A3: conflicting pending interaction edit')
+    session.flush()
+
+
 def record_outcome(session, name, outcome, *, evidence, actor_id, now=None):
     """Store bank-supplied facts; no inferred success, even for a completed run."""
     # Use the append lock before reading any governing state, not only at emit.
@@ -112,7 +136,7 @@ def record_outcome(session, name, outcome, *, evidence, actor_id, now=None):
     else:
         raise ValueError('A3: outcome serialization requires SQLite or PostgreSQL')
     # Preserve pending caller changes before populate_existing, even without autoflush.
-    session.flush()
+    _flush_outcome_state(session)
     at = as_utc(now or utcnow())
     agent = owner(session, name, actor_id)
     p = policy(session, name)

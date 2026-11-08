@@ -185,7 +185,10 @@ as evidence appends and requires the READ COMMITTED isolation level. Database
 reads after waiting see committed state; outcome registration explicitly refreshes
 retained identities, interactions and evidence rows before validation. Pending
 caller changes are flushed after locking and before refreshing, even when
-autoflush is disabled. SQLite reserves its single writer before these reads. The lock
+autoflush is disabled. Before flushing dirty interactions, registration locks their
+stored rows and compares changed fields against their original values. Conflicting
+pending edits are refused without overwriting committed state; roll back, reload
+and reconcile the caller edit before retrying. SQLite reserves its single writer before these reads. The lock
 lasts until the caller commits or rolls back, including across the nested savepoint
 that makes the outcome, finding, revalidation and autonomy reduction atomic.
 Keep these administrative transactions short. An incomplete required evidence

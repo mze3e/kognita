@@ -164,6 +164,8 @@ def _outcome(url, ready, start, results, index, mode, private):
             policy(session, retained.name)
             from kognita.models import Interaction
             retained_interaction = session.get(Interaction, 'concurrent-outcomes')
+            if mode == 'conflict':
+                retained_interaction.use_case = 'p'
             pid = session.execute(_text('SELECT pg_backend_pid()')).scalar_one()
             ready.put(pid)
             assert start.wait(20)
@@ -184,8 +186,12 @@ def _outcome(url, ready, start, results, index, mode, private):
                 session.commit()
                 results.put(('ok', result))
             except ValueError as error:
-                # Preserve the outer transaction to exercise savepoint rollback.
-                session.commit()
+                if mode == 'conflict':
+                    # Caller-owned conflicting edits require rollback and reconciliation.
+                    session.rollback()
+                else:
+                    # Prove required-write savepoint rollback even if the caller commits.
+                    session.commit()
                 results.put(('refused', str(error)))
     finally:
         engine.dispose()
@@ -208,7 +214,7 @@ def _await_advisory_waiters(engine, pids):
     pytest.fail('outcome writers did not all contend on the database lock')
 
 
-@pytest.mark.parametrize('mode', ['threshold', 'duplicate', 'rollback', 'policy', 'interaction'])
+@pytest.mark.parametrize('mode', ['threshold', 'duplicate', 'rollback', 'policy', 'interaction', 'conflict'])
 def test_concurrent_outcomes_serialize_safety_state_and_preserve_signed_chain(_store, mode):
     """Contending processes refresh safety state and leave exact, signed evidence."""
     from kognita.assurance import AssurancePolicy, configure
@@ -230,7 +236,8 @@ def test_concurrent_outcomes_serialize_safety_state_and_preserve_signed_chain(_s
         _change(session, agent, 3, writer, 'owner', 'AUTONOMY_PROMOTED', {})
         configure(session, agent.name, AssurancePolicy(use_case='p', audience='bank',
             max_adverse_outcomes=2, outcome_step_down=True), evidence=writer, actor_id='owner')
-        session.add(Interaction(id='concurrent-outcomes', client_id='client', use_case='p'))
+        session.add(Interaction(id='concurrent-outcomes', client_id='client',
+                                use_case='initial' if mode == 'conflict' else 'p'))
         session.commit()
     context = _mp.get_context('spawn')
     ready, results, start = context.Queue(), context.Queue(), context.Event()
@@ -245,7 +252,7 @@ def test_concurrent_outcomes_serialize_safety_state_and_preserve_signed_chain(_s
             pids = [ready.get(timeout=20) for _ in processes]
             start.set()
             _await_advisory_waiters(engine, pids)
-            if mode == 'interaction':
+            if mode in ('interaction', 'conflict'):
                 blocker.get(Interaction, 'concurrent-outcomes').use_case = 'other'
             elif mode == 'policy':
                 # State changed while all callers held old identities/policies.
@@ -263,7 +270,10 @@ def test_concurrent_outcomes_serialize_safety_state_and_preserve_signed_chain(_s
         responses = [results.get(timeout=5) for _ in processes]
         accepted = [result for status, result in responses if status == 'ok']
         refused = [result for status, result in responses if status == 'refused']
-        if mode == 'interaction':
+        if mode == 'conflict':
+            assert accepted == [] and len(refused) == 3
+            assert all('A3: conflicting pending interaction edit' in error for error in refused)
+        elif mode == 'interaction':
             assert accepted == [] and len(refused) == 3
             assert all('outcome must link to an interaction of the governed use case' in error for error in refused)
         elif mode == 'duplicate':
@@ -281,7 +291,7 @@ def test_concurrent_outcomes_serialize_safety_state_and_preserve_signed_chain(_s
             actions = [row.payload.get('action') for row in rows]
             outcomes = [row.payload['body']['outcome']['outcome_id'] for row in rows
                         if row.payload.get('action') == 'PRODUCTION_OUTCOME']
-            assert len(outcomes) == len(accepted) + (mode not in ('policy', 'interaction'))
+            assert len(outcomes) == len(accepted) + (mode not in ('policy', 'interaction', 'conflict'))
             assert len(set(outcomes)) == len(outcomes)
             if mode == 'rollback':
                 assert '0' not in outcomes
@@ -289,6 +299,8 @@ def test_concurrent_outcomes_serialize_safety_state_and_preserve_signed_chain(_s
             assert sum(row.event_type == _Type.REVALIDATION_TRIGGERED for row in rows) == len(accepted)
             reductions = [row.payload for row in rows if row.payload.get('action') == 'AUTONOMY_STEP_DOWN']
             assert [(row['from'], row['to']) for row in reductions] == [(3-i, 2-i) for i in range(len(accepted))]
+            if mode in ('interaction', 'conflict'):
+                assert session.get(Interaction, 'concurrent-outcomes').use_case == 'other'
             assert agent_for(session, 'outcome-worker').autonomy_level == 3 - len(accepted)
             assert [row.sequence for row in rows] == list(range(1, len(rows) + 1))
             assert _verify(session, public_key=public) == len(rows)
