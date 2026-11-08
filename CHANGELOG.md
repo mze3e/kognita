@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-08
+
+### Fixed
+
+- Review corrections: good outcomes no longer retrigger adverse thresholds; required revalidation writes roll back on failure; exact instruction records, normalized manifest datetimes and deployment-specific update reports select the correct evidence. Admission and advisories verify one batch while preserving old-row tamper detection. Existing PostgreSQL event enums receive an idempotent assurance upgrade during initialization.
+- TypeScript package metadata targets 0.8.0 with public package exports compatible with the published 0.7.0 verifier and generated type declarations.
+
+### Added
+
 - 0.8 supervisory alignment and runtime assurance: owner-configured signed KYA manifests and external-agent assertions; deployment-bound privacy, monitoring, environment, transfer and instruction attestations; candidate-bound third-party update evaluation and regression/rollback approval; authoritative production outcomes with revalidation/step-down; approved component digests and advisory quarantine; eight offline hostile-agent decision drills; versioned evidence-backed MAS/HKMA/FSB/OCC/SEC/FCA theme reports and `kognita assurance` commands. Existing deployments opt in through an accountable-owner policy. Adds the `ASSURANCE` evidence event and optional `EvaluationResult.deployment_hash`; no new core dependencies or database columns. See `docs/runtime-assurance.md`.
 
 - Correct the 0.8 assurance documentation after PR #167 review: cite the AISI and METR/Redwood technical evidence, align the claims with those sources, and include selected SEC/FCA themes in the A12 acceptance criterion.

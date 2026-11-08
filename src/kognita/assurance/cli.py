@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 def add_parser(sub):
+    """Register local assurance operator commands and their explicit inputs."""
     parser = sub.add_parser('assurance', help='0.8 runtime assurance and conformance evidence')
     commands = parser.add_subparsers(dest='assurance_command', required=True)
     inputs = {'configure', 'attest', 'components', 'update', 'outcome', 'advisory', 'drill', 'compare'}
@@ -29,6 +30,7 @@ def add_parser(sub):
 
 
 def run(args):
+    """Run one authenticated local operator command in its database transaction."""
     from kognita.db import create_all, make_engine, session_scope
     from kognita.evidence import EvidenceWriter
     from kognita.assurance import AssurancePolicy, configure

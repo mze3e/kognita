@@ -32,7 +32,10 @@ policy replacement invalidates previous policy-bound attestations and approvals.
 All policies, approvals, signed attestations, outcomes and findings are
 `ASSURANCE` events in the existing append-only evidence chain. Existing backup,
 restore, anchoring, signing and chain verification apply. No database column
-migration is needed. Callers own transactions; commit successful administrative
+migration is needed. Existing PostgreSQL event enums are extended idempotently
+by `create_all(engine)` during initialization. Run initialization with schema
+owner privileges before starting upgraded serving processes; runtime workloads
+must not have DDL privileges. Callers own transactions; commit successful administrative
 operations and roll back exceptions. Reports verify local chain integrity;
 independent authenticity still requires the existing root-key/anchor verification
 workflow.
@@ -40,9 +43,11 @@ workflow.
 ## Configure a reviewed deployment
 
 Start with an existing registered agent, linked use case, evaluation and approved
-behaviour deployment. Install the policy before enabling the new requirements
-in production, obtain the independent approvals for its exact binding, and
-verify admission. For a deployment change, submit the update packet and evaluation,
+behaviour deployment. For a live agent, configure the policy and install all evidence for its exact
+binding in one transaction, verify admission, then commit. Alternatively, use a
+maintenance window: stop normal operation before committing the policy, obtain
+and commit the bound evidence, verify admission, then resume operation. A policy
+committed without its required evidence immediately denies admission. For a deployment change, submit the update packet and evaluation,
 approve the changed behaviour, and refresh deployment-bound attestations before
 running it. An updated deployment cannot reuse the previous attestations.
 
@@ -71,6 +76,12 @@ policy = configure(session, "briefing-agent", AssurancePolicy(
 admitted request. It does not extend an expired delegation or revoked workload
 credential. Existing authority, use-case, autonomy, privacy and tool checks all
 remain necessary; passing an assurance check cannot override another denial.
+
+Assurance reads batch agents and advisories and verify the chain once per
+snapshot. A matching head digest alone does not prove that an older payload
+is intact, so a new snapshot rechecks the prefix instead of trusting a
+cross-snapshot head-only cache. Monitoring also reconciles action history.
+Plan retention and capacity for these integrity checks.
 
 ## Signed boundary attestations (A5, A6, A7, A10, A11)
 

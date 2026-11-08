@@ -2,7 +2,8 @@
 
 Callers own the transaction. Policies and attestations live in the existing
 append-only evidence chain, so backup, signing and independent verification
-apply without another mutable register or a database migration.
+apply without another mutable register. Initialization upgrades an existing
+PostgreSQL event enum before assurance writes.
 """
 from __future__ import annotations
 
@@ -18,10 +19,12 @@ from kognita.vocabulary import ActorType, EventType
 
 
 class Record(BaseModel):
+    """Strict immutable structure for signed or evidenced assurance data."""
     model_config = ConfigDict(extra='forbid', frozen=True)
 
 
 class AssurancePolicy(Record):
+    """Accountable-owner requirements and pinned external trust roots."""
     use_case: str = Field(min_length=1)
     audience: str = Field(min_length=1)
     # Keys are supplied by an authenticated owner, never discovered in a token.
@@ -49,6 +52,7 @@ class AssurancePolicy(Record):
 
     @model_validator(mode='after')
     def independent(self):
+        """Reject missing scope or incomplete transfer classification."""
         if not self.use_case.strip() or not self.audience.strip():
             raise ValueError('A0: use case and audience required')
         if self.transfer_required and not all((self.technology_origin.strip(),
@@ -58,6 +62,7 @@ class AssurancePolicy(Record):
 
 
 def agent_for(session, name):
+    """Load a fresh registered identity or refuse the unknown workload."""
     agent = session.exec(select(Agent).where(Agent.name == name)
                          .execution_options(populate_existing=True)).first()
     if agent is None:
@@ -66,6 +71,7 @@ def agent_for(session, name):
 
 
 def owner(session, name, actor_id):
+    """Require the authenticated accountable human for this agent."""
     agent = agent_for(session, name)
     if not actor_id or actor_id != agent.owner_exec or session.exec(
             select(Agent).where(Agent.name == actor_id)).first() is not None:
@@ -74,6 +80,7 @@ def owner(session, name, actor_id):
 
 
 def emit(session, evidence, name, action, body, *, actor_id, at=None, system=False):
+    """Append a required assurance event and refuse incomplete writes."""
     event = evidence.emit(session, correlation_id=f'assurance:{name}',
         event_type=EventType.ASSURANCE, actor_id=actor_id,
         actor_type=ActorType.SYSTEM if system else ActorType.HUMAN,
@@ -84,13 +91,17 @@ def emit(session, evidence, name, action, body, *, actor_id, at=None, system=Fal
     return event
 
 
-def events(session, name=None, *, as_of=None):
+def events(session, name=None, *, as_of=None, _names=None):
+    """Read one verified batch; snapshots must never reuse a head-only cache."""
     query = select(EvidenceEvent).where(EvidenceEvent.event_type == EventType.ASSURANCE)
     if name is not None:
         query = query.where(EvidenceEvent.correlation_id == f'assurance:{name}')
+    if _names is not None:
+        query = query.where(EvidenceEvent.correlation_id.in_(
+            [f'assurance:{value}' for value in _names]))
     if as_of is not None:
         query = query.where(EvidenceEvent.recorded_at <= as_utc(as_of))
-    rows = session.exec(query.order_by(EvidenceEvent.sequence)).all()
+    rows = session.exec(query.order_by(EvidenceEvent.sequence).execution_options(populate_existing=True)).all()
     if rows:
         from kognita.evidence import _verify_chain
         _verify_chain(session)
@@ -98,16 +109,19 @@ def events(session, name=None, *, as_of=None):
 
 
 def latest(rows, action):
+    """Return the newest body for an action in an already verified batch."""
     return next((r.payload['body'] for r in reversed(rows)
                  if r.payload.get('action') == action), None)
 
 
 def policy_from(rows):
+    """Validate the current policy from an already verified event batch."""
     body = latest(rows, 'POLICY')
     return AssurancePolicy.model_validate(body) if body else None
 
 
 def configure(session, name, policy: AssurancePolicy, *, evidence, actor_id):
+    """Record an owner-approved policy with independently pinned keys."""
     agent = owner(session, name, actor_id)
     policy = AssurancePolicy.model_validate(policy)
     if policy.use_case not in (agent.use_cases or []):
@@ -130,6 +144,7 @@ def configure(session, name, policy: AssurancePolicy, *, evidence, actor_id):
 
 
 def policy(session, name):
+    """Read and verify the current policy, refusing an absent policy."""
     p = policy_from(events(session, name))
     if p is None:
         raise ValueError('A0: no assurance policy')
@@ -137,6 +152,7 @@ def policy(session, name):
 
 
 def privacy_context(agent, p, use_case_record):
+    """Collect the material privacy dimensions whose changes invalidate approval."""
     deployment = (agent.tool_allowlist or {}).get('_deployment') or {}
     # Approval/status changes are not privacy changes. These named dimensions are.
     return {'purpose': agent.purpose, 'use_case_purpose': use_case_record.get('purpose'),
@@ -152,10 +168,12 @@ def privacy_context(agent, p, use_case_record):
 
 
 def context(session, agent, p):
+    """Resolve the current use-case record for privacy fingerprinting."""
     from kognita.usecases import load_register
     entry = load_register(session).get(p.use_case)
     return privacy_context(agent, p, entry.record if entry else {})
 
 
 def binding(agent, p):
+    """Bind external evidence to exact deployment and policy digests."""
     return {'deployment': agent.deployment_hash, 'policy': canonical_hash(p.model_dump(mode='json'))}

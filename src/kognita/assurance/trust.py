@@ -10,6 +10,7 @@ from kognita.assurance.records import Record
 
 
 class Assertion(Record):
+    """Protocol-neutral external identity with exact attenuated scopes."""
     issuer: str = Field(min_length=1)
     subject: str = Field(min_length=1)
     principal: str = Field(min_length=1)
@@ -23,6 +24,7 @@ class Assertion(Record):
 
     @model_validator(mode='after')
     def bounded(self):
+        """Reject unbounded validity windows and incomplete signed scope."""
         if self.issued_at.tzinfo is None or self.expires_at.tzinfo is None:
             raise ValueError('A2: timezone required')
         if self.expires_at <= self.issued_at or not self.scopes:
@@ -36,6 +38,7 @@ class Assertion(Record):
 
 
 class Attestation(Record):
+    """Independent signed boundary evidence for a specific policy and deployment."""
     kind: Literal['privacy', 'environment', 'monitoring', 'instruction', 'transfer']
     issuer: str = Field(min_length=1)
     subject: str = Field(min_length=1)
@@ -48,6 +51,7 @@ class Attestation(Record):
 
     @model_validator(mode='after')
     def bounded(self):
+        """Reject unbounded validity windows and incomplete signed scope."""
         if (self.issued_at.tzinfo is None or self.expires_at.tzinfo is None
                 or self.expires_at <= self.issued_at):
             raise ValueError('A7: bounded timezone-aware attestation required')
@@ -63,6 +67,7 @@ def sign_record(record, signer):
 
 
 def verify_record(packet, model, keys, at):
+    """Authenticate a domain-separated record and enforce its validity window."""
     from kognita.signing import _verify
     try:
         if set(packet) != {'document', 'signature'}:
@@ -82,6 +87,7 @@ def verify_record(packet, model, keys, at):
 
 
 def verify_assertion(packet, p, envelope, at, *, parent=None):
+    """Verify identity, audience, scopes and every independently trusted parent."""
     a = verify_record(packet, Assertion, p.issuers, at)
     if (a.subject != envelope.agent_name or a.principal != envelope.principal
             or a.purpose != envelope.purpose or a.audience != p.audience):

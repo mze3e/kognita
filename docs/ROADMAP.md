@@ -2,9 +2,9 @@
 
 **Vision:** Transform Kognita from a policy decision engine into a complete agent harness: a framework anyone can adopt to build governed AI agents with proof of permission and tamper-evident audit logs.
 
-**Current Status:** v0.6.1 is the latest PyPI release. The 0.3 to 0.6 items below are released, and the 0.7 trust-and-resilience controls are implemented on main. The 0.8 runtime-assurance implementation is prepared for review and is not yet published. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
+**Current Status:** 0.8.0 is the current source release. The 0.3 to 0.6 items below are released, and the 0.7 trust-and-resilience controls are implemented on main. The 0.8 runtime-assurance controls are implemented; package publication is verified separately in the release record. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
 
-**Last revised:** 7 November 2026. See [Decision Log](#decision-log) for what changed and why.
+**Last revised:** 8 November 2026. See [Decision Log](#decision-log) for what changed and why.
 
 ---
 

@@ -15,7 +15,7 @@ from kognita.assurance.reports import export_manifest, verify_manifest, compare_
 from kognita.assurance.trust import verify_assertion
 from kognita.canonical import canonical_hash
 from kognita.envelope import Envelope
-from kognita.evidence import EvidenceWriter, verify_chain
+from kognita.evidence import ChainBreak, EvidenceWriter, verify_chain
 from kognita.models import EvidenceEvent, Interaction, utcnow
 from kognita.signing import EvidenceSigner, _generate
 from kognita.vocabulary import CheckResult, EventType
@@ -225,7 +225,8 @@ def test_tampered_evidence_refuses_assurance(session,setup):
     config();session.commit()
     first=events(session,a.name)[0]
     tamper_for_test(session,first.sequence,{'action':'fake'})
-    with pytest.raises(Exception): load_state(session,[a.name],utcnow())
+    with pytest.raises(ChainBreak, match="payload does not match"):
+        load_state(session, [a.name], utcnow())
 
 
 def test_update_requires_current_evaluation_and_exact_owner_packet(session,setup):

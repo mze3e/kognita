@@ -123,3 +123,30 @@ def test_agent_a_cannot_read_agent_b_runs(_store):
         with engine.begin() as connection:
             connection.exec_driver_sql(f'DROP OWNED BY {role}')
             connection.exec_driver_sql(f'DROP ROLE {role}')
+
+
+def test_upgrade_existing_event_enum_preserves_chain_and_accepts_assurance(_store):
+    """Upgrade a 0.7 native enum twice, then write assurance without rebuilding rows."""
+    engine, _ = _store
+    from kognita.evidence import export_chain
+    with _Session(engine) as session:
+        _Writer(engine).emit(session, correlation_id='before-upgrade', event_type=_Type.TOOL_CALL)
+        session.commit()
+        before = export_chain(session)['events']
+    with engine.begin() as connection:
+        schema = connection.exec_driver_sql('SELECT current_schema()').scalar_one()
+        quote = connection.dialect.identifier_preparer.quote
+        enum = f'{quote(schema)}.{quote("eventtype")}'
+        connection.exec_driver_sql('ALTER TABLE evidence_events ALTER COLUMN event_type TYPE TEXT USING event_type::text')
+        connection.exec_driver_sql(f'DROP TYPE {enum}')
+        labels = ', '.join("'" + value.value + "'" for value in _Type if value != _Type.ASSURANCE)
+        connection.exec_driver_sql(f'CREATE TYPE {enum} AS ENUM ({labels})')
+        connection.exec_driver_sql(f'ALTER TABLE evidence_events ALTER COLUMN event_type TYPE {enum} USING event_type::{enum}')
+    _create_all(engine)
+    _create_all(engine)
+    with _Session(engine) as session:
+        assert export_chain(session)['events'] == before
+        _Writer(engine).emit(session, correlation_id='after-upgrade', event_type=_Type.ASSURANCE,
+                            payload={'action': 'UPGRADE_CHECK'})
+        session.commit()
+        assert _verify(session) == len(before) + 1

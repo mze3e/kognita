@@ -1,4 +1,5 @@
 """Owner approvals, software provenance, production feedback and quarantine."""
+from collections import defaultdict
 from datetime import timedelta
 import re
 
@@ -14,6 +15,7 @@ from kognita.vocabulary import ActorType, EventType
 
 
 class Component(Record):
+    """Approved package provenance and optional container digest."""
     name: str = Field(min_length=1)
     version: str = Field(min_length=1)
     sbom_digest: str = Field(pattern=r'^[a-f0-9]{64}$')
@@ -22,6 +24,7 @@ class Component(Record):
 
 
 def approve_components(session, name, components, *, evidence, actor_id):
+    """Approve a unique component set for the current deployment and policy."""
     agent = owner(session, name, actor_id)
     p = policy(session, name)
     parsed = [Component.model_validate(c).model_dump(mode='json') for c in components]
@@ -47,8 +50,11 @@ def advisory(session, name, version, reference, *, evidence, actor_id):
     emit(session, evidence, '*', 'ADVISORY', {'name': name, 'version': version,
           'reference': reference}, actor_id=actor_id)
     affected = []
+    grouped = defaultdict(list)
+    for row in events(session):
+        grouped[row.correlation_id].append(row)
     for agent in session.exec(select(Agent)).all():
-        rows = events(session, agent.name)
+        rows = grouped[f'assurance:{agent.name}']
         record = latest(rows, 'COMPONENTS')
         if record and any(c['name'] == name and c['version'] == version for c in record['components']):
             affected.append({'agent': agent.name, 'deployment': record['binding']['deployment'],
@@ -60,6 +66,7 @@ def advisory(session, name, version, reference, *, evidence, actor_id):
 
 def approve_update(session, name, *, candidate_digest, provider_change, regression_reference,
                    rollback_target, rollback_plan, evidence, actor_id):
+    """Record owner approval of an exact candidate and its rollback packet."""
     agent = owner(session, name, actor_id)
     p = policy(session, name)
     values = (provider_change, regression_reference, rollback_target, rollback_plan)
@@ -76,6 +83,7 @@ def approve_update(session, name, *, candidate_digest, provider_change, regressi
 
 
 class ProductionOutcome(Record):
+    """Authoritative downstream facts bound to a unique bank outcome."""
     interaction_id: str = Field(min_length=1)
     intended: str = Field(min_length=1)
     actual: str = Field(min_length=1)
@@ -110,25 +118,29 @@ def record_outcome(session, name, outcome, *, evidence, actor_id, now=None):
                   as_utc(type(at).fromisoformat(r.payload['at'])) <= at
               and r.payload['body']['version'] == agent.version
               and r.payload['body']['outcome']['adverse']]
-    breached = len(recent) + int(result.adverse) >= p.max_adverse_outcomes
+    adverse_count = len(recent) + int(result.adverse)
+    breached = result.adverse and adverse_count >= p.max_adverse_outcomes
     with session.begin_nested():
         emit(session, evidence, name, 'PRODUCTION_OUTCOME', body, actor_id=actor_id, at=at)
         if breached:
             emit(session, evidence, name, 'FINDING', {'control': 'A3', 'use_case': p.use_case,
-                 'adverse_count': len(recent) + int(result.adverse), 'outcome_id': result.outcome_id},
+                 'adverse_count': adverse_count, 'outcome_id': result.outcome_id},
                  actor_id='kognita', at=at, system=True)
-            evidence.emit(session, correlation_id=f'assurance:{name}',
+            trigger = evidence.emit(session, correlation_id=f'assurance:{name}',
                 event_type=EventType.REVALIDATION_TRIGGERED, actor_type=ActorType.SYSTEM,
                 actor_id='kognita', payload={'agent': name, 'use_case': p.use_case,
                     'reason': 'A3-PRODUCTION-OUTCOME', 'version': agent.version})
+            if trigger is None:
+                raise ValueError('A3: revalidation evidence write incomplete')
             if p.outcome_step_down and agent.autonomy_level:
                 from kognita.autonomy import _change
                 _change(session, agent, max(0, agent.autonomy_level - 1), evidence,
                         'kognita', 'AUTONOMY_STEP_DOWN', {'reason': 'A3-PRODUCTION-OUTCOME'})
-    return {'breached': breached, 'adverse_count': len(recent) + int(result.adverse)}
+    return {'breached': breached, 'adverse_count': adverse_count}
 
 
 def assurance_report(session, name, *, now=None):
+    """Report current evaluation beside evidenced outcomes and findings."""
     from kognita.evaluation import _latest_applicable
     agent = agent_for(session, name)
     at = as_utc(now or utcnow())

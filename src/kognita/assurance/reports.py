@@ -12,6 +12,7 @@ from kognita.vocabulary import EventType
 
 
 class MaterialManifest(Record):
+    """Signed export of identity, live authority, dependencies and intervention."""
     schema_version: str = 'kognita-kya-1'
     generated_at: datetime
     agent: dict
@@ -25,6 +26,7 @@ class MaterialManifest(Record):
 
 
 def export_manifest(session, name, signer, *, evidence, actor_id, now=None):
+    """Export and evidence a signed KYA manifest for an approved agent."""
     from kognita.assurance.records import owner
     from kognita.assurance.trust import sign_record
     from kognita.dependencies import _map
@@ -62,6 +64,7 @@ def export_manifest(session, name, signer, *, evidence, actor_id, now=None):
 
 
 def verify_manifest(export, public_key):
+    """Check the export digest and signature against an independent public key."""
     from kognita.signing import _verify
     packet = export['manifest']
     document = packet['document']
@@ -73,11 +76,13 @@ def verify_manifest(export, public_key):
 
 
 def compare_manifest(session, name, export, public_key):
+    """Report divergence from normalized live identity and observed evidence."""
     from kognita.dependencies import _map
     manifest = verify_manifest(export, public_key)
     agent = agent_for(session, name)
     findings = []
-    if any(canonical_hash(value) != canonical_hash(getattr(agent, key))
+    live_identity = agent.model_dump(mode='json')
+    if any(canonical_hash(value) != canonical_hash(live_identity[key])
            for key, value in manifest.agent.items()):
         findings.append({'control': 'A1', 'reason': 'identity or behavioural version changed'})
     # Include live authority divergence as well as observed undeclared calls.
@@ -121,6 +126,7 @@ _KINDS = {'A5': 'monitoring', 'A6': 'privacy', 'A7': 'environment',
 
 
 def conformance_report(session, name, profile, *, as_of=None):
+    """Map verified point-in-time evidence to versioned supervisory themes."""
     if profile not in PROFILES:
         raise ValueError('A12: unknown profile')
     at = as_utc(as_of or utcnow())
@@ -145,7 +151,10 @@ def conformance_report(session, name, profile, *, as_of=None):
             if control in _KINDS:
                 candidates = [r for r in rows if r.payload.get('action') == 'ATTESTATION' and
                               r.payload['body'].get('document', {}).get('body', {}).get('kind') == _KINDS[control]][-1:]
-            elif control in ('A1', 'A4', 'A9'):
+            elif control == 'A4':
+                candidates = [r for r in rows if r.payload.get('action') == 'UPDATE' and
+                              r.payload['body'].get('candidate_digest') == agent.deployment_hash][-1:]
+            elif control in ('A1', 'A9'):
                 candidates = [r for r in rows if r.payload.get('action') in _ACTIONS[control]][-1:]
             for r in candidates:
                 if r.payload.get('action') not in _ACTIONS[control]:

@@ -20,6 +20,7 @@ def request_digest(envelope):
 
 
 def attest(session, name, packet, *, evidence, actor_id, now=None):
+    """Verify and record an independent deployment-bound boundary assertion."""
     at = as_utc(now or utcnow())
     agent = agent_for(session, name)
     p = policy(session, name)
@@ -60,12 +61,14 @@ def attest(session, name, packet, *, evidence, actor_id, now=None):
 
 
 def transfer_digest(p):
+    """Fingerprint the institution-supplied technology-transfer classification."""
     return canonical_hash({k: getattr(p, k) for k in (
         'technology_origin', 'deployment_jurisdiction', 'transfer_type', 'transfer_policy')})
 
 
 def _action_rows(session, name):
     # Independent telemetry references exact local hashes, never counts alone.
+    """Read actions requiring independent telemetry, excluding unsent calls."""
     rows = session.exec(select(EvidenceEvent).where(EvidenceEvent.actor_id == name,
         EvidenceEvent.event_type.in_([EventType.TOOL_CALL, EventType.MODEL_CALL, EventType.EGRESS]))
         .order_by(EvidenceEvent.sequence)).all()
@@ -73,6 +76,7 @@ def _action_rows(session, name):
 
 
 def _coverage(session, name, claims):
+    """Reconcile exact action hashes within an explicitly bounded window."""
     start, end = claims.get('from_sequence'), claims.get('through_sequence')
     hashes = claims.get('action_hashes')
     external = claims.get('unexplained_external_actions')
@@ -92,6 +96,7 @@ def _coverage(session, name, claims):
 
 
 def coverage_report(session, name, *, now=None):
+    """Report independently attested coverage and unexplained action gaps."""
     at = as_utc(now or utcnow())
     p = policy(session, name)
     agent = agent_for(session, name)
@@ -109,6 +114,7 @@ def coverage_report(session, name, *, now=None):
 
 
 def _attestation(rows, agent, p, kind, at, *, digest=None):
+    """Select an exact request proof or the current superseding boundary record."""
     for row in reversed(rows):
         if row.payload.get('action') != 'ATTESTATION':
             continue
@@ -116,13 +122,13 @@ def _attestation(rows, agent, p, kind, at, *, digest=None):
         body = packet.get('document', {}).get('body', {})
         if body.get('kind') != kind:
             continue
+        if digest is not None and canonical_hash(packet) != digest:
+            continue
         # Superseding a record with an invalid one cannot revive an older record.
         try:
             a = verify_record(packet, Attestation, p.attestors, at)
             if a.subject != agent.name or {'deployment': a.deployment, 'policy': a.policy} != binding(agent, p):
                 return None
-            if digest is not None and canonical_hash(packet) != digest:
-                continue
             return a
         except ValueError:
             return None
@@ -130,22 +136,36 @@ def _attestation(rows, agent, p, kind, at, *, digest=None):
 
 
 def load_state(session, names, at):
-    """Only configured agents pay the cost of full-chain reconciliation."""
+    """Batch configured agents and advisories with one integrity check per snapshot.
+
+    A matching head cannot prove an old payload is intact. Verify the prefix
+    on each new snapshot rather than trusting a cross-snapshot head-only cache.
+    """
+    from collections import defaultdict
+    names = tuple(names)
+    grouped = defaultdict(list)
+    every = events(session, as_of=at, _names=(*names, '*'))
+    for row in every:
+        grouped[row.correlation_id].append(row)
+    advisories = tuple(row.payload['body'] for row in grouped['assurance:*']
+                       if row.payload.get('action') == 'ADVISORY')
     state = {}
     for name in names:
-        rows = events(session, name, as_of=at)
+        rows = grouped[f'assurance:{name}']
         p = policy_from(rows)
         if p is None:
             continue
         agent = agent_for(session, name)
-        state[name] = {'policy': p, 'rows': tuple(rows), 'privacy': canonical_hash(context(session, agent, p)),
-                       'actions': tuple((r.sequence, r.event_hash) for r in _action_rows(session, name)),
-                       'advisories': tuple(r.payload['body'] for r in events(session, as_of=at)
-                                            if r.payload.get('action') == 'ADVISORY')}
+        state[name] = {'policy': p, 'rows': tuple(rows),
+                       'privacy': canonical_hash(context(session, agent, p)) if p.privacy_required else None,
+                       'actions': tuple((r.sequence, r.event_hash) for r in _action_rows(session, name))
+                                  if p.monitoring_required else (),
+                       'advisories': advisories}
     return state
 
 
 def admission_checks(envelope, agent, state, at, *, activation=False):
+    """Evaluate configured assurance requirements without performing external work."""
     if agent is None or agent.name not in state:
         if envelope.context.get('external_assertion') is not None:
             return [Check(check='A2-EXTERNAL-TRUST', regime='INTERNAL',
@@ -156,6 +176,7 @@ def admission_checks(envelope, agent, state, at, *, activation=False):
     checks = []
 
     def gate(code, ok):
+        """Append a cited pass or fail for one configured assurance requirement."""
         checks.append(Check(check=code, regime='INTERNAL',
                             citation=code, result=CheckResult.PASS if ok else CheckResult.FAIL))
 
@@ -204,6 +225,7 @@ def admission_checks(envelope, agent, state, at, *, activation=False):
 
 
 def check_activation(session, agent, *, now=None):
+    """Refuse activation when required bound evidence is not current."""
     from kognita.envelope import Envelope
     at = now or utcnow()
     state = load_state(session, [agent.name], at)
@@ -218,6 +240,7 @@ def check_activation(session, agent, *, now=None):
 
 
 def check_update(session, agent, candidate, deployment, digest):
+    """Require candidate-bound evaluation and a current owner update packet."""
     rows = events(session, agent.name)
     p = policy_from(rows)
     if p is None or not p.update_required or agent.deployment_hash == digest:

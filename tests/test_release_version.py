@@ -14,3 +14,18 @@ def test_release_version_matches_package_metadata():
     lock_entry = re.search(r'name = "kognita"\nversion = "([^"]+)"', (root / "uv.lock").read_text())
     assert lock_entry is not None
     assert lock_entry.group(1) == __version__
+
+
+def test_typescript_distribution_metadata_matches_release():
+    """The npm distribution must retain its published import and CLI entry points."""
+    import json
+    from kognita import __version__
+    root = Path(__file__).resolve().parents[1] / 'verify-ts'
+    package = json.loads((root / 'package.json').read_text())
+    lock = json.loads((root / 'package-lock.json').read_text())
+    assert package['version'] == lock['version'] == lock['packages']['']['version'] == __version__
+    assert package['private'] is False
+    assert package['main'] == 'dist/_verify.js'
+    assert package['exports']['.']['import'] == './dist/_verify.js'
+    assert package['bin']['kognita-verify'] == 'dist/_cli.js'
+    assert not package.get('dependencies')

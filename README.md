@@ -891,7 +891,7 @@ The invariants are importable, so external packs run them in their own repositor
 
 ## Trust and resilience (0.7)
 
-These controls are on main and not yet in a PyPI release.
+These controls are included in the 0.7.0 and 0.8.0 source releases.
 
 - **Signed evidence.** Install the `signing` extra for Ed25519 signatures on every event (`kognita keys generate`, `kognita evidence verify --public-key`). Signing configured without the extra refuses writes. Keys rotate, revoke and escrow with `kognita keys rotate|revoke|list`, and verification works across rotations.
 - **Schema versions and migrations.** New events carry `schema_version` 2; older rows stay version 1 and still verify. `kognita db migrate|status` runs in one transaction.
@@ -899,7 +899,7 @@ These controls are on main and not yet in a PyPI release.
 - **Postgres backend.** The optional `postgres` extra adds many writers without sequence gaps and row-level security per agent (`kognita db rls apply`). Replication is the bank's.
 - **Backup and restore.** `kognita backup create|verify|restore` restores to a point in time and checks the chain and retention store. A restore drill runs in CI.
 - **External review.** `request_review_period`, `annotate` and `submit_review` let a reviewer submit a signed review into the chain.
-- **TypeScript verifier.** `verify-ts/` holds `@kognita/verify` and the `kognita-verify` CLI, which agree with the Python verifier on shared fixtures. It is not published to npm yet.
+- **TypeScript verifier.** `verify-ts/` holds `@kognita/verify` and the `kognita-verify` CLI, which agree with the Python verifier on shared fixtures. Version 0.7.0 is published on npm; the 0.8.0 source retains the same verifier exports.
 - **Provider register.** Every model provider is recorded as an ICT third party with contract details, incident history and regulatory cooperation. Routing to an unregistered provider is denied (`R3-UNREGISTERED`).
 - **Failover and model changes.** Failover goes only to models approved for the use case (`R5-FAILOVER`, `R5-UNAPPROVED-FALLBACK`). A served model that differs from the approved card is a revalidation trigger (`R7-MODEL-CHANGED`).
 - **Incidents.** Chain breaks, gateway outages, degraded periods and provider failures become incidents with timelines. `kognita incident report <id> [--redacted]` builds a report from evidence, and [docs/incident-playbooks.md](docs/incident-playbooks.md) has detect, contain and investigate steps for nine incident types.
@@ -934,7 +934,7 @@ The 0.7 controls are in this tree. These are their honest gaps:
 
 - **Replication is the operator's job.** Kognita provides backup, restore and a restore drill. Replicating the evidence store across sites is left to the bank's own infrastructure (T2).
 - **Anchoring has one sink.** Only the file anchor sink ships. Anchoring to an external timestamping service or ledger is not included (T6).
-- **The TypeScript verifier is not on npm.** `@kognita/verify` lives in `verify-ts/` and is built from source for now (T4).
+- **TypeScript verifier scope.** `@kognita/verify` is available on npm. It verifies evidence exports; anchors and recovery bundles remain outside that CLI (T4).
 - **Signing needs the `signing` extra.** If signing is configured and `cryptography` is not installed, evidence writes are refused rather than written unsigned.
 - **The gateway overhead test is flaky.** Its 25 ms mean limit sometimes fails on shared CI runners. It measures test timing, not a control.
 
@@ -956,7 +956,7 @@ The 0.6 claims controls ship in v0.6.0: typed claims, freshness, approved source
 
 The 0.7 trust and resilience controls ship in v0.7.0. See [Trust and resilience](#trust-and-resilience-07) and the [0.7 checklist](docs/ROADMAP.md).
 
-**0.8 "Supervisory Alignment and Runtime Assurance"** (unreleased) adds: material-agent/KYA manifests, external-agent trust assertions, outcome validation, third-party update gates, monitoring-coverage and execution-environment attestations, AI cyber drills, AI software-supply-chain evidence, jurisdictional technology-transfer controls, high-risk instruction authenticity and evidence-backed supervisory conformance profiles. See the [runtime assurance guide](docs/runtime-assurance.md) and [0.8 roadmap](docs/ROADMAP.md#08-supervisory-alignment-and-runtime-assurance).
+**0.8 "Supervisory Alignment and Runtime Assurance"** adds: material-agent/KYA manifests, external-agent trust assertions, outcome validation, third-party update gates, monitoring-coverage and execution-environment attestations, AI cyber drills, AI software-supply-chain evidence, jurisdictional technology-transfer controls, high-risk instruction authenticity and evidence-backed supervisory conformance profiles. See the [runtime assurance guide](docs/runtime-assurance.md) and [0.8 roadmap](docs/ROADMAP.md#08-supervisory-alignment-and-runtime-assurance).
 
 The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop, institutional memory, and a verified post-October-2026 regulatory/supervisory delta covering FSB, HKMA, FCA, SEC, OCC, ICO, MAS and relevant cyber/technology-transfer developments.
 
