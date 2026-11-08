@@ -312,3 +312,27 @@ def test_drill_transcript_preserves_policy_payload_redaction(session, evidence):
     assert all(c['citation'] == '[REDACTED]' for c in result['transcript'][0]['checks'])
     assert events(session, 'worker')[-1].payload['body']['transcript'] == result['transcript']
     assert verify_chain(session) > 0
+
+
+@pytest.mark.parametrize('existing', [False, True])
+def test_outcome_preserves_pending_interaction_with_autoflush_disabled(session, setup, existing):
+    """Refreshing safety state cannot discard pending edits or hide a new row."""
+    a, writer, _, _, _, _, config = setup
+    config()
+    interaction = Interaction(id='pending-interaction', client_id='client', use_case='p')
+    session.add(interaction)
+    if existing:
+        session.flush()
+        interaction.use_case = 'different'
+    outcome = ProductionOutcome(interaction_id=interaction.id, intended='correct', actual='adverse',
+        client_impact='loss', adverse=True, source_reference='bank:pending', outcome_id='pending')
+    with session.no_autoflush:
+        if existing:
+            with pytest.raises(ValueError, match='outcome must link to an interaction of the governed use case'):
+                record_outcome(session, a.name, outcome, evidence=writer, actor_id='owner')
+            assert interaction.use_case == 'different'
+            assert not any(row.payload.get('action') == 'PRODUCTION_OUTCOME' for row in events(session, a.name))
+        else:
+            assert record_outcome(session, a.name, outcome, evidence=writer, actor_id='owner')['breached']
+        assert session.get(Interaction, interaction.id, populate_existing=True).use_case == ('different' if existing else 'p')
+        verify_chain(session)

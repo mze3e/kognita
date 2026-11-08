@@ -111,6 +111,8 @@ def record_outcome(session, name, outcome, *, evidence, actor_id, now=None):
         session.execute(text('UPDATE agents SET name = name WHERE name = :name'), {'name': name})
     else:
         raise ValueError('A3: outcome serialization requires SQLite or PostgreSQL')
+    # Preserve pending caller changes before populate_existing, even without autoflush.
+    session.flush()
     at = as_utc(now or utcnow())
     agent = owner(session, name, actor_id)
     p = policy(session, name)
