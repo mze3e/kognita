@@ -96,6 +96,9 @@ def simulate(session, name, scenario, envelope, *, evidence, actor_id, now=None)
         decisions = [r for r in path if r['event_type'] == 'POLICY_DECISION']
         if len(decisions) != len(transcript):
             raise ValueError('A8: drill decision evidence incomplete')
+        # Summaries must use the already-redacted evidence, not raw checks.
+        transcript = [{'outcome': item['outcome'], 'checks': event['payload'].get('checks', [])}
+                      for item, event in zip(transcript, decisions)]
         passed = all(t['outcome'] == 'DENY' for t in transcript) and (
             recovery is None or recovery == 'ALLOW')
     finally:

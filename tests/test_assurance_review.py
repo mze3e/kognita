@@ -275,6 +275,8 @@ def test_drill_transcript_preserves_policy_payload_redaction(session, evidence):
         body = deepcopy(payload)
         if kind == EventType.POLICY_DECISION and isinstance(body.get('envelope'), dict):
             body['envelope']['principal'] = '[REDACTED]'
+            for check in body.get('checks', []):
+                check['citation'] = '[REDACTED]'
         return body
     writer = EvidenceWriter(session.get_bind(), clock=lambda: NOW, redact_payload=redact)
     result = simulate(session, 'worker', 'prompt-injection-tool-escalation', envelope,
@@ -284,4 +286,7 @@ def test_drill_transcript_preserves_policy_payload_redaction(session, evidence):
     stored = events(session, 'worker')[-1].payload['body']['path']
     stored_decisions = [r for r in stored if r['event_type'] == 'POLICY_DECISION']
     assert stored_decisions == decisions
+    assert result['transcript'][0]['checks'] == decisions[0]['payload']['checks']
+    assert all(c['citation'] == '[REDACTED]' for c in result['transcript'][0]['checks'])
+    assert events(session, 'worker')[-1].payload['body']['transcript'] == result['transcript']
     assert verify_chain(session) > 0
