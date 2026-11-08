@@ -179,6 +179,15 @@ the rolling window emits a finding and a revalidation trigger; optional
 `outcome_step_down` reduces autonomy. `assurance_report` shows evaluation results
 beside recorded production outcomes and findings.
 
+Outcome registration acquires transaction-level write serialization before reading
+owner, policy, identity or outcome history. PostgreSQL uses the same advisory lock
+as evidence appends and requires READ COMMITTED; every read after waiting sees
+committed state. SQLite reserves its single writer before these reads. The lock
+lasts until the caller commits or rolls back, including across the nested savepoint
+that makes the outcome, finding, revalidation and autonomy reduction atomic.
+Keep these administrative transactions short. An incomplete required evidence
+write refuses the operation and rolls back the entire safety transition.
+
 `export_manifest` returns JSON plus an Ed25519-signed digest for stable identity,
 behaviour version, owner/principal/use case, live authority and expiry, autonomy,
 client impact, permitted tools/data/jurisdictions, dependencies and kill mechanism.

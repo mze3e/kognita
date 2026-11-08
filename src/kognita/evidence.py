@@ -145,6 +145,14 @@ def _lock_for(engine: Engine) -> threading.Lock:
         return lock
 
 
+def _serialize_postgres_writes(session):
+    """Hold the shared append lock until transaction completion, before state reads."""
+    from sqlalchemy import text
+    if session.connection().get_isolation_level() != "READ COMMITTED":
+        raise ValueError("T2: evidence writes require READ COMMITTED")
+    session.execute(text("SELECT pg_advisory_xact_lock(7070002)"))
+
+
 class EvidenceWriter:
     """Appends events to the chain for one database.
 
@@ -203,12 +211,8 @@ class EvidenceWriter:
         # database lock from appending another event before committing.
         with _nullcontext() if _postgres else self._lock:
             if _postgres:
-                from sqlalchemy import text as _text
-                # Acquire before reading the tail, including for an empty chain.
-                # READ COMMITTED gives the tail query a fresh snapshot after waiting.
-                if session.connection().get_isolation_level() != "READ COMMITTED":
-                    raise ValueError("T2: evidence writes require READ COMMITTED")
-                session.execute(_text("SELECT pg_advisory_xact_lock(7070002)"))
+                # READ COMMITTED gives state reads a fresh snapshot after waiting.
+                _serialize_postgres_writes(session)
             previous = session.exec(
                 select(EvidenceEvent).order_by(desc(EvidenceEvent.sequence)).limit(1)
             ).first()

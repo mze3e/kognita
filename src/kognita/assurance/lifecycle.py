@@ -100,6 +100,17 @@ class ProductionOutcome(Record):
 
 def record_outcome(session, name, outcome, *, evidence, actor_id, now=None):
     """Store bank-supplied facts; no inferred success, even for a completed run."""
+    # Use the append lock before reading any governing state, not only at emit.
+    # Callers own commit/rollback, so competing outcomes cannot pass these reads.
+    if session.get_bind().dialect.name == 'postgresql':
+        from kognita.evidence import _serialize_postgres_writes
+        _serialize_postgres_writes(session)
+    elif session.get_bind().dialect.name == 'sqlite':
+        from sqlalchemy import text
+        # Reserve the single SQLite writer before reading the policy/history.
+        session.execute(text('UPDATE agents SET name = name WHERE name = :name'), {'name': name})
+    else:
+        raise ValueError('A3: outcome serialization requires SQLite or PostgreSQL')
     at = as_utc(now or utcnow())
     agent = owner(session, name, actor_id)
     p = policy(session, name)
