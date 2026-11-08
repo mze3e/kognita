@@ -18,6 +18,7 @@ def add_parser(sub):
         if name in inputs:
             command.add_argument('--input', required=True, help='JSON input file')
         if name in writes:
+            command.add_argument('--evidence-signing-key', help='evidence-chain Ed25519 PEM file')
             command.add_argument('--actor', required=True, help='authenticated local operator')
         if name == 'manifest':
             command.add_argument('--signing-key', required=True, help='Ed25519 PKCS8 PEM file')
@@ -44,7 +45,9 @@ def run(args):
         create_all(engine)
         data = json.loads(Path(args.input).read_text()) if hasattr(args, 'input') else None
         with session_scope(engine) as session:
-            writer = EvidenceWriter(engine)
+            key_path = getattr(args, 'evidence_signing_key', None)
+            writer = EvidenceWriter(engine, signing=(
+                EvidenceSigner(Path(key_path).read_bytes()) if key_path else None))
             common = {'evidence': writer, 'actor_id': getattr(args, 'actor', '')}
             name = args.assurance_command
             if name == 'configure':

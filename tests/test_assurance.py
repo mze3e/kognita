@@ -437,7 +437,7 @@ def test_drill_refuses_missing_decision_evidence(session,evidence,monkeypatch):
         """Provide drop for the assurance regression."""
         if kw['event_type']!=EventType.POLICY_DECISION:return original(self,session,**kw)
     monkeypatch.setattr(EvidenceWriter,'emit',drop)
-    with pytest.raises((ValueError,AttributeError)):
+    with pytest.raises(ValueError, match='A8: drill decision evidence incomplete'):
         simulate(session,'worker','machine-speed-probing',env,evidence=evidence,actor_id='owner',now=NOW)
 
 

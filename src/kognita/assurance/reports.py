@@ -153,7 +153,9 @@ def conformance_report(session, name, profile, *, as_of=None):
                               r.payload['body'].get('document', {}).get('body', {}).get('kind') == _KINDS[control]][-1:]
             elif control == 'A4':
                 candidates = [r for r in rows if r.payload.get('action') == 'UPDATE' and
-                              r.payload['body'].get('candidate_digest') == agent.deployment_hash][-1:]
+                              r.payload['body'].get('candidate_digest') == agent.deployment_hash and
+                              p is not None and r.payload['body'].get('policy') ==
+                              canonical_hash(p.model_dump(mode='json'))][-1:]
             elif control in ('A1', 'A9'):
                 candidates = [r for r in rows if r.payload.get('action') in _ACTIONS[control]][-1:]
             for r in candidates:

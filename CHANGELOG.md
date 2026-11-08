@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Signed assurance CLI writes accept a separate evidence-chain signer; mapped tool subjects cannot replace the invoked tool in external trust checks. A4 reports require the current policy digest, and drill evidence omissions raise explicit errors.
+
 - Historical assurance replay uses the recorded sequence and time cutoff so later actions do not change a past monitoring decision; live checks still see current actions. PostgreSQL 12 is the minimum server version for transactional enum upgrades.
 
 - Review corrections: good outcomes no longer retrigger adverse thresholds; required revalidation writes roll back on failure; exact instruction records, normalized manifest datetimes and deployment-specific update reports select the correct evidence. Admission and advisories verify one batch while preserving old-row tamper detection. Existing PostgreSQL event enums receive an idempotent assurance upgrade during initialization.

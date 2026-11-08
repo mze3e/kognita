@@ -92,7 +92,8 @@ def verify_assertion(packet, p, envelope, at, *, parent=None):
     if (a.subject != envelope.agent_name or a.principal != envelope.principal
             or a.purpose != envelope.purpose or a.audience != p.audience):
         raise ValueError('A2: subject/principal/purpose/audience mismatch')
-    requested = {'tools': [envelope.tool], **{k: [v] for k, v in envelope.all_subjects().items()}}
+    requested = {k: [v] for k, v in envelope.all_subjects().items()}
+    requested['tools'] = sorted({*requested.get('tools', []), envelope.tool})
     for dimension, values in envelope.context.get('_effective_subjects', {}).items():
         requested[dimension] = sorted(set(requested.get(dimension, [])) | set(values))
     if not all(set(v) <= set(a.scopes.get(k, [])) for k, v in requested.items()):

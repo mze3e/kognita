@@ -180,3 +180,83 @@ def test_monitoring_replay_excludes_later_actions_and_live_still_denies(session,
     current = decide(envelope, load_snapshot(session, as_of=NOW), usecases=usecases, as_of=NOW)
     assert current.outcome == Outcome.DENY
     assert any(c.check == 'A5-MONITORING' for c in current.failures())
+
+
+def test_mapped_tools_subject_cannot_hide_invoked_tool(session, setup):
+    """External trust must cover both the invoked tool and mapped tool subjects."""
+    from test_assurance import assertion
+    from kognita.assurance.trust import verify_assertion
+    _, _, _, _, envelope, at, config = setup
+    p = config()
+    mapped = replace(envelope, subjects={'tools': 'other'},
+                     context={'_effective_subjects': {'tools': ['other']}})
+    proof = assertion(setup, scopes={'tools': ['other']})
+    with pytest.raises(ValueError, match='authority expansion'):
+        verify_assertion(proof, p, mapped, at)
+    proof = assertion(setup, scopes={'tools': [envelope.tool, 'other']})
+    assert verify_assertion(proof, p, mapped, at).subject == envelope.agent_name
+
+
+def test_a4_report_rejects_approval_under_superseded_policy(session, setup):
+    """Deployment identity alone cannot revive a previous policy's approval."""
+    a, w, _, _, _, _, config = setup
+    p = config()
+    def approve(digest):
+        """Record an accountable-owner candidate approval for this regression."""
+        return approve_update(session, a.name, candidate_digest=digest, provider_change='change',
+            regression_reference='suite', rollback_target='previous', rollback_plan='restore',
+            evidence=w, actor_id='owner')
+    approve(a.deployment_hash)
+    configure(session, a.name, p.model_copy(update={'client_impact': 'changed'}), evidence=w, actor_id='owner')
+    approve('c' * 64)
+    report = conformance_report(session, a.name, 'MAS')
+    row = next(r for r in report['expectations'] if r['control'] == 'A4')
+    assert row['status'] == 'gap' and not row['evidence_sequences']
+    approve(a.deployment_hash)
+    report = conformance_report(session, a.name, 'MAS')
+    assert next(r for r in report['expectations'] if r['control'] == 'A4')['status'] == 'evidenced'
+
+
+def test_signed_assurance_cli_separates_manifest_and_evidence_keys(tmp_path, capsys):
+    """Signed write commands preserve chain signing and independent manifest signing."""
+    import json
+    from sqlmodel import Session
+    from kognita.cli import main
+    from kognita.db import make_engine, create_all
+    from kognita.evidence import EvidenceWriter
+    from kognita.signing import EvidenceSigner, _generate
+    from kognita.assurance.reports import verify_manifest
+    from kognita.models import Agent
+    db = tmp_path / 'signed.db'
+    private, public = _generate()
+    manifest_private, manifest_public = _generate()
+    key, manifest_key = tmp_path / 'chain.pem', tmp_path / 'manifest.pem'
+    key.write_bytes(private); manifest_key.write_bytes(manifest_private)
+    engine = make_engine(str(db)); create_all(engine)
+    with Session(engine) as session:
+        register(session, name='signed-worker', owner_exec='owner')
+        # Roll back the fixture setup before creating the signed chain.
+        # Reuse its approved identity without weakening signing checks.
+        identity = session.exec(select(Agent)).first().model_dump(mode='json')
+        session.rollback()
+    with Session(engine) as session:
+        session.add(Agent.model_validate(identity)); session.flush()
+        writer = EvidenceWriter(engine, signing=EvidenceSigner(private))
+        writer.emit(session, correlation_id='identity:signed-worker', event_type=EventType.POLICY_CHANGE,
+                    payload={'action':'DEPLOYMENT_APPROVED','agent':'signed-worker','_identity':identity})
+        session.commit()
+    policy_file = tmp_path / 'policy.json'
+    policy_file.write_text(json.dumps({'use_case':'p','audience':'bank'}))
+    args = ['assurance','configure','--db',str(db),'--agent','signed-worker','--actor','owner',
+            '--input',str(policy_file)]
+    assert main(args) == 1
+    capsys.readouterr()
+    assert main([*args, '--evidence-signing-key',str(key)]) == 0
+    capsys.readouterr()
+    assert main(['assurance','manifest','--db',str(db),'--agent','signed-worker','--actor','owner',
+        '--evidence-signing-key',str(key),'--signing-key',str(manifest_key)]) == 0
+    exported = json.loads(capsys.readouterr().out)
+    assert verify_manifest(exported, manifest_public).agent['name'] == 'signed-worker'
+    with Session(engine) as session:
+        assert verify_chain(session, public_key=public) == 3
+    engine.dispose()

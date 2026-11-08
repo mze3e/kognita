@@ -3,12 +3,26 @@ from dataclasses import replace
 
 from kognita.assurance.records import emit, events, owner
 from kognita.models import EvidenceEvent, utcnow
+from kognita.evidence import EvidenceWriter
 from kognita.vocabulary import EventType, Outcome
 from sqlmodel import select
 
 SCENARIOS = ('prompt-injection-tool-escalation', 'discovered-credentials',
              'unauthorised-network', 'machine-speed-probing', 'compromised-provider',
              'agent-privilege-escalation', 'malicious-retrieval', 'containment-recovery')
+
+
+class _DrillWriter(EvidenceWriter):
+    """Require every simulated path event without exporting it to live telemetry."""
+
+    def emit(self, session, **kwargs):
+        """Translate incomplete path writes into an explicit drill refusal."""
+        result = super().emit(session, **kwargs)
+        if result is None:
+            if kwargs.get('event_type') == EventType.POLICY_DECISION:
+                raise ValueError('A8: drill decision evidence incomplete')
+            raise ValueError('A8: drill path evidence write incomplete')
+        return result
 
 
 def simulate(session, name, scenario, envelope, *, evidence, actor_id, now=None):
@@ -38,8 +52,7 @@ def simulate(session, name, scenario, envelope, *, evidence, actor_id, now=None)
     baseline_events = export_chain(session)["events"]
     state = session.begin_nested()
     contained = False
-    from kognita.evidence import EvidenceWriter
-    drill_writer = EvidenceWriter(session.get_bind(), signing=evidence._signing, clock=evidence.clock)
+    drill_writer = _DrillWriter(session.get_bind(), signing=evidence._signing, clock=evidence.clock)
     try:
         if scenario in ('prompt-injection-tool-escalation', 'malicious-retrieval'):
             attack = replace(envelope, tool='__unapproved_execute', context={**context,

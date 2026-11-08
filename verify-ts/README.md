@@ -1,7 +1,9 @@
 # @kognita/verify
 
 Independent TypeScript evidence verifier with zero runtime dependencies. Requires
-Node 22 or later. Uses built-in SHA-256 and Ed25519. No network requests are made
+Node 22 or later for ESM and the CLI. CommonJS `require()` of this ES module
+requires Node 22.12 or later, as with the published 0.7.0 module. CI uses the
+current Node 22 release. Uses built-in SHA-256 and Ed25519. No network requests are made
 by verification. The published 0.7.0 package is available on npm. Source and distribution
 metadata target 0.8.0; compilation requires the development tools.
 

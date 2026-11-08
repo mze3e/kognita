@@ -211,7 +211,11 @@ evidence is compliance. Updating a profile never changes admission policy.
 ## CLI
 
 All commands use `--db PATH`. JSON administrative inputs come from `--input`;
-write commands require an authenticated local `--actor`.
+write commands require an authenticated local `--actor`. On a signed evidence
+store, also supply `--evidence-signing-key PATH` for the active chain signing
+key. It signs the evidence event and is independent of the manifest
+`--signing-key`, which signs the exported document. Omitting an evidence signer
+on a signed chain is a refusal; unsigned stores can continue without this flag.
 
 ```sh
 kognita assurance configure --db bank.db --agent briefing-agent --actor owner --input policy.json
