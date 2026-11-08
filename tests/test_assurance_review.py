@@ -260,3 +260,28 @@ def test_signed_assurance_cli_separates_manifest_and_evidence_keys(tmp_path, cap
     with Session(engine) as session:
         assert verify_chain(session, public_key=public) == 3
     engine.dispose()
+
+
+def test_drill_transcript_preserves_policy_payload_redaction(session, evidence):
+    """Redaction occurs before simulated decisions are copied into retained evidence."""
+    from copy import deepcopy
+    from test_authority_s3 import _setup
+    from conftest import NOW
+    from kognita.assurance.drills import simulate
+    from kognita.evidence import EvidenceWriter
+    _, _, _, envelope = _setup(session, evidence)
+    def redact(kind, payload):
+        """Redact only policy decisions, not the outer assurance drill event."""
+        body = deepcopy(payload)
+        if kind == EventType.POLICY_DECISION and isinstance(body.get('envelope'), dict):
+            body['envelope']['principal'] = '[REDACTED]'
+        return body
+    writer = EvidenceWriter(session.get_bind(), clock=lambda: NOW, redact_payload=redact)
+    result = simulate(session, 'worker', 'prompt-injection-tool-escalation', envelope,
+                      evidence=writer, actor_id='owner', now=NOW)
+    decisions = [r for r in result['path'] if r['event_type'] == 'POLICY_DECISION']
+    assert decisions and all(r['payload']['envelope']['principal'] == '[REDACTED]' for r in decisions)
+    stored = events(session, 'worker')[-1].payload['body']['path']
+    stored_decisions = [r for r in stored if r['event_type'] == 'POLICY_DECISION']
+    assert stored_decisions == decisions
+    assert verify_chain(session) > 0

@@ -52,7 +52,8 @@ def simulate(session, name, scenario, envelope, *, evidence, actor_id, now=None)
     baseline_events = export_chain(session)["events"]
     state = session.begin_nested()
     contained = False
-    drill_writer = _DrillWriter(session.get_bind(), signing=evidence._signing, clock=evidence.clock)
+    drill_writer = _DrillWriter(session.get_bind(), signing=evidence._signing,
+                                clock=evidence.clock, redact_payload=evidence.redact_payload)
     try:
         if scenario in ('prompt-injection-tool-escalation', 'malicious-retrieval'):
             attack = replace(envelope, tool='__unapproved_execute', context={**context,

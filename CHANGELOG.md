@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Offline drill transcripts preserve the configured payload redaction hook before simulated evidence is retained.
+
 - Signed assurance CLI writes accept a separate evidence-chain signer; mapped tool subjects cannot replace the invoked tool in external trust checks. A4 reports require the current policy digest, and drill evidence omissions raise explicit errors.
 
 - Historical assurance replay uses the recorded sequence and time cutoff so later actions do not change a past monitoring decision; live checks still see current actions. PostgreSQL 12 is the minimum server version for transactional enum upgrades.
