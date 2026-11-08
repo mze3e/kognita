@@ -47,6 +47,7 @@ def test_missing_revalidation_write_rolls_back_entire_outcome(session, setup, mo
     before = verify_chain(session)
     original = w.emit
     def drop_trigger(session, **kwargs):
+        """Provide drop trigger for the assurance regression."""
         if kwargs['event_type'] != EventType.REVALIDATION_TRIGGERED:
             return original(session, **kwargs)
     monkeypatch.setattr(w, 'emit', drop_trigger)
@@ -97,6 +98,7 @@ def test_a4_report_keeps_live_deployment_packet_when_next_update_pending(session
     a, w, _, _, _, _, config = setup
     config()
     def approve(digest):
+        """Provide approve for the assurance regression."""
         return approve_update(session, a.name, candidate_digest=digest, provider_change='change',
             regression_reference='suite', rollback_target='previous', rollback_plan='restore',
             evidence=w, actor_id='owner')
@@ -118,6 +120,7 @@ def test_snapshot_and_advisory_verify_once_for_multiple_agents(session, setup, m
     original = evidence_module._verify_chain
     calls = []
     def counted(*args, **kwargs):
+        """Provide counted for the assurance regression."""
         calls.append(True)
         return original(*args, **kwargs)
     monkeypatch.setattr(evidence_module, '_verify_chain', counted)
@@ -138,3 +141,42 @@ def test_same_head_tamper_is_rejected_after_previous_snapshot(session, setup):
     tamper_for_test(session, row.sequence, {'tampered': True})
     with pytest.raises(ChainBreak, match='payload does not match'):
         load_state(session, [a.name], utcnow())
+
+
+@pytest.mark.parametrize('later_seconds', [0, 60])
+def test_monitoring_replay_excludes_later_actions_and_live_still_denies(session, evidence, later_seconds):
+    """A later action, even at the same clock tick, cannot change a past decision."""
+    from test_authority_s3 import _setup
+    from fixtures.agents import _usecases
+    from conftest import NOW
+    from kognita.governance import decide, load_snapshot, record
+    from kognita.replay import replay_decision
+    from kognita.signing import EvidenceSigner, _generate
+    from kognita.assurance.records import agent_for
+    from kognita.vocabulary import Outcome
+    _, _, _, envelope = _setup(session, evidence)
+    agent = agent_for(session, 'worker')
+    private, public = _generate()
+    p = configure(session, agent.name, AssurancePolicy(use_case='READ', audience='bank',
+        monitoring_required=True, attestors={'runtime': public.decode()}), evidence=evidence, actor_id='owner')
+    action = evidence.emit(session, correlation_id='earlier', event_type=EventType.TOOL_CALL,
+                           actor_id=agent.name, payload={'tool': envelope.tool})
+    proof = sign_record(Attestation(kind='monitoring', issuer='runtime', subject=agent.name,
+        issued_at=NOW - timedelta(seconds=1), expires_at=NOW + timedelta(days=1), **binding(agent, p),
+        claims={'from_sequence': 1, 'through_sequence': action.sequence,
+                'action_hashes': [action.event_hash], 'unexplained_external_actions': []},
+        reference='runtime:coverage'), EvidenceSigner(private))
+    attest(session, agent.name, proof, evidence=evidence, actor_id='runtime', now=NOW)
+    usecases = _usecases(['READ'])
+    original = decide(envelope, load_snapshot(session, as_of=NOW), usecases=usecases, as_of=NOW)
+    assert original.outcome == Outcome.ALLOW
+    original = record(session, original, evidence=evidence, now=NOW)
+    evidence.clock = lambda: NOW + timedelta(seconds=later_seconds)
+    evidence.emit(session, correlation_id='later', event_type=EventType.TOOL_CALL,
+                  actor_id=agent.name, payload={'tool': envelope.tool})
+    replayed = replay_decision(session, original.request_id, envelope, usecases=usecases)
+    assert replayed.outcome == original.outcome and replayed.checks == original.checks
+    assert replayed.envelope_hash == original.envelope_hash
+    current = decide(envelope, load_snapshot(session, as_of=NOW), usecases=usecases, as_of=NOW)
+    assert current.outcome == Outcome.DENY
+    assert any(c.check == 'A5-MONITORING' for c in current.failures())

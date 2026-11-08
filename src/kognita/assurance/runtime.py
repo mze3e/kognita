@@ -66,12 +66,16 @@ def transfer_digest(p):
         'technology_origin', 'deployment_jurisdiction', 'transfer_type', 'transfer_policy')})
 
 
-def _action_rows(session, name):
+def _action_rows(session, name, *, as_of=None, through_sequence=None):
     # Independent telemetry references exact local hashes, never counts alone.
     """Read actions requiring independent telemetry, excluding unsent calls."""
-    rows = session.exec(select(EvidenceEvent).where(EvidenceEvent.actor_id == name,
+    query = select(EvidenceEvent).where(EvidenceEvent.actor_id == name,
         EvidenceEvent.event_type.in_([EventType.TOOL_CALL, EventType.MODEL_CALL, EventType.EGRESS]))
-        .order_by(EvidenceEvent.sequence)).all()
+    if as_of is not None:
+        query = query.where(EvidenceEvent.recorded_at <= as_utc(as_of))
+    if through_sequence is not None:
+        query = query.where(EvidenceEvent.sequence <= through_sequence)
+    rows = session.exec(query.order_by(EvidenceEvent.sequence)).all()
     return [r for r in rows if not (r.event_type == EventType.MODEL_CALL and r.payload.get('sent') is False)]
 
 
@@ -135,16 +139,18 @@ def _attestation(rows, agent, p, kind, at, *, digest=None):
     return None
 
 
-def load_state(session, names, at):
+def load_state(session, names, at, *, through_sequence=None):
     """Batch configured agents and advisories with one integrity check per snapshot.
 
     A matching head cannot prove an old payload is intact. Verify the prefix
     on each new snapshot rather than trusting a cross-snapshot head-only cache.
     """
     from collections import defaultdict
+    from collections.abc import Mapping
+    identities = names if isinstance(names, Mapping) else None
     names = tuple(names)
     grouped = defaultdict(list)
-    every = events(session, as_of=at, _names=(*names, '*'))
+    every = events(session, as_of=at, _names=(*names, '*'), _through_sequence=through_sequence)
     for row in every:
         grouped[row.correlation_id].append(row)
     advisories = tuple(row.payload['body'] for row in grouped['assurance:*']
@@ -155,10 +161,12 @@ def load_state(session, names, at):
         p = policy_from(rows)
         if p is None:
             continue
-        agent = agent_for(session, name)
+        agent = identities[name] if identities is not None else agent_for(session, name)
+        historical_at = at if through_sequence is not None else None
         state[name] = {'policy': p, 'rows': tuple(rows),
-                       'privacy': canonical_hash(context(session, agent, p)) if p.privacy_required else None,
-                       'actions': tuple((r.sequence, r.event_hash) for r in _action_rows(session, name))
+                       'privacy': canonical_hash(context(session, agent, p, as_of=historical_at)) if p.privacy_required else None,
+                       'actions': tuple((r.sequence, r.event_hash) for r in _action_rows(session, name, as_of=historical_at,
+                                      through_sequence=through_sequence))
                                   if p.monitoring_required else (),
                        'advisories': advisories}
     return state

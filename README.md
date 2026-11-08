@@ -891,6 +891,8 @@ The invariants are importable, so external packs run them in their own repositor
 
 ## Trust and resilience (0.7)
 
+The PostgreSQL backend requires PostgreSQL 12 or newer; CI exercises PostgreSQL 16.
+
 These controls are included in the 0.7.0 and 0.8.0 source releases.
 
 - **Signed evidence.** Install the `signing` extra for Ed25519 signatures on every event (`kognita keys generate`, `kognita evidence verify --public-key`). Signing configured without the extra refuses writes. Keys rotate, revoke and escrow with `kognita keys rotate|revoke|list`, and verification works across rotations.

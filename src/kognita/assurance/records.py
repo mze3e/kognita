@@ -91,7 +91,7 @@ def emit(session, evidence, name, action, body, *, actor_id, at=None, system=Fal
     return event
 
 
-def events(session, name=None, *, as_of=None, _names=None):
+def events(session, name=None, *, as_of=None, _names=None, _through_sequence=None):
     """Read one verified batch; snapshots must never reuse a head-only cache."""
     query = select(EvidenceEvent).where(EvidenceEvent.event_type == EventType.ASSURANCE)
     if name is not None:
@@ -101,6 +101,8 @@ def events(session, name=None, *, as_of=None, _names=None):
             [f'assurance:{value}' for value in _names]))
     if as_of is not None:
         query = query.where(EvidenceEvent.recorded_at <= as_utc(as_of))
+    if _through_sequence is not None:
+        query = query.where(EvidenceEvent.sequence <= _through_sequence)
     rows = session.exec(query.order_by(EvidenceEvent.sequence).execution_options(populate_existing=True)).all()
     if rows:
         from kognita.evidence import _verify_chain
@@ -167,10 +169,10 @@ def privacy_context(agent, p, use_case_record):
         'client_impact': p.client_impact, 'principal': agent.principal}
 
 
-def context(session, agent, p):
+def context(session, agent, p, *, as_of=None):
     """Resolve the current use-case record for privacy fingerprinting."""
     from kognita.usecases import load_register
-    entry = load_register(session).get(p.use_case)
+    entry = load_register(session, as_of=as_of).get(p.use_case)
     return privacy_context(agent, p, entry.record if entry else {})
 
 

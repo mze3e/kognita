@@ -24,6 +24,7 @@ from fixtures.agents import register
 
 @pytest.fixture
 def setup(session):
+    """Provide setup for the assurance regression."""
     at = utcnow()
     writer = EvidenceWriter(session.get_bind())
     agent = register(session, name='assurance-agent', owner_exec='owner')
@@ -31,6 +32,7 @@ def setup(session):
     signer = EvidenceSigner(private)
     env = Envelope(principal='alice', purpose='p', tool='read_note', agent_name=agent.name)
     def config(**kw):
+        """Provide config for the assurance regression."""
         p = AssurancePolicy(use_case='p', audience='bank', attestors={'runtime': public.decode()},
                             issuers={'partner': public.decode()}, **kw)
         configure(session, agent.name, p, evidence=writer, actor_id='owner')
@@ -39,6 +41,7 @@ def setup(session):
 
 
 def packet(setup, p, kind, claims):
+    """Provide packet for the assurance regression."""
     agent, writer, signer, public, env, at, _ = setup
     return sign_record(Attestation(kind=kind, issuer='runtime', subject=agent.name,
         issued_at=at - timedelta(seconds=1), expires_at=at + timedelta(hours=1),
@@ -46,11 +49,13 @@ def packet(setup, p, kind, claims):
 
 
 def gates(session, setup):
+    """Provide gates for the assurance regression."""
     a, _, _, _, e, at, _ = setup
     return {c.check: c.result for c in admission_checks(e, a, load_state(session, [a.name], utcnow()), utcnow())}
 
 
 def test_owner_only_policy_and_independent_attestors(session, setup):
+    """Verify owner only policy and independent attestors."""
     a, w, s, public, e, at, config = setup
     p = config()
     with pytest.raises(ValueError, match='owner'):
@@ -61,6 +66,7 @@ def test_owner_only_policy_and_independent_attestors(session, setup):
 
 
 def assertion(setup, **kw):
+    """Provide assertion for the assurance regression."""
     a, _, s, _, e, at, _ = setup
     body = dict(issuer='partner', subject=a.name, principal=e.principal, purpose=e.purpose,
         audience='bank', scopes={'tools': ['read_note'], 'client': ['one']},
@@ -73,6 +79,7 @@ def assertion(setup, **kw):
     dict(scopes={'tools': ['execute']}), dict(expires_at=datetime(2026,1,1,tzinfo=timezone.utc),
     issued_at=datetime(2025,1,1,tzinfo=timezone.utc))])
 def test_external_assertions_fail_closed(session, setup, change):
+    """Verify external assertions fail closed."""
     a,w,s,public,e,at,config=setup
     p=config(external_required=True)
     with pytest.raises(ValueError):
@@ -81,6 +88,7 @@ def test_external_assertions_fail_closed(session, setup, change):
 
 
 def test_external_signature_and_nontransitive_attenuation(session, setup):
+    """Verify external signature and nontransitive attenuation."""
     a,w,s,public,e,at,config=setup
     p=config(external_required=True)
     root=assertion(setup, subject='orchestrator')
@@ -96,6 +104,7 @@ def test_external_signature_and_nontransitive_attenuation(session, setup):
 
 
 def test_privacy_invalidates_on_material_change(session, setup):
+    """Verify privacy invalidates on material change."""
     a,w,s,public,e,at,config=setup
     p=config(privacy_required=True)
     assert gates(session,setup)['A6-PRIVACY']==CheckResult.FAIL
@@ -110,6 +119,7 @@ def test_privacy_invalidates_on_material_change(session, setup):
 @pytest.mark.parametrize('field,value', [('model','new-provider'),('autonomy_level',1),
     ('permitted_systems',['other']),('tool_allowlist',{'new-tool':{}})])
 def test_privacy_change_dimensions(session,setup,field,value):
+    """Verify privacy change dimensions."""
     a,w,s,public,e,at,config=setup
     p=config(privacy_required=True)
     attest(session,a.name,packet(setup,p,'privacy',{'context_digest':canonical_hash(context(session,a,p))}),
@@ -119,6 +129,7 @@ def test_privacy_change_dimensions(session,setup,field,value):
 
 
 def test_environment_requires_independent_complete_fresh_binding(session,setup):
+    """Verify environment requires independent complete fresh binding."""
     a,w,s,public,e,at,config=setup
     p=config(environment_required=True)
     with pytest.raises(ValueError,match='five'):
@@ -134,6 +145,7 @@ def test_environment_requires_independent_complete_fresh_binding(session,setup):
 
 
 def test_coverage_detects_both_directions_and_new_actions(session,setup):
+    """Verify coverage detects both directions and new actions."""
     a,w,s,public,e,at,config=setup
     p=config(monitoring_required=True)
     event=w.emit(session,correlation_id='action',event_type=EventType.TOOL_CALL,
@@ -153,6 +165,7 @@ def test_coverage_detects_both_directions_and_new_actions(session,setup):
 
 
 def test_exact_instruction_binding_and_transfer(session,setup):
+    """Verify exact instruction binding and transfer."""
     a,w,s,public,e,at,config=setup
     p=config(instruction_tools=[e.tool],transfer_required=True,technology_origin='CN',
              deployment_jurisdiction='SG',transfer_policy='legal:policy')
@@ -171,6 +184,7 @@ def test_exact_instruction_binding_and_transfer(session,setup):
 
 
 def test_components_advisory_quarantines_all_affected(session,setup):
+    """Verify components advisory quarantines all affected."""
     a,w,s,public,e,at,config=setup
     p=config(components_required=True)
     components=[dict(name='proxy',version='1',sbom_digest='f'*64,provenance='build:approved')]
@@ -184,6 +198,7 @@ def test_components_advisory_quarantines_all_affected(session,setup):
 
 
 def test_manifest_signature_and_observed_divergence(session,setup):
+    """Verify manifest signature and observed divergence."""
     a,w,s,public,e,at,config=setup
     config()
     result=export_manifest(session,a.name,s,evidence=w,actor_id='owner',now=at)
@@ -196,6 +211,7 @@ def test_manifest_signature_and_observed_divergence(session,setup):
 
 
 def test_outcome_threshold_and_duplicate_source(session,setup):
+    """Verify outcome threshold and duplicate source."""
     a,w,s,public,e,at,config=setup
     config(max_adverse_outcomes=1)
     session.add(Interaction(id='journey',client_id='client',use_case='p'));session.flush()
@@ -210,6 +226,7 @@ def test_outcome_threshold_and_duplicate_source(session,setup):
 
 @pytest.mark.parametrize('profile', PROFILES)
 def test_profiles_are_honest_and_point_in_time(session,setup,profile):
+    """Verify profiles are honest and point in time."""
     a,w,s,public,e,at,config=setup
     config()
     before=utcnow()
@@ -220,6 +237,7 @@ def test_profiles_are_honest_and_point_in_time(session,setup,profile):
 
 
 def test_tampered_evidence_refuses_assurance(session,setup):
+    """Verify tampered evidence refuses assurance."""
     from evidence_guard import tamper_for_test
     a,w,s,public,e,at,config=setup
     config();session.commit()
@@ -230,6 +248,7 @@ def test_tampered_evidence_refuses_assurance(session,setup):
 
 
 def test_update_requires_current_evaluation_and_exact_owner_packet(session,setup):
+    """Verify update requires current evaluation and exact owner packet."""
     from kognita.registry import approve_deployment, _deployment_hash
     from kognita.evaluation import EvaluationResult, record_evaluation, METRICS
     a,w,s,public,e,at,config=setup
@@ -256,6 +275,7 @@ def test_update_requires_current_evaluation_and_exact_owner_packet(session,setup
 
 
 def test_shared_decision_and_release_recheck(session,evidence):
+    """Verify shared decision and release recheck."""
     from test_authority_s3 import _setup, _decide
     from kognita.governance import load_snapshot, _standing_checks
     from conftest import NOW
@@ -274,12 +294,15 @@ def test_shared_decision_and_release_recheck(session,evidence):
 
 @pytest.mark.parametrize('scenario', __import__('kognita.assurance.drills',fromlist=['SCENARIOS']).SCENARIOS)
 def test_adversarial_drills_have_verified_paths_and_restore_state(session,evidence,scenario,monkeypatch):
+    """Verify adversarial drills have verified paths and restore state."""
     import socket
     from test_authority_s3 import _setup
     from kognita.assurance.drills import simulate
     from kognita.evidence import export_chain, verify_export
     from conftest import NOW
-    def no_network(*args,**kw): raise AssertionError('drill contacted network')
+    def no_network(*args,**kw):
+        """Provide no network for the assurance regression."""
+        raise AssertionError('drill contacted network')
     monkeypatch.setattr(socket,'create_connection',no_network)
     _,_,_,env=_setup(session,evidence)
     configure(session,'worker',AssurancePolicy(use_case='READ',audience='bank'),evidence=evidence,actor_id='owner')
@@ -296,6 +319,7 @@ def test_adversarial_drills_have_verified_paths_and_restore_state(session,eviden
 
 
 def test_activation_gate_and_policy_changes_invalidate_attestations(session,setup):
+    """Verify activation gate and policy changes invalidate attestations."""
     from kognita.evaluation import check_activation
     a,w,s,public,e,at,config=setup
     p=config(privacy_required=True)
@@ -308,14 +332,18 @@ def test_activation_gate_and_policy_changes_invalidate_attestations(session,setu
 
 
 def test_core_only_policy_does_not_require_signing_extra(session,setup,monkeypatch):
+    """Verify core only policy does not require signing extra."""
     import kognita.signing
     a,w,s,public,e,at,config=setup
-    def unavailable():raise AssertionError('optional signing loaded')
+    def unavailable():
+        """Provide unavailable for the assurance regression."""
+        raise AssertionError('optional signing loaded')
     monkeypatch.setattr(kognita.signing,'_crypto',unavailable)
     configure(session,a.name,AssurancePolicy(use_case='p',audience='bank'),evidence=w,actor_id='owner')
 
 
 def test_cli_config_and_profile_report(tmp_path,capsys):
+    """Verify cli config and profile report."""
     from kognita.cli import main
     from kognita.db import make_engine,create_all
     from sqlmodel import Session
@@ -334,6 +362,7 @@ def test_cli_config_and_profile_report(tmp_path,capsys):
 
 @pytest.mark.parametrize('path',['gateway','mcp'])
 def test_ingress_denies_before_transport_without_required_attestation(session,evidence,engine,path):
+    """Verify ingress denies before transport without required attestation."""
     from test_identity_radius_completion import _setup, _invoke
     from kognita.vocabulary import Outcome
     agent,headers=_setup(session,evidence,engine,path)
@@ -347,6 +376,7 @@ def test_ingress_denies_before_transport_without_required_attestation(session,ev
 
 
 def test_malformed_proof_headers_never_confer_trust():
+    """Verify malformed proof headers never confer trust."""
     from kognita.assurance.runtime import request_context
     assert request_context({'x-kognita-agent-assertion':'{bad'})=={'external_assertion':{}}
     assert request_context({'x-kognita-agent-assertion':'null'})=={'external_assertion':{}}
@@ -355,6 +385,7 @@ def test_malformed_proof_headers_never_confer_trust():
 
 
 def test_outcome_step_down_is_evidenced_and_transactional(session,setup,monkeypatch):
+    """Verify outcome step down is evidenced and transactional."""
     from kognita.autonomy import _change
     a,w,s,public,e,at,config=setup
     _change(session,a,1,w,'owner','AUTONOMY_PROMOTED',{})
@@ -369,6 +400,7 @@ def test_outcome_step_down_is_evidenced_and_transactional(session,setup,monkeypa
 
 
 def test_expiry_and_removed_trust_key_deny_existing_records(session,setup):
+    """Verify expiry and removed trust key deny existing records."""
     a,w,s,public,e,at,config=setup
     p=config(environment_required=True)
     claims={k:'runtime:ref' for k in ('network_policy','isolation','credential_scope','sandbox_identity','termination_path')}
@@ -381,6 +413,7 @@ def test_expiry_and_removed_trust_key_deny_existing_records(session,setup):
 
 
 def test_advisory_keeps_quarantined_components_out_of_profiles(session,setup):
+    """Verify advisory keeps quarantined components out of profiles."""
     a,w,s,public,e,at,config=setup
     config(components_required=True)
     approve_components(session,a.name,[dict(name='proxy',version='1',sbom_digest='f'*64,provenance='build')],
@@ -393,6 +426,7 @@ def test_advisory_keeps_quarantined_components_out_of_profiles(session,setup):
 
 
 def test_drill_refuses_missing_decision_evidence(session,evidence,monkeypatch):
+    """Verify drill refuses missing decision evidence."""
     from test_authority_s3 import _setup
     from kognita.assurance.drills import simulate
     from kognita.evidence import EvidenceWriter
@@ -400,6 +434,7 @@ def test_drill_refuses_missing_decision_evidence(session,evidence,monkeypatch):
     _,_,_,env=_setup(session,evidence)
     original=EvidenceWriter.emit
     def drop(self,session,**kw):
+        """Provide drop for the assurance regression."""
         if kw['event_type']!=EventType.POLICY_DECISION:return original(self,session,**kw)
     monkeypatch.setattr(EvidenceWriter,'emit',drop)
     with pytest.raises((ValueError,AttributeError)):
@@ -407,6 +442,7 @@ def test_drill_refuses_missing_decision_evidence(session,evidence,monkeypatch):
 
 
 def test_assurance_survives_signed_backup_restore(tmp_path):
+    """Verify assurance survives signed backup restore."""
     from kognita.db import make_engine, create_all
     from kognita.backup import _create, _restore
     from sqlmodel import Session
@@ -434,6 +470,7 @@ def test_assurance_survives_signed_backup_restore(tmp_path):
 
 @pytest.mark.parametrize('path',['gateway','mcp'])
 def test_ingress_accepts_valid_signed_external_proof_and_rejects_tampering(session,evidence,engine,path):
+    """Verify ingress accepts valid signed external proof and rejects tampering."""
     import json
     from test_identity_radius_completion import _setup, _invoke
     from test_gateway import MODEL
@@ -459,6 +496,7 @@ def test_ingress_accepts_valid_signed_external_proof_and_rejects_tampering(sessi
 
 
 def test_external_assertion_covers_argument_derived_subjects(session,setup):
+    """Verify external assertion covers argument derived subjects."""
     a,w,s,public,e,at,config=setup
     p=config()
     e=replace(e,context={'_effective_subjects':{'client':['two']}})
@@ -467,6 +505,7 @@ def test_external_assertion_covers_argument_derived_subjects(session,setup):
 
 
 def test_usecase_activation_refuses_missing_privacy_review(session,evidence):
+    """Verify usecase activation refuses missing privacy review."""
     from test_authority_s3 import _setup
     from kognita.usecases import load_register, activate
     from conftest import NOW
@@ -479,6 +518,7 @@ def test_usecase_activation_refuses_missing_privacy_review(session,evidence):
 
 
 def test_profile_does_not_revive_superseded_attestation(session,setup):
+    """Verify profile does not revive superseded attestation."""
     a,w,s,public,e,at,config=setup
     p=config(environment_required=True)
     claims={k:'runtime:ref' for k in ('network_policy','isolation','credential_scope','sandbox_identity','termination_path')}

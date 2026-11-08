@@ -1,4 +1,4 @@
-"""T2 Postgres storage guards and run isolation.
+"""T2 Postgres storage guards and run isolation (PostgreSQL 12 or newer).
 
 Schema creation installs RLS. Reapply it with
 ``kognita db rls apply --db URL`` for an existing store.
@@ -14,10 +14,11 @@ grant agents access to evidence or other infrastructure tables.
 """
 
 
-def _migrate_event_enum(connection):
+def _migrate_event_enum(connection) -> None:
     """Add assurance to the actual event-column enum, including scoped schemas.
 
     Run in schema initialization and commit before the new value is used.
+    PostgreSQL 12 or newer is required for transactional enum extension.
     PostgreSQL does not extend an existing enum through metadata.create_all.
     """
     row = connection.exec_driver_sql("""SELECT n.nspname, t.typname
@@ -31,7 +32,8 @@ def _migrate_event_enum(connection):
         connection.exec_driver_sql(f"ALTER TYPE {enum} ADD VALUE IF NOT EXISTS 'ASSURANCE'")
 
 
-def _install(connection):
+def _install(connection) -> None:
+    """Install storage guards and the enum upgrade before application writes."""
     _migrate_event_enum(connection)
     connection.exec_driver_sql('''CREATE TABLE IF NOT EXISTS evidence_head (
         id INTEGER PRIMARY KEY CHECK (id = 1),

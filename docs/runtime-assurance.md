@@ -32,7 +32,8 @@ policy replacement invalidates previous policy-bound attestations and approvals.
 All policies, approvals, signed attestations, outcomes and findings are
 `ASSURANCE` events in the existing append-only evidence chain. Existing backup,
 restore, anchoring, signing and chain verification apply. No database column
-migration is needed. Existing PostgreSQL event enums are extended idempotently
+migration is needed. PostgreSQL 12 or newer is required (CI tests PostgreSQL 16). Existing
+PostgreSQL event enums are extended idempotently
 by `create_all(engine)` during initialization. Run initialization with schema
 owner privileges before starting upgraded serving processes; runtime workloads
 must not have DDL privileges. Callers own transactions; commit successful administrative
@@ -81,7 +82,10 @@ Assurance reads batch agents and advisories and verify the chain once per
 snapshot. A matching head digest alone does not prove that an older payload
 is intact, so a new snapshot rechecks the prefix instead of trusting a
 cross-snapshot head-only cache. Monitoring also reconciles action history.
-Plan retention and capacity for these integrity checks.
+Plan retention and capacity for these integrity checks. Replay rebuilds assurance
+state from the recorded decision sequence and time using the pinned identity;
+later actions, including actions at the same timestamp, cannot change a past
+monitoring verdict. Live admission continues to reconcile all current actions.
 
 ## Signed boundary attestations (A5, A6, A7, A10, A11)
 

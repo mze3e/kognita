@@ -84,7 +84,7 @@ class PolicySnapshot:
 
 
 def load_snapshot(session: Session, *, as_of: datetime | None = None,
-                  _evidence=None, _agent_name=None) -> PolicySnapshot:
+                  _evidence=None, _agent_name=None, _load_assurance=True) -> PolicySnapshot:
     """Read the policy set and agent registry in force at ``as_of``.
 
     Closed policy rows stay in the table and are not loaded. Revocations and
@@ -107,7 +107,7 @@ def load_snapshot(session: Session, *, as_of: datetime | None = None,
     from kognita._limits import _load_usage
     from kognita.assurance.runtime import load_state
     return PolicySnapshot(
-        _assurance=load_state(session, agents, at),
+        _assurance=load_state(session, agents, at) if _load_assurance else {},
         _usage=_load_usage(session, agents, at),
         _authority=_load(session, _agent_name, at, _evidence),
         policies=policies,
