@@ -162,3 +162,31 @@ def test_verify_chain_fails_when_head_points_behind_the_last_event():
         session.commit()
         with pytest.raises(ChainBreak):
             verify_chain(session)
+
+
+@pytest.mark.parametrize('partial', [False, True])
+def test_deleted_expired_resident_tail_raises_chain_break_and_attempts_incident(tmp_path, monkeypatch, partial):
+    """External deletion cannot replace the chain error with an ORM refresh error."""
+    engine = make_engine(tmp_path / 'deleted-tail.db')
+    create_all(engine)
+    writer = EvidenceWriter(engine)
+    attempts = []
+    import kognita.incidents as incidents
+    def capture_incident(*args, **kwargs):
+        """Observe the required incident-recording attempt without changing evidence."""
+        attempts.append(kwargs)
+    monkeypatch.setattr(incidents, '_open', capture_incident)
+    with Session(engine) as session:
+        writer.emit(session, correlation_id='first', event_type=EventType.TOOL_CALL)
+        retained = writer.emit(session, correlation_id='tail', event_type=EventType.TOOL_CALL)
+        session.commit()
+        if partial:
+            session.refresh(retained)
+            session.expire(retained, ['payload'])
+        with engine.begin() as attacker:
+            attacker.exec_driver_sql('DROP TRIGGER evidence_events_no_delete')
+            attacker.exec_driver_sql('DELETE FROM evidence_events WHERE sequence = 2')
+        with pytest.raises(ChainBreak, match='chain ends at sequence 1'):
+            verify_chain(session)
+        assert len(attempts) == 1 and attempts[0]['source'] == 'chain'
+    engine.dispose()

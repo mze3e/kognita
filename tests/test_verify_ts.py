@@ -41,3 +41,30 @@ def test_shared_fixtures_agree(case, _cli):
         assert json.loads(result.stdout)['event_count'] == count
     else:
         assert 'T4:' in result.stderr
+
+
+def test_signed_assurance_export_agrees_with_node(session, tmp_path, _cli):
+    """The new event type retains signed Python/Node verifier compatibility."""
+    from kognita.evidence import EvidenceWriter, export_chain
+    from kognita.signing import EvidenceSigner, _generate
+    from kognita.vocabulary import EventType
+    private, public = _generate()
+    writer = EvidenceWriter(session.get_bind(), signing=EvidenceSigner(private))
+    writer.emit(session, correlation_id='assurance:verification', event_type=EventType.ASSURANCE,
+                payload={'action': 'COMPATIBILITY', 'body': {'integer': 42, 'unicode': '銀行'}})
+    artifact = export_chain(session)
+    assert verify_export(artifact, public_key=public) == 1
+    path, key = tmp_path / 'assurance.json', tmp_path / 'root.pem'
+    path.write_text(json.dumps(artifact))
+    key.write_bytes(public)
+    result = subprocess.run(['node', str(_cli), str(path), '--public-key', str(key)],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)['event_count'] == 1
+    artifact['events'][0]['payload']['body']['integer'] = 43
+    path.write_text(json.dumps(artifact))
+    with pytest.raises(ChainBreak):
+        verify_export(artifact, public_key=public)
+    result = subprocess.run(['node', str(_cli), str(path), '--public-key', str(key)],
+                            capture_output=True, text=True)
+    assert result.returncode == 1 and 'T4:' in result.stderr

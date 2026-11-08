@@ -80,7 +80,12 @@ def replay_decision(
     _verify_retained(session, events)
     if envelope is None:
         return _recorded_evaluation(decision, payload, at)
-    snapshot = _pinned_registry(session, load_snapshot(session, as_of=at), event.sequence)
+    snapshot = _pinned_registry(
+        session, load_snapshot(session, as_of=at, _load_assurance=False), event.sequence)
+    from dataclasses import replace as _replace_assurance
+    from kognita.assurance.runtime import load_state
+    snapshot = _replace_assurance(snapshot, _assurance=load_state(
+        session, snapshot.agents, at, through_sequence=event.sequence))
     recorded_usage = (payload.get("attributes") or {}).get("_s4_usage")
     if recorded_usage is not None:
         from dataclasses import replace as _replace

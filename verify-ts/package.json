@@ -1,11 +1,41 @@
 {
   "name": "@kognita/verify",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "version": "0.8.0",
   "type": "module",
-  "bin": {"kognita-verify": "dist/_cli.js"},
-  "files": ["dist"],
-  "engines": {"node": ">=22"},
-  "scripts": {"build": "tsc", "test": "npm run build && node --test tests/*.mjs"},
-  "devDependencies": {"@types/node": "^22.0.0", "typescript": "^5.7.0"}
+  "bin": {
+    "kognita-verify": "dist/_cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test tests/*.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "main": "dist/_verify.js",
+  "types": "dist/_verify.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/_verify.d.ts",
+      "default": "./dist/_verify.js"
+    }
+  },
+  "license": "MIT",
+  "description": "Independent Kognita evidence verifier with zero runtime dependencies",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mze3e/kognita.git",
+    "directory": "verify-ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

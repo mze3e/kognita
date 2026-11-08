@@ -28,9 +28,10 @@ _NOT_ENGINE = {"__init__", "__main__", "config", "exceptions", "cli", "policy"}
 
 
 def _engine_modules_on_disk() -> set[str]:
-    return {
-        path.stem for path in PACKAGE_ROOT.glob("*.py") if path.stem not in _NOT_ENGINE
-    }
+    flat = {path.stem for path in PACKAGE_ROOT.glob("*.py") if path.stem not in _NOT_ENGINE}
+    assurance = {"assurance." + path.stem for path in (PACKAGE_ROOT / "assurance").glob("*.py")
+                 if path.stem not in {"__init__", "cli"}}
+    return flat | assurance
 
 
 def _engine_modules_in_contract() -> set[str]:

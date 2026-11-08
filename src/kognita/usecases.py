@@ -2036,6 +2036,11 @@ def activate(
             at=when,
         )
     )
+    from kognita.models import Agent
+    from kognita.assurance.runtime import check_activation as assurance_activation
+    for agent in session.exec(select(Agent)).all():
+        if usecase_id in (agent.use_cases or []):
+            assurance_activation(session, agent, now=when)
     deadline = review_deadline(entry.proposed_tier, when)
     if (
         entry.review_date is not None

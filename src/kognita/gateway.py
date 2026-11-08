@@ -1164,8 +1164,9 @@ class Gateway:
         if template_version:
             arguments["prompt_template_version"] = template_version
         from kognita._isolation import _assurance
+        from kognita.assurance.runtime import request_context as assurance_context
         envelope = Envelope(
-            context={"_governed_ingress": True, "_agent_credential": headers.get("agent_credential"),
+            context={**assurance_context(headers), "_governed_ingress": True, "_agent_credential": headers.get("agent_credential"),
                      **({"system_trigger": admitted} if admitted else {})},
             principal=principal,
             purpose=purpose,

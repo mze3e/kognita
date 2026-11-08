@@ -77,13 +77,14 @@ class PolicySnapshot:
     drill_dues: tuple[OpenDrill, ...] = ()
     _authority: tuple = ()
     _usage: dict = field(default_factory=dict)
+    _assurance: dict = field(default_factory=dict)
 
     def effective(self, at: datetime) -> tuple[Policy, ...]:
         return tuple(p for p in self.policies if p.is_effective(at))
 
 
 def load_snapshot(session: Session, *, as_of: datetime | None = None,
-                  _evidence=None, _agent_name=None) -> PolicySnapshot:
+                  _evidence=None, _agent_name=None, _load_assurance=True) -> PolicySnapshot:
     """Read the policy set and agent registry in force at ``as_of``.
 
     Closed policy rows stay in the table and are not loaded. Revocations and
@@ -104,7 +105,9 @@ def load_snapshot(session: Session, *, as_of: datetime | None = None,
         _expire_holds(session, name, _evidence, at)
     from kognita.authority import _load
     from kognita._limits import _load_usage
+    from kognita.assurance.runtime import load_state
     return PolicySnapshot(
+        _assurance=load_state(session, agents, at) if _load_assurance else {},
         _usage=_load_usage(session, agents, at),
         _authority=_load(session, _agent_name, at, _evidence),
         policies=policies,
@@ -284,6 +287,8 @@ def decide(
     registry = rules if rules is not None else build_registry()
 
     checks: list[Check] = []
+    from kognita.assurance.runtime import admission_checks
+    checks.extend(admission_checks(envelope, agent, snapshot._assurance, at))
     from kognita.authority import _checks as _authority_checks
     from kognita._limits import _checks as _limit_checks
     checks.extend(_limit_checks(envelope, snapshot, at))
@@ -380,6 +385,8 @@ def _standing_checks(
     attrs = dict(attributes or {})
     checks: list[Check] = []
     agent = snapshot.agents.get(envelope.agent_name)
+    from kognita.assurance.runtime import admission_checks
+    checks.extend(admission_checks(envelope, agent, snapshot._assurance, at))
     if agent is not None and attrs.get("deployment_hash") != agent.deployment_hash:
         checks.append(Check(check="S1-DEPLOYMENT-HOLD", regime="INTERNAL",
                             result=CheckResult.FAIL, citation="S1-DEPLOYMENT-HOLD"))

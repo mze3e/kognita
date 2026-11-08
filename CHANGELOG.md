@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-09
+
+### Fixed
+
+- Pending edits are flushed and retained interactions refreshed before outcome validation; externally deleted expired evidence objects still produce a chain break, with an incident-recording attempt on the public `verify_chain` path. Conflicting pending interaction edits are refused instead of overwriting committed changes.
+
+- Concurrent outcome submissions serialize before governing-state reads, preventing duplicate acceptance, missed adverse thresholds and lost autonomy reductions. Real PostgreSQL process tests verify signed chains, exact sequence continuity, refreshed policy and atomic rollback.
+
+- Chain verification refreshes every stored event before hashing, including retained non-assurance ORM objects after raw database tampering.
+
+- Offline drill transcripts preserve the configured payload redaction hook before simulated evidence is retained.
+
+- Signed assurance CLI writes accept a separate evidence-chain signer; mapped tool subjects cannot replace the invoked tool in external trust checks. A4 reports require the current policy digest, and drill evidence omissions raise explicit errors.
+
+- Historical assurance replay uses the recorded sequence and time cutoff so later actions do not change a past monitoring decision; live checks still see current actions. PostgreSQL 12 is the minimum server version for transactional enum upgrades.
+
+- Review corrections: good outcomes no longer retrigger adverse thresholds; required revalidation writes roll back on failure; exact instruction records, normalized manifest datetimes and deployment-specific update reports select the correct evidence. Admission and advisories verify one batch while preserving old-row tamper detection. Existing PostgreSQL event enums receive an idempotent assurance upgrade during initialization.
+- TypeScript package metadata targets 0.8.0 with public package exports compatible with the published 0.7.0 verifier and generated type declarations.
+
+### Added
+
+- 0.8 supervisory alignment and runtime assurance: owner-configured signed KYA manifests and external-agent assertions; deployment-bound privacy, monitoring, environment, transfer and instruction attestations; candidate-bound third-party update evaluation and regression/rollback approval; authoritative production outcomes with revalidation/step-down; approved component digests and advisory quarantine; eight offline hostile-agent decision drills; versioned evidence-backed MAS/HKMA/FSB/OCC/SEC/FCA theme reports and `kognita assurance` commands. Existing deployments opt in through an accountable-owner policy. Adds the `ASSURANCE` evidence event and optional `EvaluationResult.deployment_hash`; no new core dependencies or database columns. See `docs/runtime-assurance.md`.
+
 - Correct the 0.8 assurance documentation after PR #167 review: cite the AISI and METR/Redwood technical evidence, align the claims with those sources, and include selected SEC/FCA themes in the A12 acceptance criterion.
 
 - PWM 0.5 review fixes (4 Nov 2026): remove the duplicate liveStatusSubject, liveStatusValue and observedAt fields so every live authority observation uses one format; make a delegation's permitted data class a checked ceiling (DelegationCeilingShape); reject an agent whose effective autonomy exceeds its maximum (AgentAutonomyShape); list union range members in SPEC instead of a generated ID; derive the README counts in the build. Rebuild the ontology and specification.

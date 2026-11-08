@@ -145,6 +145,14 @@ def _lock_for(engine: Engine) -> threading.Lock:
         return lock
 
 
+def _serialize_postgres_writes(session):
+    """Hold the shared append lock until transaction completion, before state reads."""
+    from sqlalchemy import text
+    if session.connection().get_isolation_level() != "READ COMMITTED":
+        raise ValueError("T2: evidence writes require READ COMMITTED")
+    session.execute(text("SELECT pg_advisory_xact_lock(7070002)"))
+
+
 class EvidenceWriter:
     """Appends events to the chain for one database.
 
@@ -203,12 +211,8 @@ class EvidenceWriter:
         # database lock from appending another event before committing.
         with _nullcontext() if _postgres else self._lock:
             if _postgres:
-                from sqlalchemy import text as _text
-                # Acquire before reading the tail, including for an empty chain.
-                # READ COMMITTED gives the tail query a fresh snapshot after waiting.
-                if session.connection().get_isolation_level() != "READ COMMITTED":
-                    raise ValueError("T2: evidence writes require READ COMMITTED")
-                session.execute(_text("SELECT pg_advisory_xact_lock(7070002)"))
+                # READ COMMITTED gives state reads a fresh snapshot after waiting.
+                _serialize_postgres_writes(session)
             previous = session.exec(
                 select(EvidenceEvent).order_by(desc(EvidenceEvent.sequence)).limit(1)
             ).first()
@@ -421,7 +425,26 @@ def verify_chain(session: Session, *, public_key: bytes | None = None) -> int:
 
 
 def _verify_chain(session, *, public_key=None):
-    events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)).all()
+    """Verify fresh stored rows without concealing resident-object corruption."""
+    # Refuse corrupted resident objects before refreshing them from storage.
+    # JSON mutations may be invisible to ORM dirty tracking, but still matter.
+    from sqlalchemy.orm.exc import ObjectDeletedError
+    for event in list(session.identity_map.values()):
+        if isinstance(event, EvidenceEvent):
+            try:
+                payload, payload_hash = event.payload, event.payload_hash
+                sequence, event_hash = event.sequence, event.event_hash
+                header = _event_header(event)
+            except ObjectDeletedError:
+                # An expired attribute refreshed a row that no longer exists.
+                # The stored sequence/checkpoint checks below detect its removal.
+                continue
+            if canonical_hash(payload) != payload_hash:
+                raise ChainBreak(sequence, "payload does not match its hash")
+            if canonical_hash(header) != event_hash:
+                raise ChainBreak(sequence, "event hash does not match its contents")
+    events = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence)
+                          .execution_options(populate_existing=True)).all()
     required = public_key is not None or any(event.signature is not None for event in events)
     from kognita.signing import _registry
     _registry(export_chain(session)['events'], public_key)
