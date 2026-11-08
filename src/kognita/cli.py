@@ -1739,6 +1739,8 @@ def build_parser() -> argparse.ArgumentParser:
         description="Prove an AI answer was permitted — and evidence it.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
+    from kognita.assurance.cli import add_parser as add_assurance_parser
+    add_assurance_parser(sub)
     backup = sub.add_parser('backup', help='R1 evidence and retention recovery')
     backup_sub = backup.add_subparsers(dest='_backup_command', required=True)
     for name in ('create', 'restore', 'verify'):

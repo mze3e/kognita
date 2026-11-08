@@ -765,7 +765,7 @@ def test_merge_policy_sets_keeps_a_base_rule_the_overlay_does_not_replace():
 
 def test_the_engine_does_not_import_packs_and_import_kognita_does_not_load_them():
     for stem in _engine_modules_on_disk():
-        tree = ast.parse((PACKAGE_ROOT / f"{stem}.py").read_text(encoding="utf-8"))
+        tree = ast.parse((PACKAGE_ROOT / (stem.replace(".", "/") + ".py")).read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             modules: list[str] = []
             if isinstance(node, ast.Import):

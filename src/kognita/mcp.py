@@ -631,6 +631,7 @@ class McpProxy:
         # mappings, for all governance consumers.
         argument_clients = _argument_values(envelope_arguments, "client")
         subjects = {"client": next(iter(argument_clients))} if argument_clients and len(argument_clients) == 1 else {}
+        from kognita.assurance.runtime import request_context as assurance_context
         envelope = Envelope(
             principal=principal,
             purpose=purpose,
@@ -641,7 +642,7 @@ class McpProxy:
             assurance_level=_assurance(headers),
             subjects=subjects,
             arguments=dict(envelope_arguments),
-            context={**context, "_governed_ingress": True, "_agent_credential": headers.get("agent_credential"),
+            context={**context, **assurance_context(headers), "_governed_ingress": True, "_agent_credential": headers.get("agent_credential"),
                      "_require_client_run": True},
         )
 

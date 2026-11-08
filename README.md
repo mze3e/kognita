@@ -910,7 +910,7 @@ These controls are on main and not yet in a PyPI release.
 
 ## Known limitations
 
-Kognita is alpha. These are known limitations in v0.7.0. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
+Kognita is alpha. These limitations remain in the 0.8 development version. The [changelog](CHANGELOG.md) includes the migration guide and full release details.
 
 - **The gateway refuses attachments.** File, image and audio content parts cannot be inspected locally, so they are refused (S5-UNSUPPORTED-CONTENT).
 - **Degraded-mode evidence is held in the gateway process.** Restarting before the evidence store recovers drops buffered evidence. `FAIL_CLOSED` is the default; MCP has no degraded mode.
@@ -956,7 +956,7 @@ The 0.6 claims controls ship in v0.6.0: typed claims, freshness, approved source
 
 The 0.7 trust and resilience controls ship in v0.7.0. See [Trust and resilience](#trust-and-resilience-07) and the [0.7 checklist](docs/ROADMAP.md).
 
-**0.8 "Supervisory Alignment and Runtime Assurance" is planned**: material-agent/KYA manifests, external-agent trust assertions, outcome validation, third-party update gates, monitoring-coverage and execution-environment attestations, AI cyber drills, AI software-supply-chain evidence, jurisdictional technology-transfer controls, high-risk instruction authenticity and evidence-backed supervisory conformance profiles. See the [0.8 roadmap](docs/ROADMAP.md#08-supervisory-alignment-and-runtime-assurance).
+**0.8 "Supervisory Alignment and Runtime Assurance"** (unreleased) adds: material-agent/KYA manifests, external-agent trust assertions, outcome validation, third-party update gates, monitoring-coverage and execution-environment attestations, AI cyber drills, AI software-supply-chain evidence, jurisdictional technology-transfer controls, high-risk instruction authenticity and evidence-backed supervisory conformance profiles. See the [runtime assurance guide](docs/runtime-assurance.md) and [0.8 roadmap](docs/ROADMAP.md#08-supervisory-alignment-and-runtime-assurance).
 
 The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop, institutional memory, and a verified post-October-2026 regulatory/supervisory delta covering FSB, HKMA, FCA, SEC, OCC, ICO, MAS and relevant cyber/technology-transfer developments.
 

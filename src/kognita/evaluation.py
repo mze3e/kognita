@@ -97,8 +97,13 @@ class EvaluationResult:
     model_version: str
     level: str
     metrics: Mapping[str, float]
+    deployment_hash: str | None = None
 
     def __post_init__(self) -> None:
+        if self.deployment_hash is not None:
+            import re
+            if not re.fullmatch(r"[a-f0-9]{64}", self.deployment_hash):
+                raise ValueError("EVALUATION_DEPLOYMENT_INVALID")
         agent_id = _text(self.agent_id, "EVALUATION_AGENT_REQUIRED")
         version = _text(self.version, "EVALUATION_VERSION_REQUIRED")
         model_version = _text(self.model_version, "EVALUATION_MODEL_REQUIRED")
@@ -111,13 +116,16 @@ class EvaluationResult:
 
 
 def _body(result: EvaluationResult) -> dict[str, Any]:
-    return {
+    body = {
         "agent_id": result.agent_id,
         "version": result.version,
         "model_version": result.model_version,
         "level": result.level,
         "metrics": dict(result.metrics),
     }
+    if result.deployment_hash is not None:
+        body["deployment_hash"] = result.deployment_hash
+    return body
 
 
 def record_evaluation(session: Session, result: EvaluationResult, *, evidence) -> EvaluationResult:
@@ -189,6 +197,8 @@ def _stored_result(session: Session, event: EvidenceEvent) -> dict[str, Any]:
     except (TypeError, ValueError) as exc:
         raise ValueError("EVALUATION_UNREADABLE") from exc
     expected = {key: payload.get(key) for key in ("agent_id", "version", "model_version", "level", "metrics")}
+    if "deployment_hash" in payload:
+        expected["deployment_hash"] = payload["deployment_hash"]
     if not isinstance(stored, dict) or canonical_json(stored) != canonical_json(expected):
         raise ValueError("EVALUATION_UNREADABLE")
     return stored
@@ -242,6 +252,8 @@ def check_activation(session: Session, agent) -> None:
     this agent version and model version must meet every one of them.
     Hallucination rate is lower-is-better. Model-level results do not count.
     """
+    from kognita.assurance.runtime import check_activation as assurance_activation
+    assurance_activation(session, agent)
     entries = _gated(session, agent)
     if not entries:
         return

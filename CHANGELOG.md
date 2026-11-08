@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- 0.8 supervisory alignment and runtime assurance: owner-configured signed KYA manifests and external-agent assertions; deployment-bound privacy, monitoring, environment, transfer and instruction attestations; candidate-bound third-party update evaluation and regression/rollback approval; authoritative production outcomes with revalidation/step-down; approved component digests and advisory quarantine; eight offline hostile-agent decision drills; versioned evidence-backed MAS/HKMA/FSB/OCC/SEC/FCA theme reports and `kognita assurance` commands. Existing deployments opt in through an accountable-owner policy. Adds the `ASSURANCE` evidence event and optional `EvaluationResult.deployment_hash`; no new core dependencies or database columns. See `docs/runtime-assurance.md`.
+
 - Correct the 0.8 assurance documentation after PR #167 review: cite the AISI and METR/Redwood technical evidence, align the claims with those sources, and include selected SEC/FCA themes in the A12 acceptance criterion.
 
 - PWM 0.5 review fixes (4 Nov 2026): remove the duplicate liveStatusSubject, liveStatusValue and observedAt fields so every live authority observation uses one format; make a delegation's permitted data class a checked ceiling (DelegationCeilingShape); reject an agent whose effective autonomy exceeds its maximum (AgentAutonomyShape); list union range members in SPEC instead of a generated ID; derive the README counts in the build. Rebuild the ontology and specification.

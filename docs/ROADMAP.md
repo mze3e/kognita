@@ -2,9 +2,9 @@
 
 **Vision:** Transform Kognita from a policy decision engine into a complete agent harness: a framework anyone can adopt to build governed AI agents with proof of permission and tamper-evident audit logs.
 
-**Current Status:** v0.6.1 is the latest PyPI release. The 0.3 to 0.6 items below are released, and the 0.7 trust-and-resilience controls are implemented on main. 0.8 is the next feature release. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
+**Current Status:** v0.6.1 is the latest PyPI release. The 0.3 to 0.6 items below are released, and the 0.7 trust-and-resilience controls are implemented on main. The 0.8 runtime-assurance implementation is prepared for review and is not yet published. Starting from a foundation of fail-closed decisions, cited policies, and tamper-evident evidence, we build outward to become the standard way organizations safely deploy agentic systems.
 
-**Last revised:** 6 November 2026. See [Decision Log](#decision-log) for what changed and why.
+**Last revised:** 7 November 2026. See [Decision Log](#decision-log) for what changed and why.
 
 ---
 
@@ -918,6 +918,8 @@ Each line is ticked only when the code and tests in this tree show it, with an e
 
 This release does **not** turn Kognita into a sandbox, SOC, identity provider, software scanner or legal engine. Where a control belongs elsewhere, Kognita requires an attestation from the authoritative system and records it in the evidence chain.
 
+**Implementation:** see [runtime assurance](runtime-assurance.md) for owner-authorized rollout, APIs, CLI, signed boundary evidence and operational limits. A8 exercises offline governance paths; A12 reports theme-level evidence and gaps, not legal certification.
+
 ### A1. Material-Agent / Know Your Agent (KYA) Manifest
 
 - Export a signed, machine-readable manifest for every material agent:
@@ -1077,18 +1079,18 @@ Every drill checks that policy, monitoring, containment and evidence remain inta
 
 ### Definition of Done
 
-- [ ] A1 Signed material-agent/KYA manifest is exportable and differences from observed authority/dependencies are findings.
-- [ ] A2 External-agent assertions are verifiable, expiry/audience scoped and non-transitive by default.
-- [ ] A3 Production outcome validation can trigger a finding, revalidation and configured autonomy step-down.
-- [ ] A4 High-materiality third-party updates cannot become approved without regression evidence, rollback plan and approval.
-- [ ] A5 Monitoring-coverage report reconciles Kognita evidence with independent telemetry and detects missing coverage.
-- [ ] A6 Privacy approval is invalidated by configured material privacy changes and can gate activation.
-- [ ] A7 Required execution-environment attestation is checked before high-risk governed runs.
-- [ ] A8 Adversarial drills cover hostile-agent and machine-speed cyber scenarios with complete evidence.
-- [ ] A9 Component/SBOM/image digests are bound to deployments; affected deployments can be enumerated from an advisory.
-- [ ] A10 Jurisdiction/technology-transfer policy can gate model deployment without Kognita making the legal classification.
-- [ ] A11 High-risk instructions can require independent authenticity/maker-checker evidence before action.
-- [ ] A12 Profiles for at least MAS, HKMA ART, FSB, OCC and selected SEC/FCA themes produce point-in-time evidence-backed conformance reports.
+- [x] A1 Signed material-agent/KYA manifest is exportable and differences from observed authority/dependencies are findings. Evidence: `assurance.reports` / `test_manifest_signature_and_observed_divergence`. Tests are in `tests/test_assurance.py`.
+- [x] A2 External-agent assertions are verifiable, expiry/audience scoped and non-transitive by default. Evidence: `assurance.trust` / `test_external_signature_and_nontransitive_attenuation`, `test_ingress_accepts_valid_signed_external_proof_and_rejects_tampering`. Tests are in `tests/test_assurance.py`.
+- [x] A3 Production outcome validation can trigger a finding, revalidation and configured autonomy step-down. Evidence: `assurance.lifecycle` / `test_outcome_threshold_and_duplicate_source`, `test_outcome_step_down_is_evidenced_and_transactional`. Tests are in `tests/test_assurance.py`.
+- [x] A4 High-materiality third-party updates cannot become approved without regression evidence, rollback plan and approval. Evidence: `assurance.runtime`, `registry`, `evaluation` / `test_update_requires_current_evaluation_and_exact_owner_packet`. Tests are in `tests/test_assurance.py`.
+- [x] A5 Monitoring-coverage report reconciles Kognita evidence with independent telemetry and detects missing coverage. Evidence: `assurance.runtime` / `test_coverage_detects_both_directions_and_new_actions`. Tests are in `tests/test_assurance.py`.
+- [x] A6 Privacy approval is invalidated by configured material privacy changes and can gate activation. Evidence: `assurance.records`, `assurance.runtime` / `test_privacy_invalidates_on_material_change`, `test_privacy_change_dimensions`, `test_usecase_activation_refuses_missing_privacy_review`. Tests are in `tests/test_assurance.py`.
+- [x] A7 Required execution-environment attestation is checked before high-risk governed runs. Evidence: `assurance.runtime` / `test_environment_requires_independent_complete_fresh_binding`, `test_ingress_denies_before_transport_without_required_attestation`. Tests are in `tests/test_assurance.py`.
+- [x] A8 Adversarial drills cover hostile-agent and machine-speed cyber scenarios with complete evidence. Evidence: `assurance.drills` / `test_adversarial_drills_have_verified_paths_and_restore_state`, `test_drill_refuses_missing_decision_evidence`. Tests are in `tests/test_assurance.py`.
+- [x] A9 Component/SBOM/image digests are bound to deployments; affected deployments can be enumerated from an advisory. Evidence: `assurance.lifecycle` / `test_components_advisory_quarantines_all_affected`, `test_advisory_keeps_quarantined_components_out_of_profiles`. Tests are in `tests/test_assurance.py`.
+- [x] A10 Jurisdiction/technology-transfer policy can gate model deployment without Kognita making the legal classification. Evidence: `assurance.runtime` / `test_exact_instruction_binding_and_transfer`. Tests are in `tests/test_assurance.py`.
+- [x] A11 High-risk instructions can require independent authenticity/maker-checker evidence before action. Evidence: `assurance.runtime` / `test_exact_instruction_binding_and_transfer`. Tests are in `tests/test_assurance.py`.
+- [x] A12 Profiles for at least MAS, HKMA ART, FSB, OCC and selected SEC/FCA themes produce point-in-time evidence-backed conformance reports. Evidence: `assurance.reports` / `test_profiles_are_honest_and_point_in_time` (six versioned theme profiles). Tests are in `tests/test_assurance.py`.
 
 ---
 

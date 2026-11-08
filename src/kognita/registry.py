@@ -216,6 +216,8 @@ def approve_deployment(
     candidate = Agent.model_validate(agent.model_dump())
     candidate.tool_allowlist = {**(agent.tool_allowlist or {}), "_deployment": deployment}
     digest = _deployment_hash(candidate, deployment)
+    from kognita.assurance.runtime import check_update
+    check_update(session, agent, candidate, deployment, digest)
     evidence.emit(session, correlation_id=f"deployment:{name}",
                   event_type=EventType.POLICY_CHANGE, actor_type=ActorType.HUMAN,
                   actor_id=actor_id, payload={"action": "DEPLOYMENT_APPROVED",

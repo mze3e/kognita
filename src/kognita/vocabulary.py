@@ -91,6 +91,7 @@ class ActorType(str, Enum):
 class EventType(str, Enum):
     """The kinds of event the evidence plane records."""
 
+    ASSURANCE = "ASSURANCE"
     CLAIM = "CLAIM"
     CLAIM_VERIFIED = "CLAIM_VERIFIED"
     #: A registered source version was superseded and its dependents were invalidated.
