@@ -175,7 +175,7 @@ def test_independent_verifier_pins_both_models_and_releases(store):
     for audience in ("rm", "client"):
         released = release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1", audience=audience)
         assert released.result == CheckResult.PASS
-        assert released.check == "C1-LABELLED"
+        assert released.check == "C1-LABELED"
     verify_chain(session)
 
 
@@ -198,7 +198,7 @@ def test_recorded_status_limits_audience(store, audience, status, allowed):
     released = release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1", audience=audience)
     assert released.result == (CheckResult.PASS if allowed else CheckResult.FAIL)
     blocked = "C1-STALE" if status == ValidatorStatus.STALE else "C7-AUDIENCE"
-    assert released.check == ("C1-LABELLED" if allowed else blocked)
+    assert released.check == ("C1-LABELED" if allowed else blocked)
 
 
 @pytest.mark.parametrize("tier,permit,changes,reason", [
@@ -282,7 +282,7 @@ def test_tier_gate_denies_release_without_a_real_verifier(store, tier_value, ver
     assert released.result == CheckResult.FAIL
 
 
-def test_labelled_verified_without_verification_event_is_denied(store):
+def test_labeled_verified_without_verification_event_is_denied(store):
     session, writer = _prepare(store)
     register_verifier(session, _verifier(), evidence=writer, interaction_id="i1")
     relabel_claim(
@@ -407,7 +407,7 @@ def test_default_audience_without_a_verifier_at_tier_1(store, audience, status, 
     released = release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1", audience=audience)
     assert released.result == (CheckResult.PASS if allowed else CheckResult.FAIL)
     blocked = "C1-STALE" if status == ValidatorStatus.STALE else "C7-AUDIENCE"
-    assert released.check == ("C1-LABELLED" if allowed else blocked)
+    assert released.check == ("C1-LABELED" if allowed else blocked)
 
 
 def test_policy_maps_are_intersected_and_unknown_keys_grant_nothing(store):

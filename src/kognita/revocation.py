@@ -367,7 +367,7 @@ def accountable_owners(
         if dimension == "provider":
             return derived
         return (named,) if named else derived
-    if not named or not _authorised_human(session, named, at):
+    if not named or not _authorized_human(session, named, at):
         raise RevocationError(
             f"{CITE}: {dimension} {value} has no accountable owner who can reinstate it"
         )
@@ -446,7 +446,7 @@ def _entry_uses_model(entry: Any, cards: dict[str, Any], value: str) -> bool:
     return False
 
 
-def _authorised_human(session: Session, name: str, at: datetime) -> bool:
+def _authorized_human(session: Session, name: str, at: datetime) -> bool:
     if _is_agent(session, name):
         return False
     register = load_register(session, as_of=at)

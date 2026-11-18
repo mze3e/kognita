@@ -80,7 +80,7 @@ from kognita.vocabulary import (
     classification_rank,
 )
 
-#: Channels the roadmap says cannot be registered, compared after normalisation.
+#: Channels the roadmap says cannot be registered, compared after normalization.
 UNREGISTRABLE_CHANNELS: tuple[str, ...] = (
     "personal whatsapp",
     "telegram",
@@ -224,7 +224,7 @@ def send_client_communication(
     retention: RetentionStore | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
-    """Authorise a client send and record the ``CLIENT_COMMUNICATION`` event.
+    """Authorize a client send and record the ``CLIENT_COMMUNICATION`` event.
 
     The return value is the recorded payload, including the outcome. Only an
     ``ALLOW`` was sent.
@@ -337,7 +337,7 @@ def send_public_content(
     retention: RetentionStore | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
-    """Authorise a public-lane send. A named client is a denial.
+    """Authorize a public-lane send. A named client is a denial.
 
     ``run_id`` is the run the content came from. A run that has touched
     client data, and a run that is not recorded, are denials.

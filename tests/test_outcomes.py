@@ -250,7 +250,7 @@ def test_near_misses_aggregate_decisions_and_recorded_drafts(session, evidence):
             summary="again",
             evidence=evidence,
             actor_id="Priya Shah",
-            citation="Near misses: blocked actions, verifier blocks, RM rejections, unsafe drafts and unusual agent behaviour",
+            citation="Near misses: blocked actions, verifier blocks, RM rejections, unsafe drafts and unusual agent behavior",
             interaction_id=interaction.id,
             now=LATER,
         )
@@ -260,7 +260,7 @@ def test_near_misses_aggregate_decisions_and_recorded_drafts(session, evidence):
         summary="The draft named a product the client cannot hold",
         evidence=evidence,
         actor_id="Priya Shah",
-        citation="Near misses: blocked actions, verifier blocks, RM rejections, unsafe drafts and unusual agent behaviour",
+        citation="Near misses: blocked actions, verifier blocks, RM rejections, unsafe drafts and unusual agent behavior",
         interaction_id=interaction.id,
         agent="dossier-agent",
         model_version="1",

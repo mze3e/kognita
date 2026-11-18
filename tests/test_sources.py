@@ -36,7 +36,7 @@ def _source(**changes):
 
 @pytest.mark.parametrize("audience", ["rm", "client"])
 @pytest.mark.parametrize("change,usecase,system,version,reason", [
-    ({}, "approved", "research", "1", "C1-LABELLED"),
+    ({}, "approved", "research", "1", "C1-LABELED"),
     ({}, "other", "research", "1", "C3-UNAPPROVED"),
     ({}, "missing", "research", "1", "C3-USECASE"),
     ({}, "", "research", "1", "C3-USECASE"),
@@ -57,9 +57,9 @@ def test_release(store, audience, change, usecase, system, version, reason):
     record_claim(session, claim, evidence=writer, interaction_id="i")
     check = release_claim(session, "c", usecase_id=usecase, audience=audience, evidence=writer, interaction_id="i")
     assert check.check == reason
-    assert check.result == (CheckResult.PASS if reason == "C1-LABELLED" else CheckResult.FAIL)
+    assert check.result == (CheckResult.PASS if reason == "C1-LABELED" else CheckResult.FAIL)
     event = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence.desc())).first()
-    assert event.payload["allowed"] == (reason == "C1-LABELLED")
+    assert event.payload["allowed"] == (reason == "C1-LABELED")
     verify_chain(session)
 
 

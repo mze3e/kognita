@@ -48,7 +48,7 @@ pwm:UnusualAgentBehaviour a skos:Concept ; skos:prefLabel "unusual agent behavio
     pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
 
 pwm:VerbAnalyse a skos:Concept ; skos:prefLabel "analyse (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:VerbAnalyze. The Kognita action verb value stays analyse."@en ;
+    skos:definition "Deprecated spelling. Use pwm:VerbAnalyze. Kognita's action verb value is now analyze too."@en ;
     owl:deprecated true ; dcterms:isReplacedBy pwm:VerbAnalyze ; skos:exactMatch pwm:VerbAnalyze ;
     pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
 

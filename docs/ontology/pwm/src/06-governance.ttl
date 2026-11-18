@@ -542,7 +542,7 @@ pwm:ActionVerbScheme a skos:ConceptScheme ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: read, analyze, recommend, draft, queue, send and execute" ] .
 pwm:VerbRead a skos:Concept ; skos:notation "read" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "read"@en ; skos:definition "Read information."@en .
-pwm:VerbAnalyze a skos:Concept ; skos:notation "analyse" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "analyze"@en ; skos:definition "Derive insight from information."@en .
+pwm:VerbAnalyze a skos:Concept ; skos:notation "analyze" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "analyze"@en ; skos:definition "Derive insight from information."@en .
 pwm:VerbRecommend a skos:Concept ; skos:notation "recommend" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "recommend"@en ; skos:definition "Propose an option."@en .
 pwm:VerbDraft a skos:Concept ; skos:notation "draft" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "draft"@en ; skos:definition "Prepare an artifact."@en .
 pwm:VerbQueue a skos:Concept ; skos:notation "queue" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "queue"@en ; skos:definition "Place an artifact for release by a person."@en .

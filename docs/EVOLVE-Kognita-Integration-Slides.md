@@ -1526,7 +1526,7 @@ LAYER 2: DOMAIN PACKS (Pluggable policy evaluators)
 │  ├─ resolve_attributes(envelope, subjects) → derive policy-relevant attributes
 │  ├─ rules() → custom rule types beyond the built-in six
 │  └─ engages(policy, context) → does this regime apply to this request?
-├─ Example packs: private-banking (cross-border rules, booking-centre), healthcare (PHI controls)
+├─ Example packs: private-banking (cross-border rules, booking-center), healthcare (PHI controls)
 ├─ Test: Conformance kit enforces all packs fail-closed, cite rules, emit evidence
 └─ Ownership: Domain experts write packs; Kognita core is domain-blind
 

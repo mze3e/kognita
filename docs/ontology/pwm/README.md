@@ -13,7 +13,7 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 - **Declared, not imported.** External terms are declared in `src/90-external.ttl` with label, source and FIBO maturity (Release or Provisional), so `pwm.ttl` loads on its own.
 - **Every term cites its grounds.** Each class, property and code list carries citations with locators to the reference register (`src/01-references.ttl`): standards (ONT, ISO), regulation (REG), Kognita (KOG), the author's frameworks and talks (AM), or a practitioner definition (NEW). A dagger in SPEC marks a citation that is still at instrument level, not checked paragraph by paragraph.
 - **OWL, SKOS and SHACL.** Light OWL axioms, code lists as SKOS concept schemes whose notations equal the Kognita values, and data rules as SHACL shapes in a separate file.
-- **US English.** PWM-defined names and prose use US spelling. Names reused from OMG Commons, FIBO or Kognita keep their source spelling.
+- **US English.** PWM-defined names and prose use US spelling. Names reused from OMG Commons or FIBO keep the spelling of their source. Kognita uses US spelling in its identifiers and values too, so the code lists match without exceptions.
 
 ## Files
 
@@ -112,7 +112,7 @@ The tests that guard against drift:
 
 To reason over data, merge it with `pwm.ttl` as RDF first (for example with rdflib), so that properties keep the types `pwm.ttl` declares.
 
-Version 0.8 contains 231 domain classes, 580 properties (273 object, 307 datatype), 63 code lists with 320 codes, 168 written rules and 84 generated rules. There are 253 node shapes, including one untargeted helper, and 252 targeted shapes. The positive example contains 309 typed records. The negative fixture contains 308 typed records: 239 violating records and 69 supporting records, plus 0 untyped violating subjects, raising 239 expected violations across 239 focus nodes. It covers all 168 written shapes and two generated code-list shapes. Regression tests exercise all 84 generated code-list shapes.
+Version 0.8 contains 231 domain classes, 580 properties (273 object, 307 datatype), 63 code lists with 320 codes, 168 written rules and 84 generated rules. There are 253 node shapes, including one untargeted helper, and 252 targeted shapes. The positive example contains 309 typed records. The negative fixture contains 308 typed records: 214 violating records and 94 supporting records, plus 5 untyped violating subjects, raising 239 expected violations across 219 focus nodes. It covers all 168 written shapes and two generated code-list shapes. Regression tests exercise all 84 generated code-list shapes.
 
 Open items:
 

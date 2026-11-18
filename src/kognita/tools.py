@@ -969,7 +969,7 @@ def run_governed(
     extra_checks: Sequence[Check] = (),
     interaction_id: str | None = None,
 ) -> ToolRun:
-    """Authorise, then execute. The only supported path to a governed tool.
+    """Authorize, then execute. The only supported path to a governed tool.
 
     Named agents must provide live workload proof in
     ``envelope.context['_agent_credential']``. It is verified against the live

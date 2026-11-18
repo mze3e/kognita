@@ -33,7 +33,7 @@ from kognita.models import (
     as_utc,
     utcnow,
 )
-from kognita.origination import authorised_humans
+from kognita.origination import authorized_humans
 from kognita.registry import set_kill_switch
 from kognita.tools import Run
 from kognita.vocabulary import (
@@ -439,10 +439,10 @@ def _ready(
             f"{party} is a registered agent and cannot intervene "
             "(Intervention: human)"
         )
-    allowed = authorised_humans(session, interaction.use_case, at)
+    allowed = authorized_humans(session, interaction.use_case, at)
     if party not in allowed:
         raise InterventionError(
-            f"{party} is not an authorised human for this interaction "
+            f"{party} is not an authorized human for this interaction "
             "(Intervention: human)"
         )
     return run, interaction_id

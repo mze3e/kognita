@@ -215,7 +215,7 @@ be committed; the local callback mechanism is not a distributed cancellation bus
 
 Mutating MCP tools without cancellation support must declare `reversible=True`
 and a compensation tool name in the approved manifest. Otherwise admission fails
-with S6C-UNCANCELLABLE. Long operations can instead expose bounded cancellable
+with S6C-UNCANCELABLE. Long operations can instead expose bounded cancelable
 steps, each independently governed. Compensation must be idempotent and undo only
 the associated action. For library tools, `compensation` is a callback accepting
 the original envelope, evaluation and session. Its function name must match the

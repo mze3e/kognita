@@ -21,7 +21,7 @@ One call, in order:
    workload credential verifies. With no agent name, a system trigger listed
    in that client configuration passes the credential check; all other
    governance checks still apply. Unlisted triggers are denied.
-4. :func:`kognita.tools.run_governed` authorises and records the call. The
+4. :func:`kognita.tools.run_governed` authorizes and records the call. The
    backend is contacted only when that call is released: an allow, or a
    human approval that already has a live grant. A denial, an escalation,
    and an ungranted human approval return the outcome and the citations
@@ -73,7 +73,7 @@ class _BackendUnavailable(KognitaError):
 
 
 class _InvalidParams(KognitaError):
-    """The call was authorised, but it does not name a backend tool."""
+    """The call was authorized, but it does not name a backend tool."""
 
 
 class _FailClosedEvidence:
@@ -392,7 +392,7 @@ class _HttpCall:
             connection.auto_open = 0
             with self._lock:
                 if self._stopped:
-                    raise _BackendUnavailable('cancelled')
+                    raise _BackendUnavailable('canceled')
                 self._connection = connection
                 self._socket = connection.sock
             path = parsed.path or '/'
@@ -731,8 +731,8 @@ class McpProxy:
                      or not callable(getattr(self.transport, '_cancel', None)))
                 and not (permission.get('reversible') is True and isinstance(permission.get('compensation'), str)
                          and permission['compensation'].strip())):
-            identity_checks.append(Check(check='S6C-UNCANCELLABLE', regime='INTERNAL',
-                result=CheckResult.FAIL, citation='S6C-UNCANCELLABLE'))
+            identity_checks.append(Check(check='S6C-UNCANCELABLE', regime='INTERNAL',
+                result=CheckResult.FAIL, citation='S6C-UNCANCELABLE'))
 
         def compensate(env, evaluation, sess):
             from kognita._actions import _bounded
@@ -817,7 +817,7 @@ class McpProxy:
         released = evaluation.allowed and not result.approval_required
         if not released:
             return self._denied(rpc_id, evaluation)
-        if state.get('_outcome') in ('timeout', 'cancelled', 'cancellation_requested', 'connection_aborted'):
+        if state.get('_outcome') in ('timeout', 'canceled', 'cancellation_requested', 'connection_aborted'):
             return _rpc_error(rpc_id, code=-32002, message=state['_outcome'], status=502, evaluation=evaluation)
         if rpc_method not in _IMPLEMENTED:
             return _rpc_error(

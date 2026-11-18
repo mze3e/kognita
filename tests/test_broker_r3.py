@@ -2,7 +2,7 @@
 
 Deliberately outside the ``tests/conftest.py`` ``_legacy_authority_prerequisites``
 and the Gateway/McpProxy credential-injection allowlists, so these exercise
-production ``decide()``/``run_governed`` behaviour, not the autouse shims.
+production ``decide()``/``run_governed`` behavior, not the autouse shims.
 """
 from copy import deepcopy
 

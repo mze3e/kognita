@@ -39,7 +39,7 @@ METRICS: tuple[str, ...] = (
 LOWER_IS_BETTER = frozenset({"hallucination_rate"})
 LEVELS = frozenset({"model", "agent", "system"})
 APPLICABLE_LEVELS = frozenset({"agent", "system"})
-_RATE_NAMES = ("recommendation_rate", "contact_rate", "prioritisation_rate")
+_RATE_NAMES = ("recommendation_rate", "contact_rate", "prioritization_rate")
 _UNASSIGNED = "(unassigned)"
 _KNOWN_OUTCOMES = frozenset({"recommend", "do not contact", "reversal"})
 
@@ -276,7 +276,7 @@ def check_activation(session: Session, agent) -> None:
 
 @dataclass(frozen=True)
 class FairnessReport:
-    """Recommendation, contact and prioritisation rates, and flagged disparities."""
+    """Recommendation, contact and prioritization rates, and flagged disparities."""
 
     rates: tuple[Mapping[str, Any], ...]
     disparities: tuple[Mapping[str, Any], ...]
@@ -347,19 +347,19 @@ def _originations(session: Session, usecase_id: str) -> dict[str, dict[str, Any]
             raise ValueError("FAIRNESS_EVIDENCE_MISMATCH")
         if usecase_id and interaction.use_case != usecase_id:
             continue
-        row = state.setdefault(client_id, {"prioritised": False, "latest": "", "product": ""})
+        row = state.setdefault(client_id, {"prioritized": False, "latest": "", "product": ""})
         if outcome == "reversal":
             if row["latest"] == "do not contact":
                 row["latest"] = "reversal"
             continue
-        row["prioritised"] = True
+        row["prioritized"] = True
         row["latest"] = outcome
         row["product"] = str(payload.get("product_id") or "").strip()
     return state
 
 
 def _flags(row: Mapping[str, Any] | None) -> tuple[bool, bool, bool]:
-    if not row or not row.get("prioritised"):
+    if not row or not row.get("prioritized"):
         return False, False, False
     contacted = row.get("latest") == "recommend"
     recommended = contacted and bool(row.get("product"))
@@ -448,7 +448,7 @@ def fairness_report(
                 "clients": len(clients),
                 "recommendation_rate": _rate(counts[0], len(clients)),
                 "contact_rate": _rate(counts[1], len(clients)),
-                "prioritisation_rate": _rate(counts[2], len(clients)),
+                "prioritization_rate": _rate(counts[2], len(clients)),
             }
             rates.append(row)
             for index, rate_name in enumerate(_RATE_NAMES):

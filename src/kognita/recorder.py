@@ -90,7 +90,7 @@ def recent_runs(
             f"the flight recorder lists at least one run ({CITE_RUN})"
         )
     events = _events(session, as_of)
-    rows = [_summarise(run_id, owned) for run_id, owned in _runs(events).items()]
+    rows = [_summarize(run_id, owned) for run_id, owned in _runs(events).items()]
     wanted_actor = (actor or "").strip()
     wanted_tool = (tool or "").strip()
     wanted_outcome = (outcome or "").strip()
@@ -114,7 +114,7 @@ def show_run(
     owned = _runs(events).get(name)
     if not owned:
         raise RecorderError(f"run {name} is not in the evidence ({CITE_RUN})")
-    summary = _summarise(name, owned)
+    summary = _summarize(name, owned)
     decisions = []
     evidence = []
     for event in owned:
@@ -519,7 +519,7 @@ def _runs(events: Sequence[EvidenceEvent]) -> dict[str, list[EvidenceEvent]]:
     return grouped
 
 
-def _summarise(run_id: str, owned: Sequence[EvidenceEvent]) -> dict[str, Any]:
+def _summarize(run_id: str, owned: Sequence[EvidenceEvent]) -> dict[str, Any]:
     actors: set[str] = set()
     tools: set[str] = set()
     outcomes: list[str] = []

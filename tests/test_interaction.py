@@ -207,7 +207,7 @@ def test_origination_records_facts_and_reconstruct_answers_both_questions(harnes
     assert report["chain"]["intact"] is True
 
 
-def test_do_not_contact_is_honoured(harness):
+def test_do_not_contact_is_honored(harness):
     with harness.session() as session:
         interaction = _open(session, harness.evidence)
         _boundary(session, harness.evidence)
@@ -890,7 +890,7 @@ def test_do_not_contact_blocks_later_client_contact_until_reversal(harness):
                 citation="  ",
                 now=FROZEN_NOW,
             )
-        with pytest.raises(OriginationError, match="not an authorised human"):
+        with pytest.raises(OriginationError, match="not an authorized human"):
             reverse_do_not_contact(
                 session,
                 barred.id,
@@ -908,7 +908,7 @@ def test_do_not_contact_blocks_later_client_contact_until_reversal(harness):
                 citation="RM instruction 2026-06-01",
                 now=FROZEN_NOW,
             )
-        with pytest.raises(OriginationError, match="no authorised human"):
+        with pytest.raises(OriginationError, match="no authorized human"):
             reverse_do_not_contact(
                 session,
                 unnamed.id,

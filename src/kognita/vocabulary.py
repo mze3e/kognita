@@ -140,7 +140,7 @@ class EventType(str, Enum):
 COMMUNICATION_LEVELS: tuple[str, ...] = (
     "general information",
     "house view",
-    "contextualised insight",
+    "contextualized insight",
     "investment discussion",
     "product recommendation",
     "transaction",

@@ -530,7 +530,7 @@ Do not wait for client harm.
 - [x] Revocation by each dimension takes effect on the next decision without affecting other use cases
 - [x] Risk tiers enforce minimum controls; a tier 3 use case cannot be activated by its own builder
 - [x] An incomplete approval packet cannot be approved; rubber-stamp approvals are flagged
-- [x] Private-banking starter pack with scenarios, including cross-border and booking-centre denials
+- [x] Private-banking starter pack with scenarios, including cross-border and booking-center denials
 - [x] OpenTelemetry export
 - [x] A use case outside the risk appetite cannot be registered; a use case past its review date is denied
 - [x] "Do not contact" outcomes recorded with reasons; a bare score is rejected as rationale
@@ -811,7 +811,7 @@ Kognita is not an evaluation harness. It records evaluation results and enforces
 - **Three levels of evaluation:** the model; the agent (task planning, tool selection, permission compliance, delegation, retries, escalation); and the end-to-end system (model, retrieval, tools, data, agent, policies, UI and human interaction). A good model can still produce an unsafe system, so the gate accepts system-level results
 - **Bias and fairness reporting:** recommendation, contact and prioritization rates computed from origination evidence across segments the bank defines, such as nationality, age group, language, portfolio size, channel and RM team. Disparities above a threshold are flagged to the risk owner. This matters most for client prioritization, prospect scoring, product recommendations and vulnerability detection
 - **Proxy attributes:** segments include attributes the bank identifies as substitutes for, or highly correlated with, protected attributes, such as postcode or language standing in for nationality. The report names those proxies and flags a disparity to the risk owner (`kognita.evaluation.fairness_report`). A disparity is not registered as a monitored metric: the 0.5 gates watch decision quality and reliability only, and `register_monitored` does not create one. What counts as a fair outcome is the bank's definition
-- **The continuous loop:** evaluate, deploy, observe, test, challenge, intervene, learn, re-authorise. Validation does not end at deployment
+- **The continuous loop:** evaluate, deploy, observe, test, challenge, intervene, learn, re-authorize. Validation does not end at deployment
 
 ### 12. Governed Business Definitions
 
@@ -1187,7 +1187,7 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 
 **12 October 2026: Trust architecture (Satya Nadella)**
 - Mapped the roadmap against [Satya Nadella's post of 10 October 2026](https://x.com/satyanadella) on a trust architecture for AI systems. Full mapping in [control-frameworks.md](control-frameworks.md). His central principle, separating the supply of intelligence from the authority over it, is Kognita's design rule; most of his principles were already shipped or planned.
-- Five gaps adopted. 0.5: new item 15, non-bypassable enforcement (tier 2 and above must run through the gateways; credentials held only by the gateways); new item 16, stopping actions in flight (bounded and cancellable tool calls). 0.6: verifier independence in item 7 (no model verifies its own work); new item 13, reasoning traces, recorded but never a basis for a decision. 0.7: structured incident report naming the controls that failed and the runtime change behind the incident.
+- Five gaps adopted. 0.5: new item 15, non-bypassable enforcement (tier 2 and above must run through the gateways; credentials held only by the gateways); new item 16, stopping actions in flight (bounded and cancelable tool calls). 0.6: verifier independence in item 7 (no model verifies its own work); new item 13, reasoning traces, recorded but never a basis for a decision. 0.7: structured incident report naming the controls that failed and the runtime change behind the incident.
 - Tamper-proof evidence was already planned: signing and external anchoring in 0.7.
 - Not adopted: industry-wide incident sharing and standard-setting, which belong to banks, regulators and standards bodies. Kognita supplies the shareable report.
 - No release dates changed.

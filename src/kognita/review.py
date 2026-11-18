@@ -1414,7 +1414,7 @@ def _screen_one(
             "not recorded" in reason or reason == "no risk criteria" or "not classified" in reason
             for reason in reasons
         ) else CITE_HIGH
-        # A recognised high-risk hit still cites the queue rule when criteria exist
+        # A recognized high-risk hit still cites the queue rule when criteria exist
         # and the only gaps are not measurement gaps.
         if criteria is not None and not any(
             "not recorded" in reason or "not classified" in reason or reason == "no risk criteria"
@@ -1538,7 +1538,7 @@ def _criterion_reasons(
     if not supplied:
         reasons.append("product complexity was not recorded")
     elif supplied not in MATERIALITY or threshold not in MATERIALITY:
-        reasons.append("product complexity was not recognised")
+        reasons.append("product complexity was not recognized")
     elif MATERIALITY.index(supplied) >= MATERIALITY.index(threshold):
         reasons.append("product complexity")
     watched = [str(item) for item in record.get("vulnerability_indicators") or []]

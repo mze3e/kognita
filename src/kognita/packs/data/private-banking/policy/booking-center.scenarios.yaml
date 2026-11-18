@@ -1,13 +1,13 @@
-rule: booking-centre
+rule: booking-center
 scenarios:
-  - name: "an RM may discuss a product from a recognised booking centre"
+  - name: "an RM may discuss a product from a recognized booking center"
     given:
       principal: "rm.lee"
       purpose: CLIENT_DISCUSSION
       tool: discuss_product
       actor_location: SG
       attributes:
-        booking_centre: SG
+        booking_center: SG
         rm_location: SG
         client_domicile: SG
         solicitation: permitted
@@ -22,15 +22,15 @@ scenarios:
       tool: discuss_product
     then:
       decision: ALLOW
-      cites: booking-centre
-  - name: "pre-call preparation from a recognised booking centre is permitted"
+      cites: booking-center
+  - name: "pre-call preparation from a recognized booking center is permitted"
     given:
       principal: "rm.lee"
       purpose: CLIENT_DISCUSSION
       tool: prepare_call
       actor_location: SG
       attributes:
-        booking_centre: SG
+        booking_center: SG
         rm_location: SG
         client_domicile: SG
         solicitation: permitted
@@ -45,15 +45,15 @@ scenarios:
       tool: prepare_call
     then:
       decision: ALLOW
-      cites: booking-centre
-  - name: "a portfolio review from a recognised booking centre is permitted"
+      cites: booking-center
+  - name: "a portfolio review from a recognized booking center is permitted"
     given:
       principal: "rm.lee"
       purpose: CLIENT_DISCUSSION
       tool: review_portfolio
       actor_location: SG
       attributes:
-        booking_centre: SG
+        booking_center: SG
         rm_location: SG
         client_domicile: SG
         solicitation: permitted
@@ -68,15 +68,15 @@ scenarios:
       tool: review_portfolio
     then:
       decision: ALLOW
-      cites: booking-centre
-  - name: "a booking centre outside the recognised list is refused"
+      cites: booking-center
+  - name: "a booking center outside the recognized list is refused"
     given:
       principal: "rm.lee"
       purpose: CLIENT_DISCUSSION
       tool: discuss_product
       actor_location: SG
       attributes:
-        booking_centre: US
+        booking_center: US
         rm_location: SG
         client_domicile: SG
         solicitation: permitted
@@ -91,4 +91,4 @@ scenarios:
       tool: discuss_product
     then:
       decision: DENY
-      cites: booking-centre
+      cites: booking-center

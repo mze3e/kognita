@@ -1,6 +1,6 @@
 """Regression test for the MCP client-argument delegation bypass.
 
-A delegation scoped to one client must not authorise a tool call whose
+A delegation scoped to one client must not authorize a tool call whose
 *arguments* name a different client. This module is deliberately named
 outside the ``tests/conftest.py`` ``_legacy_authority_prerequisites``
 allowlist so its tests run against real credentials and real delegations,

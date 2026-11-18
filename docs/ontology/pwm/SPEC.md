@@ -55,7 +55,7 @@ Not in 0.8:
 4. **Logic in OWL, codes in SKOS, rules in SHACL.** The ontology uses light OWL axioms that an extension can build on. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. Code lists are SKOS concept schemes. Data rules are SHACL shapes kept in a separate file.
 5. **Context speed and classification.** Each class states how fast its facts change and the data classification it carries by default. Fast facts, such as positions and prices, are looked up live and are never cached or embedded for AI.
 6. **Accountability stays with people.** Accountability roles are played by named people. A shape rejects any record that names an AI agent in one.
-7. **US English.** PWM-defined names, labels and prose use US English spelling, for example authorized, behavior, center and specialize. Names reused from OMG Commons, FIBO or Kognita keep the spelling of their source, for example the Kognita value licence in the technology transfer list. A renamed term stays declared as a deprecated alias for one version.
+7. **US English.** PWM-defined names, labels and prose use US English spelling, for example authorized, behavior, center and specialize. Names reused from OMG Commons or FIBO keep the spelling of their source. Kognita uses US spelling in its identifiers and values too, so PWM notations equal the Kognita values. A renamed term stays declared as a deprecated alias for one version.
 8. **Shared properties omit a domain.** A property that several classes use, such as classification, approvedBy or citesSource, declares no rdfs:domain, so using it never infers a class. SHACL says where each class requires it. Its range is stated, as a class, a union or prov:Entity for any record.
 9. **Generic core, firm extension.** No institution's data, thresholds or names appear here. A firm adds them in its own ontology that imports PWM.
 
@@ -223,7 +223,7 @@ Business relationship between a wealth manager and one or more clients, booked i
 - **Specializes:** [situation](https://www.omg.org/spec/Commons/PartiesAndSituations/Situation) (OMG Commons)
 - **Handling:** medium context, default classification C2
 - **Properties:** [`hasClient`](#hasClient), [`hasProvider`](#hasProvider)
-- **References:** **REG** [FATF Recommendations](#ref-FATF)† R.10: business relationship; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre, relationship-manager
+- **References:** **REG** [FATF Recommendations](#ref-FATF)† R.10: business relationship; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-center, relationship-manager
 
 <a id="RelationshipGroup"></a>
 #### relationship group (`pwm:RelationshipGroup`)
@@ -435,7 +435,7 @@ Role of a legal entity or branch of a wealth manager in which client accounts, c
 
 - **Specializes:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
 - **Handling:** slow context
-- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre: recognized booking centers; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Booking model
+- **References:** **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-center: recognized booking centers; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Booking model
 
 <a id="Custodian"></a>
 #### custodian (`pwm:Custodian`)
@@ -452,7 +452,7 @@ Financial institution that holds clients' securities for safekeeping.
 |---|---|---|---|
 | <a id="hasClient"></a>`pwm:hasClient` has client | [client relationship](#ClientRelationship) → [client](#Client) | Client in a client relationship. | **REG** [FATF Recommendations](#ref-FATF)† R.10 |
 | <a id="hasProvider"></a>`pwm:hasProvider` has provider | [client relationship](#ClientRelationship) → [wealth manager](#WealthManager) | Wealth manager in a client relationship. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Relationship pattern |
-| <a id="isBookedAt"></a>`pwm:isBookedAt` is booked at | any → [booking center](#BookingCenter) | Booking center in which a relationship, account or contract is booked. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre |
+| <a id="isBookedAt"></a>`pwm:isBookedAt` is booked at | any → [booking center](#BookingCenter) | Booking center in which a relationship, account or contract is booked. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-center |
 | <a id="inGroup"></a>`pwm:inGroup` in group | [client](#Client) → [relationship group](#RelationshipGroup) | Relationship group a client belongs to. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Household view |
 | <a id="assignedCoverage"></a>`pwm:assignedCoverage` assigned coverage | [coverage assignment](#CoverageAssignment) → [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons) | Party role named in a coverage assignment: a relationship manager, or a product, credit, investment or planning specialist. The coverage role says which. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Coverage model |
 | <a id="assignedRelationshipManager"></a>`pwm:assignedRelationshipManager` assigned relationship manager | [coverage assignment](#CoverageAssignment) → [relationship manager](#RelationshipManager) | Relationship manager named in a coverage assignment. Specialists are named with the parent property, assigned coverage. Sub-property of [assigned coverage](#assignedCoverage). | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) relationship-manager |
@@ -464,7 +464,7 @@ Financial institution that holds clients' securities for safekeeping.
 | <a id="residenceCountry"></a>`pwm:residenceCountry` residence country | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Country where a natural person resides, as an ISO 3166-1 alpha-2 code. | **ISO** [ISO 3166](#ref-ISO-3166)† Alpha-2 codes; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-domicile |
 | <a id="domicileCountry"></a>`pwm:domicileCountry` domicile country | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Country of a party's domicile, as an ISO 3166-1 alpha-2 code. Drives cross-border rules. Close match: [is domiciled in](https://www.omg.org/spec/Commons/Organizations/isDomiciledIn) (OMG Commons). | **ISO** [ISO 3166](#ref-ISO-3166)† Alpha-2 codes; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-domicile: recognized domiciles |
 | <a id="nationalityCountry"></a>`pwm:nationalityCountry` nationality country | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Country of a natural person's nationality, as an ISO 3166-1 alpha-2 code. | **ISO** [ISO 3166](#ref-ISO-3166)† Alpha-2 codes |
-| <a id="jurisdictionCode"></a>`pwm:jurisdictionCode` jurisdiction code | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Jurisdiction of a booking center, rule or use case, as an ISO 3166-1 alpha-2 code. Close match: [has jurisdiction](https://www.omg.org/spec/Commons/RegulatoryAgencies/hasJurisdiction) (OMG Commons). | **ISO** [ISO 3166](#ref-ISO-3166)† Alpha-2 codes; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre, rm-location |
+| <a id="jurisdictionCode"></a>`pwm:jurisdictionCode` jurisdiction code | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Jurisdiction of a booking center, rule or use case, as an ISO 3166-1 alpha-2 code. Close match: [has jurisdiction](https://www.omg.org/spec/Commons/RegulatoryAgencies/hasJurisdiction) (OMG Commons). | **ISO** [ISO 3166](#ref-ISO-3166)† Alpha-2 codes; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-center, rm-location |
 | <a id="legalEntityIdentifier"></a>`pwm:legalEntityIdentifier` legal entity identifier | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Twenty-character ISO 17442 identifier of a legal entity. Close match: [legal entity identifier](https://spec.edmcouncil.org/fibo/ontology/BE/LegalEntities/LEIEntities/LegalEntityIdentifier) (FIBO, Release). | **ISO** [ISO 17442](#ref-ISO-17442)† LEI code structure |
 
 ### Code lists
@@ -1195,7 +1195,7 @@ Deterministic rule stating whether an activity, such as solicitation, advice or 
 - **Related match:** [qualified investor restriction](https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesRestrictions/QualifiedInvestorRestriction) (FIBO, Release)
 - **Handling:** slow context, default classification C1
 - **Properties:** [`appliesToActivity`](#appliesToActivity), [`clientDomicileCode`](#clientDomicileCode), [`bookingCenterCode`](#bookingCenterCode), [`permitted`](#permitted)
-- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.3, fn 6: rule-based tools are not AI; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-domicile, booking-centre, rm-location, cross-border-solicitation, research-distribution
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 1.3, fn 6: rule-based tools are not AI; **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-domicile, booking-center, rm-location, cross-border-solicitation, research-distribution
 
 <a id="ProductTermSheet"></a>
 #### product term sheet (`pwm:ProductTermSheet`)
@@ -1249,7 +1249,7 @@ Wealth manager's current official view on markets and asset allocation. When it 
 | <a id="isin"></a>`pwm:isin` ISIN | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Twelve-character ISO 6166 international securities identification number. | **ISO** [ISO 6166](#ref-ISO-6166)† ISIN structure |
 | <a id="cfiCode"></a>`pwm:cfiCode` CFI code | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Six-letter ISO 10962 classification of financial instruments code. Close match: [financial instrument classification code](https://spec.edmcouncil.org/fibo/ontology/SEC/Securities/SecuritiesClassification/FinancialInstrumentClassificationCode) (FIBO, Release). | **ISO** [ISO 10962](#ref-ISO-10962)† CFI code |
 | <a id="clientDomicileCode"></a>`pwm:clientDomicileCode` client domicile code | [cross-border rule](#CrossBorderRule) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Client domicile a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a domicile is incomplete, not a rule for every domicile. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) client-domicile |
-| <a id="bookingCenterCode"></a>`pwm:bookingCenterCode` booking center code | [cross-border rule](#CrossBorderRule) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Booking center jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a booking center is incomplete, not a rule for every booking center. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-centre |
+| <a id="bookingCenterCode"></a>`pwm:bookingCenterCode` booking center code | [cross-border rule](#CrossBorderRule) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Booking center jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a booking center is incomplete, not a rule for every booking center. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) booking-center |
 | <a id="permitted"></a>`pwm:permitted` permitted | [cross-border rule](#CrossBorderRule) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the activity is permitted under the rule. | **KOG** [Kognita private-banking pack](#ref-KOG-PB-PACK) cross-border-solicitation: the pack enforces the flag the bank recorded |
 
 ### Code lists
@@ -1848,7 +1848,7 @@ References: **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 3: read, analyz
 | Code | Concept | Definition |
 |---|---|---|
 | read | <a id="VerbRead"></a>read (`pwm:VerbRead`) | Read information. |
-| analyse | <a id="VerbAnalyze"></a>analyze (`pwm:VerbAnalyze`) | Derive insight from information. |
+| analyze | <a id="VerbAnalyze"></a>analyze (`pwm:VerbAnalyze`) | Derive insight from information. |
 | recommend | <a id="VerbRecommend"></a>recommend (`pwm:VerbRecommend`) | Propose an option. |
 | draft | <a id="VerbDraft"></a>draft (`pwm:VerbDraft`) | Prepare an artifact. |
 | queue | <a id="VerbQueue"></a>queue (`pwm:VerbQueue`) | Place an artifact for release by a person. |
@@ -3360,7 +3360,7 @@ Recorded approval of a firm-specific blast-radius limit or autonomy promotion ga
 | <a id="evidenceStoreIsolated"></a>`pwm:evidenceStoreIsolated` evidence store isolated | [enforcement attestation](#EnforcementAttestation) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Attested agent has no write access to the evidence store. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 15; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified |
 | <a id="maximumDurationSeconds"></a>`pwm:maximumDurationSeconds` maximum duration seconds | [tool](#Tool) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Maximum duration of each tool call in seconds. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified |
 | <a id="supportsCancellation"></a>`pwm:supportsCancellation` supports cancellation | [tool](#Tool) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the proxy can cancel this tool in flight. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified |
-| <a id="decisionSeparatedSteps"></a>`pwm:decisionSeparatedSteps` decision separated steps | [tool](#Tool) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether an uncancellable action is split into steps with a decision between them. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified |
+| <a id="decisionSeparatedSteps"></a>`pwm:decisionSeparatedSteps` decision separated steps | [tool](#Tool) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether an uncancelable action is split into steps with a decision between them. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified |
 | <a id="stopOutcome"></a>`pwm:stopOutcome` stop outcome | [action stop](#ActionStop) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Cancellation result: canceled, completed, timed-out or unsupported. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified |
 | <a id="stopReason"></a>`pwm:stopReason` stop reason | [action stop](#ActionStop) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Trigger: pause, revocation, kill switch or duration timeout. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified |
 | <a id="callDurationSeconds"></a>`pwm:callDurationSeconds` call duration seconds | [tool call](#ToolCall) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Observed tool-call duration in seconds; exceeding the registered maximum must be recorded as a timeout. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 16: bounded tool calls; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW call timing evidence |
@@ -4119,7 +4119,7 @@ References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) assurance.records.Ass
 |---|---|---|
 | api | <a id="TransferApi"></a>API/SaaS (`pwm:TransferApi`) | Access through an API or hosted service. |
 | weights | <a id="TransferWeights"></a>model weights (`pwm:TransferWeights`) | Transfer of model weights. |
-| licence | <a id="TransferLicense"></a>license (`pwm:TransferLicense`) | License transfer. The Kognita value keeps its original spelling, licence. |
+| license | <a id="TransferLicense"></a>license (`pwm:TransferLicense`) | License transfer. The Kognita value keeps its original spelling, license. |
 | local | <a id="TransferLocal"></a>local deployment (`pwm:TransferLocal`) | Local deployment. |
 | ownership | <a id="TransferOwnership"></a>ownership or control (`pwm:TransferOwnership`) | Transfer of ownership or control. |
 
@@ -6151,12 +6151,68 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 | Version | Date | Change |
 |---|---|---|
-| 0.8 | 2026-11-18 | Brought PWM level with Kognita software 0.8, built as one release that covers milestones 0.6 to 0.8: milestone 0.7 trust and resilience (signing keys, rotation and revocation, anchors, recovery bundles, external reviews, the model-provider register, failover, model-change detection, the dependency map, concentration measures, failure drills, retention by record class, incident reports), milestone 0.8 runtime assurance (assurance policy, agent manifest, external-agent assertions, deployment attestations, update approvals, approved components and advisories, technology transfer classification, production outcomes, supervisory conformance reports) and the milestone 0.6 records the 0.5 review found missing (verifier independence, evaluation evidence, fairness reports, reasoning traces, claim envelope fields, memory governance, learning exports and exclusions, sensitive attribute inferences). New module 12. Every Kognita vocabulary enum now has a PWM code list whose notations equal the enum values, checked by tests/test_kognita_vocabulary.py: 15 missing evidence event types and the ActorType, ApprovalStatus, EgressDecision and CheckResult lists added, and every one of the 320 concepts has a notation. Renamed to US English with deprecated aliases kept for one version: AuthorisedSignatory, BehaviourAnomaly, BehaviourBaseline, BookingCentre, bookingCentreCode, CommContextualisedInsight, InternationalOrganisationPEP, UnusualAgentBehaviour and VerbAnalyse; PossibleProviderCapability renamed PossibleBankCapability to match Kognita. Ranges added to ten properties that had none. Reasoning axioms added: disjoint mandate types and disjoint agent, model, use case, system and provider, AI agent disjoint from person, and 14 functional properties. Every class and property now has example data or a documented exception, enforced by tests/test_example_coverage.py. Source pinned to Kognita 0.8.0. |
+| 0.8 | 2026-11-18 | Brought PWM level with Kognita software 0.8, built as one release that covers milestones 0.6 to 0.8: milestone 0.7 trust and resilience (signing keys, rotation and revocation, anchors, recovery bundles, external reviews, the model-provider register, failover, model-change detection, the dependency map, concentration measures, failure drills, retention by record class, incident reports), milestone 0.8 runtime assurance (assurance policy, agent manifest, external-agent assertions, deployment attestations, update approvals, approved components and advisories, technology transfer classification, production outcomes, supervisory conformance reports) and the milestone 0.6 records the 0.5 review found missing (verifier independence, evaluation evidence, fairness reports, reasoning traces, claim envelope fields, memory governance, learning exports and exclusions, sensitive attribute inferences). New module 12. Every Kognita vocabulary enum now has a PWM code list whose notations equal the enum values, checked by tests/test_kognita_vocabulary.py: 15 missing evidence event types and the ActorType, ApprovalStatus, EgressDecision and CheckResult lists added, and every one of the 320 concepts has a notation. Renamed to US English with deprecated aliases kept for one version: AuthorisedSignatory, BehaviourAnomaly, BehaviourBaseline, BookingCentre, bookingCentreCode, CommContextualisedInsight, InternationalOrganisationPEP, UnusualAgentBehaviour and VerbAnalyse; PossibleProviderCapability renamed PossibleBankCapability to match Kognita. Ranges added to ten properties that had none. Reasoning axioms added: disjoint mandate types and disjoint agent, model, use case, system and provider, AI agent disjoint from person, and 14 functional properties. Every class and property now has example data or a documented exception, enforced by tests/test_example_coverage.py. Kognita itself moved to US spelling for its identifiers, values and modules, so the verb, drill, reason-code and attribute notations changed with it (analyze, license, unauthorized-network, C1-LABELED, booking_center). Source pinned to Kognita 0.8.0 plus that rename. |
 | 0.5 | 2026-11-04 | Merged the 0.4 live authority observations and evidence-chain build check. Corrected delegation rank direction, typed review expiry, resolved held approvals before allowed actions, explicit field scope and PROV prefixes; refined constraint messages. Aligned to roadmap milestone 0.5: workload identity, explicit scoped and expiring human authority, autonomy evidence and step-down, blast-radius caps, content trust, instruction assurance, anomaly records, narrowing delegation chains, capability grants, fleets, sandbox output, reversibility, adversarial tests, enforcement attestations and stopping in-flight calls. Existing governance terms are reused. Configuration/grants are SlowContext; execution evidence and sandbox decision output are MediumContext. AuthorityLiveStatus uses FastContext for delegation revocation and kill-switch state; firm limits and promotion gates require dated approval by a risk committee, data governance committee or chief risk officer. Authority checks bind completed approval to the governing policy, use case and run, compare call classification by rank, cover every tool verb and require live entitlement scope coverage. Review fixes reject duplicate credential references on distinct workload identities, apply maximum autonomy as fallback for irreversible approval, and clarify that grant checks apply only when a call relies on a grant. Review of 4 Nov 2026: removed the duplicate liveStatusSubject, liveStatusValue and observedAt fields, keeping the canonical statusOf, revoked or engaged, asOf and observedBy; a delegation's permitted data class is now a checked ceiling (DelegationCeilingShape); an agent's effective autonomy cannot exceed its maximum (AgentAutonomyShape). |
 | 0.4 | 2026-11-03 | Context review: durable execution evidence, snapshots and checkpoints use MediumContext; DelegatedAuthority and KillSwitch use SlowContext; FastContext is reserved for live financial state. Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
 | 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
+
+## Gap analysis for 0.8
+
+Compared PWM 0.5 with Kognita software 0.8.0 (`main` at `4ffd948`) before adding terms. PWM version N follows roadmap milestone N; 0.8 covers milestones 0.6 to 0.8 in one release. Additions live in `src/12-trust-resilience-assurance.ttl`, generated by `tools/gen_module12.py` together with their shapes, example data and negative fixtures. Locators refer to `docs/ROADMAP.md`.
+
+## Vocabulary parity
+
+| Kognita enum | PWM 0.5 | Change in 0.8 |
+|---|---|---|
+| `EventType` (31 values) | 17 codes, 15 Kognita values missing, `MODEL_REFUSAL` PWM-only | 15 codes added; `MODEL_REFUSAL` stays as the one PWM-only value |
+| `ActorType`, `ApprovalStatus`, `EgressDecision`, `CheckResult` | no code list | Four code lists and properties `actorType`, `approvalRequestStatus`, `egressDecision`, `checkResult` |
+| `ClaimType` | `POSSIBLE_PROVIDER_CAPABILITY` | Renamed `PossibleBankCapability` with notation `POSSIBLE_BANK_CAPABILITY`; old IRI kept as a deprecated alias. Found by the new parity test |
+| `FailureMode` | notations in lower case | Notations `FAIL_CLOSED`, `DEGRADED` |
+| `StaleAction`, `ValidatorStatus`, `MemoryScope`, action verbs | concepts without notation | Notations equal the Kognita values; `VerbAnalyze` has notation `analyze` |
+| every concept | 87 of 235 had a notation | All concepts carry a notation |
+| `DrillKind`, `_RECORD_CLASSES`, `IncidentKind`, `PROFILES`, sensitive categories, transfer types | not modeled | Code lists added with notations equal to the Kognita values, including `license` |
+
+`approvalStatus` stays bound to `AssetStatusScheme`: it describes the status of a governed information asset (draft, current, superseded, withdrawn), not an approval request. The new `approvalRequestStatus` covers approval requests.
+
+## Milestone 0.7, Trust and Resilience
+
+| Item | Already present in 0.5 | Added in 0.8 |
+|---|---|---|
+| T1, R2 signing and keys | `recordHash`, `previousRecordHash` | `signature`, `signedBy`, `evidenceSequence`, `SigningKey` with `keyId`, public key and escrow references, `KeyRotation`, `KeyRevocation`. A shape rejects a signature without key and sequence, and a signature at or after a key's revocation sequence |
+| T5 schema versioning | none | `schemaVersion` on evidence records |
+| T6 anchoring | none | `EvidenceAnchor` |
+| R1 backup and restore | `RetentionEntry` | `RecoveryBundle` with cutoff sequence, restore verification and included retention state |
+| T3 external review | none | `ExternalReviewSubmission`, reviewed range checked, reviewer key required |
+| R3, R6 provider register | `ModelProvider`, `providedBy` | `ModelProviderRegistration` with the eleven contract details, incident history and regulatory cooperation. A shape rejects a model call whose provider has no registration (`R3-UNREGISTERED`) |
+| R5, R7 failover and model change | `gatewayFailureMode` | `ProviderFailover` (target must be an approved fallback of the use case), `ModelChangeDetection` (a changed served version must trigger revalidation), `approvedFallbackModel` |
+| R8, R9 dependencies and concentration | `dependsOn`, `ConcentrationLimit` (mandate) | `AIDependency`, `DependencyDivergence` (undeclared and unused checked against declared and observed flags), `ConcentrationMeasure` (share between 0 and 1, count not above total) |
+| R10 drills | `KillSwitchDrill` | `FailureDrill` with the eight Kognita fault kinds |
+| R11 retention by record class | `RetentionPolicy` | `RecordClassRetention`: days or indefinite, exactly one |
+| R13, R14 incidents | `AIIncident`, `AffectedClientResult` | `incidentKind`, `IncidentReport` |
+
+## Milestone 0.8, Supervisory Alignment and Runtime Assurance
+
+| Item | Added in 0.8 |
+|---|---|
+| A0 owner policy | `AssurancePolicy` with the required-evidence flags and the adverse-outcome threshold and window (1 to 3650 days) |
+| A1 KYA manifest | `AgentManifest`, signed |
+| A2 external agents | `ExternalAgentAssertion`: bounded validity, depth 0 to 16, parent exactly when depth is above zero |
+| A3 outcome validation | `ProductionOutcome` specializing `InteractionOutcome`, with intended and actual result, adverse flag and unique outcome identifier |
+| A4 update gate | `ThirdPartyUpdateApproval`: candidate digest, regression and rollback references, named approver |
+| A5 to A7, A10, A11 attestations | `DeploymentAttestation` of five kinds, bound to a deployment and policy digest, expiry after issue; `TechnologyTransferClassification` |
+| A9 supply chain | `ApprovedComponent` (SBOM and image digest patterns), `ComponentAdvisory` |
+| A12 profiles | `SupervisoryConformanceReport` against the six Kognita profiles |
+| A8 drills | Covered by `FailureDrill` and the existing `AdversarialTestCase`; the eight hostile-agent scenarios are not coded separately |
+
+## Milestone 0.6 records found missing in the 0.5 review
+
+Items 2 to 6 and 12 were already covered (`Fact`, `ApprovedSource`, `HouseView`, `ClaimTypeScheme`, `GovernedDefinition`). Added: claim envelope fields and a verified-claim shape (item 1); `Verifier` and `ClaimVerification` with a shape that rejects a verifier sharing the producer's model, model version or provider unless the use case permits it (item 7); memory expiry, correction path and client scoping, with institutional memory refusing a client (item 8); `LearningExport` and `LearningExclusion` (item 9); `SensitiveAttributeInference`, with a shape that rejects an unpermitted inference that policy did not block, and a treatment change without a person's review (item 10); `EvaluationResult`, `EvaluationMetricValue` and `FairnessReport` (item 11); `ReasoningTrace` (item 13). Open: house-view change propagation as a queryable relation (item 4) and per-use-case evaluation gate thresholds (item 11).
+
+## Boundaries
+
+SHACL checks the recorded structure. It does not verify signatures, recompute digests, compare anchors with an external store, run a restore, measure concentration from the registers, execute drills, or decide whether an adverse outcome exceeds the threshold. Kognita does those; PWM records the result. Checks that need the Kognita runtime stay in Kognita's tests.
 
 ## Gap analysis for 0.5
 

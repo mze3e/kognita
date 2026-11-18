@@ -84,7 +84,7 @@ def compare_manifest(session, name, export, public_key):
     live_identity = agent.model_dump(mode='json')
     if any(canonical_hash(value) != canonical_hash(live_identity[key])
            for key, value in manifest.agent.items()):
-        findings.append({'control': 'A1', 'reason': 'identity or behavioural version changed'})
+        findings.append({'control': 'A1', 'reason': 'identity or behavioral version changed'})
     # Include live authority divergence as well as observed undeclared calls.
     at = utcnow()
     live = {r.id for r in session.exec(select(_Authority).where(_Authority.grantee == name,

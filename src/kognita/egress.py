@@ -8,9 +8,9 @@ runs on the box. The guard adds a third outcome.
     The destination is permitted for this classification as it stands.
 ``REDACT``
     Sensitive spans are replaced with tokens, the provider sees only the
-    sanitised text, and the tokens are restored in the response.
+    sanitized text, and the tokens are restored in the response.
 ``DENY``
-    No sanitisation makes this lawful for this destination.
+    No sanitization makes this lawful for this destination.
 
 Every call emits ``MODEL_CALL`` and ``EGRESS`` evidence carrying the redaction
 manifest hash, so "no raw sensitive data left the boundary" is a claim that can

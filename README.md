@@ -27,7 +27,7 @@ start = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 with Session(engine) as session:
     session.add_all([
-        Policy(regime="BOOKING_CENTRE", rule_type="ATTRIBUTE_ALLOWLIST",
+        Policy(regime="BOOKING_CENTER", rule_type="ATTRIBUTE_ALLOWLIST",
                rule={"allow": {"actor_location": ["SG"]}},
                citation="Cross-border manual s3.2: SG-booked clients served from SG",
                effective_from=start),
@@ -54,7 +54,7 @@ for check in evaluation.basis():
 
 ```console
 DENY
-BOOKING_CENTRE   Cross-border manual s3.2: SG-booked clients served from SG
+BOOKING_CENTER   Cross-border manual s3.2: SG-booked clients served from SG
 INVESTOR_STATUS  Product governance policy s7: complex products
 ```
 
@@ -284,7 +284,7 @@ inspects records. It does not record or release them.
 `release_claim` loads the stored claim and checks, in this order: a stale
 status, the audience (`rm` or `client`), the label, the approved source, the
 calculation citation, the verification record, then the governed definition.
-The first failure is the reason code. A pass is `C1-LABELLED`.
+The first failure is the reason code. A pass is `C1-LABELED`.
 
 Relabeling as a verified fact requires both source references and `VERIFIED`
 status. A stale claim cannot be relabeled back into circulation.
@@ -342,7 +342,7 @@ with Session(engine) as session:
     record_claim(session, Claim("c-bare", "client-1", "The house view is overweight."),
                  evidence=writer, interaction_id="i1")
     assert release_claim(session, "c-bare", evidence=writer, interaction_id="i1",
-                         usecase_id="advice").check == "C1-UNLABELLED"
+                         usecase_id="advice").check == "C1-UNLABELED"
 
     record_claim(session, Claim(
         "c-model", "client-1", "The house view is overweight.", ClaimType.INFERENCE,
@@ -395,7 +395,7 @@ with Session(engine) as session:
                  usecase_id="advice")
     released = release_claim(session, "c-ok", evidence=writer, interaction_id="i1",
                              usecase_id="advice", audience="rm")
-    assert released.check == "C1-LABELLED" and released.result is CheckResult.PASS
+    assert released.check == "C1-LABELED" and released.result is CheckResult.PASS
     session.commit()
 ```
 
@@ -659,7 +659,7 @@ records. Use `export exclude --record <id>` to persist a record exclusion.
 
 ```sh
 kognita export exclude --db kognita.db --client client-1 --reason "Opt out" --actor operator
-kognita export request --db kognita.db --purpose "Quality evaluation" --anonymisation "control-17" --validation "report-42" --requester analyst --approval reviewer --record interaction:journey-1
+kognita export request --db kognita.db --purpose "Quality evaluation" --anonymization "control-17" --validation "report-42" --requester analyst --approval reviewer --record interaction:journey-1
 ```
 
 The request above exits 2. `interaction:journey-1` is not in the store, so the

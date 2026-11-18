@@ -261,7 +261,7 @@ class Pack:
             assert isinstance(client, dict)
             assert isinstance(product, dict)
             if client:
-                attrs["booking_centre"] = client.get("booking_centre")
+                attrs["booking_center"] = client.get("booking_center")
                 attrs["client_domicile"] = client.get("client_domicile")
                 attrs["solicitation"] = client.get("solicitation")
                 attrs["research_distribution"] = client.get("research_distribution")

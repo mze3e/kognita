@@ -7,7 +7,7 @@ suite and a reasonable offline default for small corpora. A real embedder is a
 configuration swap, not a rewrite: both satisfy
 :class:`kognita.protocols.Embedder`.
 
-Vectors are L2-normalised, so cosine similarity is a dot product.
+Vectors are L2-normalized, so cosine similarity is a dot product.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from typing import Iterable
 
 import numpy as np
 
-#: Matches the tokenisation used for both embedding and lexical overlap.
+#: Matches the tokenization used for both embedding and lexical overlap.
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 
 

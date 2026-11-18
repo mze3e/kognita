@@ -172,15 +172,15 @@ def release_claim(
     elif audience not in ("rm", "client"):
         reason = "C1-AUDIENCE"
     elif claim.claim_type is None:
-        reason = "C1-UNLABELLED"
+        reason = "C1-UNLABELED"
     else:
-        reason = "C1-LABELLED"
+        reason = "C1-LABELED"
         from kognita.sources import check_grounding
         grounding = check_grounding(session, claim, usecase_id=usecase_id,
                                     evidence=evidence, interaction_id=interaction_id)
         if grounding.result != _CheckResult.PASS:
             reason = grounding.check
-    if reason == "C1-LABELLED":
+    if reason == "C1-LABELED":
         from kognita.calculations import check_calculation
         calculation = check_calculation(
             session, claim, authoritative_figure=authoritative_figure,
@@ -189,18 +189,18 @@ def release_claim(
         if calculation.result != _CheckResult.PASS:
             reason = calculation.check
             citation = calculation.citation
-    if reason == "C1-LABELLED":
+    if reason == "C1-LABELED":
         from kognita.verification import _release_reason
         denial = _release_reason(session, claim, audience=audience, usecase_id=usecase_id)
         if denial:
             reason = denial
     definition = None
-    if reason == "C1-LABELLED":
+    if reason == "C1-LABELED":
         from kognita.definitions import check_definition
         definition = check_definition(session, claim, evidence=evidence, interaction_id=interaction_id)
         if definition.result != _CheckResult.PASS:
             reason = definition.check
-    passed = reason == "C1-LABELLED"
+    passed = reason == "C1-LABELED"
     if definition is not None and definition.result != _CheckResult.PASS:
         check = definition
     else:
@@ -226,7 +226,7 @@ def relabel_claim(
     old = _get(session, claim_id)
     next_status = old.validator_status if validator_status is None else ValidatorStatus(validator_status)
     if old.validator_status == ValidatorStatus.STALE and next_status != ValidatorStatus.STALE:
-        raise ValueError("C1-STALE: a stale claim cannot be relabelled into circulation")
+        raise ValueError("C1-STALE: a stale claim cannot be relabeled into circulation")
     new = _replace(old, claim_type=ClaimType(claim_type),
                    source_system=old.source_system if source_system is None else source_system,
                    source_record=old.source_record if source_record is None else source_record,
@@ -293,7 +293,7 @@ def _release_scope(session: _Session, usecase_id: str) -> str:
     ``usecase`` (default): the release must name the request's use case.
     ``client``: and the claim must be about the request's client.
     ``interaction``: and the release must have been made in the request's
-    interaction. An unrecognised value fails closed as ``interaction``.
+    interaction. An unrecognized value fails closed as ``interaction``.
     """
     from kognita.models import UseCase as _UseCase
     row = session.exec(
@@ -329,7 +329,7 @@ def _release_covers(
     if audience not in ("rm", "client"):
         return finish("C1-AUDIENCE", False)
     if not isinstance(content, str) or not content.strip():
-        return finish("C1-LABELLED", True)
+        return finish("C1-LABELED", True)
     wanted = content.strip()
     scope = _release_scope(session, usecase_id) if usecase_id else "interaction"
     # Only claim events are read, and the chain is not re-verified here: this
@@ -365,7 +365,7 @@ def _release_covers(
         payload = event.payload or {}
         if claim_id not in recorded:
             continue
-        if payload.get("allowed") is not True or payload.get("reason") != "C1-LABELLED":
+        if payload.get("allowed") is not True or payload.get("reason") != "C1-LABELED":
             continue
         if not usecase_id or payload.get("usecase_id") != usecase_id:
             continue
@@ -382,7 +382,7 @@ def _release_covers(
         if scope == "client" and (not client_id or released.client_id != client_id):
             continue
         if released.claim_type is not None and released.claim.strip() == wanted:
-            return finish("C1-LABELLED", True)
+            return finish("C1-LABELED", True)
     return finish("C1-UNKNOWN", False)
 
 

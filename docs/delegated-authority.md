@@ -30,7 +30,7 @@ delegation_id = delegate(
 ```
 
 The agent still needs a reviewed, approved identity and tool permissions.
-Capabilities are exact verbs: `read`, `analyse`, `recommend`, `draft`, `queue`,
+Capabilities are exact verbs: `read`, `analyze`, `recommend`, `draft`, `queue`,
 `send`, `execute`. An entitlement for one verb never grants another. Scope maps
 subject types to explicit identifiers; no wildcard matching is performed.
 Delegations bind one client and may reference additional data subjects. Every

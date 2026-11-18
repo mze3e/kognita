@@ -122,7 +122,7 @@ class Binding:
         arguments: Mapping[str, Any],
         fn: Callable[..., Any],
     ) -> GovernedResult:
-        """Authorise ``name``, then call ``fn`` only when released."""
+        """Authorize ``name``, then call ``fn`` only when released."""
         from kognita.envelope import Envelope
 
         ran: list[Any] = []

@@ -104,15 +104,15 @@ def test_proxy_control_signal_cancels_inflight(session, evidence):
     thread.start()
     try:
         response = proxy.handle('POST', '/mcp', headers, _call(), session=session)
-        assert json.loads(response.body)['error']['message'] == 'cancelled'
-        assert _outcomes(session)[-1]['outcome'] == 'cancelled'
+        assert json.loads(response.body)['error']['message'] == 'canceled'
+        assert _outcomes(session)[-1]['outcome'] == 'canceled'
         assert verify_chain(session) > 0
     finally:
         release.set()
         thread.join(1)
 
 
-@pytest.mark.parametrize('confirmed,expected', [(True, 'cancelled'), (False, 'cancellation_requested')])
+@pytest.mark.parametrize('confirmed,expected', [(True, 'canceled'), (False, 'cancellation_requested')])
 def test_cancellation_confirmation_is_not_assumed(confirmed, expected):
     entered, release = Event(), Event()
     def fn():
@@ -337,17 +337,17 @@ def test_committed_remote_control_cancels_without_local_signal(tmp_path, monkeyp
         thread.start()
         try:
             response = _proxy(engine, writer, Transport()).handle('POST', '/mcp', headers, _call(), session=session)
-            assert json.loads(response.body)['error']['message'] == 'cancelled'
+            assert json.loads(response.body)['error']['message'] == 'canceled'
             thread.join(2)
             assert not failures
-            assert _outcomes(session)[-1]['outcome'] == 'cancelled'
+            assert _outcomes(session)[-1]['outcome'] == 'canceled'
             assert verify_chain(session) > 0
         finally:
             release.set()
             thread.join(2)
 
 
-def test_uncancellable_mutation_is_denied_and_evidenced(session, evidence):
+def test_uncancelable_mutation_is_denied_and_evidenced(session, evidence):
     _register(session)
     headers = _proxy_authority(session, evidence)
     _manifest(session, evidence, verb='draft', required_level=3, permissions=['draft'])
@@ -355,7 +355,7 @@ def test_uncancellable_mutation_is_denied_and_evidenced(session, evidence):
     response = _proxy(session.get_bind(), evidence, lambda *_: calls.append(True)).handle(
         'POST', '/mcp', headers, _call(), session=session)
     assert response.evaluation.outcome is Outcome.DENY
-    assert 'S6C-UNCANCELLABLE' in {c.citation for c in response.evaluation.failures()}
+    assert 'S6C-UNCANCELABLE' in {c.citation for c in response.evaluation.failures()}
     assert not calls and verify_chain(session) > 0
 
 

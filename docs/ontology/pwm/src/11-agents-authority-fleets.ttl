@@ -519,7 +519,7 @@ pwm:supportsCancellation a owl:DatatypeProperty ; rdfs:label "supports cancellat
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 16" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialized record or property; no exact standard term identified" ] .
 
 pwm:decisionSeparatedSteps a owl:DatatypeProperty ; rdfs:label "decision separated steps"@en ;
-    skos:definition "Whether an uncancellable action is split into steps with a decision between them."@en ; rdfs:domain pwm:Tool ; rdfs:range xsd:boolean ;
+    skos:definition "Whether an uncancelable action is split into steps with a decision between them."@en ; rdfs:domain pwm:Tool ; rdfs:range xsd:boolean ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 16" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialized record or property; no exact standard term identified" ] .
 
 pwm:stoppedCall a owl:ObjectProperty ; rdfs:label "stopped call"@en ;

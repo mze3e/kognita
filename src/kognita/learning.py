@@ -34,15 +34,15 @@ class Exclusion:
 
 @dataclass(frozen=True)
 class ExportRequest:
-    """An explicit record selection and the attestations authorising it.
+    """An explicit record selection and the attestations authorizing it.
 
-    Anonymisation and validation name the completed controls or their evidence.
+    Anonymization and validation name the completed controls or their evidence.
     Approval is the approver identity, distinct from requester. Request-local
     exclusions supplement, and cannot replace, permanent exclusions.
     """
 
     purpose: str = ""
-    anonymisation: str = ""
+    anonymization: str = ""
     validation: str = ""
     approval: str = ""
     requester: str = ""
@@ -146,7 +146,7 @@ def request_export(
     The caller owns the transaction, including committing denied requests.
     """
     reasons = []
-    for name in ("purpose", "anonymisation", "validation", "approval", "requester"):
+    for name in ("purpose", "anonymization", "validation", "approval", "requester"):
         if not _text(getattr(request, name)):
             reasons.append(f"LEARNING_{name.upper()}_REQUIRED")
     if (_text(request.approval) and _text(request.requester)

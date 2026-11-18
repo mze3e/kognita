@@ -256,7 +256,7 @@ def test_entitlement_filtering_precedes_scoring(indexed):
 
 
 def test_embedding_sanity(harness):
-    """Identical text scores ~1, unrelated text well below, vectors normalised."""
+    """Identical text scores ~1, unrelated text well below, vectors normalized."""
     import numpy as np
 
     from kognita.embedding import cosine
@@ -286,7 +286,7 @@ def test_question_mentioning_subjects_stays_on_the_knowledge_route(indexed):
     """Routing is by scope, never by wording.
 
     Ported directly. Keyword routing would let a knowledge question that merely
-    says "subjects" authorise subject-profile access — the exact confusion the
+    says "subjects" authorize subject-profile access — the exact confusion the
     envelope exists to prevent.
     """
     from kognita.broker import KNOWLEDGE, ask

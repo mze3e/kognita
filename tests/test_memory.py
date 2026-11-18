@@ -24,7 +24,7 @@ OTHER = "client-2"
 SENTENCE = "Client may be considering a sale of the riverside property"
 _DEPLOYMENT = dict(
     system_prompt="prompt", instructions="instructions", tools=[], permissions=[],
-    data_sources=[], orchestration="one step", memory_behaviour="none",
+    data_sources=[], orchestration="one step", memory_behavior="none",
 )
 
 
@@ -229,10 +229,10 @@ def test_knowledge_lead_approval_versions_the_deployment(ready, evidence):
     session.refresh(agent)
     assert agent.deployment_hash != before
     assert agent.deployment_hash == _deployment_hash(agent, agent.tool_allowlist["_deployment"])
-    behaviour = agent.tool_allowlist["_deployment"]["memory_behaviour"]
-    assert "house-view" in behaviour and "\"1\"" in behaviour
+    behavior = agent.tool_allowlist["_deployment"]["memory_behavior"]
+    assert "house-view" in behavior and "\"1\"" in behavior
     assert agent.tool_allowlist["_deployment"]["instructions"] == "instructions"
-    assert SENTENCE not in behaviour
+    assert SENTENCE not in behavior
     event = _writes(session)[-1]
     assert event.payload["standard_version"] == "1"
     assert "Use the current house view" not in json.dumps(event.payload)

@@ -43,7 +43,7 @@ L0; increasing an existing agent's autonomy requires `kognita.autonomy.promote()
     "permissions": ["read_research:read"],
     "data_sources": ["approved-research"],
     "orchestration": "retrieve then explain",
-    "memory_behaviour": "no persistent memory"
+    "memory_behavior": "no persistent memory"
   }
 }
 ```

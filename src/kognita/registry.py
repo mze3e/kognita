@@ -164,9 +164,9 @@ def _deployment_hash(agent: Agent, deployment: dict) -> str:
     from kognita.canonical import canonical_hash
 
     required = {"system_prompt", "instructions", "tools", "permissions", "data_sources",
-                "orchestration", "memory_behaviour"}
+                "orchestration", "memory_behavior"}
     if not isinstance(deployment, dict) or not required <= deployment.keys():
-        raise ValueError("S1-DEPLOYMENT: all seven behaviour components are required")
+        raise ValueError("S1-DEPLOYMENT: all seven behavior components are required")
     return canonical_hash({
         "deployment": deployment,
         "identity": {key: getattr(agent, key) for key in (
@@ -193,7 +193,7 @@ def approve_deployment(
     session: Session, name: str, *, deployment: dict, evidence: EvidenceWriter,
     actor_id: str,
 ) -> Agent:
-    """Approve the complete behaviour manifest; later changes require approval."""
+    """Approve the complete behavior manifest; later changes require approval."""
     agent = get(session, name)
     if agent is None:
         raise LookupError(name)

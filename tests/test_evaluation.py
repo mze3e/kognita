@@ -31,7 +31,7 @@ from test_usecases import NOW, _activate, _open, _spec, _tier2
 
 _DEPLOYMENT = dict(
     system_prompt="", instructions="instructions", tools=[], permissions=[],
-    data_sources=[], orchestration="one step", memory_behaviour="none",
+    data_sources=[], orchestration="one step", memory_behavior="none",
 )
 _REASON = {"fact": "house view", "detail": "overweight equities", "citation": "cio-2026"}
 
@@ -358,11 +358,11 @@ def test_fairness_flags_disparities_including_proxies(session, evidence):
     rates = {(row["segment"], row["value"]): row for row in report.rates}
     assert rates[("nationality", "SG")]["recommendation_rate"] == 1
     assert rates[("nationality", "CH")]["contact_rate"] == 0
-    assert rates[("nationality", "SG")]["prioritisation_rate"] == 1
+    assert rates[("nationality", "SG")]["prioritization_rate"] == 1
     assert rates[("postcode", "018956")]["proxy"] is True
     assert any(item["proxy"] and item["segment"] == "postcode" for item in report.disparities)
     assert any(item["rate"] == "recommendation_rate" and item["value"] == "CH" for item in report.disparities)
-    assert not any(item["rate"] == "prioritisation_rate" for item in report.disparities)
+    assert not any(item["rate"] == "prioritization_rate" for item in report.disparities)
     flag = session.exec(select(EvidenceEvent).where(EvidenceEvent.event_type == EventType.REVIEW)).all()[-1]
     assert flag.payload["action"] == "REVIEW_FLAG"
     assert flag.payload["reason"] == "FAIRNESS_DISPARITY"
@@ -508,7 +508,7 @@ def test_public_exports():
         assert name in kognita.__all__
     assert EventType.EVALUATION_RECORDED.value == "EVALUATION_RECORDED"
     spec = UseCaseSpec(
-        "research-summary", "Summarise approved research for an RM", "research summarization",
+        "research-summary", "Summarize approved research for an RM", "research summarization",
         "Jane Smith", "Omar Aziz", "Priya Shah", "Luis Ortega", "Alex Chen",
         evaluation_thresholds={"accuracy": 0.5},
     )

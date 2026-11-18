@@ -1,6 +1,6 @@
 """The Context Broker — one governed front door.
 
-A question arrives, is normalised into an envelope, and is authorised *before*
+A question arrives, is normalized into an envelope, and is authorized *before*
 anything is retrieved. What comes back is composed deterministically from
 entitled, cited fragments: there is no free-text generation here, so an answer
 cannot assert something no source supports.
@@ -10,7 +10,7 @@ nothing is fetched and nothing is returned until the approval is actually
 granted. Resuming that held question is :func:`kognita.tools.continue_run`.
 
 Routing is domain-specific — which question shapes map to which tool and
-retrieval mode is a business judgement — so a pack supplies a resolver. The core
+retrieval mode is a business judgment — so a pack supplies a resolver. The core
 provides a default that routes on how many subjects are in scope, matching the
 usual case: a question about a subject *and* a related object is an eligibility
 question, one about a subject alone is a context question, and one about neither
@@ -76,7 +76,7 @@ def default_route_resolver(question: str, envelope: Envelope) -> Route:
     """Route by what is in scope, never by keywords in the question.
 
     Keyword routing is the trap here: a knowledge question that merely *mentions*
-    subjects would otherwise authorise subject-profile access. Scope is a fact
+    subjects would otherwise authorize subject-profile access. Scope is a fact
     about the request; wording is not.
     """
     subjects = envelope.all_subjects()
@@ -275,7 +275,7 @@ def ask(
     now: datetime | None = None,
     interaction_id: str | None = None,
 ) -> BrokerAnswer:
-    """Authorise a question, then answer it from entitled sources only.
+    """Authorize a question, then answer it from entitled sources only.
 
     A ``HUMAN_APPROVAL`` outcome returns no results and does not retrieve.
     Passing ``run`` checkpoints that hold so :func:`kognita.tools.continue_run`

@@ -91,7 +91,7 @@ def _appetite(**overrides) -> Appetite:
 def _spec(**overrides) -> UseCaseSpec:
     base = UseCaseSpec(
         usecase_id="research-summary",
-        purpose="Summarise approved research for an RM",
+        purpose="Summarize approved research for an RM",
         category="research summarization",
         business_owner="Jane Smith",
         technology_owner="Omar Aziz",
@@ -176,7 +176,7 @@ def _open(session, evidence, appetite: Appetite | None = None) -> None:
         provider="house",
         model="summary",
         version="1",
-        intended_use="Summarise approved research for an RM",
+        intended_use="Summarize approved research for an RM",
         limitations="Does not read tables in exhibits",
         evaluation_results="Reviewed against the research fixture, May 2026",
         approver="Luis Ortega",
@@ -777,7 +777,7 @@ def test_registry_changes_are_policy_change_events(session, evidence):
     ("field", "value"),
     [
         ("jurisdiction", "HK"),
-        ("purpose", "Summarise research for a different desk"),
+        ("purpose", "Summarize research for a different desk"),
         ("category", "meeting preparation"),
     ],
 )
@@ -863,7 +863,7 @@ def test_cli_output(tmp_path, capsys):
 
     assert main(["usecase", "show", "research-summary", "--db", str(path)]) == 0
     shown = capsys.readouterr().out
-    assert "Summarise approved research" in shown
+    assert "Summarize approved research" in shown
 
     assert main(["usecase", "validate", "briefing", "--db", str(path)]) == 1
     findings = capsys.readouterr().out
@@ -965,7 +965,7 @@ def test_two_cards_for_one_model_name_must_be_pinned(session, evidence):
         provider="house",
         model="summary",
         version="2",
-        intended_use="Summarise approved research for an RM",
+        intended_use="Summarize approved research for an RM",
         limitations="Does not read tables in exhibits",
         evaluation_results="Reviewed against the research fixture, May 2026",
         approver="Luis Ortega",
@@ -1010,7 +1010,7 @@ def test_a_new_model_card_approval_is_a_new_version(session, evidence):
         provider="house",
         model="summary",
         version="1",
-        intended_use="Summarise approved research for an RM",
+        intended_use="Summarize approved research for an RM",
         limitations="Also misses footnotes",
         evaluation_results="Reviewed against the research fixture, May 2026",
         approver="Luis Ortega",
@@ -1079,7 +1079,7 @@ def test_egress_links_the_approved_card_and_refuses_a_mismatch(session, evidence
     assert called["sent"] is False
 
 
-def test_unmediated_entries_record_the_gap_and_do_not_authorise_a_call(
+def test_unmediated_entries_record_the_gap_and_do_not_authorize_a_call(
     session, evidence
 ):
     _open(session, evidence)
@@ -1124,7 +1124,7 @@ def test_unmediated_entries_record_the_gap_and_do_not_authorise_a_call(
     )
     assert denied.outcome is Outcome.DENY
     citation = _named(denied, "USE_CASE_UNMEDIATED")[0].citation
-    assert "does not authorise a call" in citation
+    assert "does not authorize a call" in citation
     assert "accountable owner: Jane Smith" in citation
 
 

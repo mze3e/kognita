@@ -1487,7 +1487,7 @@ pwm:TransferTypeScheme a skos:ConceptScheme ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "assurance.records.AssurancePolicy.transfer_type" ] .
 pwm:TransferApi a skos:Concept ; skos:notation "api" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "API/SaaS"@en ; skos:definition "Access through an API or hosted service."@en .
 pwm:TransferWeights a skos:Concept ; skos:notation "weights" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "model weights"@en ; skos:definition "Transfer of model weights."@en .
-pwm:TransferLicense a skos:Concept ; skos:notation "licence" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "license"@en ; skos:definition "License transfer. The Kognita value keeps its original spelling, licence."@en .
+pwm:TransferLicense a skos:Concept ; skos:notation "license" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "license"@en ; skos:definition "License transfer. The Kognita value keeps its original spelling, license."@en .
 pwm:TransferLocal a skos:Concept ; skos:notation "local" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "local deployment"@en ; skos:definition "Local deployment."@en .
 pwm:TransferOwnership a skos:Concept ; skos:notation "ownership" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "ownership or control"@en ; skos:definition "Transfer of ownership or control."@en .
 

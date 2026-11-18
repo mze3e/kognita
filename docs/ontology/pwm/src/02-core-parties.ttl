@@ -115,7 +115,7 @@ pwm:ClientRelationship a owl:Class ;
     pwm:contextSpeed pwm:MediumContext ;
     pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10: business relationship" ] ,
-                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre, relationship-manager" ] .
+                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center, relationship-manager" ] .
 
 pwm:RelationshipGroup a owl:Class ;
     rdfs:label "relationship group"@en ;
@@ -311,7 +311,7 @@ pwm:BookingCenter a owl:Class ;
     rdfs:subClassOf cmns-pts:PartyRole ;
     pwm:inModule pwm:ModuleParties ;
     pwm:contextSpeed pwm:SlowContext ;
-    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre: recognized booking centers" ] ,
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center: recognized booking centers" ] ,
                  [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Booking model" ] .
 
 pwm:Custodian a owl:Class ;
@@ -344,7 +344,7 @@ pwm:isBookedAt a owl:ObjectProperty ;
     skos:definition "Booking center in which a relationship, account or contract is booked."@en ;
     rdfs:range pwm:BookingCenter ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center" ] .
 
 pwm:inGroup a owl:ObjectProperty ;
     rdfs:label "in group"@en ;
@@ -435,7 +435,7 @@ pwm:jurisdictionCode a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
     skos:closeMatch cmns-rga:hasJurisdiction ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre, rm-location" ] .
+    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center, rm-location" ] .
 
 pwm:legalEntityIdentifier a owl:DatatypeProperty ;
     rdfs:label "legal entity identifier"@en ;

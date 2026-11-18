@@ -231,7 +231,7 @@ def test_concurrent_outcomes_serialize_safety_state_and_preserve_signed_chain(_s
         agent = register(session, name='outcome-worker', owner_exec='owner',
                          use_cases=['p'], evidence=writer, actor_id='owner')
         approve_deployment(session, agent.name, deployment=dict(system_prompt='', instructions='',
-            tools=[], permissions=[], data_sources=[], orchestration='', memory_behaviour=''),
+            tools=[], permissions=[], data_sources=[], orchestration='', memory_behavior=''),
             evidence=writer, actor_id='owner')
         _change(session, agent, 3, writer, 'owner', 'AUTONOMY_PROMOTED', {})
         configure(session, agent.name, AssurancePolicy(use_case='p', audience='bank',

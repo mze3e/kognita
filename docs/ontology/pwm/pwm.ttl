@@ -781,7 +781,7 @@ pwm:ClientRelationship a owl:Class ;
     pwm:contextSpeed pwm:MediumContext ;
     pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10: business relationship" ] ,
-                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre, relationship-manager" ] .
+                 [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center, relationship-manager" ] .
 
 pwm:RelationshipGroup a owl:Class ;
     rdfs:label "relationship group"@en ;
@@ -977,7 +977,7 @@ pwm:BookingCenter a owl:Class ;
     rdfs:subClassOf cmns-pts:PartyRole ;
     pwm:inModule pwm:ModuleParties ;
     pwm:contextSpeed pwm:SlowContext ;
-    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre: recognized booking centers" ] ,
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center: recognized booking centers" ] ,
                  [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Booking model" ] .
 
 pwm:Custodian a owl:Class ;
@@ -1010,7 +1010,7 @@ pwm:isBookedAt a owl:ObjectProperty ;
     skos:definition "Booking center in which a relationship, account or contract is booked."@en ;
     rdfs:range pwm:BookingCenter ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center" ] .
 
 pwm:inGroup a owl:ObjectProperty ;
     rdfs:label "in group"@en ;
@@ -1101,7 +1101,7 @@ pwm:jurisdictionCode a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
     skos:closeMatch cmns-rga:hasJurisdiction ;
     pwm:inModule pwm:ModuleParties ;
-    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre, rm-location" ] .
+    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center, rm-location" ] .
 
 pwm:legalEntityIdentifier a owl:DatatypeProperty ;
     rdfs:label "legal entity identifier"@en ;
@@ -1979,7 +1979,7 @@ pwm:CrossBorderRule a owl:Class ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:contextSpeed pwm:SlowContext ;
     pwm:defaultClassification pwm:C1 ;
-    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile, booking-centre, rm-location, cross-border-solicitation, research-distribution" ] ,
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile, booking-center, rm-location, cross-border-solicitation, research-distribution" ] ,
                  [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.3, fn 6: rule-based tools are not AI" ] .
 
 pwm:ProductTermSheet a owl:Class ;
@@ -2087,7 +2087,7 @@ pwm:bookingCenterCode a owl:DatatypeProperty ;
     skos:definition "Booking center jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a booking center is incomplete, not a rule for every booking center."@en ;
     rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleProducts ;
-    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center" ] .
 
 pwm:permitted a owl:DatatypeProperty ;
     rdfs:label "permitted"@en ;
@@ -2954,7 +2954,7 @@ pwm:ActionVerbScheme a skos:ConceptScheme ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: read, analyze, recommend, draft, queue, send and execute" ] .
 pwm:VerbRead a skos:Concept ; skos:notation "read" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "read"@en ; skos:definition "Read information."@en .
-pwm:VerbAnalyze a skos:Concept ; skos:notation "analyse" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "analyze"@en ; skos:definition "Derive insight from information."@en .
+pwm:VerbAnalyze a skos:Concept ; skos:notation "analyze" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "analyze"@en ; skos:definition "Derive insight from information."@en .
 pwm:VerbRecommend a skos:Concept ; skos:notation "recommend" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "recommend"@en ; skos:definition "Propose an option."@en .
 pwm:VerbDraft a skos:Concept ; skos:notation "draft" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "draft"@en ; skos:definition "Prepare an artifact."@en .
 pwm:VerbQueue a skos:Concept ; skos:notation "queue" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "queue"@en ; skos:definition "Place an artifact for release by a person."@en .
@@ -5002,7 +5002,7 @@ pwm:supportsCancellation a owl:DatatypeProperty ; rdfs:label "supports cancellat
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 16" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialized record or property; no exact standard term identified" ] .
 
 pwm:decisionSeparatedSteps a owl:DatatypeProperty ; rdfs:label "decision separated steps"@en ;
-    skos:definition "Whether an uncancellable action is split into steps with a decision between them."@en ; rdfs:domain pwm:Tool ; rdfs:range xsd:boolean ;
+    skos:definition "Whether an uncancelable action is split into steps with a decision between them."@en ; rdfs:domain pwm:Tool ; rdfs:range xsd:boolean ;
     pwm:inModule pwm:ModuleAgents ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.5 item 16" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.5: NEW specialized record or property; no exact standard term identified" ] .
 
 pwm:stoppedCall a owl:ObjectProperty ; rdfs:label "stopped call"@en ;
@@ -6567,7 +6567,7 @@ pwm:TransferTypeScheme a skos:ConceptScheme ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "assurance.records.AssurancePolicy.transfer_type" ] .
 pwm:TransferApi a skos:Concept ; skos:notation "api" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "API/SaaS"@en ; skos:definition "Access through an API or hosted service."@en .
 pwm:TransferWeights a skos:Concept ; skos:notation "weights" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "model weights"@en ; skos:definition "Transfer of model weights."@en .
-pwm:TransferLicense a skos:Concept ; skos:notation "licence" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "license"@en ; skos:definition "License transfer. The Kognita value keeps its original spelling, licence."@en .
+pwm:TransferLicense a skos:Concept ; skos:notation "license" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "license"@en ; skos:definition "License transfer. The Kognita value keeps its original spelling, license."@en .
 pwm:TransferLocal a skos:Concept ; skos:notation "local" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "local deployment"@en ; skos:definition "Local deployment."@en .
 pwm:TransferOwnership a skos:Concept ; skos:notation "ownership" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "ownership or control"@en ; skos:definition "Transfer of ownership or control."@en .
 
@@ -7128,7 +7128,7 @@ pwm:UnusualAgentBehaviour a skos:Concept ; skos:prefLabel "unusual agent behavio
     pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
 
 pwm:VerbAnalyse a skos:Concept ; skos:prefLabel "analyse (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:VerbAnalyze. The Kognita action verb value stays analyse."@en ;
+    skos:definition "Deprecated spelling. Use pwm:VerbAnalyze. Kognita's action verb value is now analyze too."@en ;
     owl:deprecated true ; dcterms:isReplacedBy pwm:VerbAnalyze ; skos:exactMatch pwm:VerbAnalyze ;
     pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
 

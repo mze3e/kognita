@@ -10,9 +10,9 @@ Compared PWM 0.5 with Kognita software 0.8.0 (`main` at `4ffd948`) before adding
 | `ActorType`, `ApprovalStatus`, `EgressDecision`, `CheckResult` | no code list | Four code lists and properties `actorType`, `approvalRequestStatus`, `egressDecision`, `checkResult` |
 | `ClaimType` | `POSSIBLE_PROVIDER_CAPABILITY` | Renamed `PossibleBankCapability` with notation `POSSIBLE_BANK_CAPABILITY`; old IRI kept as a deprecated alias. Found by the new parity test |
 | `FailureMode` | notations in lower case | Notations `FAIL_CLOSED`, `DEGRADED` |
-| `StaleAction`, `ValidatorStatus`, `MemoryScope`, action verbs | concepts without notation | Notations equal the Kognita values; `VerbAnalyze` keeps notation `analyse` |
+| `StaleAction`, `ValidatorStatus`, `MemoryScope`, action verbs | concepts without notation | Notations equal the Kognita values; `VerbAnalyze` has notation `analyze` |
 | every concept | 87 of 235 had a notation | All concepts carry a notation |
-| `DrillKind`, `_RECORD_CLASSES`, `IncidentKind`, `PROFILES`, sensitive categories, transfer types | not modeled | Code lists added with notations equal to the Kognita values, including `licence`, kept as the Kognita spelling |
+| `DrillKind`, `_RECORD_CLASSES`, `IncidentKind`, `PROFILES`, sensitive categories, transfer types | not modeled | Code lists added with notations equal to the Kognita values, including `license` |
 
 `approvalStatus` stays bound to `AssetStatusScheme`: it describes the status of a governed information asset (draft, current, superseded, withdrawn), not an approval request. The new `approvalRequestStatus` covers approval requests.
 

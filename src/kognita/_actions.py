@@ -83,7 +83,7 @@ def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(),
                         try:
                             confirmation.append(cancel())
                             if confirmation[-1] is True and _lifecycle is not None:
-                                _lifecycle['cancelled'] = True
+                                _lifecycle['canceled'] = True
                         except Exception:
                             confirmation.append(False)
                         finally:
@@ -97,9 +97,9 @@ def _bounded(fn, *, seconds, agent, run, delegation, cancel=None, _authority=(),
                     if timeout:
                         return 'timeout', None
                     if confirmed and result and not result[0][0]:
-                        return ('timeout' if timeout else 'cancelled'), None
+                        return ('timeout' if timeout else 'canceled'), None
                     break
-                return ('timeout' if timeout else 'cancelled' if confirmed else 'cancellation_requested'), None
+                return ('timeout' if timeout else 'canceled' if confirmed else 'cancellation_requested'), None
         if finished[0] > deadline:
             return 'timeout', None
         ok, value = result[0]
@@ -153,7 +153,7 @@ def _finish_action(session, action_id, evidence, *, _lifecycle=None, _commit=Tru
     from kognita.models import _PendingAction
     row = session.get(_PendingAction, action_id)
     if row is not None and _lifecycle and not (
-            _lifecycle['settled'].is_set() or _lifecycle.get('cancelled')):
+            _lifecycle['settled'].is_set() or _lifecycle.get('canceled')):
         with _lock:
             _uncertain.setdefault(session.get_bind(), {})[action_id] = _lifecycle
         evidence.emit(session, correlation_id=action_id, event_type=EventType.INTERVENTION,
@@ -168,8 +168,8 @@ def _finish_action(session, action_id, evidence, *, _lifecycle=None, _commit=Tru
         evidence.emit(session, correlation_id=action_id, event_type=EventType.INTERVENTION,
                       actor_type=ActorType.SYSTEM, actor_id='governance-pdp',
                       payload={'action': '_action_finished', 'run_id': run_id,
-                               '_settlement': ('cancelled' if _lifecycle and
-                                   _lifecycle.get('cancelled') else 'completed'),
+                               '_settlement': ('canceled' if _lifecycle and
+                                   _lifecycle.get('canceled') else 'completed'),
                                'citation': 'S6C-RECOVER'})
         if _commit:
             session.commit()
@@ -187,7 +187,7 @@ def _reconcile_actions(session, run_id, evidence):
     for action_id in rows:
         with _lock:
             lifecycle = _uncertain.get(session.get_bind(), {}).get(action_id)
-        if lifecycle and (lifecycle['settled'].is_set() or lifecycle.get('cancelled')):
+        if lifecycle and (lifecycle['settled'].is_set() or lifecycle.get('canceled')):
             _finish_action(session, action_id, evidence, _lifecycle=lifecycle, _commit=False)
     session.flush()
 

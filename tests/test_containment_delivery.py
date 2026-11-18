@@ -78,7 +78,7 @@ def test_containment_cancels_running_proxy_and_delivers_alert(session, engine, e
         def __call__(self, method, url, headers, body):
             started.set()
             assert stopped.wait(5)
-            raise RuntimeError('cancelled backend')
+            raise RuntimeError('canceled backend')
         def _cancel(self, rpc_id):
             stopped.set()
             return True
@@ -104,11 +104,11 @@ def test_containment_cancels_running_proxy_and_delivers_alert(session, engine, e
         assert not thread.is_alive()
         assert stopped.is_set()
         assert responses[0].status == 502
-        assert b'cancelled' in responses[0].body
+        assert b'canceled' in responses[0].body
         assert not verify(session, 'dossier-agent', credential)
         outcomes = [e.payload.get('outcome') for e in session.exec(select(EvidenceEvent))
                     if e.payload.get('citation') == 'S6C-IN-FLIGHT']
-        assert outcomes == ['completed', 'cancelled']
+        assert outcomes == ['completed', 'canceled']
         _delivered(session, memory, 'ANOMALY_ALERT', 'Head of Research Ops')
         from contextlib import nullcontext
         from types import SimpleNamespace
@@ -140,7 +140,7 @@ def test_gateway_sustained_decline_steps_down_and_delivers_alert(session, engine
     _activate(session, writer, _spec(knowledge_lead='Jane Smith', validators=('Jane Smith', 'validator'),
         _autonomy_step_down=dict(minimum_sample=4, window_days=7, quality=.7, reliability=.8)))
     permission = dict(agent.tool_allowlist['read'], required_level=2, verb='recommend', permissions=['recommend'])
-    agent.tool_allowlist = {'model_call': permission, '_deployment': dict(system_prompt='', instructions='', tools=[], permissions=[], data_sources=[], orchestration='', memory_behaviour='')}
+    agent.tool_allowlist = {'model_call': permission, '_deployment': dict(system_prompt='', instructions='', tools=[], permissions=[], data_sources=[], orchestration='', memory_behavior='')}
     agent.autonomy_level = 2
     agent.deployment_hash = _deployment_hash(agent, agent.tool_allowlist['_deployment'])
     # Keep the approved observation digest aligned with the synthetic historical deployment.

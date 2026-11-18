@@ -448,7 +448,7 @@ class KnowledgeItem(SQLModel, table=True):
     bbox: dict[str, Any] | None = Field(
         default=None, sa_column=Column(JSON, nullable=True)
     )
-    #: L2-normalised embedding, stored as float32 bytes.
+    #: L2-normalized embedding, stored as float32 bytes.
     embedding: bytes | None = Field(default=None)
     embedding_dim: int = 0
     embedding_model: str = ""

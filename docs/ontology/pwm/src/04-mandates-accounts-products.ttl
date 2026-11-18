@@ -400,7 +400,7 @@ pwm:CrossBorderRule a owl:Class ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:contextSpeed pwm:SlowContext ;
     pwm:defaultClassification pwm:C1 ;
-    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile, booking-centre, rm-location, cross-border-solicitation, research-distribution" ] ,
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile, booking-center, rm-location, cross-border-solicitation, research-distribution" ] ,
                  [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "1.3, fn 6: rule-based tools are not AI" ] .
 
 pwm:ProductTermSheet a owl:Class ;
@@ -508,7 +508,7 @@ pwm:bookingCenterCode a owl:DatatypeProperty ;
     skos:definition "Booking center jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a booking center is incomplete, not a rule for every booking center."@en ;
     rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleProducts ;
-    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-center" ] .
 
 pwm:permitted a owl:DatatypeProperty ;
     rdfs:label "permitted"@en ;
