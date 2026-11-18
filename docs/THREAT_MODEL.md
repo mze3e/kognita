@@ -38,7 +38,7 @@ by default. A trusted host can use `external=False` for a known internal corpus;
 C2/C3 results still mark client data. The broker passes its run into retrieval,
 including retrieval resumed after approval. Other document ingress paths use the
 private `_ingest` adapter at their trusted content boundary. Unknown provenance
-must be labelled external by the host. Labels are stored in additive nullable
+must be labeled external by the host. Labels are stored in additive nullable
 SQLite columns, merged monotonically, and evidenced before results are released.
 
 `Envelope.assurance_level` is an integer from 0 to 3; zero is the default. A header
@@ -209,7 +209,7 @@ switches, credential and delegation revocation, task completion and run pauses
 signal active proxy calls in the same process; indexed live-state checks also
 observe committed changes made by other processes. The proxy commits admission
 evidence before contacting the backend so SQLite does not block interventions. Evidence distinguishes completed,
-cancelled, cancellation_requested and timeout outcomes. Completion winning a
+canceled, cancellation_requested and timeout outcomes. Completion winning a
 cancellation race is recorded as completed. Cross-process control changes must
 be committed; the local callback mechanism is not a distributed cancellation bus. Cancellation of a remote side effect must be authenticated and correlated to the specific request, never inferred from a closed socket. Default transport cancellation evidence confirms local connection abortion only; custom transport hooks must define their confirmation semantics.
 

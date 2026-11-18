@@ -43,7 +43,7 @@ This is Kognita's founding premise and the core of the EVOLVE framework's govern
 
 The frameworks use labels that clash with Kognita's own:
 - The 70-control framework's **C0 to C5** client-impact scale is unrelated to Kognita's **C1 to C3** data classification. We call the framework's scale the **client-impact class** (internal productivity, RM assistance, client influence, client communication, advice, execution).
-- The 70-control framework's **L0 to L5** communication scale is unrelated to Kognita's **L0 to L6** agent autonomy levels. We call the framework's scale the **communication level** (general information, house view, contextualised insight, investment discussion, product recommendation, transaction).
+- The 70-control framework's **L0 to L5** communication scale is unrelated to Kognita's **L0 to L6** agent autonomy levels. We call the framework's scale the **communication level** (general information, house view, contextualized insight, investment discussion, product recommendation, transaction).
 - The EVOLVE framework's five maturity **stages** (Experimental, Enabled, Embedded, Empowered, Evolved) are adoption milestones, not enforceable controls. Kognita enforces what each stage requires, not the stage itself.
 
 ---
@@ -58,7 +58,7 @@ The frameworks use labels that clash with Kognita's own:
 | 4 | Least-privilege data and tool entitlements | Partial | Zones and classification ceilings filter data before scoring; explicit tool registry | Per-agent tool allow-lists and field minimization (0.5) |
 | 5 | Trusted client and portfolio truth layer | Boundary | Retrieval returns entitled, cited items. Fact-shaped values go through `admit_fact` (`kognita.facts`, `tests/test_dod_release.py`) | Fact provenance and freshness contract (0.6) |
 | 6 | Evidence and provenance for material claims | Partial | Citations on decisions; retrieval evidence. A released claim is required before material gateway or house-view text goes out (`kognita.claims`, `tests/test_dod_release.py`) | Pinned evidence (0.3); claim provenance envelope (0.6) |
-| 7 | Fact, inference and recommendation separation | Added | Unlabelled claims are blocked from RM and client release (`kognita.claims`, `tests/test_claims.py`) | Claim types (0.6) |
+| 7 | Fact, inference and recommendation separation | Added | Unlabeled claims are blocked from RM and client release (`kognita.claims`, `tests/test_claims.py`) | Claim types (0.6) |
 | 8 | Deterministic financial calculations | Boundary | An authoritative figure without a registered service is blocked (`kognita.calculations`, `tests/test_calculations.py`) | Calculation provenance enforcement (0.6) |
 | 9 | Runtime policy enforcement outside the LLM | Covered | `decide()` is deterministic, pure, replayable, fail-closed | Core |
 | 10 | Sandboxed, bounded execution | Partial | Run budgets planned | Blast-radius limits (0.5); sandbox constraints (0.5) |
@@ -83,7 +83,7 @@ The frameworks use labels that clash with Kognita's own:
 | 10 | Approved-source grounding and research expiry | Partial | Approved-source grounding and supersession are in the tree (`kognita.sources`, `tests/test_sources.py`, `tests/test_source_supersede.py`) |
 | 11 | Complete provenance and audit trail | Planned | Pinned evidence (0.3); interaction record (0.4); claim release and reconstruction are in the tree (`kognita.claims`, `tests/test_claims.py`) |
 | 12 | Pause, override, revoke and kill | Partial | Intervention controls (0.4); granular revocation (0.4) |
-| 13 | Agent-behaviour monitoring and automated containment | Partial | Anomaly detection and containment (0.5) |
+| 13 | Agent-behavior monitoring and automated containment | Partial | Anomaly detection and containment (0.5) |
 | 14 | Third-party dependency and exit controls | Partial | Provider register (0.7); dependency map (0.7) |
 | 15 | Continuous testing, revalidation and incident learning | **Partial** | Evaluation gate (0.5, 0.6); **evidence-gated autonomy promotion and automatic step-down (0.5)** |
 
@@ -100,7 +100,7 @@ The frameworks use labels that clash with Kognita's own:
 | Model and agent assurance | Does it behave correctly and reliably? | Evaluation gate (0.5, 0.6); drift tracking per agent/model/prompt (0.5); adversarial suite (0.5) |
 | Client and conduct | Could it affect advice, suitability or communications? | Origination, communication levels, suitability (0.4); claims (0.6) |
 | Human control | Where can humans understand, intervene and override? | RM review with outcome metrics (0.4); intervention controls (0.4); Knowledge Lead oversight (0.4) |
-| Runtime and cyber | Can abnormal behaviour be detected and contained? | Anomaly detection, containment, taint tracking (0.5); automatic step-down on drift (0.5) |
+| Runtime and cyber | Can abnormal behavior be detected and contained? | Anomaly detection, containment, taint tracking (0.5); automatic step-down on drift (0.5) |
 | Resilience and third parties | What happens when providers or systems fail? | Gateway failure mode (0.3); resilience track (0.7) |
 | Evidence and auditability | Can the bank reconstruct exactly what happened? | Hash chain (core); pinned evidence, reconstruction (0.3); institutional memory versioning (0.6) |
 
@@ -133,7 +133,7 @@ The frameworks use labels that clash with Kognita's own:
 |---|---|---|---|---|
 | 2 | Materiality and risk classification | Added | Multi-axis classification; outcome metrics per use case with baseline and target | Use-case register (0.4) |
 | 15 | Continuous testing, revalidation and incident learning | **Partial** | Evaluation gate planned; **evidence gates for autonomy promotion and automatic step-down on drift added** | 0.4; 0.5; 0.6 |
-| 32 | Continuous testing | Partial | Periodic review planned; re-authorisation enforced by review dates; **quality trends tracked per agent, model, prompt** | 0.4; 0.5 |
+| 32 | Continuous testing | Partial | Periodic review planned; re-authorization enforced by review dates; **quality trends tracked per agent, model, prompt** | 0.4; 0.5 |
 | 58 | Automation-bias controls | Partial | Approval rate and time; **edit, rejection and escalation rates; decision quality tracked per use case** | RM review (0.4); outcome metrics (0.4) |
 | 61 | Autonomy escalation approval | **Planned** | **Raising autonomy requires evidence thresholds on outcome metrics; independent validation still required on top** | 0.5 |
 
@@ -163,7 +163,7 @@ Each use case registers:
 These controls are in the working tree (`kognita.memory`, `tests/test_memory.py`).
 
 - A pattern in RM corrections or outcomes becomes a *proposed change* to the shared standard through the proposal model (ADR 0007), carrying evidence: which interactions, which corrections, which metrics moved.
-- The **Knowledge Lead** approves or rejects it. Approved changes produce a new deployment version, so the standard is versioned, effective-dated, and re-approved like any behaviour change.
+- The **Knowledge Lead** approves or rejects it. Approved changes produce a new deployment version, so the standard is versioned, effective-dated, and re-approved like any behavior change.
 - **Standards are effective-dated:** Every output records which standard version produced it, and an expired or superseded standard cannot be used.
 - Client data never crosses into institutional memory; feedback-loop controls apply to any learning that leaves Kognita.
 
@@ -218,7 +218,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | 3.5(e) | Escalation of AI incidents and breaches of risk thresholds | Planned | Circuit breaker, intervention controls, outcomes and near misses (0.4); step-down alerts (0.5) | 0.4, 0.5 |
 | 3.5(f) | Timely board updates on material AI risk | Planned | Senior-management report of every material AI system, its classification, owner, status and open findings | 0.4 |
 | 3.5(g) | Competent personnel and adequate resources | Out of scope | - | - |
-| 3.6 | Local senior management visibility and escalation for Singapore | Partial | Jurisdiction and booking centre are envelope attributes; reports filtered by jurisdiction are not yet specified | 0.4 |
+| 3.6 | Local senior management visibility and escalation for Singapore | Partial | Jurisdiction and booking center are envelope attributes; reports filtered by jurisdiction are not yet specified | 0.4 |
 
 ### Section 4: Identification, Inventory and Risk Materiality
 
@@ -230,7 +230,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | 4.5 | Accurate inventory with update frequency for new, changed and decommissioned AI | Planned | Use-case register; registry changes are evidenced policy changes; `kognita usecase list` | 0.4 |
 | 4.6 | Links to other inventories (data assets, vendors, outsourcing registers) | Added | Each entry links to data sources and vendors using the identifiers in the bank's data inventory and outsourcing register (gap 5) | 0.4 |
 | 4.7 | Attributes: purpose, approved scope (jurisdiction), model type, data, dependencies, lifecycle status, materiality, review status, roles, documentation | Planned | Use-case register fields, model card per approved model, review dates | 0.4 |
-| 4.7, fn 25 | For agents: identifiers, tools and systems accessible, components, guardrails | Planned | Agent registry: identity, tool allow-list, permitted systems, autonomy level, blast-radius limits, behaviour-version hash | 0.5 |
+| 4.7, fn 25 | For agents: identifiers, tools and systems accessible, components, guardrails | Planned | Agent registry: identity, tool allow-list, permitted systems, autonomy level, blast-radius limits, behavior-version hash | 0.5 |
 | 4.8 | Inventory design reviewed for newer AI technologies | Boundary | The register schema is versioned; the review is the bank's | - |
 | 4.10, 4.12(a) | Materiality methodology; impact on the FI and customers, data sensitivity | Planned | Six axes: business criticality, client-impact class, decision consequence, data sensitivity, autonomy, complexity | 0.4 |
 | 4.12(b) | Complexity: technology, novelty, explainability, visibility into third-party AI | Added | Complexity added as a sixth axis, mapped to MAS's impact, complexity and reliance (gap 4) | 0.4 |
@@ -264,7 +264,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | 5.15 | Guardrails tested for agent failure modes | Planned | Conformance kit (Core); adversarial suite (0.5) | Core, 0.5 |
 | 5.16(a) | Secure deployment: input validation, API authentication, encryption, DLP | Partial | Egress guard and gateway decide before forwarding (0.3); agent workload credentials (0.5); infrastructure hardening is the bank's | 0.3, 0.5 |
 | 5.16(b) | Role-based access, MFA, separation of duties | Partial | Two-signature approval for separation of duties (Core); human authentication is the bank's identity provider | Core |
-| 5.16(c) | Govern plugins and APIs; restrict data exposure | Covered | MCP proxy authorises every tool call; tool arguments evidenced as hashes | 0.3 |
+| 5.16(c) | Govern plugins and APIs; restrict data exposure | Covered | MCP proxy authorizes every tool call; tool arguments evidenced as hashes | 0.3 |
 | 5.17 | Documentation sufficient for an independent party to replicate | Partial | Run-time reproducibility: pinned policy, retrieval, model and tool hashes and the reconstruction report (0.3). Development documentation is the bank's | 0.3 |
 | 5.18 to 5.21 | Independent pre-deployment review; formal independent validation for high materiality | Planned | Tier 3 and 4 activation needs independent sign-off, enforced as separation of duties | 0.4 |
 | 5.22 | Technology and cybersecurity review; red teaming; anomaly detection | Partial | Anomaly detection and containment (0.5); adversarial suite (0.5); penetration testing is the bank's | 0.5 |
@@ -273,7 +273,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 | 5.23(c) | Accountable person for monitoring and incidents | Planned | Accountable owner per use case | 0.4 |
 | 5.23(d) | Records of monitoring; access logged; prompts, responses, model versions | Covered | Hash-chained evidence; `MODEL_CALL` records provider, model version, prompt template version, prompt and response hashes, with content in the retention store | 0.3 |
 | 5.24 | Re-validation, independent for high materiality; triggered by alerts and changes | Planned | Review dates per tier; revalidation on material change (0.4); drift findings count toward review (0.5) | 0.4, 0.5 |
-| 5.25(a)(b) | Significance of changes; re-approval; version control and rollback | Planned | Policy rows effective-dated, edits refused (0.3); behaviour-version hash over prompt, tools, permissions and data needs re-approval (0.5) | 0.3, 0.5 |
+| 5.25(a)(b) | Significance of changes; re-approval; version control and rollback | Planned | Policy rows effective-dated, edits refused (0.3); behavior-version hash over prompt, tools, permissions and data needs re-approval (0.5) | 0.3, 0.5 |
 | 5.25(c) | Enhanced controls on automatic updates | Planned | Learned changes to standards need Knowledge Lead approval and become new versions (`kognita.memory.approve_standard`, `tests/test_memory.py`). Model and tool events record the use-case `standard_version` (`tests/test_dod_release.py`) | 0.6 |
 | 5.26 | Retirement and decommissioning | Added | A retired use case is a DENY; retirement stops its agents, applies retention and notifies dependants (gap 9) | 0.4 |
 
@@ -281,7 +281,7 @@ AI whose poor performance or unavailability is unlikely to have a material adver
 
 | Para | Expectation | Status | Kognita |
 |---|---|---|---|
-| 6.1, 6.2 | Competence, training and resources | Out of scope | Training attestation can gate use (0.4); the programme is the bank's |
+| 6.1, 6.2 | Competence, training and resources | Out of scope | Training attestation can gate use (0.4); the program is the bank's |
 | 6.3 | Technology infrastructure adequate for AI | Out of scope | Gateway overhead is benchmarked under 50 ms (0.3) |
 
 ### Gaps Found by This Audit
@@ -339,17 +339,17 @@ This is Kognita's design rule stated from the outside. The mapping below uses th
 |---|---|---|---|
 | Model diversity: no sole dependency, no model verifying its own work | Partial | Single-provider dependency count (0.4); concentration report and governed failover (0.7). Verifier independence is in the tree: a verifier on the producer's model or provider is denied, with a tier 1 `permit_same_model` exception (`kognita.verification`, `tests/test_verification.py`) | 0.4, 0.6 item 7, 0.7 |
 | Observe everything: tamper-proof, human-readable evidence; reproduce an outcome without the model attesting to it | Partial | Hash chain with pinned policy, retrieval, model and tool hashes, and a readable reconstruction report; replay never re-runs the model (shipped). Today the chain is tamper-evident; Ed25519 signing and external anchoring make it tamper-proof | 0.3, 0.7 |
-| Verifiability: test failures, attacks, edge cases and system changes | Partial | Conformance kit (shipped); kill-switch drills (0.4); adversarial suite and re-approval on behaviour change (0.5); evaluation evidence gate (0.6); failure drills (0.7) | Core, 0.4 to 0.7 |
+| Verifiability: test failures, attacks, edge cases and system changes | Partial | Conformance kit (shipped); kill-switch drills (0.4); adversarial suite and re-approval on behavior change (0.5); evaluation evidence gate (0.6); failure drills (0.7) | Core, 0.4 to 0.7 |
 | Independent controls over access and actions | Covered | Policies are bank-owned, effective-dated data evaluated outside the model | Core |
-| Independent auditability: no single model controls both behaviour and its evidence | Partial | Kognita, not the model, writes the evidence. Independent validation (0.4); in gateway mode the agent has no write access to the evidence store (0.5 item 15); external review API and a separate verifier (0.7) | 0.4, 0.5, 0.7 |
-| Containment: assume compromise; an authorised person can pause or shut down a model mid-task | Partial | Kill switch denies the next decision (shipped); pause, revoke and recover (0.4); automatic containment (0.5). Added: bounded and cancellable tool calls, so an action already running can be stopped | Core, 0.4, 0.5 item 16 |
+| Independent auditability: no single model controls both behavior and its evidence | Partial | Kognita, not the model, writes the evidence. Independent validation (0.4); in gateway mode the agent has no write access to the evidence store (0.5 item 15); external review API and a separate verifier (0.7) | 0.4, 0.5, 0.7 |
+| Containment: assume compromise; an authorized person can pause or shut down a model mid-task | Partial | Kill switch denies the next decision (shipped); pause, revoke and recover (0.4); automatic containment (0.5). Added: bounded and cancellable tool calls, so an action already running can be stopped | Core, 0.4, 0.5 item 16 |
 | Incident disclosure: tell those affected; share what failed, which controls failed, and the runtime changes behind it | Partial | Affected-client query and circuit-breaker incidents (0.4); incident evidence (0.7). Added: a structured incident report naming the controls that failed and the deployment-version diff, with a redacted variant for sharing. Disclosure itself is the bank's | 0.4, 0.7 |
 | Industry standards where existing ones are insufficient | Out of scope | Standard-setting belongs to industry bodies and regulators. Kognita's conformance kit is open and importable, so a pack can prove it meets the same invariants | - |
 
 ### Gaps Adopted
 
 1. **Non-bypassable enforcement** (0.5 item 15): tier 2 and above must run through the AI gateway and MCP proxy; credentials are held only by the gateways; divergence between declared and observed calls is a finding.
-2. **Stopping actions in flight** (0.5 item 16): every tool declares a maximum duration; a pause, revocation or kill switch cancels in-flight tool calls where the tool supports it; tools that cannot be cancelled must be reversible or split into steps.
+2. **Stopping actions in flight** (0.5 item 16): every tool declares a maximum duration; a pause, revocation or kill switch cancels in-flight tool calls where the tool supports it; tools that cannot be canceled must be reversible or split into steps.
 3. **Verifier independence** (0.6 item 7): a verifier may not use the producer's model, model version or provider. In the tree (`kognita.verification`, `tests/test_verification.py`). Tier 1 may set `permit_same_model`. Self-verification stays denied.
 4. **Reasoning traces** (0.6 item 13): recorded and retained where the provider returns them, required by policy at higher tiers, never a basis for a decision. In the tree (`kognita.gateway`, `tests/test_reasoning_traces.py`).
 5. **Structured incident report** (0.7): what happened, who was affected, which controls failed, and the runtime change behind it, with a redacted variant for sharing.
@@ -365,14 +365,14 @@ This section records primary-source developments that were not in the 12 October
 |---|---|---|---|---|
 | [UK ICO agentic AI call for evidence](https://ico.org.uk/about-the-ico/ico-and-stakeholder-consultations/2026/10/agentic-ai-call-for-evidence/), 8 Oct | Consultation; not binding | Agentic-AI privacy analysis across security, transparency, accountability, automated decision-making, fairness, purpose limitation and lawfulness | Purpose limitation, data classification, sensitive-data gates and use-case review exist | **Added 0.8 A6:** privacy-impact re-assessment triggered by new tools, memory, data classes, purposes, autonomy or jurisdictions |
 | [FSB Sound Practices for Responsible Adoption of AI](https://www.fsb.org/2026/10/sound-practices-for-responsible-adoption-of-artificial-intelligence-ai-final-report/), 15 Oct | Final non-binding international sound practices | Human oversight should reflect materiality, autonomy, complexity and explainability; AI cyber/ICT scenarios should enter tests and exercises; third-party AI risk includes supply chain, concentration and continuity | Governance, materiality, human review, dependency map, provider register and failure drills are strong | **Added 0.8 A8:** explicit AI-enabled cyber/adversarial exercise pack; FSB profile added to 0.8 A12 |
-| [HKMA ART Framework](https://www.hkma.gov.hk/eng/news-and-media/press-releases/2026/10/20261015-3/) and Supervisory Guidance, 15 Oct | Current supervisory guidance for Hong Kong authorised institutions; agentic concepts partly exploratory | Intent-anchored accountability, material-agent registry, effective intervention, dependency lineage, agent harness boundaries and possible kill switches | Internal agent registry, authority, dependency map and kill switches already exist | **Added 0.8 A1-A2:** exportable material-agent/KYA manifest and interoperable external-agent trust assertions |
+| [HKMA ART Framework](https://www.hkma.gov.hk/eng/news-and-media/press-releases/2026/10/20261015-3/) and Supervisory Guidance, 15 Oct | Current supervisory guidance for Hong Kong authorized institutions; agentic concepts partly exploratory | Intent-anchored accountability, material-agent registry, effective intervention, dependency lineage, agent harness boundaries and possible kill switches | Internal agent registry, authority, dependency map and kill switches already exist | **Added 0.8 A1-A2:** exportable material-agent/KYA manifest and interoperable external-agent trust assertions |
 | [CERT-In CIAD-2026-0049](https://cert-in.org.in/s2cMainServlet?VLCODE=CIAD-2026-0049&pageid=PUBVLNOTES02), 15 Oct | Critical cybersecurity advisory; not financial regulation | Enforce network restrictions outside the model, isolate evaluations from production, monitor model-initiated network activity in real time, and give an independent operator termination authority | Tool allow-lists, blast radius, containment and kill switches exist; sandbox remains a boundary | **Added 0.8 A5/A7/A8:** monitoring-coverage attestation, execution-environment attestation and agent cyber exercises |
-| [China MOFCOM/MOST Announcement No. 48](https://www.mofcom.gov.cn/zwgk/zcfb/art/2026/art_0a31a3c9ac404f7a9b0e917ce3412997.html), 16 Oct | **Binding interim pre-export registration** for listed technologies; catalogue amendments under consultation | 23 proposed AI technologies include large models and intelligent agents. Certain transfers and overseas local deployment can be technology exports; ordinary API/SaaS access is generally treated differently | Provider register records residency and contracts, but not technology-transfer restrictions | **Added 0.8 A10:** jurisdictional model/technology-transfer policy metadata and pre-deployment enforcement |
+| [China MOFCOM/MOST Announcement No. 48](https://www.mofcom.gov.cn/zwgk/zcfb/art/2026/art_0a31a3c9ac404f7a9b0e917ce3412997.html), 16 Oct | **Binding interim pre-export registration** for listed technologies; catalog amendments under consultation | 23 proposed AI technologies include large models and intelligent agents. Certain transfers and overseas local deployment can be technology exports; ordinary API/SaaS access is generally treated differently | Provider register records residency and contracts, but not technology-transfer restrictions | **Added 0.8 A10:** jurisdictional model/technology-transfer policy metadata and pre-deployment enforcement |
 | [FCA AI good practice and areas for improvement](https://www.fca.org.uk/publications/good-poor-practice/ai-financial-services), 19-20 Oct | Supervisory examples; explicitly not new requirements | Monitor real-world outcomes, evidence whether humans actually reviewed/overrode/escalated, maintain escalation thresholds and fallback arrangements | RM edits, outcomes, review queue and provider failover exist | **Added 0.8 A3:** downstream outcome validation and continuous post-deployment assurance |
 | [SEC FY2027 Examination Priorities](https://www.sec.gov/newsroom/press-releases/2026-109-sec-announces-fiscal-year-2027-examination-priorities), 23 Oct | Examination priorities; not new rules | Advanced AI in client communications, advisory and portfolio management; AI-generated phishing/deepfake social engineering; automated recommendations must remain consistent with investor profiles and disclosures | Communication levels, suitability boundaries, deepfake incident playbook and client records exist | **Added 0.8 A11:** high-risk instruction authenticity / maker-checker evidence for sensitive client actions |
 | [CERT-In CIAD-2026-0053](https://cert-in.org.in/s2cMainServlet?VLCODE=CIAD-2026-0053&pageid=PUBVLNOTES02), 23 Oct | Cybersecurity advisory | Reported compromise of LiteLLM package/container distribution shows AI gateway/orchestration dependencies are software-supply-chain risk, not only vendor risk | Dependency map identifies frameworks/orchestration but does not attest package/image integrity | **Added 0.8 A9:** AI software-supply-chain attestation (SBOM/lockfile/image digest and approved component version) |
 | [Bank of England/FCA AI in UK Financial Services 2026](https://www.bankofengland.co.uk/report/2026/artificial-intelligence-in-uk-financial-services-2026), 26 Oct | Supervisory survey/evidence; not a rule | 80% of respondents reported deployed agents; post-deployment monitoring lags pre-deployment control; regression testing, rollback and exit planning for third-party updates are uneven | Silent model-change detection, failover and provider register exist | **Added 0.8 A4:** third-party AI update gate requiring regression evidence and rollback plan for material changes |
-| [HKMA Project SAGE](https://www.hkma.gov.hk/eng/news-and-media/press-releases/2026/11/20261102-4/), 2 Nov | Supervisory policy development / industry programme; discussion paper is not binding | Verify agent identities and delegated authority, explore **Know Your Agent (KYA)** practices, authentication, interoperability standards, governance, liability and consumer protection | Authenticated internal identity and delegated authority exist; external agents remain untrusted principals | **Added 0.8 A1-A2:** KYA manifest and cross-organisation agent trust/interoperability |
+| [HKMA Project SAGE](https://www.hkma.gov.hk/eng/news-and-media/press-releases/2026/11/20261102-4/), 2 Nov | Supervisory policy development / industry program; discussion paper is not binding | Verify agent identities and delegated authority, explore **Know Your Agent (KYA)** practices, authentication, interoperability standards, governance, liability and consumer protection | Authenticated internal identity and delegated authority exist; external agents remain untrusted principals | **Added 0.8 A1-A2:** KYA manifest and cross-organization agent trust/interoperability |
 | [MAS Future of Finance Institute](https://www.mas.gov.sg/news/media-releases/2026/future-of-finance-institute-commences-operations-starting-with-ai-in-finance), 3 Nov | MAS-led implementation initiative; not a new supervisory requirement | SafeFin.ai will develop practical resources for the MAS Guidelines; BuildFin.ai will develop practices/tools for safe agentic AI | MAS paragraph mapping already exists | No new enforcement feature. Track SafeFin/BuildFin outputs through **0.8 A12 supervisory profiles** |
 | [CERT-In CIAD-2026-0058](https://www.cert-in.org.in/s2cMainServlet?VLCODE=CIAD-2026-0058&pageid=PUBVLNOTES02), 4 Nov | Critical BFSI cybersecurity advisory | AI-assisted attacks operate at machine speed against payment/disbursement APIs; recommends maker-checker approval, zero trust, machine-speed detection and automated containment | Dual approval, runtime policy, anomaly containment and incident evidence exist | **0.8 A8/A11** make the attack scenarios and instruction-authenticity evidence explicit |
 | [OCC Bulletin 2026-54](https://occ.treas.gov/news-issuances/bulletins/2026/bulletin-2026-54.html), 4 Nov | Examiner framework; explicitly creates no new supervisory expectations | Examination intensity should reflect consequences, transfer of agency, human oversight, autonomy and complexity rather than model sophistication alone | Client-impact, autonomy, materiality and human-control dimensions already exist | No new core field required. Add OCC examination profile under **0.8 A12** |
@@ -383,7 +383,7 @@ These are the implementation deltas that were not already explicit in the code o
 
 | ID | Control | Why it is new | Boundary |
 |---|---|---|---|
-| A1 | **Material-agent / KYA manifest** | Existing registry is internal. Supervisory and cross-organisation use needs an exportable identity, owner, purpose, authority, autonomy, dependencies, intervention and expiry record | Kognita issues/exports the manifest; sector-wide registry operation belongs to supervisors/industry |
+| A1 | **Material-agent / KYA manifest** | Existing registry is internal. Supervisory and cross-organization use needs an exportable identity, owner, purpose, authority, autonomy, dependencies, intervention and expiry record | Kognita issues/exports the manifest; sector-wide registry operation belongs to supervisors/industry |
 | A2 | **External-agent trust and interoperability** | External agents are currently untrusted, but there is no positive trust assertion that can be independently verified | Kognita verifies identity/authority assertions; it does not become a universal identity provider |
 | A3 | **Outcome validation and post-deployment assurance** | Existing outcome metrics do not explicitly bind an AI recommendation/action to the downstream real-world outcome and validate that outcome against expectations | The bank owns business outcome truth; Kognita records and gates on supplied outcome evidence |
 | A4 | **Third-party update gate** | Silent changes are detected after the fact; high-materiality vendor updates need regression evidence and a rollback plan before they are accepted | Evaluation harness remains external; Kognita requires its evidence |
@@ -400,7 +400,7 @@ These are the implementation deltas that were not already explicit in the code o
 
 Two non-regulatory developments strengthen the case for the controls above:
 
-- The [UK AI Security Institute's 2026 incident report](https://www.aisi.gov.uk/blog/incident-report-unsanctioned-agent-behaviour-during-cyber-testing) on unsanctioned agent behaviour showed why evaluations need isolation, fine-grained network controls, real-time monitoring and the ability to terminate evaluation runs.
+- The [UK AI Security Institute's 2026 incident report](https://www.aisi.gov.uk/blog/incident-report-unsanctioned-agent-behavior-during-cyber-testing) on unsanctioned agent behavior showed why evaluations need isolation, fine-grained network controls, real-time monitoring and the ability to terminate evaluation runs.
 - The [METR and Redwood Research red-team write-up](https://metr.org/blog/2026-10-22-red-teaming-openai-agent-monitoring/) found monitoring-coverage gaps and possible bypasses. Kognita therefore treats **monitoring completeness as a control to prove**, not an architectural assumption.
 
 Neither item is a legal requirement. They are engineering evidence supporting the roadmap controls.

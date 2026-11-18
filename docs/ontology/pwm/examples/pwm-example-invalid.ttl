@@ -104,12 +104,12 @@ ex:Bad04PastReviewDecisionShape prov:generatedAtTime "2099-01-01T00:00:00+00:00"
     ns1:underUseCase ex:UseCaseMeetingPrep .
 
 ex:Bad04PolicyChangeShape a ns1:PolicyChange ;
-    ns1:changesPolicy ex:PolicyArtefact ;
+    ns1:changesPolicy ex:PolicyArtifact ;
     ns1:deltaText "ADDED rule" .
 
 ex:Bad04PolicyPackShape a ns1:PolicyPack ;
     ns1:fixtureLocator "urn:synthetic:pack-fixtures"^^xsd:anyURI ;
-    ns1:packPolicy ex:PolicyArtefact .
+    ns1:packPolicy ex:PolicyArtifact .
 
 ex:Bad04PolicyTestCaseShape a ns1:PolicyTestCase ;
     ns1:givenAttributes "classification: C2" ;
@@ -300,13 +300,13 @@ ex:Bad05AutonomyTransitionShape a ns1:AutonomyTransition ;
     ns1:windowEnd "2026-11-02T00:00:00+00:00"^^xsd:dateTime ;
     ns1:windowStart "2026-11-01T00:00:00+00:00"^^xsd:dateTime .
 
-ex:Bad05BehaviourAnomalyShape a ns1:BehaviourAnomaly ;
+ex:Bad05BehaviorAnomalyShape a ns1:BehaviorAnomaly ;
     ns1:anomalyBaseline ex:Baseline ;
     ns1:anomalyValue 100.0 ;
     ns1:containmentApplied true ;
     ns1:notifiedRole ex:BusinessOwner .
 
-ex:Bad05BehaviourBaselineShape a ns1:BehaviourBaseline ;
+ex:Bad05BehaviorBaselineShape a ns1:BehaviorBaseline ;
     ns1:anomalyThreshold 20.0 ;
     ns1:baselineAgent ex:Agent ;
     ns1:baselineExpected 5.0 ;
@@ -369,7 +369,7 @@ ex:Bad05ContentIsolationShape a ns1:MCPProxiedCall ;
     ns1:workloadIdentity ex:Workload .
 
 ex:Bad05DelegationScopeShape a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
     ns1:aboutClient ex:Client ;
     ns1:actionVerb ns1:VerbDraft,
         ns1:VerbRead ;
@@ -660,7 +660,7 @@ ex:Bad05SandboxConstraintsShape a ns1:SandboxConstraints ;
     ns1:permitsExport false ;
     ns1:permitsPersistence false ;
     ns1:permittedAPI "urn:synthetic:portfolio-api"^^xsd:anyURI ;
-    ns1:permittedCommand "analyse" ;
+    ns1:permittedCommand "analyze" ;
     ns1:sandboxCredential "urn:synthetic:credential:scoped"^^xsd:anyURI .
 
 ex:Bad05ScopeNarrowingLimitsShape a ns1:DelegatedAuthority ;
@@ -867,7 +867,7 @@ ex:BadClaimNoSource a ns1:Claim ;
     ns1:validatorStatus ns1:ValidatorUnverified .
 
 ex:BadClaimUntyped a ns1:Claim ;
-    rdfs:label "A claim nobody labelled"@en .
+    rdfs:label "A claim nobody labeled"@en .
 
 ex:BadClaimUnverified a ns1:Claim ;
     ns1:citesSource ex:FactRiskProfile ;
@@ -916,7 +916,7 @@ ex:BadCoverage a ns1:QuestionCoverage ;
 
 ex:BadCrossBorderCode a ns1:CrossBorderRule ;
     ns1:appliesToActivity ns1:ActivityMarketing ;
-    ns1:bookingCentreCode "SGP" ;
+    ns1:bookingCenterCode "SGP" ;
     ns1:clientDomicileCode "HK" ;
     ns1:permitted false ;
     ns1:ruleCitation "Illustrative only" ;
@@ -2205,7 +2205,7 @@ ex:TimezoneReviewUseCase a ns1:AIUseCase ;
     ns1:usesDataClass ns1:C2 .
 
 ex:BadRestrictedEntitlement a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
     ns1:aboutClient ex:Client ;
     ns1:actionVerb ns1:VerbDraft,
         ns1:VerbRead ;
@@ -2223,7 +2223,7 @@ ex:BadRestrictedEntitlement a ns1:DelegatedAuthority ;
     ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
 
 ex:CoverageDelegation a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
     ns1:aboutClient ex:Client ;
     ns1:actionVerb ns1:VerbDraft,
         ns1:VerbRead ;
@@ -2241,7 +2241,7 @@ ex:CoverageDelegation a ns1:DelegatedAuthority ;
     ns1:validUntil "2026-11-03T18:00:00+08:00"^^xsd:dateTime .
 
 ex:HighDelegation a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
     ns1:aboutClient ex:Client ;
     ns1:actionVerb ns1:VerbDraft,
         ns1:VerbRead ;
@@ -2287,7 +2287,7 @@ ex:MaxOnlyIdentity a ns1:WorkloadIdentity ;
     ns1:workloadSubject "agent-max-only-05" .
 
 ex:MultiVerbDelegation a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
     ns1:aboutClient ex:Client ;
     ns1:actionVerb ns1:VerbDraft,
         ns1:VerbRead ;
@@ -2306,7 +2306,7 @@ ex:MultiVerbDelegation a ns1:DelegatedAuthority ;
 
 ex:MultiVerbTool a ns1:Tool ;
     rdfs:label "Read portfolio positions"@en ;
-    ns1:actionVerb ns1:VerbAnalyse,
+    ns1:actionVerb ns1:VerbAnalyze,
         ns1:VerbRead ;
     ns1:maximumDurationSeconds 30.0 ;
     ns1:requiredAutonomyLevel ns1:L0Retrieve ;
@@ -2341,7 +2341,7 @@ ex:HighAgent a ns1:AIAgent ;
     ns1:registeredForUseCase ex:UseCaseMeetingPrep ;
     ns1:workloadIdentity ex:HighIdentity .
 
-ex:LateDelegation rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+ex:LateDelegation rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
     ns1:aboutClient ex:Client ;
     ns1:actionVerb ns1:VerbDraft,
         ns1:VerbRead ;
@@ -2380,7 +2380,7 @@ ex:MaxOnlyAgent a ns1:AIAgent ;
     ns1:workloadIdentity ex:MaxOnlyIdentity .
 
 ex:MaxOnlyDelegation a ns1:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
     ns1:aboutClient ex:Client ;
     ns1:actionVerb ns1:VerbDraft,
         ns1:VerbRead ;
@@ -2529,7 +2529,7 @@ ex:LowAutonomyScope a pwm:AuthorityScope ;
         ex:ToolPortfolioRead .
 
 ex:LowAutonomyDelegation a pwm:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
     pwm:aboutClient ex:Client ;
     pwm:actionVerb pwm:VerbDraft,
         pwm:VerbRead ;

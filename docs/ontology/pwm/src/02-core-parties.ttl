@@ -109,7 +109,7 @@ pwm:Prospect a owl:Class ;
 
 pwm:ClientRelationship a owl:Class ;
     rdfs:label "client relationship"@en ;
-    skos:definition "Business relationship between a wealth manager and one or more clients, booked in a booking centre and covered by named relationship managers for a period."@en ;
+    skos:definition "Business relationship between a wealth manager and one or more clients, booked in a booking center and covered by named relationship managers for a period."@en ;
     rdfs:subClassOf cmns-pts:Situation ;
     pwm:inModule pwm:ModuleParties ;
     pwm:contextSpeed pwm:MediumContext ;
@@ -146,7 +146,7 @@ pwm:CoverageAssignment a owl:Class ;
 
 pwm:InvestmentAdviser a owl:Class ;
     rdfs:label "investment adviser"@en ;
-    skos:definition "Role of a person who gives investment advice to clients under the wealth manager's licence or registration."@en ;
+    skos:definition "Role of a person who gives investment advice to clients under the wealth manager's license or registration."@en ;
     rdfs:subClassOf cmns-pts:PartyRole ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 4(1)(4): investment advice" ] ,
@@ -160,9 +160,9 @@ pwm:ExternalAssetManager a owl:Class ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Intermediated private banking model" ] .
 
-pwm:AuthorisedSignatory a owl:Class ;
-    rdfs:label "authorised signatory"@en ;
-    skos:definition "Person authorised to give instructions on an account or for an entity client, within stated signing rules."@en ;
+pwm:AuthorizedSignatory a owl:Class ;
+    rdfs:label "authorized signatory"@en ;
+    skos:definition "Person authorized to give instructions on an account or for an entity client, within stated signing rules."@en ;
     rdfs:subClassOf fibo-be-oac-exec:AuthorizedIndividual ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Account mandate and signing authority" ] ;
@@ -170,7 +170,7 @@ pwm:AuthorisedSignatory a owl:Class ;
 
 pwm:PowerOfAttorneyHolder a owl:Class ;
     rdfs:label "power of attorney holder"@en ;
-    skos:definition "Party authorised by a client, under a power of attorney, to act for the client within the scope that instrument grants."@en ;
+    skos:definition "Party authorized by a client, under a power of attorney, to act for the client within the scope that instrument grants."@en ;
     rdfs:subClassOf fibo-be-oac-exec:AuthorizedIndividual ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "General and limited powers of attorney" ] ;
@@ -276,7 +276,7 @@ pwm:PrivateInvestmentCompany a owl:Class ;
 
 pwm:FamilyOffice a owl:Class ;
     rdfs:label "family office"@en ;
-    skos:definition "Organisation that administers and manages the affairs and wealth of one or more families."@en ;
+    skos:definition "Organization that administers and manages the affairs and wealth of one or more families."@en ;
     rdfs:subClassOf fibo-be-fct-fct:FamilyOffice ;
     skos:exactMatch fibo-be-fct-fct:FamilyOffice ;
     pwm:inModule pwm:ModuleParties ;
@@ -305,13 +305,13 @@ pwm:WealthManagementService a owl:Class ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:ISO-22222 ; pwm:locator "Personal financial planning process" ] .
 
-pwm:BookingCentre a owl:Class ;
-    rdfs:label "booking centre"@en ;
+pwm:BookingCenter a owl:Class ;
+    rdfs:label "booking center"@en ;
     skos:definition "Role of a legal entity or branch of a wealth manager in which client accounts, contracts and assets are booked, and whose jurisdiction's rules apply to them."@en ;
     rdfs:subClassOf cmns-pts:PartyRole ;
     pwm:inModule pwm:ModuleParties ;
     pwm:contextSpeed pwm:SlowContext ;
-    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre: recognised booking centres" ] ,
+    pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre: recognized booking centers" ] ,
                  [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Booking model" ] .
 
 pwm:Custodian a owl:Class ;
@@ -341,8 +341,8 @@ pwm:hasProvider a owl:ObjectProperty ;
 
 pwm:isBookedAt a owl:ObjectProperty ;
     rdfs:label "is booked at"@en ;
-    skos:definition "Booking centre in which a relationship, account or contract is booked."@en ;
-    rdfs:range pwm:BookingCentre ;
+    skos:definition "Booking center in which a relationship, account or contract is booked."@en ;
+    rdfs:range pwm:BookingCenter ;
     pwm:inModule pwm:ModuleParties ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .
 
@@ -419,7 +419,7 @@ pwm:domicileCountry a owl:DatatypeProperty ;
     skos:closeMatch cmns-org:isDomiciledIn ;
     pwm:inModule pwm:ModuleParties ;
     pwm:defaultClassification pwm:C2 ;
-    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile: recognised domiciles" ] .
+    pwm:citation [ pwm:cites pwmref:ISO-3166 ; pwm:locator "Alpha-2 codes" ] , [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile: recognized domiciles" ] .
 
 pwm:nationalityCountry a owl:DatatypeProperty ;
     rdfs:label "nationality country"@en ;
@@ -431,7 +431,7 @@ pwm:nationalityCountry a owl:DatatypeProperty ;
 
 pwm:jurisdictionCode a owl:DatatypeProperty ;
     rdfs:label "jurisdiction code"@en ;
-    skos:definition "Jurisdiction of a booking centre, rule or use case, as an ISO 3166-1 alpha-2 code."@en ;
+    skos:definition "Jurisdiction of a booking center, rule or use case, as an ISO 3166-1 alpha-2 code."@en ;
     rdfs:range xsd:string ;
     skos:closeMatch cmns-rga:hasJurisdiction ;
     pwm:inModule pwm:ModuleParties ;
@@ -467,8 +467,8 @@ pwm:ForeignPEP a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topCo
     skos:prefLabel "foreign PEP"@en ; skos:definition "Entrusted with a prominent public function by a foreign country."@en .
 pwm:DomesticPEP a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;
     skos:prefLabel "domestic PEP"@en ; skos:definition "Entrusted domestically with a prominent public function."@en .
-pwm:InternationalOrganisationPEP a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;
-    skos:prefLabel "international organisation PEP"@en ; skos:definition "Entrusted with a prominent function by an international organisation."@en .
+pwm:InternationalOrganizationPEP a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;
+    skos:prefLabel "international organization PEP"@en ; skos:definition "Entrusted with a prominent function by an international organization."@en .
 pwm:PEPFamilyMember a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;
     skos:prefLabel "family member of a PEP"@en ; skos:definition "Related to a PEP by blood or marriage."@en .
 pwm:PEPCloseAssociate a skos:Concept ; skos:inScheme pwm:PEPCategoryScheme ; skos:topConceptOf pwm:PEPCategoryScheme ;

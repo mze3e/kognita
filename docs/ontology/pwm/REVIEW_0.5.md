@@ -37,7 +37,7 @@ Recommendation: give every concept a `skos:notation` that equals the Kognita enu
 
 ### 3. Example coverage is thin where it matters most
 
-66 of 198 classes (counting subclass instances; 77 by exact type) have no instance in the positive example. They include core business classes: `Trust`, `Trustee`, `Settlor`, `BeneficialOwner`, `ControllingPerson`, `PoliticallyExposedPerson`, `SourceOfWealthAssessment`, `SuitabilityReport`, `DiscretionaryMandate`, `Fee`, `ThirdPartyPayment`, `Position`, `LombardFacility`, `TargetMarket`, `Complaint`, `VulnerabilityIndicator`, `Consent`, and `ModelOwner`. 37 of 408 properties are also never used. A class nobody populates is untested: the shapes cannot catch a modelling error in it. Of the 66 unpopulated classes, 21 are in the parties module.
+66 of 198 classes (counting subclass instances; 77 by exact type) have no instance in the positive example. They include core business classes: `Trust`, `Trustee`, `Settlor`, `BeneficialOwner`, `ControllingPerson`, `PoliticallyExposedPerson`, `SourceOfWealthAssessment`, `SuitabilityReport`, `DiscretionaryMandate`, `Fee`, `ThirdPartyPayment`, `Position`, `LombardFacility`, `TargetMarket`, `Complaint`, `VulnerabilityIndicator`, `Consent`, and `ModelOwner`. 37 of 408 properties are also never used. A class nobody populates is untested: the shapes cannot catch a modeling error in it. Of the 66 unpopulated classes, 21 are in the parties module.
 
 Recommendation: add a build gate that fails when a non-meta class or property has no example, with an explicit allow-list for the exceptions. Then fill the parties, suitability and mandates modules first, which also tests the FIBO alignments.
 
@@ -67,7 +67,7 @@ Recommendation: keep README to "what 0.5 is"; move history to one `CHANGELOG.md`
 
 ### 8. Smaller items
 
-- Mixed British and American spelling in PWM-defined terms: `AuthorisedSignatory` and `InternationalOrganisationPEP` use British spelling, while the reused OMG and FIBO terms (`Authorization`, `AuthorizedIndividual`) use American. Pick one policy for PWM-defined names and note that reused external names keep their source spelling.
+- Mixed British and American spelling in PWM-defined terms: `AuthorizedSignatory` and `InternationalOrganizationPEP` use British spelling, while the reused OMG and FIBO terms (`Authorization`, `AuthorizedIndividual`) use American. Pick one policy for PWM-defined names and note that reused external names keep their source spelling.
 - Legacy `xsd:date` and `xsd:duration` ranges (`nextReviewDate`, `retentionUntil`, `freshnessThreshold`) are still open. The cheapest time to migrate is before the 1.0 IRI freeze; add it to the 0.6 scope.
 - Hash checks: SHACL cannot recompute hashes (stated plainly, which is good). Kognita already has an independent verifier (`@kognita/verify`, `kognita evidence verify`). A small conformance script that exports an example chain and runs it through that verifier would turn "the chain is unbroken" from a structural claim into a cryptographic one.
 - The 66 generated code-list shapes are exercised by regression tests but only 2 by the negative fixture, so the fixture count (193) understates what is tested. Say so in the README, or add one negative per scheme to the fixture.

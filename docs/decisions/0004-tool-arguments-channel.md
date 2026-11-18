@@ -12,7 +12,7 @@ Tool functions have no way to receive arguments. The signature is:
 ToolFn = Callable[[Envelope, Evaluation, Session], Any]
 ```
 
-The only place tool arguments travel today is `Envelope.context`, documented as "Never trusted for authorisation decisions" and excluded from `to_dict()`. That means:
+The only place tool arguments travel today is `Envelope.context`, documented as "Never trusted for authorization decisions" and excluded from `to_dict()`. That means:
 
 - Arguments are not hashed
 - Arguments are not evidenced

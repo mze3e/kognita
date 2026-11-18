@@ -60,7 +60,7 @@ pwm:Fact a owl:Class ;
 pwm:Claim a owl:Class ;
     rdfs:label "claim"@en ;
     skos:definition "Material statement an agent produces for a person or client, typed as verified fact, inference, conversation hypothesis or possible provider capability, with its sources, calculation method, model and prompt versions and validator status."@en ;
-    skos:scopeNote "Unlabelled claims cannot be shown. An inference cannot be relabelled as fact without a cited source and verification."@en ;
+    skos:scopeNote "Unlabeled claims cannot be shown. An inference cannot be relabeled as fact without a cited source and verification."@en ;
     rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:contextSpeed pwm:MediumContext ;
@@ -120,7 +120,7 @@ pwm:AIIncident a owl:Class ;
 
 pwm:NearMiss a owl:Class ;
     rdfs:label "near miss"@en ;
-    skos:definition "Event where harm was avoided, such as a blocked action, a verifier block, a reviewer rejection, an unsafe draft or unusual agent behaviour, aggregated to find weak controls before harm occurs."@en ;
+    skos:definition "Event where harm was avoided, such as a blocked action, a verifier block, a reviewer rejection, an unsafe draft or unusual agent behavior, aggregated to find weak controls before harm occurs."@en ;
     rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:defaultClassification pwm:C1 ;
@@ -421,7 +421,7 @@ pwm:MemoryScopeScheme a skos:ConceptScheme ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "memory.MemoryScope" ] .
 pwm:MemoryWorking a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "working"@en ; skos:definition "Temporary context; expires with the run."@en .
 pwm:MemoryRelationship a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "relationship"@en ; skos:definition "Durable client information, governed like any bank record."@en .
-pwm:MemoryInstitutional a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "institutional"@en ; skos:definition "What the organisation learns across clients; no client data."@en .
+pwm:MemoryInstitutional a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "institutional"@en ; skos:definition "What the organization learns across clients; no client data."@en .
 
 pwm:EvidenceEventTypeScheme a skos:ConceptScheme ;
     skos:prefLabel "evidence event types"@en ;

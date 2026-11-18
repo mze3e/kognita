@@ -6,7 +6,7 @@
 #  in regulation and in the Kognita governed-agent roadmap.
 #
 #  Author: Ahmed Muzammil (https://ahmedmuzammil.com)
-#  Licence: Creative Commons Attribution-ShareAlike 4.0 International
+#  License: Creative Commons Attribution-ShareAlike 4.0 International
 #
 #  How to read the references: every PWM term carries one or more
 #  pwm:citation nodes. Each names a reference in the register (pwmref:...) and
@@ -79,7 +79,7 @@
     owl:priorVersion <https://ahmedmuzammil.com/ontology/pwm/0.4> ;
     dcterms:title "Private Wealth Management Ontology"@en ;
     dcterms:alternative "PWM"@en ;
-    dcterms:description """A generic ontology for private banking and wealth management. It models parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, client interactions, and the governance of AI that acts on them: use cases, agents, delegated authority, claims and evidence. Business concepts reuse or specialise the Financial Industry Business Ontology (FIBO) and the OMG Commons library. Governance concepts follow the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) and the Kognita roadmap. Every term cites the references it is grounded in. Institution-specific detail belongs in an extension that imports this ontology."""@en ;
+    dcterms:description """A generic ontology for private banking and wealth management. It models parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, client interactions, and the governance of AI that acts on them: use cases, agents, delegated authority, claims and evidence. Business concepts reuse or specialize the Financial Industry Business Ontology (FIBO) and the OMG Commons library. Governance concepts follow the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) and the Kognita roadmap. Every term cites the references it is grounded in. Institution-specific detail belongs in an extension that imports this ontology."""@en ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:created "2026-11-02"^^xsd:date ;
     dcterms:modified "2026-11-04"^^xsd:date ;
@@ -134,7 +134,7 @@ xsd:duration a rdfs:Datatype .
 
 pwm:Module a owl:Class ;
     rdfs:label "module"@en ;
-    skos:definition "Thematic grouping of PWM terms used to organise this specification."@en ;
+    skos:definition "Thematic grouping of PWM terms used to organize this specification."@en ;
     rdfs:isDefinedBy <https://ahmedmuzammil.com/ontology/pwm> .
 
 pwm:Reference a owl:Class ;
@@ -243,7 +243,7 @@ pwm:ModuleEvidence a pwm:Module ; rdfs:label "Information governance, claims and
 # Source types (the marks shown against every term)
 
 pwm:SourceStandardOntology a pwm:SourceType ; rdfs:label "standard ontology"@en ; skos:notation "ONT" ;
-    skos:definition "Published ontology reused or specialised: FIBO, OMG Commons, W3C PROV-O, DPV."@en .
+    skos:definition "Published ontology reused or specialized: FIBO, OMG Commons, W3C PROV-O, DPV."@en .
 pwm:SourceTechnicalStandard a pwm:SourceType ; rdfs:label "technical standard"@en ; skos:notation "ISO" ;
     skos:definition "ISO or ISO/IEC standard, used for identifiers, code formats and terminology."@en .
 pwm:SourceRegulatory a pwm:SourceType ; rdfs:label "regulation or supervisory guidance"@en ; skos:notation "REG" ;
@@ -260,6 +260,6 @@ pwm:SourcePractice a pwm:SourceType ; rdfs:label "practitioner definition"@en ; 
 pwm:SlowContext a pwm:ContextSpeed ; rdfs:label "slow"@en ;
     skos:definition "Changes over weeks or months, such as policies, definitions and the house view. Curated, versioned and owned; safe to cache with an effective date."@en .
 pwm:MediumContext a pwm:ContextSpeed ; rdfs:label "medium"@en ;
-    skos:definition "Changes over days or weeks, such as client profile, KYC status and mandate. Synchronised from the system of record and cached with an explicit as-of time."@en .
+    skos:definition "Changes over days or weeks, such as client profile, KYC status and mandate. Synchronized from the system of record and cached with an explicit as-of time."@en .
 pwm:FastContext a pwm:ContextSpeed ; rdfs:label "fast"@en ;
     skos:definition "Changes in seconds or minutes, such as positions, prices, cash, orders and live authority or kill-switch state. Looked up live from the system of record; never cached or embedded for AI."@en .

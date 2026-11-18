@@ -137,7 +137,7 @@ It sets one overarching test, which Kognita adopts as the measure for every rele
 | 10 | Approved-source grounding and research expiry | Partial | Approved sources and supersession (0.6) |
 | 11 | Complete provenance and audit trail | Planned | 0.3; 0.4; 0.6 |
 | 12 | Pause, override, revoke and kill | Partial | Intervention controls (0.4) |
-| 13 | Agent-behaviour monitoring and automated containment | Partial | Containment sequence (0.5) |
+| 13 | Agent-behavior monitoring and automated containment | Partial | Containment sequence (0.5) |
 | 14 | Third-party dependency and exit controls | Partial | Dependency map and concentration risk (0.7) |
 | 15 | Continuous testing, revalidation and incident learning | Partial | Near misses (0.4); adversarial suite (0.5); revalidation (0.6) |
 
@@ -398,7 +398,7 @@ scenarios:
 
 Templates: `role-based-access`, `geo-fencing`, `data-classification`, `time-gated-access`, `two-signature-approval-chains`. Each pack is policy files, scenarios, and a fixture pack.
 
-**Private-banking pack.** A pack built on real RM workflows: meeting transcript to suitability report, onboarding and KYC with human approval, pre-call preparation, portfolio review, and client communication. It encodes the rules that make private banking different: client domicile, RM location and booking centre; cross-border solicitation and research-distribution restrictions; product eligibility and suitability; mandate and concentration limits. The question it answers is not only "is product X suitable?" but "may this RM discuss product X with this client, from this location, today?"
+**Private-banking pack.** A pack built on real RM workflows: meeting transcript to suitability report, onboarding and KYC with human approval, pre-call preparation, portfolio review, and client communication. It encodes the rules that make private banking different: client domicile, RM location and booking center; cross-border solicitation and research-distribution restrictions; product eligibility and suitability; mandate and concentration limits. The question it answers is not only "is product X suitable?" but "may this RM discuss product X with this client, from this location, today?"
 
 **Distribution** (pattern from Fabric; idea only):
 - One directory per pack; name-based lookup; no central registry
@@ -467,7 +467,7 @@ Answers "why this client?" and "why this product?", which today have no record.
 - Recommendation rationale is recorded as structured fields with citations to the sources used, not as free model text
 - Suitability and eligibility checks remain separate cited checks: origination says why it was *proposed*, suitability says why it was *permitted*
 - **Reasons, not scores.** "Relevance score 89%" is not an acceptable rationale. Origination must record the client facts and evidence behind it, such as exposure, a recent discussion, and the house-view change that triggered it
-- **"Do not contact" is a first-class outcome.** Origination can conclude that no communication is recommended, with reasons: low relevance, poor timing, vulnerability, excessive frequency, a recent rejection, or a relationship circumstance. Contact-frequency limits per client are enforced by policy. Relationship intelligence must not optimise only for outreach
+- **"Do not contact" is a first-class outcome.** Origination can conclude that no communication is recommended, with reasons: low relevance, poor timing, vulnerability, excessive frequency, a recent rejection, or a relationship circumstance. Contact-frequency limits per client are enforced by policy. Relationship intelligence must not optimize only for outreach
 
 ### 11. RM Review Capture
 
@@ -487,7 +487,7 @@ Builds on the existing proposal model (ADR 0007), which already stores before-st
 - The event records channel, recipient reference, a hash of the content as sent, and a link back to the recommendation and final decision it came from
 - A communication that does not trace back to a final decision is a DENY
 - **Content policy before sending:** required disclosures, prohibited claims, investment-risk language, research attribution, approved tone, and channel restrictions, checked as cited rules. Cross-border communication rules apply per recipient. Higher-risk communications require review by use-case tier
-- **Communication level:** every communication is classified as general information, house view, contextualised insight, investment discussion, product recommendation, or transaction. Each level carries its own required controls, so moving from insight to recommendation triggers suitability checks and RM approval automatically
+- **Communication level:** every communication is classified as general information, house view, contextualized insight, investment discussion, product recommendation, or transaction. Each level carries its own required controls, so moving from insight to recommendation triggers suitability checks and RM approval automatically
 - **Approved-channel register:** a channel may carry client communication only if registered as meeting the bank's archiving and supervision requirements. Personal WhatsApp, Telegram or personal email are not registrable; a bank-approved messaging channel can be
 - **Client transparency:** AI-disclosure rules per jurisdiction and use case decide when a client must be told that AI generated content, assisted analysis, powers a chatbot, or materially contributed to a decision. The content provenance label (item 11) drives them
 - **Public lane:** public content such as LinkedIn posts, newsletters and event material uses approved research, approved claims, brand style and disclaimers only, and never client context. The separation is enforced in code (0.5 item 6), not by procedure
@@ -516,7 +516,7 @@ Stops poor guidance from scaling, and finds everyone it reached.
 
 Do not wait for client harm.
 - **Outcome events:** client complaints, corrections, wrong-client targeting, unsuitable suggestions, communication errors, policy breaches and operational incidents are recorded and linked back to the originating interaction, so a complaint traces to the exact AI output, model version and approver
-- **Near-miss register:** blocked actions, verifier blocks, RM rejections, unsafe drafts and unusual agent behaviour, aggregated by use case, agent and model version
+- **Near-miss register:** blocked actions, verifier blocks, RM rejections, unsafe drafts and unusual agent behavior, aggregated by use case, agent and model version
 - Both feed risk-based review (item 13) and count toward the circuit breaker (item 14)
 - Depends on pinned evidence (0.3) and the interaction record (item 9)
 
@@ -578,7 +578,7 @@ An agent needs explicit authority to act for someone.
 - Authority is specific, temporary by default, purpose-bound and revocable; revocation takes effect on the next decision
 - **Dual check:** a request is allowed only if the human holds the entitlement *and* the agent is authorized for it under a live delegation. Agent entitlements are always narrower than the human's
 - Every decision and action envelope references the delegation it relied on
-- The object also carries **jurisdiction** (which booking centre or country) and an **approval threshold** (which actions require human approval)
+- The object also carries **jurisdiction** (which booking center or country) and an **approval threshold** (which actions require human approval)
 - **Authority ends when the task does,** not only when the clock runs out: "access client X to prepare tomorrow's meeting" is revoked once the meeting preparation completes
 
 ### 3. Autonomy Levels
@@ -598,7 +598,7 @@ Autonomy is classified, not implied.
 - Every agent carries a maximum level; every tool declares the level it requires. A call above the agent's level is a DENY; a call at L4 always routes to human approval
 - The use-case risk tier caps the level. Early private-banking deployments are expected at L1 to L4
 - Raising an agent's level is a governed change requiring the accountable owner and independent validation. Autonomy never increases silently: moving from "generate draft" to "queue draft" to "send automatically" is treated as a material change
-- **Action permissions are per verb.** Read, analyse, recommend, draft, queue, send and execute are separate permissions. **The ability to recommend never implies the ability to execute:** an agent may conclude "client X should be contacted" without being permitted to contact client X
+- **Action permissions are per verb.** Read, analyze, recommend, draft, queue, send and execute are separate permissions. **The ability to recommend never implies the ability to execute:** an agent may conclude "client X should be contacted" without being permitted to contact client X
 - **Evidence gates for promotion.** Each use case defines, per autonomy transition, thresholds on the outcome metrics (0.4 item 7) over a minimum sample and window: for example quality at or above 95 percent, exception rate below 5 percent, and every action in the window fully reconstructable. A promotion request below threshold cannot be approved. Approval by the accountable owner and independent validation is still required above it: the evidence is necessary, not sufficient
 - **Automatic step-down.** When the same metrics fall below a lower threshold over a rolling window, the agent's effective level drops one step on the next decision, the step-down is evidenced, and the accountable owner and Knowledge Lead are alerted. Restoring the level goes through the promotion gate again. Step-down is graduated; the circuit breaker (0.4 item 14) remains the hard stop
 - **Quality drift.** The metrics are tracked as trends per agent, model version and prompt version, not only against thresholds. A sustained decline is a drift finding that counts toward step-down and toward risk-based review, so gradual degradation after deployment is caught without waiting for a breach
@@ -637,7 +637,7 @@ Anything from outside the bank is treated as potentially hostile: websites, PDFs
 
 - A baseline per agent: distinct clients per day, documents retrieved, actions taken, tools used, data classes touched
 - Deviations block, isolate and alert: a pre-call agent querying 10,000 clients, a KYC agent downloading thousands of documents, a service agent creating 700 tickets, a portfolio agent requesting transaction tools
-- Also watched: privilege probing and repeated denied actions, unusual tool sequences, unexpected network access, and sudden behaviour drift
+- Also watched: privilege probing and repeated denied actions, unusual tool sequences, unexpected network access, and sudden behavior drift
 - **Machine-speed containment.** Agentic failures and attacks can outpace human response, so containment is automatic when a threshold is crossed: quarantine the agent, revoke its credential, stop its tools, then alert a human. The human decides on release, not on containment
 - Blocks are recorded as incidents and count toward the circuit breaker (0.4 item 14)
 
@@ -681,8 +681,8 @@ A program must not be able to bypass or tamper with the mechanism that enforces 
 
 The kill switch and revocation take effect on the next decision. A tool call already released runs to completion, so "pause mid-task" needs more than a denial of the next request.
 - **Bounded tool calls:** every registered tool declares a maximum duration; the MCP proxy enforces it and records a timeout as an evidenced outcome
-- **Cancellation:** a pause, revocation or kill switch on an agent or run cancels its in-flight tool calls at the proxy where the tool supports cancellation, and records which calls were cancelled and which had already completed
-- **Long actions as steps:** a tool whose action cannot be cancelled must be registered as reversible with a compensating action (item 13), or split into steps with a decision between them, so containment always has a point to act
+- **Cancellation:** a pause, revocation or kill switch on an agent or run cancels its in-flight tool calls at the proxy where the tool supports cancellation, and records which calls were canceled and which had already completed
+- **Long actions as steps:** a tool whose action cannot be canceled must be registered as reversible with a compensating action (item 13), or split into steps with a decision between them, so containment always has a point to act
 - Run wall-clock budgets (0.3) remain the outer limit
 
 Identity registration and owner-approved deployment accept `Agent.deployment_date`
@@ -693,7 +693,7 @@ values after the additive migration and are denied until completed and approved.
 `BlastRadius.max_daily_transactions` limits released calls whose tool permission
 verb is `execute` per UTC calendar day (`S4-DAILY-TRANSACTIONS`). Approval holds
 do not spend transaction quota; approved release uses the existing atomic quota
-admission lock. Read, analyse, recommend, draft, queue and send calls do not
+admission lock. Read, analyze, recommend, draft, queue and send calls do not
 spend this transaction cap. `BlastRadius.products` is an allow-list over resolved
 `product` subjects, including nested arguments and manifest subject mappings
 (`S4-PRODUCTS`). `None` leaves products unrestricted; an empty list permits no
@@ -720,7 +720,7 @@ named products. Both controls complement the existing per-agent limits.
 - [x] A promotion request below its evidence thresholds cannot be approved
 - [x] A sustained metric decline steps the agent down one level automatically, evidenced and alerted
 - [x] A tier 2 use case registered in library mode fails validation; an agent holding a provider credential directly is flagged
-- [x] Engaging the kill switch cancels an in-flight tool call at the proxy and records which calls were cancelled; a tool call past its maximum duration times out with evidence
+- [x] Engaging the kill switch cancels an in-flight tool call at the proxy and records which calls were canceled; a tool call past its maximum duration times out with evidence
 
 ---
 
@@ -762,8 +762,8 @@ Kognita does not own client data; the bank's systems of record do. Kognita enfor
 ### 5. Claim Types: Fact, Inference, Recommendation
 
 - Every claim is typed: **verified fact**, **inference**, **conversation hypothesis**, or **possible bank capability**
-- Unlabelled claims cannot be shown to an RM or sent to a client
-- An inference cannot be relabelled as a fact without a cited source and verification, so an LLM inference cannot quietly become perceived fact
+- Unlabeled claims cannot be shown to an RM or sent to a client
+- An inference cannot be relabeled as a fact without a cited source and verification, so an LLM inference cannot quietly become perceived fact
 
 ### 6. Calculation Provenance
 
@@ -785,16 +785,16 @@ Before material output reaches an RM, a registered verifier tries to prove it wr
 - **Relationship memory** is durable client information, governed like any other bank record
 - Writing to relationship memory is a governed action. An inference such as "client may be considering a sale" can be proposed, but becomes a record only after RM verification, through the proposal model (ADR 0007). Hallucinations cannot become institutional facts automatically
 - Memory is typed like claims (verified fact, inferred preference, AI hypothesis), scoped to one client, and carries a retention period, a correction path and an expiry. "The client probably prefers X" cannot accumulate as if it were a fact
-- **Institutional memory** is what the organisation learns across clients: corrected templates, refined instructions, updated quality standards, known exceptions. It is how one RM's correction improves the next RM's output, and it needs the same discipline as client memory:
+- **Institutional memory** is what the organization learns across clients: corrected templates, refined instructions, updated quality standards, known exceptions. It is how one RM's correction improves the next RM's output, and it needs the same discipline as client memory:
   - **Learning is proposed, never applied.** A pattern in RM corrections or outcomes (0.4 items 11 and 15) becomes a proposed change to a standard through the proposal model (ADR 0007), carrying the evidence behind it: which interactions, which corrections, which metric moved
-  - The use case's **Knowledge Lead** (0.4 item 8) approves or rejects it. An approved change produces a new deployment version (0.5 item 1), so it is versioned, effective-dated and re-approved like any behaviour change, never edited in place
+  - The use case's **Knowledge Lead** (0.4 item 8) approves or rejects it. An approved change produces a new deployment version (0.5 item 1), so it is versioned, effective-dated and re-approved like any behavior change, never edited in place
   - **Standards are effective-dated.** Every output records which version of the standard produced it, and an expired or superseded standard cannot be used, the same rule that already applies to policy
   - Client data never crosses into institutional memory: a learned standard may reference the evidence that justified it, but not carry client content. Feedback-loop controls (item 9) apply to any learning that leaves Kognita for training or fine-tuning
 
 ### 9. Feedback-Loop Controls
 
-- Interactions are never used for learning by default. Exporting interactions, RM edits or outcomes to any training, fine-tuning or evaluation pipeline is a governed action: purpose, anonymisation, validation, approval and exclusions, all evidenced
-- Clients and records can be excluded, and the exclusion holds for every future export. Otherwise bad behaviour can become self-reinforcing
+- Interactions are never used for learning by default. Exporting interactions, RM edits or outcomes to any training, fine-tuning or evaluation pipeline is a governed action: purpose, anonymization, validation, approval and exclusions, all evidenced
+- Clients and records can be excluded, and the exclusion holds for every future export. Otherwise bad behavior can become self-reinforcing
 
 ### 10. Sensitive Attribute Controls
 
@@ -807,17 +807,17 @@ Before material output reaches an RM, a registered verifier tries to prove it wr
 Kognita is not an evaluation harness. It records evaluation results and enforces them.
 - Evaluation results are attached to agent and model versions: accuracy, groundedness, completeness, relevance, hallucination rate, freshness, policy compliance, entitlement, action correctness and escalation
 - Activating or changing a tier 2 or higher agent requires results above thresholds set per use case, such as a benchmark against a golden set of historical meetings defined by experienced RMs
-- Kognita measures the dimensions only it can see from evidence: entitlement blocks, escalation correctness, action correctness, stale-data use, permission and client-boundary compliance, delegation behaviour and retries
+- Kognita measures the dimensions only it can see from evidence: entitlement blocks, escalation correctness, action correctness, stale-data use, permission and client-boundary compliance, delegation behavior and retries
 - **Three levels of evaluation:** the model; the agent (task planning, tool selection, permission compliance, delegation, retries, escalation); and the end-to-end system (model, retrieval, tools, data, agent, policies, UI and human interaction). A good model can still produce an unsafe system, so the gate accepts system-level results
-- **Bias and fairness reporting:** recommendation, contact and prioritisation rates computed from origination evidence across segments the bank defines, such as nationality, age group, language, portfolio size, channel and RM team. Disparities above a threshold are flagged to the risk owner. This matters most for client prioritisation, prospect scoring, product recommendations and vulnerability detection
+- **Bias and fairness reporting:** recommendation, contact and prioritization rates computed from origination evidence across segments the bank defines, such as nationality, age group, language, portfolio size, channel and RM team. Disparities above a threshold are flagged to the risk owner. This matters most for client prioritization, prospect scoring, product recommendations and vulnerability detection
 - **Proxy attributes:** segments include attributes the bank identifies as substitutes for, or highly correlated with, protected attributes, such as postcode or language standing in for nationality. The report names those proxies and flags a disparity to the risk owner (`kognita.evaluation.fairness_report`). A disparity is not registered as a monitored metric: the 0.5 gates watch decision quality and reliability only, and `register_monitored` does not create one. What counts as a fair outcome is the bank's definition
 - **The continuous loop:** evaluate, deploy, observe, test, challenge, intervene, learn, re-authorise. Validation does not end at deployment
 
 ### 12. Governed Business Definitions
 
-Without one definition, every agent invents its own version of the business: Finance's AUM, the advisory platform's AUM and the RM front end's AUM can all differ. Kognita is not a semantic layer, the same way it is not a calculation engine; the bank's semantic layer or data catalogue owns definitions. Kognita enforces that they are used.
+Without one definition, every agent invents its own version of the business: Finance's AUM, the advisory platform's AUM and the RM front end's AUM can all differ. Kognita is not a semantic layer, the same way it is not a calculation engine; the bank's semantic layer or data catalog owns definitions. Kognita enforces that they are used.
 - The bank registers governed terms (AUM, net new money, concentration, risk capacity) with a reference to the authoritative definition, its owner and its version
-- A claim or figure that uses a governed term must cite the registered definition and version in its provenance envelope (item 1). A figure labelled with a governed term but citing no definition, or a superseded one, is blocked, as with calculation provenance (item 6)
+- A claim or figure that uses a governed term must cite the registered definition and version in its provenance envelope (item 1). A figure labeled with a governed term but citing no definition, or a superseded one, is blocked, as with calculation provenance (item 6)
 - When a definition changes, `kognita evidence affected --definition <id>` lists the claims, recommendations and communications produced under the previous version, as with house-view changes (item 4)
 
 ### 13. Reasoning Traces
@@ -825,7 +825,7 @@ Without one definition, every agent invents its own version of the business: Fin
 Reasoning transparency is necessary but not sufficient: a model's stated reasoning is not guaranteed to be faithful to how it produced the output. Kognita records it and never relies on it.
 - Where a provider returns a reasoning trace or summary, the AI gateway records it as its own `MODEL_CALL` field: a hash in the evidence chain, the content in the retention store, linked to the interaction
 - A use case can require a reasoning trace. At tier 3 and above, a material output whose model returned no trace is flagged to the risk owner and counts toward risk-based review (0.4 item 13); a provider or model that cannot return one is recorded on its model card
-- `reconstruct` shows the trace beside the output, labelled as the model's own account
+- `reconstruct` shows the trace beside the output, labeled as the model's own account
 - A reasoning trace is never a basis for a decision: no policy may allow an action because the model's reasoning says it is permitted. Decisions stay on cited rules and verified claims
 
 ### Definition of Done
@@ -834,7 +834,7 @@ Each line was checked against the code and tests in this tree. All seventeen sta
 
 - [x] Claim provenance envelope on every material claim, reconstructable. A tier 2 or high-materiality gateway response, and a communication at house view or above, is refused with `C1-UNKNOWN` unless that text was recorded and released for the audience. `reconstruct` lists a released RM claim. Evidence: `kognita.claims` / `tests/test_claims.py::test_release`, `tests/test_dod_release.py::test_gateway_refuses_material_text_until_a_claim_is_released`, `tests/test_dod_release.py::test_communication_refuses_a_house_view_without_a_released_claim`.
 - [x] Stale data refreshed, suppressed or flagged per policy; never silently used. Fact-shaped retrieval items and tool results call `admit_fact`. The use case `stale_action` defaults to `SUPPRESS`. Evidence: `kognita.facts` / `tests/test_facts.py::test_fresh_and_stale_defaults`, `tests/test_dod_release.py::test_tool_and_retrieval_do_not_use_stale_facts`, `tests/test_dod_release.py::test_stale_fact_refresh_and_warning_are_explicit`.
-- [x] Unlabelled claims blocked from RM and client. Evidence: `kognita.claims.release_claim` / `tests/test_claims.py::test_release`.
+- [x] Unlabeled claims blocked from RM and client. Evidence: `kognita.claims.release_claim` / `tests/test_claims.py::test_release`.
 - [x] Authoritative figures without a registered calculation service blocked. Evidence: `kognita.calculations.check_calculation` / `tests/test_calculations.py::test_release_blocks_uncited_figures`.
 - [x] Verification gate required at tier 2 and above, with statuses enforced. Evidence: `kognita.verification` / `tests/test_verification.py::test_tier_gate_denies_release_without_a_real_verifier`, `tests/test_verification.py::test_recorded_status_limits_audience`.
 - [x] AI inferences cannot reach relationship memory without RM verification. Evidence: `kognita.memory` / `tests/test_memory.py::test_direct_inference_write_is_denied`, `tests/test_memory.py::test_relationship_inference_requires_rm_verification`.
@@ -923,7 +923,7 @@ This release does **not** turn Kognita into a sandbox, SOC, identity provider, s
 ### A1. Material-Agent / Know Your Agent (KYA) Manifest
 
 - Export a signed, machine-readable manifest for every material agent:
-  - stable agent identity and behavioural version
+  - stable agent identity and behavioral version
   - accountable business owner and use case
   - principal and delegated authority
   - autonomy level and client-impact class
@@ -989,7 +989,7 @@ This release does **not** turn Kognita into a sandbox, SOC, identity provider, s
   - purpose
   - personal-data class
   - tool or connector
-  - persistent memory behaviour
+  - persistent memory behavior
   - external recipient/provider
   - jurisdiction
   - autonomy/client-impact level
@@ -1015,7 +1015,7 @@ Extend 0.7 failure drills with hostile-agent scenarios:
 
 - prompt injection leading to tool escalation
 - discovered third-party credentials
-- unauthorised external network access
+- unauthorized external network access
 - machine-speed API probing and multi-technique attack
 - compromised model/provider
 - agent-to-agent privilege escalation
@@ -1044,7 +1044,7 @@ Every drill checks that policy, monitoring, containment and evidence remain inta
 - Extend provider/model metadata with:
   - technology origin
   - deployment jurisdiction
-  - transfer type: API/SaaS, model weights, licence, local deployment, ownership/control transfer
+  - transfer type: API/SaaS, model weights, license, local deployment, ownership/control transfer
   - operator-supplied restriction/registration policy reference
 - Policy can require a current legal/compliance approval before a governed deployment crosses a configured technology-transfer boundary.
 - Kognita does not determine whether a technology is legally controlled; it enforces the classification supplied by the institution.

@@ -1,4 +1,4 @@
-"""Build the Private Wealth Management Ontology artefacts.
+"""Build the Private Wealth Management Ontology artifacts.
 
     python3 tools/build.py [--site PATH]
 
@@ -53,15 +53,15 @@ SCOPE_IN = [
 ]
 SCOPE_OUT = [
     "Orders, execution and the trade lifecycle; corporate actions",
-    "Performance and attribution methods (only the provenance of figures is modelled)",
+    "Performance and attribution methods (only the provenance of figures is modeled)",
     "Tax reporting detail (CRS and FATCA reporting records), lending beyond the Lombard facility",
     "Any institution's thresholds, scales, product shelf or internal names: these belong in an extension",
 ]
 PRINCIPLES = [
     ("Reuse before inventing",
-     "Business terms specialise or map to FIBO first (Release before Provisional), then OMG Commons, W3C PROV-O and DPV. A term is defined here only when none fits, and it is marked NEW."),
+     "Business terms specialize or map to FIBO first (Release before Provisional), then OMG Commons, W3C PROV-O and DPV. A term is defined here only when none fits, and it is marked NEW."),
     ("Declare, don't import",
-     "External terms are declared with their label, source and FIBO maturity instead of importing whole ontologies, so the file loads on its own. Specialisation uses rdfs:subClassOf; looser alignment uses SKOS exact, close and related matches."),
+     "External terms are declared with their label, source and FIBO maturity instead of importing whole ontologies, so the file loads on its own. Specialization uses rdfs:subClassOf; looser alignment uses SKOS exact, close and related matches."),
     ("Every term cites its grounds",
      "Each class, property and code list carries at least one citation with a locator: an article, paragraph, roadmap item or slide. The reference register records how each source was checked."),
     ("Logic in OWL, codes in SKOS, rules in SHACL",
@@ -96,7 +96,7 @@ pwm:riskProfileLevel pwm:valuesFrom firm:RiskScale .
 pwm:productRiskLevel pwm:valuesFrom firm:RiskScale .
 pwm:targetRiskProfile pwm:valuesFrom firm:RiskScale .
 
-# A firm product type specialising a PWM class
+# A firm product type specializing a PWM class
 firm:StructuredNote a owl:Class ;
     rdfs:subClassOf pwm:Product ;
     rdfs:label "structured note"@en ."""
@@ -406,7 +406,7 @@ def build(base: Path, site_path):
         if gap_path.exists():
             spec.write("\n" + gap_path.read_text(encoding="utf-8").replace("# PWM 0.5 gap analysis", "## Gap analysis for 0.5", 1).replace("# PWM 0.4 gap analysis", "## Gap analysis for 0.4", 1).replace("## PWM 0.5 gap analysis", "## Gap analysis for 0.5", 1) + "\n")
         spec.write("\n## Verification for 0.5\n\n")
-        spec.write("New 0.5 records specialise prov:Entity except HumanEntitlement and CapabilityGrant (OMG Commons Authorization), AdversarialTestCase (PolicyTestCase, itself a prov:Entity), and ApprovingAuthorityRole (OMG Commons PartyRole) with RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer subclasses. AuthorityRevocation, FleetHalt and ActionStop are records about interventions, not prov:Activity. AIAgent retains prov:SoftwareAgent and OMG SoftwareAgent. Existing Run, governed calls and Replay retain their activity parents. No new external matches are asserted. All new datatype-property ranges use OWL 2 datatype-map datatypes.\n\n")
+        spec.write("New 0.5 records specialize prov:Entity except HumanEntitlement and CapabilityGrant (OMG Commons Authorization), AdversarialTestCase (PolicyTestCase, itself a prov:Entity), and ApprovingAuthorityRole (OMG Commons PartyRole) with RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer subclasses. AuthorityRevocation, FleetHalt and ActionStop are records about interventions, not prov:Activity. AIAgent retains prov:SoftwareAgent and OMG SoftwareAgent. Existing Run, governed calls and Replay retain their activity parents. No new external matches are asserted. All new datatype-property ranges use OWL 2 datatype-map datatypes.\n\n")
         node_count = len(set(sg.subjects(RDF.type, SH.NodeShape)))
         spec.write(f"There are {node_count} node shapes: {counts['rules']} written targeted shapes, {counts['codeListRules']} generated targeted shapes and one untargeted helper.\n\n")
         positive = base / "examples/pwm-example.ttl"
@@ -449,8 +449,8 @@ def build(base: Path, site_path):
             readme.write_text(text, encoding="utf-8")
         spec.write("The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.\n\n")
         spec.write(f"All {counts['rules']} written rules have negative fixtures. Two generated code-list rules are exercised there; all {counts['codeListRules']} generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. Review dates remain valid through the end of that day; absent timezones are interpreted as UTC. A decision on an expired use case must be DENY.\n\n")
-        spec.write("New 0.4 PROV specialisations: IngestedDocument, DeclarativePolicy, PolicyChange, PolicyTestCase, PolicyPack, FlightRecorderSession, RMReviewEdit, ReviewQueue, ReviewQueueEntry, ReviewCoverageReport, AffectedClientQuery, AffectedClientResult and InteractionOutcome specialise prov:Entity. Replay specialises prov:Activity. DocumentElement specialises existing DocumentSection (OMG Commons Document); CircuitBreaker specialises KillSwitch; CircuitBreakerTrip specialises AIIncident (prov:Entity). No PROV activity parent is asserted for recorder manifests, edits or trips.\n\n")
-        spec.write("PWM version N aligns to roadmap milestone N. Version 0.5 models milestone 0.5, not the software release number. The inherited 0.3 PROV specialisations remain as follows. New specialised records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialised gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.\n\n")
+        spec.write("New 0.4 PROV specializations: IngestedDocument, DeclarativePolicy, PolicyChange, PolicyTestCase, PolicyPack, FlightRecorderSession, RMReviewEdit, ReviewQueue, ReviewQueueEntry, ReviewCoverageReport, AffectedClientQuery, AffectedClientResult and InteractionOutcome specialize prov:Entity. Replay specializes prov:Activity. DocumentElement specializes existing DocumentSection (OMG Commons Document); CircuitBreaker specializes KillSwitch; CircuitBreakerTrip specializes AIIncident (prov:Entity). No PROV activity parent is asserted for recorder manifests, edits or trips.\n\n")
+        spec.write("PWM version N aligns to roadmap milestone N. Version 0.5 models milestone 0.5, not the software release number. The inherited 0.3 PROV specializations remain as follows. New specialized records and fields are marked NEW, with item-level KOG grounds. Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialize prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialize prov:Entity. SystemTrigger specializes prov:Agent. No new FIBO, OMG or DPV alignment is asserted for these specialized gateway fields. Existing modelVersion, providedBy, contentHash, decision outcomes, classifications, event types and evidence links are reused.\n\n")
         spec.write("Kognita references mean software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. "
                    "Item locators retain the roadmap section numbers at that commit.\n\n")
         spec.write("EUR-Lex CELEX 32021R1253 (EN/ALL text and relationship table) confirms that 2021/1253 Art. 1(1) "
@@ -462,7 +462,7 @@ def build(base: Path, site_path):
         spec.write("No verifiable close match was found for `inInstrument` or `hasUnderlyingInstrument` with their broad PWM semantics, "
                    "so both remain NEW. FIBO `hasOwnedAsset` describes an ownership situation rather than a holding or position, "
                    "and `hasUnderlier` describes a derivative rather than any shelf product. "
-                   "No FIBO `CashAccount` was found; PWM CashAccount specialises verified Release `DepositAccount`. "
+                   "No FIBO `CashAccount` was found; PWM CashAccount specializes verified Release `DepositAccount`. "
                    "`hasHolding` maps closely to verified OMG Commons Collections/hasMember (20250801); "
                    "`securedBy` maps closely to FIBO isCollateralizedBy. No equivalence is asserted for these narrower properties.\n\n")
         spec.write("All FIBO term IRIs below were checked against the actual master RDF/XML source, "
@@ -542,14 +542,14 @@ def spec_md(d, refs):
            f"| Namespace | `pwm:` {m['namespace']} |",
            f"| Shapes | {m['shapesIri']} (`pwm-shapes.ttl`), latest pointer |",
            f"| Shapes version IRI | {SITE}/0.5/pwm-shapes.ttl |",
-           f"| Licence | [CC BY-SA 4.0]({m['license']}) |",
+           f"| License | [CC BY-SA 4.0]({m['license']}) |",
            f"| Author | {m['creator']} |",
            f"| Web page | {m['ontologyIri']} |", "",
            "## Abstract", "", m["description"], "",
            "## Status", "", m["status"], "",
            f"Size: {c['classes']} classes, {c['objectProperties']} object properties, {c['datatypeProperties']} datatype properties, "
            f"{c['codeLists']} code lists with {c['concepts']} codes, {c['rules']} data rules plus {c['codeListRules']} generated code-list rules, {c['references']} references and "
-           f"{c['citations']} citations. {m['fiboAligned']} FIBO terms are specialised or mapped.", "",
+           f"{c['citations']} citations. {m['fiboAligned']} FIBO terms are specialized or mapped.", "",
            "## Scope", "", "In scope:", ""] + [f"- {s}" for s in d["scopeIn"]] + ["", "Not in 0.5:", ""] + \
           [f"- {s}" for s in d["scopeOut"]] + ["", "## Design principles", ""] + \
           [f"{i}. **{p['title']}.** {p['body']}" for i, p in enumerate(d["principles"], 1)] + \
@@ -574,7 +574,7 @@ def spec_md(d, refs):
                 out += ["", f"*Note:* {t['scopeNote']}"]
             lines = []
             if t["supers"]:
-                lines.append("**Specialises:** " + ", ".join(md_link(l) for l in t["supers"]))
+                lines.append("**Specializes:** " + ", ".join(md_link(l) for l in t["supers"]))
             for r in t.get("restrictions", []):
                 lines.append(f"**Restriction:** {md_link(r['property'])} {r['quantifier']} {md_link(r['filler'])}")
             for mt in t["matches"]:
@@ -622,7 +622,7 @@ def spec_md(d, refs):
         if r.get("comment"):
             out += ["", f"*{r['comment']}*"]
     out += ["", "## Extending PWM for an institution", "",
-            "Keep institution detail in a separate ontology that imports PWM by its version IRI, which resolves to the Turtle file. Specialise PWM classes, add the firm's code lists, and bind coded properties to them with `pwm:valuesFrom`. Keep confidential content out of public repositories.", "",
+            "Keep institution detail in a separate ontology that imports PWM by its version IRI, which resolves to the Turtle file. Specialize PWM classes, add the firm's code lists, and bind coded properties to them with `pwm:valuesFrom`. Keep confidential content out of public repositories.", "",
             "Save as `firm.ttl`:", "", "```turtle", d["extensionExample"], "```", "",
             "Save separately as `firm-shapes.ttl`:", "", "```turtle", EXTENSION_SHAPES_TTL, "```", "",
             "Load both shapes graphs together:", "", "```python",

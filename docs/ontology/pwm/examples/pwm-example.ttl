@@ -44,15 +44,15 @@ ex:PersonCIO a fibo-fnd-aap-ppl:Person ; rdfs:label "Chief investment officer (f
 ex:PersonModelRisk a fibo-fnd-aap-ppl:Person ; rdfs:label "Head of model risk (fictional person)"@en .
 ex:PersonAIControl a fibo-fnd-aap-ppl:Person ; rdfs:label "Head of AI risk, second line (fictional person)"@en .
 
-# --- Firm, booking centre, client and coverage ------------------------------------------------
+# --- Firm, booking center, client and coverage ------------------------------------------------
 
 ex:ExamplePrivateBank a pwm:PrivateBank ;
     rdfs:label "Example Private Bank (fictional)"@en ;
     pwm:legalEntityIdentifier "EXMP00PRIVATEBANK095" ;
     pwm:jurisdictionCode "SG" .
 
-ex:BookingCentreSG a pwm:BookingCentre ;
-    rdfs:label "Example Private Bank, Singapore booking centre"@en ;
+ex:BookingCenterSG a pwm:BookingCenter ;
+    rdfs:label "Example Private Bank, Singapore booking center"@en ;
     cmns-rlcmp:isPlayedBy ex:ExamplePrivateBank ;
     pwm:jurisdictionCode "SG" .
 
@@ -71,7 +71,7 @@ ex:Relationship a pwm:ClientRelationship ;
     rdfs:label "Relationship 0001 (fictional)"@en ;
     pwm:hasClient ex:Client ;
     pwm:hasProvider ex:ExamplePrivateBank ;
-    pwm:isBookedAt ex:BookingCentreSG ;
+    pwm:isBookedAt ex:BookingCenterSG ;
     pwm:validFrom "2024-03-01T00:00:00+08:00"^^xsd:dateTime .
 
 ex:RM a pwm:RelationshipManager ;
@@ -165,7 +165,7 @@ ex:Account a pwm:InvestmentAccount ;
     rdfs:label "Investment account 0001 (fictional)"@en ;
     pwm:accountHeldBy ex:Holder ;
     pwm:hasPortfolio ex:Portfolio ;
-    pwm:isBookedAt ex:BookingCentreSG ;
+    pwm:isBookedAt ex:BookingCenterSG ;
     pwm:governedByMandate ex:Mandate ;
     pwm:signingRule pwm:SignAnyOne ;
     pwm:currency "SGD" .
@@ -288,7 +288,7 @@ ex:Agent a pwm:AIAgent ;
     pwm:nextReviewDate "2027-02-01"^^xsd:date .
 
 ex:Delegation a pwm:DelegatedAuthority ;
-    rdfs:label "RM authorises the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
+    rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
     pwm:delegatedBy ex:PersonRM ;
     pwm:delegatedTo ex:Agent ;
     pwm:hasPurpose ex:PurposeMeetingPrep ;
@@ -414,11 +414,11 @@ ex:RuleClientCommunication a pwm:PolicyRule ;
     pwm:validFrom "2026-01-01T00:00:00+08:00"^^xsd:dateTime .
 
 ex:RuleSolicitation a pwm:CrossBorderRule ;
-    rdfs:label "Solicitation of clients domiciled in HK from the SG booking centre is marked prohibited (illustrative)"@en ;
+    rdfs:label "Solicitation of clients domiciled in HK from the SG booking center is marked prohibited (illustrative)"@en ;
     pwm:appliesToActivity pwm:ActivitySolicitation ;
     pwm:permitted false ;
     pwm:clientDomicileCode "HK" ;
-    pwm:bookingCentreCode "SG" ;
+    pwm:bookingCenterCode "SG" ;
     pwm:ruleCitation "Illustrative only. The firm's cross-border manual sets the boundary; the rule enforces the recorded flag (Kognita private-banking pack, cross-border-solicitation)." ;
     pwm:versionId "1.0" ;
     pwm:validFrom "2026-01-01T00:00:00+08:00"^^xsd:dateTime .
@@ -563,14 +563,14 @@ ex:ResponseAttribute a pwm:EnvelopeAttribute ; pwm:attributeName "response.class
     pwm:attributeSource pwm:AttributeClassifierDerived ; pwm:derivedFromClassifier ex:ResponseClassifier .
 ex:GatewayCall pwm:hasAttribute ex:ResponseAttribute .
 
-# PWM 0.5: synthetic ingestion, policy artefacts and lifecycle evidence.
+# PWM 0.5: synthetic ingestion, policy artifacts and lifecycle evidence.
 ex:Ingestion a pwm:IngestedDocument ; pwm:parserName "docling-slim" ; pwm:parserVersion "2.60.0 (synthetic pinned example)" ; pwm:contentHash "sha256:2bee6b8c11586ab16ecac5406f18d26da8d8e614dabb031b28cc6882cd417531" ; pwm:versionId "1" .
 ex:Passage a pwm:DocumentElement ; pwm:ingestedFrom ex:Ingestion ; pwm:pageNumber "1"^^xsd:positiveInteger ; pwm:sectionPath "root/credit" ; pwm:characterStart "0"^^xsd:nonNegativeInteger ; pwm:characterEnd "30"^^xsd:nonNegativeInteger ; pwm:classification pwm:C1 ; pwm:contentHash "sha256:c2c9ee0cc6ad32a11f9b18970c20bc1705381855f13e15add3771c26383d652b" ; pwm:boundingBox "page-points: 0,0,200,100" .
 ex:Snapshot prov:wasDerivedFrom ex:Passage .
-ex:PolicyArtefact a pwm:DeclarativePolicy ; pwm:versionId "1" ; pwm:containsRule ex:RuleModelAccess ; pwm:policySerialization "rules: [model-access]" ; pwm:hasPolicyTest ex:PolicyScenario ; pwm:contentHash "sha256:26f8a94cff65e877c4c04cfc943e242e138a0a4eb16f8f954998e060030af74e" .
-ex:PolicyDelta a pwm:PolicyChange ; pwm:changesPolicy ex:PolicyArtefact ; pwm:deltaText "ADDED model-access" ; pwm:changeStage "applied" ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
+ex:PolicyArtifact a pwm:DeclarativePolicy ; pwm:versionId "1" ; pwm:containsRule ex:RuleModelAccess ; pwm:policySerialization "rules: [model-access]" ; pwm:hasPolicyTest ex:PolicyScenario ; pwm:contentHash "sha256:26f8a94cff65e877c4c04cfc943e242e138a0a4eb16f8f954998e060030af74e" .
+ex:PolicyDelta a pwm:PolicyChange ; pwm:changesPolicy ex:PolicyArtifact ; pwm:deltaText "ADDED model-access" ; pwm:changeStage "applied" ; prov:generatedAtTime "2026-11-03T00:00:00Z"^^xsd:dateTime .
 ex:PolicyScenario a pwm:PolicyTestCase ; pwm:testsRule ex:RuleModelAccess ; pwm:givenAttributes "classification: C2" ; pwm:whenAction "model_call" ; pwm:expectedOutcome pwm:OutcomeAllow .
-ex:PrivateBankingPack a pwm:PolicyPack ; pwm:versionId "1" ; pwm:packPolicy ex:PolicyArtefact ; pwm:fixtureLocator "urn:synthetic:pack-fixtures"^^xsd:anyURI .
+ex:PrivateBankingPack a pwm:PolicyPack ; pwm:versionId "1" ; pwm:packPolicy ex:PolicyArtifact ; pwm:fixtureLocator "urn:synthetic:pack-fixtures"^^xsd:anyURI .
 ex:Recorder a pwm:FlightRecorderSession ; pwm:recordedRun ex:Run ; pwm:partOfInteraction ex:Interaction ; pwm:contentHash "sha256:c4df54c1ea9c5b12a3e42b23d0ae6603f35c605d52b855e88d19959508bf474f" ; pwm:exportLocator "urn:synthetic:recorder-export"^^xsd:anyURI .
 ex:Replay a pwm:Replay ; pwm:replaysSession ex:Recorder ; pwm:replayReport ex:Report .
 ex:Metric a pwm:OutcomeMetric ; pwm:primaryMetric pwm:MetricDecisionQuality ; pwm:versionId "1" ; pwm:baselineValue 0.85 ; pwm:targetValue 0.95 .
@@ -651,12 +651,12 @@ ex:ProxyCall pwm:inputContent ex:ExternalResearch .
 ex:Instruction a pwm:AuthenticatedInstruction ; pwm:instructionSource "urn:synthetic:authenticated-workflow"^^xsd:anyURI ; pwm:instructionPrincipal ex:PersonRM ;
     pwm:assuranceLevel "step-up" ; pwm:signatureReference "urn:synthetic:signature:instruction-01"^^xsd:anyURI ; pwm:transactionContext "meeting-preparation-client-0001" .
 ex:PolicyDecisionRelease pwm:instructionEvidence ex:Instruction ; pwm:requiresStepUp true .
-ex:Baseline a pwm:BehaviourBaseline ; pwm:baselineAgent ex:Agent ; pwm:versionId "1" ; pwm:baselineMetric "distinct clients per day" ; pwm:baselineExpected 5.0 ; pwm:anomalyThreshold 20.0 ;
+ex:Baseline a pwm:BehaviorBaseline ; pwm:baselineAgent ex:Agent ; pwm:versionId "1" ; pwm:baselineMetric "distinct clients per day" ; pwm:baselineExpected 5.0 ; pwm:anomalyThreshold 20.0 ;
     pwm:windowStart "2026-10-01T00:00:00Z"^^xsd:dateTime ; pwm:windowEnd "2026-11-01T00:00:00Z"^^xsd:dateTime .
-ex:Anomaly a pwm:BehaviourAnomaly ; pwm:anomalyBaseline ex:Baseline ; pwm:anomalyValue 100.0 ; pwm:containmentApplied true ; pwm:anomalyIncident ex:Incident ; pwm:notifiedRole ex:BusinessOwner .
+ex:Anomaly a pwm:BehaviorAnomaly ; pwm:anomalyBaseline ex:Baseline ; pwm:anomalyValue 100.0 ; pwm:containmentApplied true ; pwm:anomalyIncident ex:Incident ; pwm:notifiedRole ex:BusinessOwner .
 ex:Fleet a pwm:AgentFleet ; pwm:fleetMember ex:Agent, ex:Worker ; pwm:fleetIsolation "Separate run identities and stores; agent calls use gateway authorization" ; pwm:fleetQuota "10"^^xsd:positiveInteger .
 ex:Halt a pwm:FleetHalt ; pwm:haltScope ex:Fleet ; prov:generatedAtTime "2026-11-05T10:00:00Z"^^xsd:dateTime ; pwm:rationale "Containment drill" .
-ex:Sandbox a pwm:SandboxConstraints ; pwm:filesystemScope "/work read-only" ; pwm:networkDestination "urn:synthetic:gateway"^^xsd:anyURI ; pwm:permittedCommand "analyse" ;
+ex:Sandbox a pwm:SandboxConstraints ; pwm:filesystemScope "/work read-only" ; pwm:networkDestination "urn:synthetic:gateway"^^xsd:anyURI ; pwm:permittedCommand "analyze" ;
     pwm:permittedAPI "urn:synthetic:portfolio-api"^^xsd:anyURI ; pwm:sandboxCredential "urn:synthetic:credential:scoped"^^xsd:anyURI ;
     pwm:permitsExport false ; pwm:permitsPersistence false ; pwm:autoStopSeconds 60.0 ; pwm:cpuSeconds 10.0 ; pwm:memoryBytes "1048576"^^xsd:nonNegativeInteger ; pwm:diskBytes "0"^^xsd:nonNegativeInteger .
 ex:PolicyDecisionModelAllow pwm:sandboxConstraints ex:Sandbox .
@@ -680,8 +680,8 @@ ex:ReadScope pwm:scopeAutonomyLevel pwm:L0Retrieve ; pwm:scopeLimit ex:Limit .
 ex:ProxyCall pwm:aboutClient ex:Client ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:callDurationSeconds 2.0 .
 ex:PolicyDecisionModelAllow pwm:hasPurpose ex:PurposeMeetingPrep ; prov:generatedAtTime "2026-11-03T01:58:00Z"^^xsd:dateTime .
 
-ex:CancelledCall a pwm:MCPProxiedCall ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionModelAllow ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:mcpBackend "portfolio-local" ; pwm:responseHash "sha256:4c82030edafc461867f62679e611e2aebde7acf7c6fb150192928cc30e391ec8" ; pwm:aboutClient ex:Client ; pwm:callDurationSeconds 10.0 .
-ex:Cancelled a pwm:ActionStop ; pwm:stoppedCall ex:CancelledCall ; pwm:stopOutcome "cancelled" ; pwm:stopReason "pause" ; prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
+ex:CanceledCall a pwm:MCPProxiedCall ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionModelAllow ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:mcpBackend "portfolio-local" ; pwm:responseHash "sha256:4c82030edafc461867f62679e611e2aebde7acf7c6fb150192928cc30e391ec8" ; pwm:aboutClient ex:Client ; pwm:callDurationSeconds 10.0 .
+ex:Canceled a pwm:ActionStop ; pwm:stoppedCall ex:CanceledCall ; pwm:stopOutcome "canceled" ; pwm:stopReason "pause" ; prov:generatedAtTime "2026-11-03T02:00:00Z"^^xsd:dateTime .
 ex:TimedOutCall a pwm:MCPProxiedCall ; pwm:classification pwm:C2 ; pwm:jurisdictionCode "SG" ; pwm:inRun ex:Run ; pwm:governedByDecision ex:PolicyDecisionModelAllow ; pwm:clientConfiguration ex:GatewayClient ; pwm:callAgent ex:Agent ; pwm:workloadIdentity ex:Workload ; pwm:reliesOnDelegation ex:Delegation ; pwm:invokedTool ex:ToolPortfolioRead ; pwm:mcpBackend "portfolio-local" ; pwm:responseHash "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" ; pwm:aboutClient ex:Client ; pwm:callDurationSeconds 31.0 .
 ex:TimedOut a pwm:ActionStop ; pwm:stoppedCall ex:TimedOutCall ; pwm:stopOutcome "timed-out" ; pwm:stopReason "maximum duration" ; prov:generatedAtTime "2026-11-03T02:00:31Z"^^xsd:dateTime .
 ex:GrantRevocation a pwm:AuthorityRevocation ; pwm:revokedAuthority ex:Grant ; pwm:revokedAt "2026-11-03T08:30:00Z"^^xsd:dateTime ; pwm:rationale "Capability no longer needed" .
@@ -731,7 +731,7 @@ ex:GatewayCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
 
 ex:ProxyCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
 
-ex:CancelledCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
+ex:CanceledCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
 
 ex:TimedOutCall prov:generatedAtTime "2026-11-03T01:58:30Z"^^xsd:dateTime .
 

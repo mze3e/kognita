@@ -19,7 +19,7 @@
 
 ## Checklist
 
-- [ ] Tests added or updated for new behaviour
+- [ ] Tests added or updated for new behavior
 - [ ] `CHANGELOG.md` updated under `[Unreleased]`
 - [ ] All tests pass (`uv run pytest`)
 - [ ] Import layering is clean (`uv run import-linter check`)

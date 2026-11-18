@@ -208,8 +208,8 @@ pwm:CommGeneralInformation a skos:Concept ; skos:inScheme pwm:CommunicationLevel
     skos:prefLabel "general information"@en ; skos:definition "Information not specific to the client."@en .
 pwm:CommHouseView a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "2" ;
     skos:prefLabel "house view"@en ; skos:definition "The institution's published view, unadapted."@en .
-pwm:CommContextualisedInsight a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "3" ;
-    skos:prefLabel "contextualised insight"@en ; skos:definition "Information related to the client's circumstances, without a recommendation."@en .
+pwm:CommContextualizedInsight a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "3" ;
+    skos:prefLabel "contextualized insight"@en ; skos:definition "Information related to the client's circumstances, without a recommendation."@en .
 pwm:CommInvestmentDiscussion a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "4" ;
     skos:prefLabel "investment discussion"@en ; skos:definition "Discussion of options for the client's portfolio."@en .
 pwm:CommProductRecommendation a skos:Concept ; skos:inScheme pwm:CommunicationLevelScheme ; skos:topConceptOf pwm:CommunicationLevelScheme ; skos:notation "5" ;

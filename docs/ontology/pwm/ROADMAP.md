@@ -22,7 +22,7 @@ Four tests define it:
 | 0.1 | Before the roadmap | First public draft | Done, 2 Nov 2026 |
 | 0.2 | Releases 0.1 and 0.2 | Verified FIBO grounding and sustainability preferences | Done, merged 3 Nov 2026 (#162) |
 | 0.3 | 0.3 Gateways, the Run and Replay | Runs, budgets, approvals, gateway calls, pinned evidence, reconstruction | Done, merged 3 Nov 2026 (#163) |
-| 0.4 | 0.4 Ingestion, Policy Language and the Client Lifecycle | Ingestion, policy artefacts, review, circuit breaker, outcomes | Draft, in review (#164) |
+| 0.4 | 0.4 Ingestion, Policy Language and the Client Lifecycle | Ingestion, policy artifacts, review, circuit breaker, outcomes | Draft, in review (#164) |
 | 0.5 | 0.5 Agents, Authority and Fleets | Agent identity, scoped authority, autonomy, blast radius, fleets | Draft, in review (#165) |
 | 0.6 | 0.6 Claims | Claim envelope, facts, verification, memory, evaluation, definitions | Planned |
 | 0.7 | 0.7 Trust and Resilience | Signed evidence, provider register, dependencies, drills, incidents | Planned |
@@ -106,7 +106,7 @@ PWM already has a basic claim record from 0.1. The first step is a gap analysis 
 ## 1.0-rc "Release candidates"
 
 - **Practitioner review.** Two or more reviewers from wealth management operations, compliance and data architecture, each with written findings and dispositions.
-- **Ontology review.** A review by an ontology engineer familiar with FIBO, covering alignment choices, `rdfs:subClassOf` versus SKOS mappings, and reasoning behaviour.
+- **Ontology review.** A review by an ontology engineer familiar with FIBO, covering alignment choices, `rdfs:subClassOf` versus SKOS mappings, and reasoning behavior.
 - **FIBO proposals.** Submit the practitioner-defined (NEW) terms that would belong in FIBO to the EDM Council, starting with mandate types, suitability assessment, investor classification and coverage assignment. Record each outcome.
 - **DPV alignment.** Confirm the mappings to DPV for consent, purpose, personal data and AI lifecycle stages with the DPV community.
 - **Second implementation.** At least one institution extension, which can be private, built only from the public spec. Every gap it hits is logged as an issue.
@@ -146,7 +146,7 @@ These run through every release:
 | Risk | Mitigation |
 |---|---|
 | The ontology drifts from Kognita and becomes a second description of the same system | Follow Kognita milestone by milestone now; the 0.9 mapping table and CI round trip make drift a failing test |
-| Over-modelling: terms nobody populates | Every new term needs example data and a consumer, either a shape, a query or a Kognita mapping. 77 classes have no example data at 0.5 |
+| Over-modeling: terms nobody populates | Every new term needs example data and a consumer, either a shape, a query or a Kognita mapping. 77 classes have no example data at 0.5 |
 | Rules that look complete but accept bad data | Mutation checks before each release; every written rule exercised by a negative fixture |
 | Regulatory citations go stale | Register-level verification status, re-checked each release; the regulatory watch workstream |
 | Jurisdiction rules leak into the core | Thresholds and rule tables live in jurisdiction profiles as data, never as ontology axioms |

@@ -71,7 +71,7 @@ pwm:Benchmark a owl:Class ;
     skos:closeMatch fibo-sec-fund-civ:PortfolioBenchmark ;
     pwm:inModule pwm:ModuleMandates ;
     pwm:contextSpeed pwm:SlowContext ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "FIBO's PortfolioBenchmark is Provisional, so it is matched, not specialised" ] .
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "FIBO's PortfolioBenchmark is Provisional, so it is matched, not specialized" ] .
 
 pwm:Fee a owl:Class ;
     rdfs:label "fee"@en ;
@@ -171,7 +171,7 @@ pwm:InvestmentAccount a owl:Class ;
     rdfs:subClassOf fibo-fbc-pas-caa:InvestmentAccount , pwm:Account ;
     pwm:inModule pwm:ModuleAccounts ;
     pwm:defaultClassification pwm:C2 ;
-    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Specialises FIBO InvestmentAccount within the PWM account hierarchy" ] ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Specializes FIBO InvestmentAccount within the PWM account hierarchy" ] ;
     pwm:citation [ pwm:cites pwmref:FIBO ; pwm:locator "FBC/ProductsAndServices/ClientsAndAccounts/InvestmentAccount, Release; master source verified 2026-11-03" ] .
 
 pwm:CustodyAccount a owl:Class ;
@@ -334,9 +334,9 @@ pwm:SigningRuleScheme a skos:ConceptScheme ;
     pwm:inModule pwm:ModuleAccounts ;
     pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Signing authority" ] .
 pwm:SignAnyOne a skos:Concept ; skos:inScheme pwm:SigningRuleScheme ; skos:topConceptOf pwm:SigningRuleScheme ;
-    skos:prefLabel "any one to sign"@en ; skos:definition "Any single authorised signatory may instruct."@en .
+    skos:prefLabel "any one to sign"@en ; skos:definition "Any single authorized signatory may instruct."@en .
 pwm:SignTwoJointly a skos:Concept ; skos:inScheme pwm:SigningRuleScheme ; skos:topConceptOf pwm:SigningRuleScheme ;
-    skos:prefLabel "two to sign"@en ; skos:definition "Any two authorised signatories together."@en .
+    skos:prefLabel "two to sign"@en ; skos:definition "Any two authorized signatories together."@en .
 pwm:SignAllJointly a skos:Concept ; skos:inScheme pwm:SigningRuleScheme ; skos:topConceptOf pwm:SigningRuleScheme ;
     skos:prefLabel "all to sign"@en ; skos:definition "Every holder or signatory must sign."@en .
 
@@ -384,7 +384,7 @@ pwm:TargetMarket a owl:Class ;
 pwm:ApprovedProductList a owl:Class ;
     rdfs:label "approved product list"@en ;
     skos:altLabel "product shelf"@en ;
-    skos:definition "Versioned list of products approved for distribution from a booking centre."@en ;
+    skos:definition "Versioned list of products approved for distribution from a booking center."@en ;
     rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:contextSpeed pwm:SlowContext ;
@@ -393,8 +393,8 @@ pwm:ApprovedProductList a owl:Class ;
 
 pwm:CrossBorderRule a owl:Class ;
     rdfs:label "cross-border rule"@en ;
-    skos:definition "Deterministic rule stating whether an activity, such as solicitation, advice or research distribution, is permitted for a client domicile, booking centre, investor category and product."@en ;
-    skos:scopeNote "A rule table evaluated outside the model. It is not AI under MAS AIRG para 1.3 unless a model takes part in the decision. Activity, client domicile and booking centre are required; an absent investor category or product means all. When rules overlap, the most specific rule (most scope values set) decides; on a tie, not permitted wins; with no matching rule the activity is not permitted (fail closed)."@en ;
+    skos:definition "Deterministic rule stating whether an activity, such as solicitation, advice or research distribution, is permitted for a client domicile, booking center, investor category and product."@en ;
+    skos:scopeNote "A rule table evaluated outside the model. It is not AI under MAS AIRG para 1.3 unless a model takes part in the decision. Activity, client domicile and booking center are required; an absent investor category or product means all. When rules overlap, the most specific rule (most scope values set) decides; on a tie, not permitted wins; with no matching rule the activity is not permitted (fail closed)."@en ;
     rdfs:subClassOf pwm:PolicyRule ;
     skos:relatedMatch fibo-sec-sec-rst:InvestorsDomicileRestriction , fibo-sec-sec-rst:QualifiedInvestorRestriction ;
     pwm:inModule pwm:ModuleProducts ;
@@ -405,7 +405,7 @@ pwm:CrossBorderRule a owl:Class ;
 
 pwm:ProductTermSheet a owl:Class ;
     rdfs:label "product term sheet"@en ;
-    skos:definition "Offering document summarising a product's terms, payoff, risks and costs."@en ;
+    skos:definition "Offering document summarizing a product's terms, payoff, risks and costs."@en ;
     skos:editorialNote "FIBO's TermSheet (FND/Agreements) is a non-binding deal agreement, a different concept, so it is not aligned."@en ;
     rdfs:subClassOf fibo-sec-sec-iss:OfferingDocument ;
     pwm:inModule pwm:ModuleProducts ;
@@ -417,7 +417,7 @@ pwm:ProductTermSheet a owl:Class ;
 pwm:KeyInformationDocument a owl:Class ;
     rdfs:label "key information document"@en ;
     skos:altLabel "KID"@en ;
-    skos:definition "Short standardised disclosure of a packaged product's nature, risks, costs and potential returns."@en ;
+    skos:definition "Short standardized disclosure of a packaged product's nature, risks, costs and potential returns."@en ;
     rdfs:subClassOf fibo-sec-sec-iss:OfferingDocument ;
     skos:closeMatch fibo-sec-fund-civ:KeyInvestorInformationDocument ;
     pwm:inModule pwm:ModuleProducts ;
@@ -503,9 +503,9 @@ pwm:clientDomicileCode a owl:DatatypeProperty ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "client-domicile" ] .
 
-pwm:bookingCentreCode a owl:DatatypeProperty ;
-    rdfs:label "booking centre code"@en ;
-    skos:definition "Booking centre jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a booking centre is incomplete, not a rule for every booking centre."@en ;
+pwm:bookingCenterCode a owl:DatatypeProperty ;
+    rdfs:label "booking center code"@en ;
+    skos:definition "Booking center jurisdiction a rule covers, as an ISO 3166-1 alpha-2 code. Required: a rule without a booking center is incomplete, not a rule for every booking center."@en ;
     rdfs:domain pwm:CrossBorderRule ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleProducts ;
     pwm:citation [ pwm:cites pwmref:KOG-PB-PACK ; pwm:locator "booking-centre" ] .

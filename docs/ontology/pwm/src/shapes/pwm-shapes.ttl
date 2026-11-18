@@ -248,7 +248,7 @@ pwmsh:ClaimShape a sh:NodeShape ;
     sh:targetClass pwm:Claim ;
     dcterms:source pwmref:KOG-ROADMAP ;
     sh:property [ sh:path pwm:claimType ; sh:minCount 1 ; sh:maxCount 1 ;
-        sh:message "Unlabelled claims cannot be shown to an RM or sent to a client (Kognita 0.6 item 5)." ] ;
+        sh:message "Unlabeled claims cannot be shown to an RM or sent to a client (Kognita 0.6 item 5)." ] ;
     sh:property [ sh:path pwm:validatorStatus ; sh:maxCount 1  ; sh:message "validatorStatus: maximum count 1." ] ;
     sh:or (
         [ sh:not [ sh:property [ sh:path pwm:claimType ; sh:hasValue pwm:VerifiedFact  ; sh:message "claimType: required value VerifiedFact." ] ] ]
@@ -358,8 +358,8 @@ pwmsh:CrossBorderRuleShape a sh:NodeShape ;
     sh:property [ sh:path pwm:permitted ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean  ; sh:message "permitted: minimum count 1; maximum count 1; datatype boolean." ] ;
     sh:property [ sh:path pwm:clientDomicileCode ; sh:minCount 1 ; sh:pattern "^[A-Z]{2}$" ;
         sh:message "Client domicile is an ISO 3166-1 alpha-2 code." ] ;
-    sh:property [ sh:path pwm:bookingCentreCode ; sh:minCount 1 ; sh:pattern "^[A-Z]{2}$" ;
-        sh:message "Booking centre is an ISO 3166-1 alpha-2 code." ] .
+    sh:property [ sh:path pwm:bookingCenterCode ; sh:minCount 1 ; sh:pattern "^[A-Z]{2}$" ;
+        sh:message "Booking center is an ISO 3166-1 alpha-2 code." ] .
 
 pwmsh:PolicyDecisionShape a sh:NodeShape ;
     rdfs:label "Policy decision"@en ;
@@ -1006,7 +1006,7 @@ pwmsh:InstructionAssuranceShape a sh:NodeShape ; rdfs:label "InstructionAssuranc
     sh:sparql [ sh:prefixes <https://ahmedmuzammil.com/ontology/pwm/shapes> ; sh:message "Allowed high-risk instructions require signed step-up evidence and a completed approval of a held decision in the same run, strictly before the allowed decision (Kognita 0.5 item 7)." ;
         sh:select """SELECT DISTINCT $this WHERE { $this pwm:requiresStepUp true ; pwm:decisionOutcome pwm:OutcomeAllow . FILTER NOT EXISTS { $this pwm:instructionEvidence ?i ; pwm:humanApproval ?approval . ?i pwm:assuranceLevel "step-up" ; pwm:signatureReference ?signature . ?approval pwm:approvalResolution pwm:ApprovalApproved ; pwm:resolvesApproval ?request . ?request a pwm:ApprovalRequest ; pwm:requestsDecision ?held ; pwm:atCheckpoint ?checkpoint . ?held pwm:decisionOutcome pwm:OutcomeHumanApproval ; pwm:inRun ?run ; pwm:underUseCase ?approvalUseCase ; pwm:decidedByRule ?approvalRule . ?checkpoint pwm:inRun ?run ; pwm:runState pwm:RunSuspended . $this pwm:inRun ?run ; pwm:underUseCase ?approvalUseCase ; pwm:decidedByRule ?approvalRule ; prov:generatedAtTime ?decisionAt . ?approval prov:generatedAtTime ?approvedAt . FILTER(?approvedAt < ?decisionAt) } }""" ] .
 
-pwmsh:BehaviourBaselineShape a sh:NodeShape ; rdfs:label "BehaviourBaselineShape"@en ; sh:targetClass pwm:BehaviourBaseline ;
+pwmsh:BehaviorBaselineShape a sh:NodeShape ; rdfs:label "BehaviorBaselineShape"@en ; sh:targetClass pwm:BehaviorBaseline ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 8. Checks recorded evidence; runtime enforcement remains external."@en ;
     sh:property [ sh:path pwm:baselineAgent ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AIAgent ; sh:message "pwm:baselineAgent: minimum count 1, maximum count 1, class pwm:AIAgent." ] ;
     sh:property [ sh:path pwm:versionId ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "pwm:versionId: minimum count 1, maximum count 1, datatype xsd:string." ] ;
@@ -1016,9 +1016,9 @@ pwmsh:BehaviourBaselineShape a sh:NodeShape ; rdfs:label "BehaviourBaselineShape
     sh:property [ sh:path pwm:windowStart ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:message "pwm:windowStart: minimum count 1, maximum count 1, datatype xsd:dateTime." ] ;
     sh:property [ sh:path pwm:windowEnd ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:message "pwm:windowEnd: minimum count 1, maximum count 1, datatype xsd:dateTime." ] .
 
-pwmsh:BehaviourAnomalyShape a sh:NodeShape ; rdfs:label "BehaviourAnomalyShape"@en ; sh:targetClass pwm:BehaviourAnomaly ;
+pwmsh:BehaviorAnomalyShape a sh:NodeShape ; rdfs:label "BehaviorAnomalyShape"@en ; sh:targetClass pwm:BehaviorAnomaly ;
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 8. Checks recorded evidence; runtime enforcement remains external."@en ;
-    sh:property [ sh:path pwm:anomalyBaseline ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:BehaviourBaseline ; sh:message "pwm:anomalyBaseline: minimum count 1, maximum count 1, class pwm:BehaviourBaseline." ] ;
+    sh:property [ sh:path pwm:anomalyBaseline ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:BehaviorBaseline ; sh:message "pwm:anomalyBaseline: minimum count 1, maximum count 1, class pwm:BehaviorBaseline." ] ;
     sh:property [ sh:path pwm:anomalyValue ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:message "pwm:anomalyValue: minimum count 1, maximum count 1, datatype xsd:decimal." ] ;
     sh:property [ sh:path pwm:containmentApplied ; sh:hasValue true ; sh:message "pwm:containmentApplied: required value true." ] ;
     sh:property [ sh:path pwm:anomalyIncident ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:AIIncident ; sh:message "pwm:anomalyIncident: minimum count 1, maximum count 1, class pwm:AIIncident." ] ;
@@ -1112,7 +1112,7 @@ pwmsh:ActionStopShape a sh:NodeShape ; rdfs:label "ActionStopShape"@en ; sh:targ
     dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.5 item 16. Checks recorded evidence; runtime enforcement remains external."@en ;
     sh:property [ sh:path pwm:stoppedCall ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pwm:ToolCall ; sh:message "pwm:stoppedCall: minimum count 1, maximum count 1, class pwm:ToolCall." ] ;
     sh:property [ sh:path pwm:stopOutcome ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "pwm:stopOutcome: minimum count 1, maximum count 1, datatype xsd:string." ] ;
-    sh:property [ sh:path pwm:stopOutcome ; sh:in ( "cancelled" "completed" "timed-out" "unsupported" ) ; sh:message "pwm:stopOutcome: allowed values ( 'cancelled' 'completed' 'timed-out' 'unsupported' )." ] ;
+    sh:property [ sh:path pwm:stopOutcome ; sh:in ( "canceled" "completed" "timed-out" "unsupported" ) ; sh:message "pwm:stopOutcome: allowed values ( 'canceled' 'completed' 'timed-out' 'unsupported' )." ] ;
     sh:property [ sh:path pwm:stopReason ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:message "pwm:stopReason: minimum count 1, maximum count 1, datatype xsd:string." ] ;
     sh:property [ sh:path prov:generatedAtTime ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ; sh:message "prov:generatedAtTime: minimum count 1, maximum count 1, datatype xsd:dateTime." ] .
 

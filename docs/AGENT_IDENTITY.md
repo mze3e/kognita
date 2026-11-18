@@ -52,21 +52,21 @@ The linked use case must also be registered and active under the existing
 use-case controls. Tool permissions are exact names and verbs. `recommend`
 never confers `execute`. Register tool declarations with `required_level` and
 `verb`; the runner checks these against the agent's approved tool record.
-Level requirements have floors: read 0, analyse 1, recommend 2, draft 3, and
+Level requirements have floors: read 0, analyze 1, recommend 2, draft 3, and
 queue/send/execute 4. Requirements of L5 or L6 represent autonomous actions.
 An L4 requirement always withholds execution until human approval. The
 use-case maximum and existing tier ceilings also apply (tiers 1/2/3/4:
 L2/L3/L4/L4).
 
-The deployment hash binds all seven behaviour components and the authority
+The deployment hash binds all seven behavior components and the authority
 configuration, including autonomy, review date and `Agent.model`. `registry.approve_deployment()`
-requires the accountable owner and appends approval evidence. Changed behaviour
+requires the accountable owner and appends approval evidence. Changed behavior
 or authority and expired reviews deny with `S1-*` rule citations. The approved
 manifest is kept under the private `_deployment` entry in `tool_allowlist`;
-callers must preserve that entry when editing tool permissions. Behaviour
+callers must preserve that entry when editing tool permissions. Behavior
 supplied in `Envelope.context["deployment"]` is compared with the approved hash;
 it cannot grant authority. Library integrations supply their actual current
-behaviour manifest here when runtime configuration differs from the registry.
+behavior manifest here when runtime configuration differs from the registry.
 The AI gateway checks system/developer messages (joined with newlines), provider
 tool declarations and supplied instructions against the stored manifest on every
 call. Administrative manifests describe the other runtime components.

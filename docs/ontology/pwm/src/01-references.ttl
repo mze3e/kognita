@@ -242,7 +242,7 @@ pwmref:EU-MIFID2 a pwm:Reference ;
 
 pwmref:EU-MIFID2-DR a pwm:Reference ;
     dcterms:alternative "MiFID II Delegated Regulation" ;
-    dcterms:title "Commission Delegated Regulation (EU) 2017/565 supplementing MiFID II (organisational requirements and operating conditions)" ;
+    dcterms:title "Commission Delegated Regulation (EU) 2017/565 supplementing MiFID II (organizational requirements and operating conditions)" ;
     dcterms:publisher "European Commission" ;
     rdfs:seeAlso <https://eur-lex.europa.eu/eli/reg_del/2017/565/oj> ;
     pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "EU" ; pwm:verificationStatus "instrument-level" .
@@ -256,7 +256,7 @@ pwmref:EU-PRIIPS a pwm:Reference ;
 
 pwmref:EU-AI-ACT a pwm:Reference ;
     dcterms:alternative "EU AI Act" ;
-    dcterms:title "Regulation (EU) 2024/1689 laying down harmonised rules on artificial intelligence (AI Act)" ;
+    dcterms:title "Regulation (EU) 2024/1689 laying down harmonized rules on artificial intelligence (AI Act)" ;
     dcterms:publisher "European Parliament and Council" ;
     rdfs:seeAlso <https://eur-lex.europa.eu/eli/reg/2024/1689/oj> ;
     pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "EU" ; pwm:verificationStatus "instrument-level" .
@@ -265,7 +265,7 @@ pwmref:EU-AI-ACT a pwm:Reference ;
 
 pwmref:UK-FCA-COBS a pwm:Reference ;
     dcterms:alternative "FCA COBS" ;
-    dcterms:title "FCA Handbook, Conduct of Business Sourcebook (COBS 3 client categorisation; COBS 9A suitability; COBS 10A appropriateness)" ;
+    dcterms:title "FCA Handbook, Conduct of Business Sourcebook (COBS 3 client categorization; COBS 9A suitability; COBS 10A appropriateness)" ;
     dcterms:publisher "Financial Conduct Authority" ;
     rdfs:seeAlso <https://www.handbook.fca.org.uk/handbook/COBS/> ;
     pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "GB" ; pwm:verificationStatus "instrument-level" .
@@ -275,7 +275,7 @@ pwmref:UK-FCA-FG21-1 a pwm:Reference ;
     dcterms:title "FG21/1 Guidance for firms on the fair treatment of vulnerable customers" ;
     dcterms:publisher "Financial Conduct Authority" ;
     dcterms:date "2021" ;
-    rdfs:seeAlso <https://www.fca.org.uk/publication/finalised-guidance/fg21-1.pdf> ;
+    rdfs:seeAlso <https://www.fca.org.uk/publication/finalized-guidance/fg21-1.pdf> ;
     pwm:sourceType pwm:SourceRegulatory ; pwm:jurisdiction "GB" ; pwm:verificationStatus "instrument-level" .
 
 # --- Hong Kong, Switzerland, United States -----------------------------------------
@@ -356,7 +356,7 @@ pwmref:KOG-PB-PACK a pwm:Reference ;
 
 pwmref:EVOLVE a pwm:Reference ;
     dcterms:alternative "EVOLVE" ;
-    dcterms:title "EVOLVE: Building the AI-Native Enterprise (organisational maturity model for AI)" ;
+    dcterms:title "EVOLVE: Building the AI-Native Enterprise (organizational maturity model for AI)" ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
     rdfs:seeAlso <https://ahmedmuzammil.com/frameworks/evolve> ;

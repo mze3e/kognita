@@ -131,7 +131,7 @@ pwm:ScreeningEscalated a skos:Concept ; skos:inScheme pwm:ScreeningDispositionSc
 
 pwm:InvestorClassification a owl:Class ;
     rdfs:label "investor classification"@en ;
-    skos:definition "Regulatory categorisation of a client under one jurisdiction's rules, such as retail, professional or accredited, with any opt-in or opt-out recorded."@en ;
+    skos:definition "Regulatory categorization of a client under one jurisdiction's rules, such as retail, professional or accredited, with any opt-in or opt-out recorded."@en ;
     skos:editorialNote "FIBO models qualified-investor and domicile restrictions on the instrument side (SecuritiesRestrictions). This class records the client side of the same test."@en ;
     rdfs:subClassOf pwm:Assessment ;
     skos:relatedMatch fibo-sec-sec-rst:QualifiedInvestorRestriction ;
