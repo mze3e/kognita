@@ -59,7 +59,7 @@ pwm:Fact a owl:Class ;
 
 pwm:Claim a owl:Class ;
     rdfs:label "claim"@en ;
-    skos:definition "Material statement an agent produces for a person or client, typed as verified fact, inference, conversation hypothesis or possible provider capability, with its sources, calculation method, model and prompt versions and validator status."@en ;
+    skos:definition "Material statement an agent produces for a person or client, typed as verified fact, inference, conversation hypothesis or possible bank capability, with its sources, calculation method, model and prompt versions and validator status."@en ;
     skos:scopeNote "Unlabeled claims cannot be shown. An inference cannot be relabeled as fact without a cited source and verification."@en ;
     rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleEvidence ;
@@ -210,7 +210,7 @@ pwm:validatorStatus a owl:ObjectProperty ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 7: verification gate" ] .
 
-pwm:citesSource a owl:ObjectProperty ;
+pwm:citesSource a owl:ObjectProperty ; rdfs:range prov:Entity ;
     rdfs:label "cites source"@en ;
     skos:definition "Approved source, governed asset or fact a claim relies on."@en ;
     rdfs:subPropertyOf prov:wasDerivedFrom ;
@@ -295,7 +295,7 @@ pwm:eventType a owl:ObjectProperty ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.EventType" ] .
 
-pwm:evidenceFor a owl:ObjectProperty ;
+pwm:evidenceFor a owl:ObjectProperty ; rdfs:range [ a owl:Class ; owl:unionOf ( prov:Entity prov:Activity ) ] ;
     rdfs:label "evidence for"@en ;
     skos:definition "Decision, action, communication or other record that an evidence record documents. The record points to it by identifier and hash and does not copy its content."@en ;
     rdfs:domain pwm:EvidenceRecord ;
@@ -377,51 +377,51 @@ pwm:ClaimTypeScheme a skos:ConceptScheme ;
     skos:prefLabel "claim types"@en ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 5" ] , [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "claims.ClaimType" ] .
-pwm:VerifiedFact a skos:Concept ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
+pwm:VerifiedFact a skos:Concept ; skos:notation "VERIFIED_FACT" ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
     skos:prefLabel "verified fact"@en ; skos:definition "Backed by a cited source and verification."@en .
-pwm:Inference a skos:Concept ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
+pwm:Inference a skos:Concept ; skos:notation "INFERENCE" ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
     skos:prefLabel "inference"@en ; skos:definition "Reasoned from facts; not itself verified."@en .
-pwm:ConversationHypothesis a skos:Concept ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
+pwm:ConversationHypothesis a skos:Concept ; skos:notation "CONVERSATION_HYPOTHESIS" ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
     skos:prefLabel "conversation hypothesis"@en ; skos:definition "Something worth raising with the client, to be tested in conversation."@en .
-pwm:PossibleProviderCapability a skos:Concept ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
-    skos:prefLabel "possible provider capability"@en ; skos:altLabel "possible bank capability"@en ;
+pwm:PossibleBankCapability a skos:Concept ; skos:notation "POSSIBLE_BANK_CAPABILITY" ; skos:inScheme pwm:ClaimTypeScheme ; skos:topConceptOf pwm:ClaimTypeScheme ;
+    skos:prefLabel "possible bank capability"@en ; skos:altLabel "possible provider capability"@en ;
     skos:definition "Something the institution might be able to offer, not yet confirmed."@en .
 
 pwm:ValidatorStatusScheme a skos:ConceptScheme ;
     skos:prefLabel "validator statuses"@en ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 7" ] , [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "claims.ValidatorStatus" ] .
-pwm:ValidatorVerified a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "verified"@en ; skos:definition "Verifier confirmed it."@en .
-pwm:ValidatorInferred a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "inferred"@en ; skos:definition "Supported only by inference."@en .
-pwm:ValidatorUnverified a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "unverified"@en ; skos:definition "Not yet checked."@en .
-pwm:ValidatorConflicting a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "conflicting"@en ; skos:definition "Sources disagree."@en .
-pwm:ValidatorStale a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "stale"@en ; skos:definition "Relies on data past its freshness threshold."@en .
-pwm:ValidatorBlocked a skos:Concept ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "blocked"@en ; skos:definition "May not be released."@en .
+pwm:ValidatorVerified a skos:Concept ; skos:notation "VERIFIED" ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "verified"@en ; skos:definition "Verifier confirmed it."@en .
+pwm:ValidatorInferred a skos:Concept ; skos:notation "INFERRED" ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "inferred"@en ; skos:definition "Supported only by inference."@en .
+pwm:ValidatorUnverified a skos:Concept ; skos:notation "UNVERIFIED" ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "unverified"@en ; skos:definition "Not yet checked."@en .
+pwm:ValidatorConflicting a skos:Concept ; skos:notation "CONFLICTING" ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "conflicting"@en ; skos:definition "Sources disagree."@en .
+pwm:ValidatorStale a skos:Concept ; skos:notation "STALE" ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "stale"@en ; skos:definition "Relies on data past its freshness threshold."@en .
+pwm:ValidatorBlocked a skos:Concept ; skos:notation "BLOCKED" ; skos:inScheme pwm:ValidatorStatusScheme ; skos:topConceptOf pwm:ValidatorStatusScheme ; skos:prefLabel "blocked"@en ; skos:definition "May not be released."@en .
 
 pwm:AssetStatusScheme a skos:ConceptScheme ;
     skos:prefLabel "information asset statuses"@en ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 9: superseded, current, draft" ] .
-pwm:AssetDraft a skos:Concept ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "draft"@en ; skos:definition "Not approved; never given to AI as authoritative."@en .
-pwm:AssetCurrent a skos:Concept ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "current"@en ; skos:definition "Approved and in force."@en .
-pwm:AssetSuperseded a skos:Concept ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "superseded"@en ; skos:definition "Replaced by a later version; kept for reconstruction only."@en .
-pwm:AssetWithdrawn a skos:Concept ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "withdrawn"@en ; skos:definition "Withdrawn without replacement."@en .
+pwm:AssetDraft a skos:Concept ; skos:notation "draft" ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "draft"@en ; skos:definition "Not approved; never given to AI as authoritative."@en .
+pwm:AssetCurrent a skos:Concept ; skos:notation "current" ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "current"@en ; skos:definition "Approved and in force."@en .
+pwm:AssetSuperseded a skos:Concept ; skos:notation "superseded" ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "superseded"@en ; skos:definition "Replaced by a later version; kept for reconstruction only."@en .
+pwm:AssetWithdrawn a skos:Concept ; skos:notation "withdrawn" ; skos:inScheme pwm:AssetStatusScheme ; skos:topConceptOf pwm:AssetStatusScheme ; skos:prefLabel "withdrawn"@en ; skos:definition "Withdrawn without replacement."@en .
 
 pwm:StaleActionScheme a skos:ConceptScheme ;
     skos:prefLabel "stale-data actions"@en ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.StaleAction" ] .
-pwm:StaleRefresh a skos:Concept ; skos:inScheme pwm:StaleActionScheme ; skos:topConceptOf pwm:StaleActionScheme ; skos:prefLabel "refresh"@en ; skos:definition "Fetch a current value before use."@en .
-pwm:StaleSuppress a skos:Concept ; skos:inScheme pwm:StaleActionScheme ; skos:topConceptOf pwm:StaleActionScheme ; skos:prefLabel "suppress"@en ; skos:definition "Do not use the value."@en .
-pwm:StaleWarn a skos:Concept ; skos:inScheme pwm:StaleActionScheme ; skos:topConceptOf pwm:StaleActionScheme ; skos:prefLabel "warn"@en ; skos:definition "Use with a visible staleness warning."@en .
+pwm:StaleRefresh a skos:Concept ; skos:notation "REFRESH" ; skos:inScheme pwm:StaleActionScheme ; skos:topConceptOf pwm:StaleActionScheme ; skos:prefLabel "refresh"@en ; skos:definition "Fetch a current value before use."@en .
+pwm:StaleSuppress a skos:Concept ; skos:notation "SUPPRESS" ; skos:inScheme pwm:StaleActionScheme ; skos:topConceptOf pwm:StaleActionScheme ; skos:prefLabel "suppress"@en ; skos:definition "Do not use the value."@en .
+pwm:StaleWarn a skos:Concept ; skos:notation "WARN" ; skos:inScheme pwm:StaleActionScheme ; skos:topConceptOf pwm:StaleActionScheme ; skos:prefLabel "warn"@en ; skos:definition "Use with a visible staleness warning."@en .
 
 pwm:MemoryScopeScheme a skos:ConceptScheme ;
     skos:prefLabel "memory scopes"@en ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "memory.MemoryScope" ] .
-pwm:MemoryWorking a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "working"@en ; skos:definition "Temporary context; expires with the run."@en .
-pwm:MemoryRelationship a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "relationship"@en ; skos:definition "Durable client information, governed like any bank record."@en .
-pwm:MemoryInstitutional a skos:Concept ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "institutional"@en ; skos:definition "What the organization learns across clients; no client data."@en .
+pwm:MemoryWorking a skos:Concept ; skos:notation "WORKING" ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "working"@en ; skos:definition "Temporary context; expires with the run."@en .
+pwm:MemoryRelationship a skos:Concept ; skos:notation "RELATIONSHIP" ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "relationship"@en ; skos:definition "Durable client information, governed like any bank record."@en .
+pwm:MemoryInstitutional a skos:Concept ; skos:notation "INSTITUTIONAL" ; skos:inScheme pwm:MemoryScopeScheme ; skos:topConceptOf pwm:MemoryScopeScheme ; skos:prefLabel "institutional"@en ; skos:definition "What the organization learns across clients; no client data."@en .
 
 pwm:EvidenceEventTypeScheme a skos:ConceptScheme ;
     skos:prefLabel "evidence event types"@en ;

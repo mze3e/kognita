@@ -2,7 +2,7 @@
 # declared with owl:deprecated for one version and names its replacement
 # (ROADMAP.md, versioning policy).
 #
-# 0.6 renamed nine terms to US English spelling. Remove these declarations in 0.7.
+# 0.6 renamed ten terms to US English spelling. Remove these declarations in 0.7.
 
 owl:deprecated a owl:AnnotationProperty .
 dcterms:isReplacedBy a owl:AnnotationProperty .
@@ -51,3 +51,8 @@ pwm:VerbAnalyse a skos:Concept ; skos:prefLabel "analyse (deprecated)"@en ;
     skos:definition "Deprecated spelling. Use pwm:VerbAnalyze. The Kognita action verb value stays analyse."@en ;
     owl:deprecated true ; dcterms:isReplacedBy pwm:VerbAnalyze ; skos:exactMatch pwm:VerbAnalyze ;
     pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
+
+pwm:PossibleProviderCapability a skos:Concept ; skos:prefLabel "possible provider capability (deprecated)"@en ;
+    skos:definition "Deprecated name. Use pwm:PossibleBankCapability, which matches Kognita's ClaimType value POSSIBLE_BANK_CAPABILITY."@en ;
+    owl:deprecated true ; dcterms:isReplacedBy pwm:PossibleBankCapability ; skos:exactMatch pwm:PossibleBankCapability ;
+    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 rename to match Kognita ClaimType; deprecated alias for one version" ] .

@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.5 example data
+#  PWM 0.8 example data
 #
 #  Synthetic data for a fictional firm, Example Private Bank. No real client,
 #  person, firm or security appears here. Identifiers are well formed but
@@ -24,13 +24,14 @@
 @prefix cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/> .
 @prefix fibo-fnd-aap-ppl: <https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/> .
 @prefix fibo-sec-dbt-bnd: <https://spec.edmcouncil.org/fibo/ontology/SEC/Debt/Bonds/> .
+@prefix fibo-fnd-pty-pty: <https://spec.edmcouncil.org/fibo/ontology/FND/Parties/Parties/> .
 @prefix pwm:      <https://ahmedmuzammil.com/ontology/pwm#> .
 @prefix ex:       <https://example.org/pwm-example#> .
 
 <https://example.org/pwm-example> a owl:Ontology ;
-    dcterms:title "PWM 0.5 example data"@en ;
+    dcterms:title "PWM 0.8 example data"@en ;
     dcterms:description "Synthetic data for a fictional firm, Example Private Bank. No real client, person, firm or security."@en ;
-    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl> ;
+    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.8/pwm-shapes.ttl> ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
 
 # --- People (fictional) --------------------------------------------------------------------
@@ -780,3 +781,168 @@ ex:LiveSwitch a pwm:KillSwitch ;
     pwm:scopeUseCase ex:UseCaseMeetingPrep .
 
 ex:LiveObserver a prov:Agent .
+
+
+# >>> coverage BEGIN (0.8: every class has example data; see tests/test_example_coverage.py)
+# --- A second fictional family: trust structure, due diligence and roles -----------------------
+ex:PersonSettlor a fibo-fnd-aap-ppl:Person ; rdfs:label "Settlor (fictional person)"@en .
+ex:PersonTrustee a fibo-fnd-aap-ppl:Person ; rdfs:label "Trustee (fictional person)"@en .
+ex:PersonTrustBeneficiary a fibo-fnd-aap-ppl:Person ; rdfs:label "Trust beneficiary (fictional person)"@en .
+ex:PersonProtector a fibo-fnd-aap-ppl:Person ; rdfs:label "Protector (fictional person)"@en .
+ex:PersonPEP a fibo-fnd-aap-ppl:Person ; rdfs:label "Politically exposed person (fictional person)"@en .
+ex:PersonAdviser a fibo-fnd-aap-ppl:Person ; rdfs:label "Investment adviser (fictional person)"@en .
+ex:PersonController a fibo-fnd-aap-ppl:Person ; rdfs:label "Controlling person (fictional person)"@en .
+ex:PersonSignatory a fibo-fnd-aap-ppl:Person, pwm:AuthorizedSignatory ; rdfs:label "Authorized signatory (fictional person)"@en .
+ex:PersonAttorney a fibo-fnd-aap-ppl:Person, pwm:PowerOfAttorneyHolder ; rdfs:label "Power of attorney holder (fictional person)"@en .
+ex:FamilyTrust a pwm:Trust ; rdfs:label "Family trust (fictional)"@en .
+ex:SettlorRole a pwm:Settlor ; cmns-rlcmp:isPlayedBy ex:PersonSettlor .
+ex:TrusteeRole a pwm:Trustee ; cmns-rlcmp:isPlayedBy ex:PersonTrustee .
+ex:TrustBeneficiaryRole a pwm:TrustBeneficiary ; cmns-rlcmp:isPlayedBy ex:PersonTrustBeneficiary .
+ex:ProtectorRole a pwm:Protector ; cmns-rlcmp:isPlayedBy ex:PersonProtector .
+ex:BeneficialOwnerRole a pwm:BeneficialOwner ; cmns-rlcmp:isPlayedBy ex:PersonTrustBeneficiary .
+ex:ControllingPersonRole a pwm:ControllingPerson ; cmns-rlcmp:isPlayedBy ex:PersonController .
+ex:PEPRole a pwm:PoliticallyExposedPerson ; cmns-rlcmp:isPlayedBy ex:PersonPEP ; pwm:pepCategory pwm:DomesticPEP .
+ex:AdviserRole a pwm:InvestmentAdviser ; cmns-rlcmp:isPlayedBy ex:PersonAdviser .
+ex:ProspectRole a pwm:Prospect ; cmns-rlcmp:isPlayedBy ex:PersonPEP .
+ex:ExternalManagerRole a pwm:ExternalAssetManager ; cmns-rlcmp:isPlayedBy ex:PersonAdviser .
+ex:ConnectedPartyRole a pwm:ConnectedParty ; cmns-rlcmp:isPlayedBy ex:PersonController ; pwm:connectedTo ex:Client .
+ex:EntityClient1 a pwm:EntityClient ; rdfs:label "Entity client (fictional)"@en .
+ex:Foundation1 a pwm:Foundation ; rdfs:label "Foundation (fictional)"@en .
+ex:PIC1 a pwm:PrivateInvestmentCompany ; rdfs:label "Private investment company (fictional)"@en .
+ex:FamilyOffice1 a pwm:FamilyOffice ; rdfs:label "Family office (fictional)"@en .
+ex:WealthService1 a pwm:WealthManagementService ; rdfs:label "Wealth management service (fictional)"@en .
+ex:Custodian1 a pwm:Custodian ; rdfs:label "Custodian (fictional)"@en .
+ex:EDD1 a pwm:EnhancedDueDiligence ; rdfs:label "Enhanced due diligence for the PEP (fictional)"@en .
+ex:PeriodicReview1 a pwm:PeriodicReview ; pwm:assesses ex:Client ; rdfs:label "Periodic review (fictional)"@en .
+ex:SourceOfWealth1 a pwm:SourceOfWealthAssessment ; pwm:assesses ex:Client ; rdfs:label "Source of wealth assessment (fictional)"@en .
+ex:SourceOfFunds1 a pwm:SourceOfFundsAssessment ; pwm:assesses ex:Client ; rdfs:label "Source of funds assessment (fictional)"@en .
+ex:Screening1 a pwm:ScreeningResult ; pwm:assesses ex:Client ; pwm:screeningDisposition pwm:ScreeningFalsePositive ; rdfs:label "Screening result (fictional)"@en .
+# --- Suitability, mandates and fees ----------------------------------------------------------
+ex:KnowledgeAssessment1 a pwm:KnowledgeAndExperienceAssessment ; pwm:assesses ex:Client ; rdfs:label "Knowledge and experience assessment (fictional)"@en .
+ex:FinancialSituation1 a pwm:FinancialSituationAssessment ; pwm:assesses ex:Client ; rdfs:label "Financial situation assessment (fictional)"@en .
+ex:Appropriateness1 a pwm:AppropriatenessAssessment ; pwm:assesses ex:Client ; rdfs:label "Appropriateness assessment (fictional)"@en .
+ex:InvestmentObjective1 a pwm:InvestmentObjective ; rdfs:label "Capital growth over ten years (fictional)"@en .
+ex:SuitabilityReport1 a pwm:SuitabilityReport ; rdfs:label "Suitability report (fictional)"@en .
+ex:ClientAcknowledgement1 a pwm:ClientAcknowledgement ; rdfs:label "Client acknowledgement of the suitability report (fictional)"@en .
+ex:DiscretionaryMandate1 a pwm:DiscretionaryMandate ; rdfs:label "Discretionary mandate (fictional)"@en .
+ex:ExecutionOnly1 a pwm:ExecutionOnlyArrangement ; rdfs:label "Execution-only arrangement (fictional)"@en .
+ex:CustodyOnly1 a pwm:CustodyOnlyArrangement ; rdfs:label "Custody-only arrangement (fictional)"@en .
+ex:ModelPortfolio1 a pwm:ModelPortfolio ; rdfs:label "Balanced model portfolio (fictional)"@en .
+ex:Benchmark1 a pwm:Benchmark ; rdfs:label "Balanced composite benchmark (fictional)"@en .
+ex:Fee1 a pwm:Fee ; pwm:feeType pwm:FeeAdvisory ; rdfs:label "Advisory fee (fictional)"@en .
+ex:ThirdPartyPayment1 a pwm:ThirdPartyPayment ; rdfs:label "Third-party payment disclosed to the client (fictional)"@en .
+# --- Accounts and products -----------------------------------------------------------------
+ex:CustodyAccount1 a pwm:CustodyAccount ; rdfs:label "Custody account (fictional)"@en .
+ex:CashAccount1 a pwm:CashAccount ; rdfs:label "Cash account (fictional)"@en .
+ex:JointAccount1 a pwm:JointAccount ; rdfs:label "Joint account (fictional)"@en .
+ex:Position1 a pwm:Position ; rdfs:label "Position in a fictional bond"@en .
+ex:Lombard1 a pwm:LombardFacility ; pwm:securedBy ex:Portfolio ; rdfs:label "Lombard facility (fictional)"@en .
+ex:TargetMarket1 a pwm:TargetMarket ; rdfs:label "Target market for the fictional bond"@en .
+ex:ApprovedList1 a pwm:ApprovedProductList ; rdfs:label "Approved product list (fictional)"@en .
+ex:TermSheet1 a pwm:ProductTermSheet ; rdfs:label "Term sheet (fictional)"@en .
+ex:KID1 a pwm:KeyInformationDocument ; rdfs:label "Key information document (fictional)"@en .
+# --- Client circumstances ---------------------------------------------------------------------
+ex:Complaint1 a pwm:Complaint ; rdfs:label "Complaint about a late statement (fictional)"@en .
+ex:Vulnerability1 a pwm:VulnerabilityIndicator ; rdfs:label "Vulnerability indicator (fictional)"@en .
+ex:Consent1 a pwm:Consent ; rdfs:label "Consent to AI-assisted processing (fictional)"@en .
+# --- Governance and evidence --------------------------------------------------------------------
+ex:AISystem1 a pwm:AISystem ; rdfs:label "Internal AI system (fictional)"@en .
+ex:ThirdPartyAI1 a pwm:ThirdPartyAI ; rdfs:label "Third-party AI system (fictional)"@en .
+ex:ModelOwner1 a pwm:ModelOwner ; cmns-rlcmp:isPlayedBy ex:PersonHeadOfAdvisory .
+ex:KillSwitchDrill1 a pwm:KillSwitchDrill ; rdfs:label "Kill switch drill (fictional)"@en .
+ex:Definition1 a pwm:GovernedDefinition ; pwm:definesTerm "AUM" ; rdfs:label "Assets under management (fictional definition)"@en .
+ex:Memory1 a pwm:MemoryRecord ; pwm:memoryScope pwm:MemoryWorking ; rdfs:label "Working memory for the meeting (fictional)"@en .
+ex:BudgetDenial1 a pwm:BudgetExceededDenial ; prov:generatedAtTime "2026-11-03T09:58:00+08:00"^^xsd:dateTime ; pwm:budgetDimension "max_calls" ; pwm:exceededBudget ex:Budget ;
+    pwm:decidedByRule ex:RuleModelAccess ; pwm:decisionOutcome pwm:OutcomeDeny ; pwm:hasCheck ex:ModelAccessCheck ; pwm:underUseCase ex:UseCaseMeetingPrep .
+ex:Finding1 a pwm:ReconstructionFinding ; pwm:findingKind "hash mismatch" ; pwm:findingRecord ex:RetainedPrompt ;
+    pwm:expectedHash "sha256:1111111111111111111111111111111111111111111111111111111111111111" ; pwm:observedHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" .
+ex:DataGovernanceCommittee1 a pwm:DataGovernanceCommittee ; rdfs:label "Data governance committee (fictional)"@en .
+ex:ChiefRiskOfficer1 a pwm:ChiefRiskOfficer ; cmns-rlcmp:isPlayedBy ex:PersonHeadOfAdvisory .
+# --- Remaining properties, attached to the records above ---------------------------------------
+ex:RuleSolicitation pwm:appliesToInvestorCategory pwm:RetailInvestorSG ; pwm:appliesToProduct ex:Product .
+ex:ToolDraftNote pwm:boundaryTier pwm:AskFirst ; pwm:publicContentTool false ; pwm:decisionSeparatedSteps false .
+ex:RiskProfileV2 pwm:capacityForLoss pwm:RatingMedium .
+ex:Mandate pwm:hasBenchmark ex:Benchmark1 .
+ex:EntityClient1 pwm:hasBeneficialOwner ex:BeneficialOwnerRole .
+ex:Position1 pwm:inInstrument ex:Bond .
+ex:ModelPortfolio1 pwm:targetRiskProfile pwm:RP3 .
+ex:ClaimRiskProfile pwm:usesDefinition ex:Definition1 .
+ex:Report pwm:hasFinding ex:Finding1 .
+ex:Coverage pwm:assignedCoverage ex:RM .
+ex:TaxSelfCertification pwm:hasTaxIdentifier ex:TaxId1 .
+ex:TaxId1 a fibo-fnd-pty-pty:TaxIdentifier ; rdfs:label "Synthetic taxpayer identifier"@en .
+ex:DeleteDraft pwm:compensatesCall ex:ProxyCall .
+ex:PassageParent a pwm:DocumentElement ; pwm:ingestedFrom ex:Ingestion ; pwm:pageNumber "1"^^xsd:positiveInteger ; pwm:sectionPath "root" ; pwm:characterStart "0"^^xsd:nonNegativeInteger ; pwm:characterEnd "30"^^xsd:nonNegativeInteger ; pwm:classification pwm:C2 ; pwm:contentHash "sha256:3333333333333333333333333333333333333333333333333333333333333333" .
+ex:Passage pwm:parentElement ex:PassageParent .
+ex:RuleOther a pwm:PolicyRule ; pwm:ruleCitation "Synthetic rule outside every use case in this example" ; pwm:versionId "1.0" ; pwm:validFrom "2026-11-03T00:00:00Z"^^xsd:dateTime .
+ex:ScopedSwitch a pwm:KillSwitch ; pwm:scopePolicy ex:RuleOther ; pwm:scopePromptVersion "other-v1" .
+ex:BuiltInPack a pwm:PolicyPack ; pwm:versionId "1" ; pwm:packPolicy ex:PolicyArtifact ; pwm:fixtureLocator "urn:synthetic:builtin-pack-fixtures"^^xsd:anyURI .
+ex:PrivateBankingPack pwm:shadowsPack ex:BuiltInPack .
+ex:Coverage0 pwm:answerText "The client's risk profile in force and the mandate are recorded." .
+ex:UseCaseMeetingPrep pwm:permitsSelfVerification false ; pwm:requiresReasoningTrace false .
+ex:Evidence1 pwm:actorType pwm:ActorAgent ; pwm:schemaVersion "1" ; pwm:evidenceSequence "0"^^xsd:nonNegativeInteger ; pwm:signature "c2lnbmF0dXJlLXN5bnRoZXRpYw==" ; pwm:signedBy ex:SigningKey2 .
+ex:Evidence4 pwm:egressDecision pwm:EgressRedact ; pwm:actorType pwm:ActorAgent .
+ex:ModelAccessCheck pwm:checkResult pwm:CheckPass .
+ex:Approval pwm:approvalRequestStatus pwm:ApprovalStatusApproved .
+ex:Incident pwm:incidentKind pwm:IncidentProviderFailure .
+ex:ProviderRegistration1 pwm:providerIncident ex:Incident .
+ex:IncidentReport1 pwm:reportAffectedClients ex:Affected .
+ex:Assertion2 a pwm:ExternalAgentAssertion ; pwm:assertionIssuer "https://issuer.example.org" ; pwm:assertionSubject "external-agent-1-child" ; pwm:assertionPrincipal ex:PersonRM ; pwm:assertionPurpose "meeting preparation" ; pwm:assertionAudience "example-private-bank" ; pwm:assertionScope "read=portfolio" ; pwm:assertionDepth "1"^^xsd:nonNegativeInteger ; pwm:parentAssertion ex:Assertion1 ; pwm:issuedAt "2026-11-10T08:30:00+08:00"^^xsd:dateTime ; pwm:expiresAt "2026-11-10T18:00:00+08:00"^^xsd:dateTime .
+ex:OriginationNoContact a pwm:Origination ; pwm:partOfInteraction ex:Interaction ; pwm:withClient ex:Client ; pwm:originationTrigger pwm:OriginationSchedule ;
+    pwm:rationale "Scheduled review found the client travelling; no contact is recommended this week." ; pwm:doNotContactReason pwm:DNCPoorTiming ;
+    prov:startedAtTime "2026-11-03T09:56:00+08:00"^^xsd:dateTime .
+# <<< coverage END
+
+# >>> module 12 BEGIN (generated by tools/gen_module12.py)
+
+# --- Module 12: trust, resilience and assurance (synthetic) ------------------------------------
+ex:SigningKey1 a pwm:SigningKey ; rdfs:label "Evidence signing key 1 (fictional)"@en ; pwm:keyId "key-0001" ; pwm:publicKeyReference "urn:synthetic:pubkey:0001" ; pwm:escrowReference "urn:synthetic:escrow:0001" .
+ex:SigningKey2 a pwm:SigningKey ; rdfs:label "Evidence signing key 2 (fictional)"@en ; pwm:keyId "key-0002" ; pwm:publicKeyReference "urn:synthetic:pubkey:0002" .
+ex:KeyRotation1 a pwm:KeyRotation ; pwm:rotatesFrom ex:SigningKey1 ; pwm:rotatesTo ex:SigningKey2 ; prov:generatedAtTime "2026-11-10T09:00:00+08:00"^^xsd:dateTime .
+ex:KeyRevocation1 a pwm:KeyRevocation ; pwm:revokesKey ex:SigningKey1 ; pwm:effectiveFromSequence "100"^^xsd:nonNegativeInteger ; prov:generatedAtTime "2026-11-10T09:05:00+08:00"^^xsd:dateTime .
+ex:Anchor1 a pwm:EvidenceAnchor ; pwm:anchoredRecordHash "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ; pwm:anchoredSequence "8"^^xsd:nonNegativeInteger ; pwm:anchorLocation "urn:synthetic:independent-store/anchors-0001" ; prov:generatedAtTime "2026-11-10T09:10:00+08:00"^^xsd:dateTime .
+ex:Recovery1 a pwm:RecoveryBundle ; pwm:bundleHash "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" ; pwm:recoveryCutoffSequence "8"^^xsd:nonNegativeInteger ; pwm:restoreVerified true ; pwm:includesRetentionState true .
+ex:ExternalReview1 a pwm:ExternalReviewSubmission ; pwm:reviewedFromSequence "0"^^xsd:nonNegativeInteger ; pwm:reviewedToSequence "8"^^xsd:nonNegativeInteger ; pwm:signedBy ex:SigningKey2 ; prov:wasAttributedTo ex:PersonHeadOfAdvisory .
+ex:UseCaseMeetingPrep pwm:approvedFallbackModel ex:FallbackModelCard .
+ex:ProviderRegistration1 a pwm:ModelProviderRegistration ; pwm:registeredProvider ex:Provider ; pwm:dependentUseCase ex:UseCaseMeetingPrep ;
+    pwm:dataResidency "Singapore" ; pwm:dataRetentionTerms "No retention after the response" ; pwm:trainingUse false ; pwm:subProcessor "Cloud host (fictional)" ;
+    pwm:encryptionDescription "TLS 1.3 in transit; AES-256 at rest" ; pwm:incidentNotificationTerms "Within 24 hours" ; pwm:availabilityCommitment "99.9 percent monthly" ;
+    pwm:modelChangeNotice "30 days written notice" ; pwm:auditRights true ; pwm:exitPlanReference "urn:synthetic:exit-plan:0001" ; pwm:regulatoryCooperation "Cooperates with the firm's regulators" .
+ex:FallbackModelCard a pwm:ModelCard ; rdfs:label "Fallback model card (fictional)"@en .
+ex:Failover1 a pwm:ProviderFailover ; pwm:failoverFrom ex:ModelCard ; pwm:failoverTo ex:FallbackModelCard ; pwm:failoverUseCase ex:UseCaseMeetingPrep ; pwm:failoverTrigger pwm:TriggerHttp5xx ; prov:generatedAtTime "2026-11-10T10:00:00+08:00"^^xsd:dateTime .
+ex:ModelChange1 a pwm:ModelChangeDetection ; pwm:approvedModelVersion "model-2026-09" ; pwm:servedModelVersion "model-2026-10" ; pwm:triggersRevalidation true ; pwm:detectedOnCall ex:GatewayCall .
+ex:Dependency1 a pwm:AIDependency ; pwm:dependencyLayer pwm:LayerModelProvider ; pwm:dependencyOf ex:UseCaseMeetingPrep ; pwm:dependencyTarget "Model provider (fictional)" ; pwm:dependencyDeclared true ; pwm:dependencyObserved true .
+ex:Dependency2 a pwm:AIDependency ; pwm:dependencyLayer pwm:LayerVectorPlatform ; pwm:dependencyOf ex:UseCaseMeetingPrep ; pwm:dependencyTarget "Vector platform (fictional)" ; pwm:dependencyDeclared false ; pwm:dependencyObserved true .
+ex:Divergence1 a pwm:DependencyDivergence ; pwm:divergenceKind pwm:DivergenceUndeclared ; pwm:divergenceDependency ex:Dependency2 .
+ex:Concentration1 a pwm:ConcentrationMeasure ; pwm:concentrationLayer pwm:LayerModelProvider ; pwm:concentrationTarget "Model provider (fictional)" ; pwm:criticalUseCaseCount "1"^^xsd:nonNegativeInteger ; pwm:criticalUseCaseTotal "1"^^xsd:nonNegativeInteger ; pwm:criticalUseCaseShare "1.0"^^xsd:decimal .
+ex:Drill1 a pwm:FailureDrill ; pwm:drillKind pwm:DrillModelUnavailable ; pwm:drillUseCase ex:UseCaseMeetingPrep ; pwm:evidenceCompleteAfterDrill true ; pwm:gatewayFailureMode pwm:FailClosed .
+ex:RecordRetention1 a pwm:RecordClassRetention ; pwm:recordClass pwm:RecordAdvice ; pwm:classRetentionDays "2555"^^xsd:nonNegativeInteger .
+ex:RecordRetention2 a pwm:RecordClassRetention ; pwm:recordClass pwm:RecordComplianceRecords ; pwm:retainIndefinitely true .
+ex:IncidentReport1 a pwm:IncidentReport ; pwm:reportsIncident ex:Incident ; pwm:redactedReport false ; pwm:controlRan "policy decision before model call" ; pwm:controlFailed "none missing" ; pwm:runtimeChange "none" .
+ex:AssurancePolicy1 a pwm:AssurancePolicy ; pwm:assuranceUseCase ex:UseCaseMeetingPrep ; pwm:assuranceAudience "example-private-bank" ; pwm:requiresExternalAssertion false ; pwm:requiresDeploymentAttestation pwm:AttestationMonitoring ; pwm:requiresComponentApproval true ; pwm:requiresTransferClassification true ; pwm:requiresUpdateApproval true ; pwm:outcomeStepDown true ; pwm:maxAdverseOutcomes "1"^^xsd:positiveInteger ; pwm:outcomeWindowDays "30"^^xsd:positiveInteger .
+ex:Manifest1 a pwm:AgentManifest ; pwm:manifestSchemaVersion "kognita-kya-1" ; pwm:manifestOfAgent ex:Agent ; pwm:manifestDigest "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ; pwm:signedBy ex:SigningKey2 .
+ex:Assertion1 a pwm:ExternalAgentAssertion ; pwm:assertionIssuer "https://issuer.example.org" ; pwm:assertionSubject "external-agent-1" ; pwm:assertionPrincipal ex:PersonRM ; pwm:assertionPurpose "meeting preparation" ; pwm:assertionAudience "example-private-bank" ; pwm:assertionScope "read=portfolio" ; pwm:assertionDepth "0"^^xsd:nonNegativeInteger ; pwm:issuedAt "2026-11-10T08:00:00+08:00"^^xsd:dateTime ; pwm:expiresAt "2026-11-10T20:00:00+08:00"^^xsd:dateTime .
+ex:Attestation1 a pwm:DeploymentAttestation ; pwm:attestationKind pwm:AttestationMonitoring ; pwm:attestationIssuer "independent-assessor (fictional)" ; pwm:attestationSubject "meeting preparation agent" ; pwm:attestsDeployment "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" ; pwm:attestsPolicy "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" ; pwm:attestationReference "urn:synthetic:attestation:0001" ; pwm:issuedAt "2026-11-10T08:00:00+08:00"^^xsd:dateTime ; pwm:expiresAt "2027-02-10T08:00:00+08:00"^^xsd:dateTime .
+ex:UpdateApproval1 a pwm:ThirdPartyUpdateApproval ; pwm:candidateDigest "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" ; pwm:regressionReference "urn:synthetic:regression:0001" ; pwm:rollbackReference "urn:synthetic:rollback:0001" ; pwm:providerChange "Provider updated the served model" ; pwm:approvedBy ex:PersonHeadOfAdvisory .
+ex:Component1 a pwm:ApprovedComponent ; pwm:componentName "agent-runtime" ; pwm:componentVersion "1.4.2" ; pwm:sbomDigest "1111111111111111111111111111111111111111111111111111111111111111" ; pwm:imageDigest "sha256:2222222222222222222222222222222222222222222222222222222222222222" ; pwm:provenanceReference "urn:synthetic:provenance:0001" .
+ex:Advisory1 a pwm:ComponentAdvisory ; pwm:advisoryReference "urn:synthetic:advisory:0001" ; pwm:affectsComponent ex:Component1 ; pwm:quarantined false .
+ex:Transfer1 a pwm:TechnologyTransferClassification ; pwm:transferType pwm:TransferApi ; pwm:technologyOrigin "SG" ; pwm:deploymentJurisdiction "SG" ; pwm:transferPolicyReference "urn:synthetic:transfer-policy:0001" .
+ex:ProductionOutcome1 a pwm:ProductionOutcome ; pwm:outcomeKind pwm:Correction ; pwm:partOfInteraction ex:Interaction ; pwm:affectedOutput ex:Recommendation ; pwm:implicatedModel ex:Model ; pwm:outcomeApprover ex:PersonRM ; pwm:outcomeId "outcome-0001" ; pwm:outcomeSourceReference "urn:synthetic:crm:outcome-0001" ; pwm:intendedResult "Meeting brief delivered" ; pwm:actualResult "Meeting brief delivered" ; pwm:adverse false .
+ex:VerifierProvider a pwm:ModelProvider ; rdfs:label "Verifier model provider (fictional)"@en .
+ex:VerifierModelCard a pwm:ModelCard ; pwm:providedBy ex:VerifierProvider ; pwm:modelVersion "verifier-2026-10" ; rdfs:label "Verifier model card (fictional)"@en .
+ex:Verifier1 a pwm:Verifier ; pwm:verifierAgent ex:Agent ; pwm:verifierModelCard ex:VerifierModelCard .
+ex:ClaimVerification1 a pwm:ClaimVerification ; pwm:verifiedClaim ex:ClaimRiskProfile ; pwm:verifiedBy ex:Verifier1 ; pwm:producerModelCard ex:ModelCard ; pwm:verificationVerdict pwm:ValidatorVerified ; pwm:underUseCase ex:UseCaseMeetingPrep .
+ex:Evaluation1 a pwm:EvaluationResult ; pwm:evaluatesAgent ex:Agent ; pwm:evaluatedVersion "agent-1.4" ; pwm:evaluatedModelVersion "model-2026-09" ; pwm:evaluationLevel pwm:LevelAgent ; pwm:evaluationDeploymentHash "3333333333333333333333333333333333333333333333333333333333333333" ; pwm:hasMetricValue ex:Metric1, ex:Metric2 .
+ex:Metric1 a pwm:EvaluationMetricValue ; pwm:metricName "groundedness" ; pwm:metricScore "0.96"^^xsd:decimal .
+ex:Metric2 a pwm:EvaluationMetricValue ; pwm:metricName "hallucination rate" ; pwm:metricScore "0.02"^^xsd:decimal .
+ex:Fairness1 a pwm:FairnessReport ; pwm:fairnessThreshold "0.10"^^xsd:decimal ; pwm:fairnessFlagged false ; pwm:proxyAttribute "postcode" .
+ex:Trace1 a pwm:ReasoningTrace ; pwm:traceOfCall ex:GatewayCall ; pwm:traceHash "sha256:4444444444444444444444444444444444444444444444444444444444444444" ; pwm:retainedIn ex:RetainedPrompt .
+ex:ClaimRiskProfile pwm:claimSourceSystem "portfolio-system (fictional)" ; pwm:claimSourceRecord "risk-profile/0001" ; pwm:claimSourceTimestamp "2026-11-03T08:00:00+08:00"^^xsd:dateTime ; pwm:claimRetrievalTimestamp "2026-11-03T09:59:30+08:00"^^xsd:dateTime ; pwm:calculationMethod "none: recorded value" ; pwm:claimPromptVersion "meeting-v3" ; pwm:claimConfidence "0.97"^^xsd:decimal ; pwm:claimPolicyStatus "may reach RM" .
+ex:Memory2 a pwm:MemoryRecord ; pwm:memoryScope pwm:MemoryRelationship ; pwm:memorySubjectClient ex:Client ; pwm:memoryExpiresAt "2027-11-03T00:00:00+08:00"^^xsd:dateTime ; pwm:memoryCorrectionPath "Ask the RM; the RM corrects through the review queue" .
+ex:Memory3 a pwm:MemoryRecord ; pwm:memoryScope pwm:MemoryInstitutional .
+ex:LearningExport1 a pwm:LearningExport ; pwm:exportPurpose "Quality evaluation" ; pwm:anonymizationReference "urn:synthetic:anonymization:0001" ; pwm:validationReference "urn:synthetic:validation:0001" ; pwm:approvedBy ex:PersonHeadOfAdvisory ; pwm:exportRequester ex:PersonRM ; pwm:exportedRecordId "interaction:journey-1" .
+ex:LearningExclusion1 a pwm:LearningExclusion ; pwm:exclusionReason "Client withdrew consent to learning use" ; pwm:excludesClient ex:Client .
+ex:LearningExclusion2 a pwm:LearningExclusion ; pwm:exclusionReason "Record excluded after a complaint" ; pwm:excludesRecordId "interaction:journey-0" .
+ex:Sensitive1 a pwm:SensitiveAttributeInference ; pwm:sensitiveKind pwm:SensitiveVulnerability ; pwm:permittedByUseCase true ; pwm:blockedByPolicy false ; pwm:changesClientTreatment false ; pwm:reviewedByRM ex:PersonRM .
+ex:Conformance1 a pwm:SupervisoryConformanceReport ; pwm:conformanceProfile pwm:ProfileMAS ; pwm:reportAsOf "2026-11-10T12:00:00+08:00"^^xsd:dateTime ; pwm:coversControl "A1", "A3" ; pwm:referencesEvidence ex:Evidence1 .
+# <<< module 12 END

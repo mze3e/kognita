@@ -109,14 +109,14 @@ def test_version_and_counts(tmp_path):
     g = Graph().parse(BASE / 'pwm.ttl')
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     site = 'https://ahmedmuzammil.com/ontology/pwm'
-    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.5')
-    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.5/pwm-shapes.ttl')
-    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.5 (draft)'
-    assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.4')
-    assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.4/pwm-shapes.ttl')
-    assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 235
-    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 197
-    assert len(set(example().subjects(RDF.type, None))) == 191
+    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.8')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.8/pwm-shapes.ttl')
+    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.8 (draft)'
+    assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.5')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.5/pwm-shapes.ttl')
+    assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 325
+    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 253
+    assert len(set(example().subjects(RDF.type, None))) == 309
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
@@ -124,9 +124,9 @@ def test_version_and_counts(tmp_path):
     shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (193, 220, 188, 48, 130, 66)
-    assert sum(validator.EXPECTED.values()) == 193
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 259
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (231, 273, 307, 63, 168, 84)
+    assert sum(validator.EXPECTED.values()) == 239
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 308
     assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
     first_spec = (tmp_path / 'SPEC.md').read_text()
     status_row = next(row for row in first_spec.splitlines() if '<a id="statusOf"></a>' in row)
@@ -184,7 +184,7 @@ def test_every_generated_code_list_rule():
     actual = {(report.value(r, validator.SH.focusNode), report.value(r, validator.SH.resultPath))
               for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
     assert actual == expected
-    assert len(actual) == 66
+    assert len(actual) == 84
 
 
 def test_sustainability_preference_edges():

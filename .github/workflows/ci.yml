@@ -44,6 +44,34 @@ jobs:
       - name: Check import layering
         run: uv run import-linter lint
 
+  pwm:
+    name: PWM ontology
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PWM tooling
+        run: pip install rdflib pyshacl owlrl pytest
+
+      - name: Regenerate and rebuild; fail on any difference
+        working-directory: docs/ontology/pwm
+        run: |
+          python3 tools/gen_module12.py
+          python3 tools/build.py
+          git diff --exit-code -- .
+
+      - name: Validate example and negative fixture
+        working-directory: docs/ontology/pwm
+        run: python3 tools/validate.py
+
+      - name: PWM tests, including Kognita vocabulary parity
+        working-directory: docs/ontology/pwm
+        run: python3 -m pytest -q tests
+
   postgres:
     name: Postgres isolation and concurrent writers
     runs-on: ubuntu-latest

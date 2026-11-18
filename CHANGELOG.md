@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Ontology (PWM)
+
+- PWM 0.8 (18 Nov 2026): brings PWM level with Kognita 0.8 in one release that covers milestones 0.6 to 0.8. New module 12 for trust and resilience (signing keys, rotation and revocation, anchors, recovery bundles, external reviews, the provider register, failover and model-change detection, the dependency map, concentration, failure drills, retention by record class, incident reports), runtime assurance (assurance policy, agent manifest, external-agent assertions, deployment attestations, update approvals, approved components and advisories, technology transfer classification, production outcomes, conformance reports) and the milestone 0.6 records found missing (verifier independence, evaluation evidence, fairness reports, reasoning traces, claim envelope, memory governance, learning exports and exclusions, sensitive attributes). Every Kognita vocabulary enum now has a PWM code list with equal notations, checked by `tests/test_kognita_vocabulary.py`; all 31 event types are present; a mismatch it found (`POSSIBLE_BANK_CAPABILITY`) is fixed. Ranges for ten properties, reasoning axioms (disjoint classes and functional properties), and example data for every class and property, enforced by `tests/test_example_coverage.py`. See `docs/ontology/pwm/CHANGELOG.md` and `REVIEW_0.5.md`.
+- PWM uses US English throughout. Nine PWM terms are renamed (`AuthorisedSignatory`, `BehaviourAnomaly`, `BehaviourBaseline`, `BookingCentre`, `bookingCentreCode`, `CommContextualisedInsight`, `InternationalOrganisationPEP`, `UnusualAgentBehaviour`, `VerbAnalyse`) and `PossibleProviderCapability` becomes `PossibleBankCapability`; each old IRI stays declared as a deprecated alias for one version. Kognita runtime identifiers and values keep their spelling.
+- PWM roadmap renumbered: the business-scope and supervisory-readiness releases are 0.9 and 0.10, so they no longer share a number with Kognita 0.8. The source is pinned to Kognita 0.8.0.
+
+### Documentation
+
+- Prose in the README, roadmap, control frameworks, runtime assurance and the other docs uses US English. Inline code, CLI flags and runtime values are unchanged.
+- The PWM README describes the current state; history moved to a generated `docs/ontology/pwm/CHANGELOG.md`.
+
+### Continuous integration
+
+- A PWM job rebuilds the ontology and fails on any diff, then runs the SHACL validation and the PWM tests, including the Kognita vocabulary parity check.
+
 ## [0.8.0] - 2026-11-09
 
 ### Fixed
@@ -26,17 +41,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Review corrections: good outcomes no longer retrigger adverse thresholds; required revalidation writes roll back on failure; exact instruction records, normalized manifest datetimes and deployment-specific update reports select the correct evidence. Admission and advisories verify one batch while preserving old-row tamper detection. Existing PostgreSQL event enums receive an idempotent assurance upgrade during initialization.
 - TypeScript package metadata targets 0.8.0 with public package exports compatible with the published 0.7.0 verifier and generated type declarations.
 
+### Ontology (PWM)
+
+- PWM 0.1 to 0.3 (2 and 3 Nov 2026, #160, #162, #163): first public draft (ten modules, a reference register where every term cites its grounds, OWL 2 DL with SKOS code lists, SHACL shapes, a synthetic example and negative tests); FIBO grounding re-verified against a pinned commit and EU sustainability preferences; runs, budgets, durable approvals, gateway calls, classifier evidence, pinned checks, retention and reconstruction coverage.
+- PWM 0.4 and 0.5 (5 Nov 2026, #164, #165): ingestion, declarative policy, review queues, circuit breaker and outcomes; agent identity, scoped authority, autonomy, blast radius, fleets, sandbox output and enforcement attestations.
+- PWM roadmap from 0.1 to 1.0, following the Kognita milestones (#166).
+- PWM 0.5 review fixes (4 Nov 2026): remove the duplicate liveStatusSubject, liveStatusValue and observedAt fields so every live authority observation uses one format; make a delegation's permitted data class a checked ceiling (DelegationCeilingShape); reject an agent whose effective autonomy exceeds its maximum (AgentAutonomyShape); list union range members in SPEC instead of a generated ID; derive the README counts in the build. Rebuild the ontology and specification.
+- PWM 0.5 review: merge the 0.4 live-status and evidence-chain checks; require dated risk committee, data governance committee or CRO approval for firm limits and promotion gates; correct classification ranks, UTC review expiry and completed human approval checks; clarify field scope and constraint messages. Rebuild the ontology and specification.
+- PWM 0.4: add NEW FastContext AuthorityLiveStatus for decision-time revocation and kill-switch checks, with SHACL rules and negative fixtures. Keep authority and switch definitions in SlowContext. Fail ontology builds on broken example evidence chains.
+
 ### Added
 
 - 0.8 supervisory alignment and runtime assurance: owner-configured signed KYA manifests and external-agent assertions; deployment-bound privacy, monitoring, environment, transfer and instruction attestations; candidate-bound third-party update evaluation and regression/rollback approval; authoritative production outcomes with revalidation/step-down; approved component digests and advisory quarantine; eight offline hostile-agent decision drills; versioned evidence-backed MAS/HKMA/FSB/OCC/SEC/FCA theme reports and `kognita assurance` commands. Existing deployments opt in through an accountable-owner policy. Adds the `ASSURANCE` evidence event and optional `EvaluationResult.deployment_hash`; no new core dependencies or database columns. See `docs/runtime-assurance.md`.
 
 - Correct the 0.8 assurance documentation after PR #167 review: cite the AISI and METR/Redwood technical evidence, align the claims with those sources, and include selected SEC/FCA themes in the A12 acceptance criterion.
-
-- PWM 0.5 review fixes (4 Nov 2026): remove the duplicate liveStatusSubject, liveStatusValue and observedAt fields so every live authority observation uses one format; make a delegation's permitted data class a checked ceiling (DelegationCeilingShape); reject an agent whose effective autonomy exceeds its maximum (AgentAutonomyShape); list union range members in SPEC instead of a generated ID; derive the README counts in the build. Rebuild the ontology and specification.
-
-- PWM 0.5 review: merge the 0.4 live-status and evidence-chain checks; require dated risk committee, data governance committee or CRO approval for firm limits and promotion gates; correct classification ranks, UTC review expiry and completed human approval checks; clarify field scope and constraint messages. Rebuild the ontology and specification.
-
-- PWM 0.4: add NEW FastContext AuthorityLiveStatus for decision-time revocation and kill-switch checks, with SHACL rules and negative fixtures. Keep authority and switch definitions in SlowContext. Fail ontology builds on broken example evidence chains.
 
 ## [0.7.0] - 2026-10-31
 

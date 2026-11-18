@@ -1,0 +1,1539 @@
+# =============================================================================
+#  PWM 0.8: Trust, resilience and assurance (module 12)
+#
+#  Signed evidence and keys, anchors, recovery, the model-provider register,
+#  failover and model change, the dependency map, failure drills, retention by
+#  record class, incident reports, and runtime assurance records. Follows
+#  Kognita milestones 0.7 (Trust and Resilience) and 0.8 (Supervisory Alignment
+#  and Runtime Assurance), and fills the vocabulary gaps found in the 0.5 review.
+#  Generated from tools/gen_module12.py; edit that script, not this file.
+# =============================================================================
+
+pwm:ModuleTrust a pwm:Module ; rdfs:label "Trust, resilience and assurance"@en ; pwm:moduleOrder 12 ;
+    skos:definition "Signed and anchored evidence, provider and dependency registers, failover and drills, retention by record class, incident reports and runtime assurance records."@en .
+
+pwm:SigningKey a owl:Class ; rdfs:label "signing key"@en ;
+    skos:definition "Public identity of an evidence-signing key: key identifier, public key reference and escrow reference. Holds no private key material."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T1 (Ed25519 signing)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R2 (key rotation, revocation and escrow)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:KeyRotation a owl:Class ; rdfs:label "key rotation"@en ;
+    skos:definition "Record that one signing key replaced another. Verification works across rotations."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R2 (key rotation, revocation and escrow)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:KeyRevocation a owl:Class ; rdfs:label "key revocation"@en ;
+    skos:definition "Record that a signing key is revoked from a stated evidence sequence. Signatures at or after that sequence fail closed."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R2 (key rotation, revocation and escrow)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:EvidenceAnchor a owl:Class ; rdfs:label "evidence anchor"@en ;
+    skos:definition "Checkpoint of the chain head (record hash and sequence) published to a store the firm does not control, so a rewrite of the anchored prefix is detectable."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T6 (external anchoring)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:RecoveryBundle a owl:Class ; rdfs:label "recovery bundle"@en ;
+    skos:definition "Backup of the evidence chain, retained content, holds, retention policies, key registry and anchors, recoverable to a sequence or time and verified before publication."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R1 (backup and restore)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ExternalReviewSubmission a owl:Class ; rdfs:label "external review submission"@en ;
+    skos:definition "Signed review by an external reviewer of an immutable range of evidence sequences, with annotations. The reviewer signature is checked against the key registry."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T3 (external review API)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ModelProviderRegistration a owl:Class ; rdfs:label "model provider registration"@en ;
+    skos:definition "A model provider recorded as an ICT third party: use cases that depend on it, data residency and retention, training use, sub-processors, encryption, incident notification, availability, model-change notice, audit rights, exit plan, incident history and regulatory cooperation."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ProviderFailover a owl:Class ; rdfs:label "provider failover"@en ;
+    skos:definition "Governed switch to a fallback model after a connection failure, server error or model change. Allowed only to a model approved for the use case, and evidenced before the retry."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R5 (provider failover)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ModelChangeDetection a owl:Class ; rdfs:label "model change detection"@en ;
+    skos:definition "Comparison of the model version reported by the provider with the version approved at admission. A difference the provider did not announce triggers revalidation."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R7 (silent model-change detection)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:AIDependency a owl:Class ; rdfs:label "AI dependency"@en ;
+    skos:definition "One edge of the AI dependency map: a use case depends on a provider, cloud, framework, vector platform, orchestration layer, tool or data source. Declared in the registers, observed in evidence, or both."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R8 (AI dependency map)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:DependencyDivergence a owl:Class ; rdfs:label "dependency divergence"@en ;
+    skos:definition "Finding that a dependency is undeclared but observed in evidence, or declared but never observed."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R8 (AI dependency map)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ConcentrationMeasure a owl:Class ; rdfs:label "concentration measure"@en ;
+    skos:definition "Share of critical use cases that rest on one provider or platform layer member, computed from the dependency map."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R9 (concentration risk)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:FailureDrill a owl:Class ; rdfs:label "failure drill"@en ;
+    skos:definition "Offline simulation of one of eight fault kinds against a use case, checking the configured failure mode and that evidence stays complete."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R10 (failure drills)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:RecordClassRetention a owl:Class ; rdfs:label "record class retention"@en ;
+    skos:definition "Retention period for a regulatory record class, so an AI record never expires before the regulatory record it supports. A class may be held indefinitely."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R11 (retention by record class)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:IncidentReport a owl:Class ; rdfs:label "incident report"@en ;
+    skos:definition "Report built from evidence for an incident: affected clients, controls that ran, failed or were missing, and the runtime change behind it. A redacted report exposes fixed labels and aggregate counts only."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R14 (structured incident report)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R13 (incident evidence)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:AssurancePolicy a owl:Class ; rdfs:label "assurance policy"@en ;
+    skos:definition "Accountable-owner requirements for a use case: which external assertions, attestations, component approvals, transfer classification and update approvals are required, and the outcome thresholds that trigger revalidation."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:AgentManifest a owl:Class ; rdfs:label "agent manifest"@en ;
+    skos:definition "Signed export of an agent's identity, live authority, permissions, dependencies and intervention controls (Know Your Agent). Differences from observed authority or dependencies are findings."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A1 (KYA manifest)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ExternalAgentAssertion a owl:Class ; rdfs:label "external agent assertion"@en ;
+    skos:definition "Protocol-neutral identity assertion from an external agent: issuer, subject, principal, purpose, audience, exact scopes and a bounded validity window. Not transitive by default."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:DeploymentAttestation a owl:Class ; rdfs:label "deployment attestation"@en ;
+    skos:definition "Independent signed boundary evidence bound to one deployment and policy: privacy, environment, monitoring, instruction or transfer. Expires."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ThirdPartyUpdateApproval a owl:Class ; rdfs:label "third-party update approval"@en ;
+    skos:definition "Approval of a candidate third-party AI update with regression evidence, rollback plan and a named approver. A high-materiality update cannot become approved without them."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A4 (third-party update gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ApprovedComponent a owl:Class ; rdfs:label "approved component"@en ;
+    skos:definition "Approved software component of an agent deployment: name, version, SBOM digest, optional container image digest and provenance."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ComponentAdvisory a owl:Class ; rdfs:label "component advisory"@en ;
+    skos:definition "Vulnerability or provenance advisory that affects an approved component and can quarantine the agent."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:TechnologyTransferClassification a owl:Class ; rdfs:label "technology transfer classification"@en ;
+    skos:definition "Classification of an AI technology transfer: type, origin of the technology, deployment jurisdiction and the policy reference that governs it."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A10 (technology transfer)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ProductionOutcome a owl:Class ; rdfs:label "production outcome"@en ;
+    skos:definition "Authoritative downstream facts for one interaction, bound to a unique outcome identifier and source: intended and actual result, client impact, adverse flag. Adverse outcomes beyond the configured threshold trigger revalidation and autonomy step-down."@en ; rdfs:subClassOf pwm:InteractionOutcome ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A3 (outcome validation)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:SupervisoryConformanceReport a owl:Class ; rdfs:label "supervisory conformance report"@en ;
+    skos:definition "Point-in-time report from evidence and registers against a versioned supervisory profile. A profile is a mapping, not a legal opinion."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A12 (supervisory conformance profiles)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:Verifier a owl:Class ; rdfs:label "verifier"@en ;
+    skos:definition "Registered agent or service, with its own identity, that checks another agent's claims. Its model, model version and provider are pinned so independence from the producer can be checked."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 7 (verification gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ClaimVerification a owl:Class ; rdfs:label "claim verification"@en ;
+    skos:definition "One verification of a claim by a registered verifier, with the producer's and the verifier's model pinned. The verifier must differ from the producer in model, model version and provider unless the use case permits otherwise."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 7 (verification gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:EvaluationResult a owl:Class ; rdfs:label "evaluation result"@en ;
+    skos:definition "Recorded evaluation of an agent version on a model version at the model, agent or system level, with metric values and the deployment content hash that identifies the evaluated behavior."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:EvaluationMetricValue a owl:Class ; rdfs:label "evaluation metric value"@en ;
+    skos:definition "One named metric in an evaluation result, such as accuracy, groundedness, hallucination rate or escalation correctness."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:FairnessReport a owl:Class ; rdfs:label "fairness report"@en ;
+    skos:definition "Recommendation, contact and prioritization rates across firm-defined segments, with the disparity threshold, named proxy attributes and a flag to the risk owner."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ReasoningTrace a owl:Class ; rdfs:label "reasoning trace"@en ;
+    skos:definition "Record that a provider returned a reasoning trace for a model call: its hash and where the content is retained. The model's own account, never a basis for a decision."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 13 (reasoning traces)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:LearningExport a owl:Class ; rdfs:label "learning export"@en ;
+    skos:definition "Governed export of interactions, RM edits or outcomes to a training, fine-tuning or evaluation pipeline: purpose, anonymization, validation, approval and requester recorded. Never the default."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:LearningExclusion a owl:Class ; rdfs:label "learning exclusion"@en ;
+    skos:definition "Exclusion of a client or record from every future learning export. The exclusion holds permanently."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:SensitiveAttributeInference a owl:Class ; rdfs:label "sensitive attribute inference"@en ;
+    skos:definition "Special-category inference (religion, health, political views, ethnicity, sexuality or personal vulnerability) labeled by the classifier. Blocked from relationship workflows unless the use case permits. A vulnerability flag goes to RM review; an AI may flag but never determine."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C3 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 10 (sensitive attribute controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:signature a owl:DatatypeProperty ; rdfs:label "signature"@en ;
+    skos:definition "Ed25519 signature over the evidence record, base64 encoded."@en ;
+    rdfs:domain pwm:EvidenceRecord ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T1 (Ed25519 signing)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:signedBy a owl:ObjectProperty ; rdfs:label "signed by"@en ;
+    skos:definition "Signing key whose signature covers this record. Verification checks the key against the key registry."@en ;
+    rdfs:range pwm:SigningKey ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T1 (Ed25519 signing)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R2 (key rotation, revocation and escrow)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:evidenceSequence a owl:DatatypeProperty ; rdfs:label "evidence sequence"@en ;
+    skos:definition "Position of the record in its chain, starting at zero without gaps."@en ;
+    rdfs:domain pwm:EvidenceRecord ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T1 (Ed25519 signing)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:schemaVersion a owl:DatatypeProperty ; rdfs:label "schema version"@en ;
+    skos:definition "Version of the evidence event schema the record was written under. Older events stay readable and verify."@en ;
+    rdfs:domain pwm:EvidenceRecord ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T5 (schema versioning)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:keyId a owl:DatatypeProperty ; rdfs:label "key identifier"@en ;
+    skos:definition "Identifier derived from the public key."@en ;
+    rdfs:domain pwm:SigningKey ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T1 (Ed25519 signing)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:publicKeyReference a owl:DatatypeProperty ; rdfs:label "public key reference"@en ;
+    skos:definition "Location or fingerprint of the public key."@en ;
+    rdfs:domain pwm:SigningKey ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T1 (Ed25519 signing)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:escrowReference a owl:DatatypeProperty ; rdfs:label "escrow reference"@en ;
+    skos:definition "Reference to the escrowed recovery material for a key, never the material itself."@en ;
+    rdfs:domain pwm:SigningKey ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R2 (key rotation, revocation and escrow)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:rotatesFrom a owl:ObjectProperty ; rdfs:label "rotates from"@en ;
+    skos:definition "Key that is retired by a rotation."@en ;
+    rdfs:domain pwm:KeyRotation ;
+    rdfs:range pwm:SigningKey ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R2 (key rotation, revocation and escrow)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:rotatesTo a owl:ObjectProperty ; rdfs:label "rotates to"@en ;
+    skos:definition "Key that takes over in a rotation."@en ;
+    rdfs:domain pwm:KeyRotation ;
+    rdfs:range pwm:SigningKey ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R2 (key rotation, revocation and escrow)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:revokesKey a owl:ObjectProperty ; rdfs:label "revokes key"@en ;
+    skos:definition "Key that a revocation withdraws."@en ;
+    rdfs:domain pwm:KeyRevocation ;
+    rdfs:range pwm:SigningKey ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R2 (key rotation, revocation and escrow)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:effectiveFromSequence a owl:DatatypeProperty ; rdfs:label "effective from sequence"@en ;
+    skos:definition "First evidence sequence at which a revocation applies."@en ;
+    rdfs:domain pwm:KeyRevocation ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R2 (key rotation, revocation and escrow)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:anchoredRecordHash a owl:DatatypeProperty ; rdfs:label "anchored record hash"@en ;
+    skos:definition "Hash of the chain head that the anchor publishes."@en ;
+    rdfs:domain pwm:EvidenceAnchor ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T6 (external anchoring)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:anchoredSequence a owl:DatatypeProperty ; rdfs:label "anchored sequence"@en ;
+    skos:definition "Sequence of the chain head that the anchor publishes."@en ;
+    rdfs:domain pwm:EvidenceAnchor ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T6 (external anchoring)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:anchorLocation a owl:DatatypeProperty ; rdfs:label "anchor location"@en ;
+    skos:definition "Where the checkpoint is kept, in storage the firm does not control."@en ;
+    rdfs:domain pwm:EvidenceAnchor ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T6 (external anchoring)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:bundleHash a owl:DatatypeProperty ; rdfs:label "bundle hash"@en ;
+    skos:definition "Hash of the recovery bundle."@en ;
+    rdfs:domain pwm:RecoveryBundle ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R1 (backup and restore)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:recoveryCutoffSequence a owl:DatatypeProperty ; rdfs:label "recovery cutoff sequence"@en ;
+    skos:definition "Evidence sequence to which the bundle restores."@en ;
+    rdfs:domain pwm:RecoveryBundle ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R1 (backup and restore)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:restoreVerified a owl:DatatypeProperty ; rdfs:label "restore verified"@en ;
+    skos:definition "Whether a restore verified the chain and retention store end to end."@en ;
+    rdfs:domain pwm:RecoveryBundle ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R1 (backup and restore)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:includesRetentionState a owl:DatatypeProperty ; rdfs:label "includes retention state"@en ;
+    skos:definition "Whether the bundle holds the historical retention state needed to restore to the cutoff."@en ;
+    rdfs:domain pwm:RecoveryBundle ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R1 (backup and restore)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reviewedFromSequence a owl:DatatypeProperty ; rdfs:label "reviewed from sequence"@en ;
+    skos:definition "First sequence of the reviewed period."@en ;
+    rdfs:domain pwm:ExternalReviewSubmission ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T3 (external review API)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reviewedToSequence a owl:DatatypeProperty ; rdfs:label "reviewed to sequence"@en ;
+    skos:definition "Last sequence of the reviewed period."@en ;
+    rdfs:domain pwm:ExternalReviewSubmission ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item T3 (external review API)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:registeredProvider a owl:ObjectProperty ; rdfs:label "registered provider"@en ;
+    skos:definition "Model provider that the registration describes."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range pwm:ModelProvider ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:dependentUseCase a owl:ObjectProperty ; rdfs:label "dependent use case"@en ;
+    skos:definition "Use case that depends on a provider."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:dataResidency a owl:DatatypeProperty ; rdfs:label "data residency"@en ;
+    skos:definition "Where the provider processes and stores data."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:dataRetentionTerms a owl:DatatypeProperty ; rdfs:label "data retention terms"@en ;
+    skos:definition "How long the provider retains data."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:trainingUse a owl:DatatypeProperty ; rdfs:label "training use"@en ;
+    skos:definition "Whether the provider may use the firm's data for training."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:subProcessor a owl:DatatypeProperty ; rdfs:label "sub-processor"@en ;
+    skos:definition "Sub-processor the provider relies on."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:encryptionDescription a owl:DatatypeProperty ; rdfs:label "encryption description"@en ;
+    skos:definition "Encryption in transit and at rest."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:incidentNotificationTerms a owl:DatatypeProperty ; rdfs:label "incident notification terms"@en ;
+    skos:definition "How and how fast the provider notifies incidents."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:availabilityCommitment a owl:DatatypeProperty ; rdfs:label "availability commitment"@en ;
+    skos:definition "Availability the provider commits to."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:modelChangeNotice a owl:DatatypeProperty ; rdfs:label "model change notice"@en ;
+    skos:definition "Notice the provider gives before changing a served model."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R7 (silent model-change detection)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:auditRights a owl:DatatypeProperty ; rdfs:label "audit rights"@en ;
+    skos:definition "Whether the firm holds audit rights over the provider."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:exitPlanReference a owl:DatatypeProperty ; rdfs:label "exit plan reference"@en ;
+    skos:definition "Reference to the exit plan for the provider."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:regulatoryCooperation a owl:DatatypeProperty ; rdfs:label "regulatory cooperation"@en ;
+    skos:definition "Whether and how the provider cooperates with the firm's regulators."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:providerIncident a owl:ObjectProperty ; rdfs:label "provider incident"@en ;
+    skos:definition "Incident in the provider's history."@en ;
+    rdfs:domain pwm:ModelProviderRegistration ;
+    rdfs:range pwm:AIIncident ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R3 (model-provider register)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:failoverFrom a owl:ObjectProperty ; rdfs:label "failover from"@en ;
+    skos:definition "Model card the call was first routed to."@en ;
+    rdfs:domain pwm:ProviderFailover ;
+    rdfs:range pwm:ModelCard ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R5 (provider failover)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:failoverTo a owl:ObjectProperty ; rdfs:label "failover to"@en ;
+    skos:definition "Fallback model card the call was routed to."@en ;
+    rdfs:domain pwm:ProviderFailover ;
+    rdfs:range pwm:ModelCard ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R5 (provider failover)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:failoverUseCase a owl:ObjectProperty ; rdfs:label "failover use case"@en ;
+    skos:definition "Use case whose approved fallbacks govern the failover."@en ;
+    rdfs:domain pwm:ProviderFailover ;
+    rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R5 (provider failover)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:failoverTrigger a owl:ObjectProperty ; rdfs:label "failover trigger"@en ;
+    skos:definition "Why the failover happened."@en ;
+    rdfs:domain pwm:ProviderFailover ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R5 (provider failover)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R7 (silent model-change detection)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:approvedFallbackModel a owl:ObjectProperty ; rdfs:label "approved fallback model"@en ;
+    skos:definition "Model card approved as a fallback for the use case."@en ;
+    rdfs:domain pwm:AIUseCase ;
+    rdfs:range pwm:ModelCard ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R5 (provider failover)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:approvedModelVersion a owl:DatatypeProperty ; rdfs:label "approved model version"@en ;
+    skos:definition "Model version approved at admission."@en ;
+    rdfs:domain pwm:ModelChangeDetection ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R7 (silent model-change detection)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:servedModelVersion a owl:DatatypeProperty ; rdfs:label "served model version"@en ;
+    skos:definition "Model version the provider reported on the call."@en ;
+    rdfs:domain pwm:ModelChangeDetection ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R7 (silent model-change detection)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:triggersRevalidation a owl:DatatypeProperty ; rdfs:label "triggers revalidation"@en ;
+    skos:definition "Whether the detection requires revalidation of the use case."@en ;
+    rdfs:domain pwm:ModelChangeDetection ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R7 (silent model-change detection)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:detectedOnCall a owl:ObjectProperty ; rdfs:label "detected on call"@en ;
+    skos:definition "Model call on which the change was detected."@en ;
+    rdfs:domain pwm:ModelChangeDetection ;
+    rdfs:range pwm:ModelCall ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R7 (silent model-change detection)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:dependencyLayer a owl:ObjectProperty ; rdfs:label "dependency layer"@en ;
+    skos:definition "Layer of the dependency map that the dependency sits in."@en ;
+    rdfs:domain pwm:AIDependency ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R8 (AI dependency map)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R9 (concentration risk)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:dependencyOf a owl:ObjectProperty ; rdfs:label "dependency of"@en ;
+    skos:definition "Use case that has the dependency."@en ;
+    rdfs:domain pwm:AIDependency ;
+    rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R8 (AI dependency map)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:dependencyTarget a owl:DatatypeProperty ; rdfs:label "dependency target"@en ;
+    skos:definition "Name of the provider, platform, tool or data source depended on."@en ;
+    rdfs:domain pwm:AIDependency ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R8 (AI dependency map)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:dependencyDeclared a owl:DatatypeProperty ; rdfs:label "dependency declared"@en ;
+    skos:definition "Whether the registers declare the dependency."@en ;
+    rdfs:domain pwm:AIDependency ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R8 (AI dependency map)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:dependencyObserved a owl:DatatypeProperty ; rdfs:label "dependency observed"@en ;
+    skos:definition "Whether evidence shows the dependency was actually used."@en ;
+    rdfs:domain pwm:AIDependency ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R8 (AI dependency map)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:divergenceKind a owl:ObjectProperty ; rdfs:label "divergence kind"@en ;
+    skos:definition "Whether the dependency is undeclared or unused."@en ;
+    rdfs:domain pwm:DependencyDivergence ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R8 (AI dependency map)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:divergenceDependency a owl:ObjectProperty ; rdfs:label "divergence dependency"@en ;
+    skos:definition "Dependency that diverges."@en ;
+    rdfs:domain pwm:DependencyDivergence ;
+    rdfs:range pwm:AIDependency ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R8 (AI dependency map)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:concentrationLayer a owl:ObjectProperty ; rdfs:label "concentration layer"@en ;
+    skos:definition "Layer that the concentration is measured in."@en ;
+    rdfs:domain pwm:ConcentrationMeasure ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R9 (concentration risk)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:concentrationTarget a owl:DatatypeProperty ; rdfs:label "concentration target"@en ;
+    skos:definition "Provider or platform that the measure covers."@en ;
+    rdfs:domain pwm:ConcentrationMeasure ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R9 (concentration risk)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:criticalUseCaseCount a owl:DatatypeProperty ; rdfs:label "critical use case count"@en ;
+    skos:definition "Number of critical use cases resting on the target."@en ;
+    rdfs:domain pwm:ConcentrationMeasure ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R9 (concentration risk)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:criticalUseCaseTotal a owl:DatatypeProperty ; rdfs:label "critical use case total"@en ;
+    skos:definition "Number of critical use cases in scope."@en ;
+    rdfs:domain pwm:ConcentrationMeasure ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R9 (concentration risk)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:criticalUseCaseShare a owl:DatatypeProperty ; rdfs:label "critical use case share"@en ;
+    skos:definition "Fraction from 0 to 1 of critical use cases resting on the target."@en ;
+    rdfs:domain pwm:ConcentrationMeasure ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R9 (concentration risk)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:drillKind a owl:ObjectProperty ; rdfs:label "drill kind"@en ;
+    skos:definition "Fault simulated by the drill."@en ;
+    rdfs:domain pwm:FailureDrill ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R10 (failure drills)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:drillUseCase a owl:ObjectProperty ; rdfs:label "drill use case"@en ;
+    skos:definition "Use case exercised by the drill."@en ;
+    rdfs:domain pwm:FailureDrill ;
+    rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R10 (failure drills)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:evidenceCompleteAfterDrill a owl:DatatypeProperty ; rdfs:label "evidence complete after drill"@en ;
+    skos:definition "Whether evidence stayed complete and the chain verified after the simulated fault."@en ;
+    rdfs:domain pwm:FailureDrill ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R10 (failure drills)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:recordClass a owl:ObjectProperty ; rdfs:label "record class"@en ;
+    skos:definition "Regulatory record class that the retention period covers."@en ;
+    rdfs:domain pwm:RecordClassRetention ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R11 (retention by record class)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:classRetentionDays a owl:DatatypeProperty ; rdfs:label "class retention in days"@en ;
+    skos:definition "Retention period for the record class, in whole days."@en ;
+    rdfs:domain pwm:RecordClassRetention ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R11 (retention by record class)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:retainIndefinitely a owl:DatatypeProperty ; rdfs:label "retain indefinitely"@en ;
+    skos:definition "Whether the record class is held with no expiry."@en ;
+    rdfs:domain pwm:RecordClassRetention ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R11 (retention by record class)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reportsIncident a owl:ObjectProperty ; rdfs:label "reports incident"@en ;
+    skos:definition "Incident that the report describes."@en ;
+    rdfs:domain pwm:IncidentReport ;
+    rdfs:range pwm:AIIncident ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R14 (structured incident report)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:incidentKind a owl:ObjectProperty ; rdfs:label "incident kind"@en ;
+    skos:definition "Kind of operational incident recorded as evidence."@en ;
+    rdfs:domain pwm:AIIncident ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R13 (incident evidence)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reportAffectedClients a owl:ObjectProperty ; rdfs:label "report affected clients"@en ;
+    skos:definition "Affected-client result that the report uses."@en ;
+    rdfs:domain pwm:IncidentReport ;
+    rdfs:range pwm:AffectedClientResult ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R14 (structured incident report)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:controlRan a owl:DatatypeProperty ; rdfs:label "control ran"@en ;
+    skos:definition "Control that ran for the incident's interactions."@en ;
+    rdfs:domain pwm:IncidentReport ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R14 (structured incident report)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:controlFailed a owl:DatatypeProperty ; rdfs:label "control failed"@en ;
+    skos:definition "Control that failed or was missing for the incident's interactions."@en ;
+    rdfs:domain pwm:IncidentReport ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R14 (structured incident report)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:runtimeChange a owl:DatatypeProperty ; rdfs:label "runtime change"@en ;
+    skos:definition "Deployment or configuration change behind the incident."@en ;
+    rdfs:domain pwm:IncidentReport ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R14 (structured incident report)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:redactedReport a owl:DatatypeProperty ; rdfs:label "redacted report"@en ;
+    skos:definition "Whether the report exposes fixed labels and aggregate counts only."@en ;
+    rdfs:domain pwm:IncidentReport ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.7 item R14 (structured incident report)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:assuranceUseCase a owl:ObjectProperty ; rdfs:label "assurance use case"@en ;
+    skos:definition "Use case that the assurance policy covers."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:assuranceAudience a owl:DatatypeProperty ; rdfs:label "assurance audience"@en ;
+    skos:definition "Audience that external assertions must name."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:requiresExternalAssertion a owl:DatatypeProperty ; rdfs:label "requires external assertion"@en ;
+    skos:definition "Whether external-agent assertions are required."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:requiresDeploymentAttestation a owl:ObjectProperty ; rdfs:label "requires deployment attestation"@en ;
+    skos:definition "Attestation kind the policy requires for the deployment."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:requiresComponentApproval a owl:DatatypeProperty ; rdfs:label "requires component approval"@en ;
+    skos:definition "Whether approved components are required."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:requiresTransferClassification a owl:DatatypeProperty ; rdfs:label "requires transfer classification"@en ;
+    skos:definition "Whether a technology transfer classification is required."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A10 (technology transfer)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:requiresUpdateApproval a owl:DatatypeProperty ; rdfs:label "requires update approval"@en ;
+    skos:definition "Whether third-party updates need approval."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A4 (third-party update gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:outcomeStepDown a owl:DatatypeProperty ; rdfs:label "outcome step-down"@en ;
+    skos:definition "Whether adverse outcomes beyond the threshold step autonomy down."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A3 (outcome validation)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:maxAdverseOutcomes a owl:DatatypeProperty ; rdfs:label "maximum adverse outcomes"@en ;
+    skos:definition "Adverse outcomes allowed in the window before revalidation."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range xsd:positiveInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A3 (outcome validation)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:outcomeWindowDays a owl:DatatypeProperty ; rdfs:label "outcome window days"@en ;
+    skos:definition "Length of the adverse-outcome window in days, 1 to 3650."@en ;
+    rdfs:domain pwm:AssurancePolicy ;
+    rdfs:range xsd:positiveInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 (accountable-owner assurance policy)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A3 (outcome validation)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:manifestSchemaVersion a owl:DatatypeProperty ; rdfs:label "manifest schema version"@en ;
+    skos:definition "Version of the manifest schema."@en ;
+    rdfs:domain pwm:AgentManifest ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A1 (KYA manifest)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:manifestOfAgent a owl:ObjectProperty ; rdfs:label "manifest of agent"@en ;
+    skos:definition "Agent that the manifest describes."@en ;
+    rdfs:domain pwm:AgentManifest ;
+    rdfs:range pwm:AIAgent ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A1 (KYA manifest)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:manifestDigest a owl:DatatypeProperty ; rdfs:label "manifest digest"@en ;
+    skos:definition "Digest of the manifest document that the signature covers."@en ;
+    rdfs:domain pwm:AgentManifest ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A1 (KYA manifest)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:assertionIssuer a owl:DatatypeProperty ; rdfs:label "assertion issuer"@en ;
+    skos:definition "Issuer of the assertion."@en ;
+    rdfs:domain pwm:ExternalAgentAssertion ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:assertionSubject a owl:DatatypeProperty ; rdfs:label "assertion subject"@en ;
+    skos:definition "Agent that the assertion identifies."@en ;
+    rdfs:domain pwm:ExternalAgentAssertion ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:assertionPrincipal a owl:ObjectProperty ; rdfs:label "assertion principal"@en ;
+    skos:definition "Person on whose behalf the external agent acts."@en ;
+    rdfs:domain pwm:ExternalAgentAssertion ;
+    rdfs:range fibo-fnd-aap-ppl:Person ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:assertionPurpose a owl:DatatypeProperty ; rdfs:label "assertion purpose"@en ;
+    skos:definition "Purpose that the assertion is limited to."@en ;
+    rdfs:domain pwm:ExternalAgentAssertion ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:assertionAudience a owl:DatatypeProperty ; rdfs:label "assertion audience"@en ;
+    skos:definition "Audience that the assertion is addressed to."@en ;
+    rdfs:domain pwm:ExternalAgentAssertion ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:assertionScope a owl:DatatypeProperty ; rdfs:label "assertion scope"@en ;
+    skos:definition "Exact scope granted, as key=value. A wildcard is never valid."@en ;
+    rdfs:domain pwm:ExternalAgentAssertion ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:assertionDepth a owl:DatatypeProperty ; rdfs:label "assertion depth"@en ;
+    skos:definition "Delegation depth, 0 to 16. Zero means no parent."@en ;
+    rdfs:domain pwm:ExternalAgentAssertion ;
+    rdfs:range xsd:nonNegativeInteger ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:parentAssertion a owl:ObjectProperty ; rdfs:label "parent assertion"@en ;
+    skos:definition "Assertion that this one narrows."@en ;
+    rdfs:domain pwm:ExternalAgentAssertion ;
+    rdfs:range pwm:ExternalAgentAssertion ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:issuedAt a owl:DatatypeProperty ; rdfs:label "issued at"@en ;
+    skos:definition "When a credential or assertion was issued."@en ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:expiresAt a owl:DatatypeProperty ; rdfs:label "expires at"@en ;
+    skos:definition "When a credential or assertion stops being valid."@en ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A2 (external-agent trust)" ], [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:attestationKind a owl:ObjectProperty ; rdfs:label "attestation kind"@en ;
+    skos:definition "Which boundary the attestation covers."@en ;
+    rdfs:domain pwm:DeploymentAttestation ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:attestationIssuer a owl:DatatypeProperty ; rdfs:label "attestation issuer"@en ;
+    skos:definition "Independent issuer of the attestation."@en ;
+    rdfs:domain pwm:DeploymentAttestation ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:attestationSubject a owl:DatatypeProperty ; rdfs:label "attestation subject"@en ;
+    skos:definition "Subject that the attestation is about."@en ;
+    rdfs:domain pwm:DeploymentAttestation ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:attestsDeployment a owl:DatatypeProperty ; rdfs:label "attests deployment"@en ;
+    skos:definition "Deployment digest that the attestation is bound to."@en ;
+    rdfs:domain pwm:DeploymentAttestation ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:attestsPolicy a owl:DatatypeProperty ; rdfs:label "attests policy"@en ;
+    skos:definition "Policy digest that the attestation is bound to."@en ;
+    rdfs:domain pwm:DeploymentAttestation ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:attestationReference a owl:DatatypeProperty ; rdfs:label "attestation reference"@en ;
+    skos:definition "Reference to the independent evidence behind the attestation."@en ;
+    rdfs:domain pwm:DeploymentAttestation ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:candidateDigest a owl:DatatypeProperty ; rdfs:label "candidate digest"@en ;
+    skos:definition "Digest of the candidate third-party update."@en ;
+    rdfs:domain pwm:ThirdPartyUpdateApproval ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A4 (third-party update gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:regressionReference a owl:DatatypeProperty ; rdfs:label "regression reference"@en ;
+    skos:definition "Reference to the regression evidence for the candidate."@en ;
+    rdfs:domain pwm:ThirdPartyUpdateApproval ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A4 (third-party update gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:rollbackReference a owl:DatatypeProperty ; rdfs:label "rollback reference"@en ;
+    skos:definition "Reference to the rollback plan."@en ;
+    rdfs:domain pwm:ThirdPartyUpdateApproval ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A4 (third-party update gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:providerChange a owl:DatatypeProperty ; rdfs:label "provider change"@en ;
+    skos:definition "Description of the change the provider made."@en ;
+    rdfs:domain pwm:ThirdPartyUpdateApproval ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A4 (third-party update gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:componentName a owl:DatatypeProperty ; rdfs:label "component name"@en ;
+    skos:definition "Name of the software component."@en ;
+    rdfs:domain pwm:ApprovedComponent ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:componentVersion a owl:DatatypeProperty ; rdfs:label "component version"@en ;
+    skos:definition "Version of the software component."@en ;
+    rdfs:domain pwm:ApprovedComponent ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:sbomDigest a owl:DatatypeProperty ; rdfs:label "SBOM digest"@en ;
+    skos:definition "SHA-256 of the software bill of materials, 64 lowercase hexadecimal characters."@en ;
+    rdfs:domain pwm:ApprovedComponent ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:imageDigest a owl:DatatypeProperty ; rdfs:label "image digest"@en ;
+    skos:definition "Container image digest, sha256: and 64 lowercase hexadecimal characters."@en ;
+    rdfs:domain pwm:ApprovedComponent ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:provenanceReference a owl:DatatypeProperty ; rdfs:label "provenance reference"@en ;
+    skos:definition "Reference to the provenance attestation."@en ;
+    rdfs:domain pwm:ApprovedComponent ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:advisoryReference a owl:DatatypeProperty ; rdfs:label "advisory reference"@en ;
+    skos:definition "Reference to the advisory."@en ;
+    rdfs:domain pwm:ComponentAdvisory ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:affectsComponent a owl:ObjectProperty ; rdfs:label "affects component"@en ;
+    skos:definition "Approved component that the advisory affects."@en ;
+    rdfs:domain pwm:ComponentAdvisory ;
+    rdfs:range pwm:ApprovedComponent ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:quarantined a owl:DatatypeProperty ; rdfs:label "quarantined"@en ;
+    skos:definition "Whether the advisory quarantined the agent."@en ;
+    rdfs:domain pwm:ComponentAdvisory ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A9 (software supply chain)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:transferType a owl:ObjectProperty ; rdfs:label "transfer type"@en ;
+    skos:definition "Type of AI technology transfer."@en ;
+    rdfs:domain pwm:TechnologyTransferClassification ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A10 (technology transfer)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:technologyOrigin a owl:DatatypeProperty ; rdfs:label "technology origin"@en ;
+    skos:definition "Jurisdiction of origin of the technology."@en ;
+    rdfs:domain pwm:TechnologyTransferClassification ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A10 (technology transfer)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:deploymentJurisdiction a owl:DatatypeProperty ; rdfs:label "deployment jurisdiction"@en ;
+    skos:definition "Jurisdiction where the technology is deployed."@en ;
+    rdfs:domain pwm:TechnologyTransferClassification ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A10 (technology transfer)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:transferPolicyReference a owl:DatatypeProperty ; rdfs:label "transfer policy reference"@en ;
+    skos:definition "Policy that governs the transfer."@en ;
+    rdfs:domain pwm:TechnologyTransferClassification ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A10 (technology transfer)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:intendedResult a owl:DatatypeProperty ; rdfs:label "intended result"@en ;
+    skos:definition "What the interaction was meant to achieve."@en ;
+    rdfs:domain pwm:ProductionOutcome ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A3 (outcome validation)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:actualResult a owl:DatatypeProperty ; rdfs:label "actual result"@en ;
+    skos:definition "What happened downstream."@en ;
+    rdfs:domain pwm:ProductionOutcome ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A3 (outcome validation)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:adverse a owl:DatatypeProperty ; rdfs:label "adverse"@en ;
+    skos:definition "Whether the outcome counts as adverse."@en ;
+    rdfs:domain pwm:ProductionOutcome ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A3 (outcome validation)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:outcomeSourceReference a owl:DatatypeProperty ; rdfs:label "outcome source reference"@en ;
+    skos:definition "System of record that reports the outcome."@en ;
+    rdfs:domain pwm:ProductionOutcome ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A3 (outcome validation)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:outcomeId a owl:DatatypeProperty ; rdfs:label "outcome identifier"@en ;
+    skos:definition "Unique outcome identifier; a duplicate source is refused."@en ;
+    rdfs:domain pwm:ProductionOutcome ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A3 (outcome validation)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:conformanceProfile a owl:ObjectProperty ; rdfs:label "conformance profile"@en ;
+    skos:definition "Supervisory profile the report is built against."@en ;
+    rdfs:domain pwm:SupervisoryConformanceReport ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A12 (supervisory conformance profiles)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reportAsOf a owl:DatatypeProperty ; rdfs:label "report as of"@en ;
+    skos:definition "Point in time that the report describes."@en ;
+    rdfs:domain pwm:SupervisoryConformanceReport ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A12 (supervisory conformance profiles)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:coversControl a owl:DatatypeProperty ; rdfs:label "covers control"@en ;
+    skos:definition "Roadmap control code the report covers, A1 to A12."@en ;
+    rdfs:domain pwm:SupervisoryConformanceReport ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A12 (supervisory conformance profiles)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:referencesEvidence a owl:ObjectProperty ; rdfs:label "references evidence"@en ;
+    skos:definition "Evidence record that supports the report."@en ;
+    rdfs:domain pwm:SupervisoryConformanceReport ;
+    rdfs:range pwm:EvidenceRecord ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A12 (supervisory conformance profiles)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:verifierAgent a owl:ObjectProperty ; rdfs:label "verifier agent"@en ;
+    skos:definition "Agent identity of the verifier."@en ;
+    rdfs:domain pwm:Verifier ;
+    rdfs:range pwm:AIAgent ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 7 (verification gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:verifierModelCard a owl:ObjectProperty ; rdfs:label "verifier model card"@en ;
+    skos:definition "Model card of the model that the verifier runs on. Its model version and provider are the verifier's pinned identity."@en ;
+    rdfs:domain pwm:Verifier ;
+    rdfs:range pwm:ModelCard ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 7 (verification gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:verifiedClaim a owl:ObjectProperty ; rdfs:label "verified claim"@en ;
+    skos:definition "Claim that was verified."@en ;
+    rdfs:domain pwm:ClaimVerification ;
+    rdfs:range pwm:Claim ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 7 (verification gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:verifiedBy a owl:ObjectProperty ; rdfs:label "verified by"@en ;
+    skos:definition "Registered verifier that checked the claim."@en ;
+    rdfs:domain pwm:ClaimVerification ;
+    rdfs:range pwm:Verifier ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 7 (verification gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:producerModelCard a owl:ObjectProperty ; rdfs:label "producer model card"@en ;
+    skos:definition "Model card of the model that produced the claim."@en ;
+    rdfs:domain pwm:ClaimVerification ;
+    rdfs:range pwm:ModelCard ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 7 (verification gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:verificationVerdict a owl:ObjectProperty ; rdfs:label "verification verdict"@en ;
+    skos:definition "Validator status that the verifier assigned to the claim."@en ;
+    rdfs:domain pwm:ClaimVerification ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 7 (verification gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:permitsSelfVerification a owl:DatatypeProperty ; rdfs:label "permits self verification"@en ;
+    skos:definition "Whether the use case explicitly permits a verifier that shares the producer's model, version or provider. Only at tier 1."@en ;
+    rdfs:domain pwm:AIUseCase ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 7 (verification gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:evaluatesAgent a owl:ObjectProperty ; rdfs:label "evaluates agent"@en ;
+    skos:definition "Agent that the result evaluates."@en ;
+    rdfs:domain pwm:EvaluationResult ;
+    rdfs:range pwm:AIAgent ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:evaluatedVersion a owl:DatatypeProperty ; rdfs:label "evaluated version"@en ;
+    skos:definition "Agent version that was evaluated."@en ;
+    rdfs:domain pwm:EvaluationResult ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:evaluatedModelVersion a owl:DatatypeProperty ; rdfs:label "evaluated model version"@en ;
+    skos:definition "Model version that was evaluated."@en ;
+    rdfs:domain pwm:EvaluationResult ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:evaluationLevel a owl:ObjectProperty ; rdfs:label "evaluation level"@en ;
+    skos:definition "Whether the model, the agent or the end-to-end system was evaluated."@en ;
+    rdfs:domain pwm:EvaluationResult ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:evaluationDeploymentHash a owl:DatatypeProperty ; rdfs:label "evaluation deployment hash"@en ;
+    skos:definition "SHA-256 of the deployment content that was evaluated, 64 lowercase hexadecimal characters."@en ;
+    rdfs:domain pwm:EvaluationResult ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:hasMetricValue a owl:ObjectProperty ; rdfs:label "has metric value"@en ;
+    skos:definition "Metric value recorded in the evaluation result."@en ;
+    rdfs:domain pwm:EvaluationResult ;
+    rdfs:range pwm:EvaluationMetricValue ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:metricName a owl:DatatypeProperty ; rdfs:label "metric name"@en ;
+    skos:definition "Name of the evaluation metric."@en ;
+    rdfs:domain pwm:EvaluationMetricValue ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:metricScore a owl:DatatypeProperty ; rdfs:label "metric score"@en ;
+    skos:definition "Metric value as a fraction from 0 to 1."@en ;
+    rdfs:domain pwm:EvaluationMetricValue ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:fairnessThreshold a owl:DatatypeProperty ; rdfs:label "fairness threshold"@en ;
+    skos:definition "Disparity above which the report flags a segment to the risk owner."@en ;
+    rdfs:domain pwm:FairnessReport ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:proxyAttribute a owl:DatatypeProperty ; rdfs:label "proxy attribute"@en ;
+    skos:definition "Attribute that stands in for, or correlates with, a protected attribute."@en ;
+    rdfs:domain pwm:FairnessReport ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:fairnessFlagged a owl:DatatypeProperty ; rdfs:label "fairness flagged"@en ;
+    skos:definition "Whether a disparity above the threshold was flagged to the risk owner."@en ;
+    rdfs:domain pwm:FairnessReport ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:traceOfCall a owl:ObjectProperty ; rdfs:label "trace of call"@en ;
+    skos:definition "Model call whose reasoning trace this is."@en ;
+    rdfs:domain pwm:ReasoningTrace ;
+    rdfs:range pwm:ModelCall ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 13 (reasoning traces)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:traceHash a owl:DatatypeProperty ; rdfs:label "trace hash"@en ;
+    skos:definition "Hash of the reasoning trace in the evidence chain; the content sits in the retention store."@en ;
+    rdfs:domain pwm:ReasoningTrace ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 13 (reasoning traces)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:requiresReasoningTrace a owl:DatatypeProperty ; rdfs:label "requires reasoning trace"@en ;
+    skos:definition "Whether the use case requires a reasoning trace on material output."@en ;
+    rdfs:domain pwm:AIUseCase ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 13 (reasoning traces)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:claimSourceSystem a owl:DatatypeProperty ; rdfs:label "claim source system"@en ;
+    skos:definition "System of record that the claim's source belongs to."@en ;
+    rdfs:domain pwm:Claim ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 1 (claim provenance envelope)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:claimSourceRecord a owl:DatatypeProperty ; rdfs:label "claim source record"@en ;
+    skos:definition "Record in the source system that the claim relies on."@en ;
+    rdfs:domain pwm:Claim ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 1 (claim provenance envelope)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:claimSourceTimestamp a owl:DatatypeProperty ; rdfs:label "claim source timestamp"@en ;
+    skos:definition "As-of time of the source record."@en ;
+    rdfs:domain pwm:Claim ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 1 (claim provenance envelope)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:claimRetrievalTimestamp a owl:DatatypeProperty ; rdfs:label "claim retrieval timestamp"@en ;
+    skos:definition "When the source record was retrieved."@en ;
+    rdfs:domain pwm:Claim ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 1 (claim provenance envelope)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:calculationMethod a owl:DatatypeProperty ; rdfs:label "calculation method"@en ;
+    skos:definition "Registered calculation service or method that produced a figure in the claim."@en ;
+    rdfs:domain pwm:Claim ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 1 (claim provenance envelope)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:claimPromptVersion a owl:DatatypeProperty ; rdfs:label "claim prompt version"@en ;
+    skos:definition "Prompt version that produced the claim."@en ;
+    rdfs:domain pwm:Claim ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 1 (claim provenance envelope)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:claimConfidence a owl:DatatypeProperty ; rdfs:label "claim confidence"@en ;
+    skos:definition "Confidence from 0 to 1 that the producer assigned to the claim."@en ;
+    rdfs:domain pwm:Claim ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 1 (claim provenance envelope)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:claimPolicyStatus a owl:DatatypeProperty ; rdfs:label "claim policy status"@en ;
+    skos:definition "Whether policy allows the claim to reach an RM or client."@en ;
+    rdfs:domain pwm:Claim ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 1 (claim provenance envelope)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:memorySubjectClient a owl:ObjectProperty ; rdfs:label "memory subject client"@en ;
+    skos:definition "Client that a relationship memory record is about. Institutional memory names no client."@en ;
+    rdfs:domain pwm:MemoryRecord ;
+    rdfs:range pwm:Client ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 8 (memory governance)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:memoryExpiresAt a owl:DatatypeProperty ; rdfs:label "memory expires at"@en ;
+    skos:definition "When the memory record expires."@en ;
+    rdfs:domain pwm:MemoryRecord ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 8 (memory governance)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:memoryCorrectionPath a owl:DatatypeProperty ; rdfs:label "memory correction path"@en ;
+    skos:definition "How a person can correct or remove the memory record."@en ;
+    rdfs:domain pwm:MemoryRecord ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 8 (memory governance)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:exportPurpose a owl:DatatypeProperty ; rdfs:label "export purpose"@en ;
+    skos:definition "Purpose of the learning export."@en ;
+    rdfs:domain pwm:LearningExport ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:anonymizationReference a owl:DatatypeProperty ; rdfs:label "anonymization reference"@en ;
+    skos:definition "Reference to the anonymization applied before export."@en ;
+    rdfs:domain pwm:LearningExport ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:validationReference a owl:DatatypeProperty ; rdfs:label "validation reference"@en ;
+    skos:definition "Reference to the validation report that cleared the export."@en ;
+    rdfs:domain pwm:LearningExport ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:exportRequester a owl:ObjectProperty ; rdfs:label "export requester"@en ;
+    skos:definition "Person who requested the export."@en ;
+    rdfs:domain pwm:LearningExport ;
+    rdfs:range fibo-fnd-aap-ppl:Person ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:exportedRecordId a owl:DatatypeProperty ; rdfs:label "exported record identifier"@en ;
+    skos:definition "Identifier of a record included in the export."@en ;
+    rdfs:domain pwm:LearningExport ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:exclusionReason a owl:DatatypeProperty ; rdfs:label "exclusion reason"@en ;
+    skos:definition "Why the client or record is excluded from learning exports."@en ;
+    rdfs:domain pwm:LearningExclusion ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:excludesClient a owl:ObjectProperty ; rdfs:label "excludes client"@en ;
+    skos:definition "Client excluded from every future learning export."@en ;
+    rdfs:domain pwm:LearningExclusion ;
+    rdfs:range pwm:Client ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:excludesRecordId a owl:DatatypeProperty ; rdfs:label "excludes record identifier"@en ;
+    skos:definition "Record excluded from every future learning export."@en ;
+    rdfs:domain pwm:LearningExclusion ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 9 (feedback-loop controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:sensitiveKind a owl:ObjectProperty ; rdfs:label "sensitive kind"@en ;
+    skos:definition "Special category that the inference concerns."@en ;
+    rdfs:domain pwm:SensitiveAttributeInference ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 10 (sensitive attribute controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:permittedByUseCase a owl:DatatypeProperty ; rdfs:label "permitted by use case"@en ;
+    skos:definition "Whether the use case explicitly permits the special-category inference."@en ;
+    rdfs:domain pwm:SensitiveAttributeInference ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 10 (sensitive attribute controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:blockedByPolicy a owl:DatatypeProperty ; rdfs:label "blocked by policy"@en ;
+    skos:definition "Whether policy blocked the inference from the relationship workflow."@en ;
+    rdfs:domain pwm:SensitiveAttributeInference ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 10 (sensitive attribute controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:changesClientTreatment a owl:DatatypeProperty ; rdfs:label "changes client treatment"@en ;
+    skos:definition "Whether the inference changes how the client is treated. Requires a person's determination."@en ;
+    rdfs:domain pwm:SensitiveAttributeInference ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 10 (sensitive attribute controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reviewedByRM a owl:ObjectProperty ; rdfs:label "reviewed by RM"@en ;
+    skos:definition "Person who reviewed the flag and made any determination."@en ;
+    rdfs:domain pwm:SensitiveAttributeInference ;
+    rdfs:range fibo-fnd-aap-ppl:Person ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 10 (sensitive attribute controls)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:actorType a owl:ObjectProperty ; rdfs:label "actor type"@en ;
+    skos:definition "Whether a human, an agent or the system produced the event."@en ;
+    rdfs:domain pwm:EvidenceRecord ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.8.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:approvalRequestStatus a owl:ObjectProperty ; rdfs:label "approval request status"@en ;
+    skos:definition "State of an approval request, including the first signature of a two-signature approval."@en ;
+    rdfs:domain pwm:ApprovalRequest ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.8.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:egressDecision a owl:ObjectProperty ; rdfs:label "egress decision"@en ;
+    skos:definition "Whether data left for a provider unchanged, redacted or not at all."@en ;
+    rdfs:domain pwm:EvidenceRecord ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.8.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:checkResult a owl:ObjectProperty ; rdfs:label "check result"@en ;
+    skos:definition "Verdict of one policy check."@en ;
+    rdfs:domain pwm:PolicyCheck ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.8.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ActorTypeScheme a skos:ConceptScheme ;
+    skos:prefLabel "actor types"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.ActorType" ] .
+pwm:ActorHuman a skos:Concept ; skos:notation "HUMAN" ; skos:inScheme pwm:ActorTypeScheme ; skos:topConceptOf pwm:ActorTypeScheme ; skos:prefLabel "human"@en ; skos:definition "A person."@en .
+pwm:ActorAgent a skos:Concept ; skos:notation "AGENT" ; skos:inScheme pwm:ActorTypeScheme ; skos:topConceptOf pwm:ActorTypeScheme ; skos:prefLabel "agent"@en ; skos:definition "An AI agent."@en .
+pwm:ActorSystem a skos:Concept ; skos:notation "SYSTEM" ; skos:inScheme pwm:ActorTypeScheme ; skos:topConceptOf pwm:ActorTypeScheme ; skos:prefLabel "system"@en ; skos:definition "Kognita or another system component."@en .
+
+pwm:ApprovalStatusScheme a skos:ConceptScheme ;
+    skos:prefLabel "approval request statuses"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.ApprovalStatus" ] .
+pwm:ApprovalPending a skos:Concept ; skos:notation "PENDING" ; skos:inScheme pwm:ApprovalStatusScheme ; skos:topConceptOf pwm:ApprovalStatusScheme ; skos:prefLabel "pending"@en ; skos:definition "Awaiting a decision."@en .
+pwm:ApprovalMarked a skos:Concept ; skos:notation "MARKED" ; skos:inScheme pwm:ApprovalStatusScheme ; skos:topConceptOf pwm:ApprovalStatusScheme ; skos:prefLabel "marked"@en ; skos:definition "First signature recorded in a two-signature approval."@en .
+pwm:ApprovalStatusApproved a skos:Concept ; skos:notation "APPROVED" ; skos:inScheme pwm:ApprovalStatusScheme ; skos:topConceptOf pwm:ApprovalStatusScheme ; skos:prefLabel "approved"@en ; skos:definition "Approved."@en .
+pwm:ApprovalRejected a skos:Concept ; skos:notation "REJECTED" ; skos:inScheme pwm:ApprovalStatusScheme ; skos:topConceptOf pwm:ApprovalStatusScheme ; skos:prefLabel "rejected"@en ; skos:definition "Rejected."@en .
+pwm:ApprovalExpired a skos:Concept ; skos:notation "EXPIRED" ; skos:inScheme pwm:ApprovalStatusScheme ; skos:topConceptOf pwm:ApprovalStatusScheme ; skos:prefLabel "expired"@en ; skos:definition "Expired without a decision."@en .
+
+pwm:EgressDecisionScheme a skos:ConceptScheme ;
+    skos:prefLabel "egress decisions"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.EgressDecision" ] .
+pwm:EgressAllow a skos:Concept ; skos:notation "ALLOW" ; skos:inScheme pwm:EgressDecisionScheme ; skos:topConceptOf pwm:EgressDecisionScheme ; skos:prefLabel "allow"@en ; skos:definition "Data left unchanged."@en .
+pwm:EgressRedact a skos:Concept ; skos:notation "REDACT" ; skos:inScheme pwm:EgressDecisionScheme ; skos:topConceptOf pwm:EgressDecisionScheme ; skos:prefLabel "redact"@en ; skos:definition "Data left after redaction."@en .
+pwm:EgressDeny a skos:Concept ; skos:notation "DENY" ; skos:inScheme pwm:EgressDecisionScheme ; skos:topConceptOf pwm:EgressDecisionScheme ; skos:prefLabel "deny"@en ; skos:definition "Data did not leave."@en .
+
+pwm:CheckResultScheme a skos:ConceptScheme ;
+    skos:prefLabel "check results"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "vocabulary.CheckResult" ] .
+pwm:CheckPass a skos:Concept ; skos:notation "pass" ; skos:inScheme pwm:CheckResultScheme ; skos:topConceptOf pwm:CheckResultScheme ; skos:prefLabel "pass"@en ; skos:definition "The check passed."@en .
+pwm:CheckFail a skos:Concept ; skos:notation "fail" ; skos:inScheme pwm:CheckResultScheme ; skos:topConceptOf pwm:CheckResultScheme ; skos:prefLabel "fail"@en ; skos:definition "The check failed."@en .
+pwm:CheckEscalate a skos:Concept ; skos:notation "escalate" ; skos:inScheme pwm:CheckResultScheme ; skos:topConceptOf pwm:CheckResultScheme ; skos:prefLabel "escalate"@en ; skos:definition "The check escalates to a person."@en .
+pwm:CheckRequiresHuman a skos:Concept ; skos:notation "requires_human" ; skos:inScheme pwm:CheckResultScheme ; skos:topConceptOf pwm:CheckResultScheme ; skos:prefLabel "requires human"@en ; skos:definition "A human decision is required."@en .
+
+pwm:FailoverTriggerScheme a skos:ConceptScheme ;
+    skos:prefLabel "failover triggers"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "roadmap milestone 0.7 items R5 and R7" ] .
+pwm:TriggerConnectionFailure a skos:Concept ; skos:notation "connection_failure" ; skos:inScheme pwm:FailoverTriggerScheme ; skos:topConceptOf pwm:FailoverTriggerScheme ; skos:prefLabel "connection failure"@en ; skos:definition "The provider connection failed."@en .
+pwm:TriggerHttp5xx a skos:Concept ; skos:notation "http_5xx" ; skos:inScheme pwm:FailoverTriggerScheme ; skos:topConceptOf pwm:FailoverTriggerScheme ; skos:prefLabel "HTTP 5xx"@en ; skos:definition "The provider returned a server error."@en .
+pwm:TriggerModelChanged a skos:Concept ; skos:notation "model_changed" ; skos:inScheme pwm:FailoverTriggerScheme ; skos:topConceptOf pwm:FailoverTriggerScheme ; skos:prefLabel "model changed"@en ; skos:definition "The served model differs from the approved model."@en .
+
+pwm:DependencyLayerScheme a skos:ConceptScheme ;
+    skos:prefLabel "dependency layers"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "roadmap milestone 0.7 items R8 and R9" ] .
+pwm:LayerModelProvider a skos:Concept ; skos:notation "model_provider" ; skos:inScheme pwm:DependencyLayerScheme ; skos:topConceptOf pwm:DependencyLayerScheme ; skos:prefLabel "model provider"@en ; skos:definition "Model provider."@en .
+pwm:LayerCloud a skos:Concept ; skos:notation "cloud" ; skos:inScheme pwm:DependencyLayerScheme ; skos:topConceptOf pwm:DependencyLayerScheme ; skos:prefLabel "cloud"@en ; skos:definition "Cloud platform."@en .
+pwm:LayerFramework a skos:Concept ; skos:notation "framework" ; skos:inScheme pwm:DependencyLayerScheme ; skos:topConceptOf pwm:DependencyLayerScheme ; skos:prefLabel "framework"@en ; skos:definition "Agent framework."@en .
+pwm:LayerVectorPlatform a skos:Concept ; skos:notation "vector_platform" ; skos:inScheme pwm:DependencyLayerScheme ; skos:topConceptOf pwm:DependencyLayerScheme ; skos:prefLabel "vector platform"@en ; skos:definition "Vector store or retrieval platform."@en .
+pwm:LayerOrchestration a skos:Concept ; skos:notation "orchestration" ; skos:inScheme pwm:DependencyLayerScheme ; skos:topConceptOf pwm:DependencyLayerScheme ; skos:prefLabel "orchestration"@en ; skos:definition "Orchestration layer."@en .
+pwm:LayerTool a skos:Concept ; skos:notation "tool" ; skos:inScheme pwm:DependencyLayerScheme ; skos:topConceptOf pwm:DependencyLayerScheme ; skos:prefLabel "tool"@en ; skos:definition "Tool or API."@en .
+pwm:LayerDataSource a skos:Concept ; skos:notation "data_source" ; skos:inScheme pwm:DependencyLayerScheme ; skos:topConceptOf pwm:DependencyLayerScheme ; skos:prefLabel "data source"@en ; skos:definition "Data source."@en .
+
+pwm:DependencyDivergenceScheme a skos:ConceptScheme ;
+    skos:prefLabel "dependency divergences"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "roadmap milestone 0.7 item R8" ] .
+pwm:DivergenceUndeclared a skos:Concept ; skos:notation "R8-UNDECLARED" ; skos:inScheme pwm:DependencyDivergenceScheme ; skos:topConceptOf pwm:DependencyDivergenceScheme ; skos:prefLabel "undeclared"@en ; skos:definition "Observed in evidence but not declared in the registers."@en .
+pwm:DivergenceUnused a skos:Concept ; skos:notation "R8-UNUSED" ; skos:inScheme pwm:DependencyDivergenceScheme ; skos:topConceptOf pwm:DependencyDivergenceScheme ; skos:prefLabel "unused"@en ; skos:definition "Declared in the registers but never observed."@en .
+
+pwm:DrillKindScheme a skos:ConceptScheme ;
+    skos:prefLabel "drill kinds"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "breaker.DrillKind" ] .
+pwm:DrillModelUnavailable a skos:Concept ; skos:notation "model_unavailable" ; skos:inScheme pwm:DrillKindScheme ; skos:topConceptOf pwm:DrillKindScheme ; skos:prefLabel "model unavailable"@en ; skos:definition "The model is unavailable."@en .
+pwm:DrillVendorOutage a skos:Concept ; skos:notation "vendor_outage" ; skos:inScheme pwm:DrillKindScheme ; skos:topConceptOf pwm:DrillKindScheme ; skos:prefLabel "vendor outage"@en ; skos:definition "The vendor is down."@en .
+pwm:DrillApiOutage a skos:Concept ; skos:notation "api_outage" ; skos:inScheme pwm:DrillKindScheme ; skos:topConceptOf pwm:DrillKindScheme ; skos:prefLabel "API outage"@en ; skos:definition "An API is down."@en .
+pwm:DrillRetrievalFailure a skos:Concept ; skos:notation "retrieval_failure" ; skos:inScheme pwm:DrillKindScheme ; skos:topConceptOf pwm:DrillKindScheme ; skos:prefLabel "retrieval failure"@en ; skos:definition "Retrieval fails."@en .
+pwm:DrillIdentityServiceFailure a skos:Concept ; skos:notation "identity_service_failure" ; skos:inScheme pwm:DrillKindScheme ; skos:topConceptOf pwm:DrillKindScheme ; skos:prefLabel "identity service failure"@en ; skos:definition "The identity service fails."@en .
+pwm:DrillCorruptedContext a skos:Concept ; skos:notation "corrupted_context" ; skos:inScheme pwm:DrillKindScheme ; skos:topConceptOf pwm:DrillKindScheme ; skos:prefLabel "corrupted context"@en ; skos:definition "Context is corrupted."@en .
+pwm:DrillCompromisedModel a skos:Concept ; skos:notation "compromised_model" ; skos:inScheme pwm:DrillKindScheme ; skos:topConceptOf pwm:DrillKindScheme ; skos:prefLabel "compromised model"@en ; skos:definition "The model is compromised."@en .
+pwm:DrillToolFailure a skos:Concept ; skos:notation "tool_failure" ; skos:inScheme pwm:DrillKindScheme ; skos:topConceptOf pwm:DrillKindScheme ; skos:prefLabel "tool failure"@en ; skos:definition "A tool fails."@en .
+
+pwm:RecordClassScheme a skos:ConceptScheme ;
+    skos:prefLabel "regulatory record classes"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "retention._RECORD_CLASSES" ] .
+pwm:RecordClientCommunications a skos:Concept ; skos:notation "client communications" ; skos:inScheme pwm:RecordClassScheme ; skos:topConceptOf pwm:RecordClassScheme ; skos:prefLabel "client communications"@en ; skos:definition "Client communications."@en .
+pwm:RecordAdvice a skos:Concept ; skos:notation "advice" ; skos:inScheme pwm:RecordClassScheme ; skos:topConceptOf pwm:RecordClassScheme ; skos:prefLabel "advice"@en ; skos:definition "Advice."@en .
+pwm:RecordRecommendations a skos:Concept ; skos:notation "recommendations" ; skos:inScheme pwm:RecordClassScheme ; skos:topConceptOf pwm:RecordClassScheme ; skos:prefLabel "recommendations"@en ; skos:definition "Recommendations."@en .
+pwm:RecordApprovals a skos:Concept ; skos:notation "approvals" ; skos:inScheme pwm:RecordClassScheme ; skos:topConceptOf pwm:RecordClassScheme ; skos:prefLabel "approvals"@en ; skos:definition "Approvals."@en .
+pwm:RecordTransactions a skos:Concept ; skos:notation "transactions" ; skos:inScheme pwm:RecordClassScheme ; skos:topConceptOf pwm:RecordClassScheme ; skos:prefLabel "transactions"@en ; skos:definition "Transactions."@en .
+pwm:RecordComplianceRecords a skos:Concept ; skos:notation "compliance records" ; skos:inScheme pwm:RecordClassScheme ; skos:topConceptOf pwm:RecordClassScheme ; skos:prefLabel "compliance records"@en ; skos:definition "Compliance records."@en .
+
+pwm:IncidentKindScheme a skos:ConceptScheme ;
+    skos:prefLabel "operational incident kinds"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "incidents.IncidentKind" ] .
+pwm:IncidentChainBreak a skos:Concept ; skos:notation "chain_break" ; skos:inScheme pwm:IncidentKindScheme ; skos:topConceptOf pwm:IncidentKindScheme ; skos:prefLabel "chain break"@en ; skos:definition "The evidence chain failed verification."@en .
+pwm:IncidentGatewayOutage a skos:Concept ; skos:notation "gateway_outage" ; skos:inScheme pwm:IncidentKindScheme ; skos:topConceptOf pwm:IncidentKindScheme ; skos:prefLabel "gateway outage"@en ; skos:definition "The gateway was unavailable."@en .
+pwm:IncidentDegradedMode a skos:Concept ; skos:notation "degraded_mode" ; skos:inScheme pwm:IncidentKindScheme ; skos:topConceptOf pwm:IncidentKindScheme ; skos:prefLabel "degraded mode"@en ; skos:definition "The gateway ran in degraded mode."@en .
+pwm:IncidentProviderFailure a skos:Concept ; skos:notation "provider_failure" ; skos:inScheme pwm:IncidentKindScheme ; skos:topConceptOf pwm:IncidentKindScheme ; skos:prefLabel "provider failure"@en ; skos:definition "A model provider failed."@en .
+
+pwm:AttestationKindScheme a skos:ConceptScheme ;
+    skos:prefLabel "attestation kinds"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "assurance.trust.Attestation" ] .
+pwm:AttestationPrivacy a skos:Concept ; skos:notation "privacy" ; skos:inScheme pwm:AttestationKindScheme ; skos:topConceptOf pwm:AttestationKindScheme ; skos:prefLabel "privacy"@en ; skos:definition "Privacy impact context."@en .
+pwm:AttestationEnvironment a skos:Concept ; skos:notation "environment" ; skos:inScheme pwm:AttestationKindScheme ; skos:topConceptOf pwm:AttestationKindScheme ; skos:prefLabel "environment"@en ; skos:definition "Execution environment."@en .
+pwm:AttestationMonitoring a skos:Concept ; skos:notation "monitoring" ; skos:inScheme pwm:AttestationKindScheme ; skos:topConceptOf pwm:AttestationKindScheme ; skos:prefLabel "monitoring"@en ; skos:definition "Monitoring coverage."@en .
+pwm:AttestationInstruction a skos:Concept ; skos:notation "instruction" ; skos:inScheme pwm:AttestationKindScheme ; skos:topConceptOf pwm:AttestationKindScheme ; skos:prefLabel "instruction"@en ; skos:definition "High-risk instruction authenticity."@en .
+pwm:AttestationTransfer a skos:Concept ; skos:notation "transfer" ; skos:inScheme pwm:AttestationKindScheme ; skos:topConceptOf pwm:AttestationKindScheme ; skos:prefLabel "transfer"@en ; skos:definition "Jurisdictional technology transfer."@en .
+
+pwm:TransferTypeScheme a skos:ConceptScheme ;
+    skos:prefLabel "technology transfer types"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "assurance.records.AssurancePolicy.transfer_type" ] .
+pwm:TransferApi a skos:Concept ; skos:notation "api" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "API/SaaS"@en ; skos:definition "Access through an API or hosted service."@en .
+pwm:TransferWeights a skos:Concept ; skos:notation "weights" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "model weights"@en ; skos:definition "Transfer of model weights."@en .
+pwm:TransferLicense a skos:Concept ; skos:notation "licence" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "license"@en ; skos:definition "License transfer. The Kognita value keeps its original spelling, licence."@en .
+pwm:TransferLocal a skos:Concept ; skos:notation "local" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "local deployment"@en ; skos:definition "Local deployment."@en .
+pwm:TransferOwnership a skos:Concept ; skos:notation "ownership" ; skos:inScheme pwm:TransferTypeScheme ; skos:topConceptOf pwm:TransferTypeScheme ; skos:prefLabel "ownership or control"@en ; skos:definition "Transfer of ownership or control."@en .
+
+pwm:ConformanceProfileScheme a skos:ConceptScheme ;
+    skos:prefLabel "supervisory conformance profiles"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "assurance.reports.PROFILES" ] .
+pwm:ProfileMAS a skos:Concept ; skos:notation "MAS" ; skos:inScheme pwm:ConformanceProfileScheme ; skos:topConceptOf pwm:ConformanceProfileScheme ; skos:prefLabel "MAS"@en ; skos:definition "Monetary Authority of Singapore."@en .
+pwm:ProfileHKMAART a skos:Concept ; skos:notation "HKMA-ART" ; skos:inScheme pwm:ConformanceProfileScheme ; skos:topConceptOf pwm:ConformanceProfileScheme ; skos:prefLabel "HKMA ART"@en ; skos:definition "Hong Kong Monetary Authority."@en .
+pwm:ProfileFSB a skos:Concept ; skos:notation "FSB" ; skos:inScheme pwm:ConformanceProfileScheme ; skos:topConceptOf pwm:ConformanceProfileScheme ; skos:prefLabel "FSB"@en ; skos:definition "Financial Stability Board sound practices."@en .
+pwm:ProfileOCC a skos:Concept ; skos:notation "OCC" ; skos:inScheme pwm:ConformanceProfileScheme ; skos:topConceptOf pwm:ConformanceProfileScheme ; skos:prefLabel "OCC"@en ; skos:definition "US Office of the Comptroller of the Currency examiner considerations."@en .
+pwm:ProfileSEC a skos:Concept ; skos:notation "SEC" ; skos:inScheme pwm:ConformanceProfileScheme ; skos:topConceptOf pwm:ConformanceProfileScheme ; skos:prefLabel "SEC"@en ; skos:definition "Selected US Securities and Exchange Commission themes."@en .
+pwm:ProfileFCA a skos:Concept ; skos:notation "FCA" ; skos:inScheme pwm:ConformanceProfileScheme ; skos:topConceptOf pwm:ConformanceProfileScheme ; skos:prefLabel "FCA"@en ; skos:definition "Selected UK Financial Conduct Authority themes."@en .
+
+pwm:SensitiveKindScheme a skos:ConceptScheme ;
+    skos:prefLabel "special categories"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "sensitive._PATTERNS" ] .
+pwm:SensitiveReligion a skos:Concept ; skos:notation "religion" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "religion"@en ; skos:definition "Religion."@en .
+pwm:SensitiveHealth a skos:Concept ; skos:notation "health" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "health"@en ; skos:definition "Health."@en .
+pwm:SensitivePolitical a skos:Concept ; skos:notation "political_views" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "political views"@en ; skos:definition "Political views."@en .
+pwm:SensitiveEthnicity a skos:Concept ; skos:notation "ethnicity" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "ethnicity"@en ; skos:definition "Ethnicity."@en .
+pwm:SensitiveSexuality a skos:Concept ; skos:notation "sexuality" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "sexuality"@en ; skos:definition "Sexuality."@en .
+pwm:SensitiveVulnerability a skos:Concept ; skos:notation "vulnerability" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "personal vulnerability"@en ; skos:definition "Personal vulnerability."@en .
+
+pwm:EvaluationLevelScheme a skos:ConceptScheme ;
+    skos:prefLabel "evaluation levels"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "evaluation.py and cli evaluation record --level" ] .
+pwm:LevelModel a skos:Concept ; skos:notation "model" ; skos:inScheme pwm:EvaluationLevelScheme ; skos:topConceptOf pwm:EvaluationLevelScheme ; skos:prefLabel "model"@en ; skos:definition "The model alone."@en .
+pwm:LevelAgent a skos:Concept ; skos:notation "agent" ; skos:inScheme pwm:EvaluationLevelScheme ; skos:topConceptOf pwm:EvaluationLevelScheme ; skos:prefLabel "agent"@en ; skos:definition "The agent: planning, tool selection, permission compliance, delegation, retries and escalation."@en .
+pwm:LevelSystem a skos:Concept ; skos:notation "system" ; skos:inScheme pwm:EvaluationLevelScheme ; skos:topConceptOf pwm:EvaluationLevelScheme ; skos:prefLabel "system"@en ; skos:definition "The end-to-end system: model, retrieval, tools, data, agent, policies, interface and human interaction."@en .
+
+# Evidence event types added to match Kognita vocabulary.EventType (31 values).
+pwm:EventAnchorPublished a skos:Concept ; skos:notation "ANCHOR_PUBLISHED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "anchor published"@en ; skos:definition "A chain-head checkpoint was published to an external sink."@en .
+pwm:EventAssurance a skos:Concept ; skos:notation "ASSURANCE" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "assurance"@en ; skos:definition "A runtime assurance record was evidenced: manifest, attestation, update approval, component approval, drill or production outcome."@en .
+pwm:EventClaimVerified a skos:Concept ; skos:notation "CLAIM_VERIFIED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "claim verified"@en ; skos:definition "A claim passed the verification gate."@en .
+pwm:EventEvaluationRecorded a skos:Concept ; skos:notation "EVALUATION_RECORDED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "evaluation recorded"@en ; skos:definition "An evaluation result was recorded."@en .
+pwm:EventExternalReviewSubmitted a skos:Concept ; skos:notation "EXTERNAL_REVIEW_SUBMITTED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "external review submitted"@en ; skos:definition "An external reviewer submitted a signed review."@en .
+pwm:EventIncidentUpdated a skos:Concept ; skos:notation "INCIDENT_UPDATED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "incident updated"@en ; skos:definition "An incident was updated."@en .
+pwm:EventIncidentClosed a skos:Concept ; skos:notation "INCIDENT_CLOSED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "incident closed"@en ; skos:definition "An incident was closed."@en .
+pwm:EventInteraction a skos:Concept ; skos:notation "INTERACTION" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "interaction"@en ; skos:definition "A client interaction was recorded."@en .
+pwm:EventKeyRevoked a skos:Concept ; skos:notation "KEY_REVOKED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "key revoked"@en ; skos:definition "A signing key was revoked."@en .
+pwm:EventKeyRotated a skos:Concept ; skos:notation "KEY_ROTATED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "key rotated"@en ; skos:definition "A signing key was rotated."@en .
+pwm:EventLearningExport a skos:Concept ; skos:notation "LEARNING_EXPORT" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "learning export"@en ; skos:definition "An approved export of interaction data for learning or evaluation was made."@en .
+pwm:EventMemoryWrite a skos:Concept ; skos:notation "MEMORY_WRITE" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "memory write"@en ; skos:definition "A memory record was written."@en .
+pwm:EventRevalidationTriggered a skos:Concept ; skos:notation "REVALIDATION_TRIGGERED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "revalidation triggered"@en ; skos:definition "A model change or other trigger required revalidation."@en .
+pwm:EventReview a skos:Concept ; skos:notation "REVIEW" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "review"@en ; skos:definition "A human review was recorded."@en .
+pwm:EventSourceSuperseded a skos:Concept ; skos:notation "SOURCE_SUPERSEDED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "source superseded"@en ; skos:definition "An approved source was superseded, so facts that depend on it are no longer current."@en .

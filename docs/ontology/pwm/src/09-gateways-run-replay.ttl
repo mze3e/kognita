@@ -217,7 +217,7 @@ pwm:hasFinding a owl:ObjectProperty ; rdfs:label "has finding"@en ; skos:definit
     rdfs:range pwm:ReconstructionFinding ;
     pwm:inModule pwm:ModuleEvidence ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 8" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified" ] .
 
-pwm:findingRecord a owl:ObjectProperty ; rdfs:label "finding record"@en ; skos:definition "Record affected by the finding."@en ;
+pwm:findingRecord a owl:ObjectProperty ; rdfs:range prov:Entity ; rdfs:label "finding record"@en ; skos:definition "Record affected by the finding."@en ;
     rdfs:domain pwm:ReconstructionFinding ;
     pwm:inModule pwm:ModuleEvidence ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 8" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified" ] .
 
@@ -470,9 +470,9 @@ pwm:GatewayFailureModeScheme a skos:ConceptScheme ; skos:prefLabel "gateway fail
 
 pwm:gatewayFailureMode a owl:ObjectProperty ; rdfs:label "gateway failure mode"@en ; skos:definition "Recorded gatewayFailureMode code."@en ; rdfs:range skos:Concept ; pwm:valuesFrom pwm:GatewayFailureModeScheme ; pwm:inModule pwm:ModuleEvidence ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 9" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified" ] .
 
-pwm:FailClosed a skos:Concept ; skos:inScheme pwm:GatewayFailureModeScheme ; skos:prefLabel "fail closed"@en ; skos:notation "fail_closed" ; skos:definition "Default: refuse calls while the gateway or evidence store is unavailable."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 9" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified" ] .
+pwm:FailClosed a skos:Concept ; skos:inScheme pwm:GatewayFailureModeScheme ; skos:prefLabel "fail closed"@en ; skos:notation "FAIL_CLOSED" ; skos:definition "Default: refuse calls while the gateway or evidence store is unavailable."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 9" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified" ] .
 
-pwm:Degraded a skos:Concept ; skos:inScheme pwm:GatewayFailureModeScheme ; skos:prefLabel "degraded"@en ; skos:notation "degraded" ; skos:definition "Only local-model calls without client data may proceed during an outage; evidence is written when the store recovers."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 9" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified" ] .
+pwm:Degraded a skos:Concept ; skos:inScheme pwm:GatewayFailureModeScheme ; skos:prefLabel "degraded"@en ; skos:notation "DEGRADED" ; skos:definition "Only local-model calls without client data may proceed during an outage; evidence is written when the store recovers."@en ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 9" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified" ] .
 
 pwm:ReconstructionQuestionScheme a skos:ConceptScheme ; skos:prefLabel "supervisory reconstruction questions"@en ; skos:definition "Codes for reconstructionQuestion."@en ; pwm:inModule pwm:ModuleEvidence ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.3 item 8" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified" ] .
 
