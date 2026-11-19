@@ -52,8 +52,8 @@ A term is mapped to a paragraph when one of its citations to the MAS AIRG regist
 | 5.11(c) | Concentration risk | Planned | `ModelProvider`, `ThirdPartyAI`, `providedBy` | mapped |
 | 5.11(d) | Notification and assessment of third-party changes | Planned | `ModelProvider`, `ThirdPartyAI`, `providedBy` | mapped |
 | 5.11(e) | Contingency for third-party failure or discontinued support | Planned | `ModelProvider`, `ThirdPartyAI`, `providedBy` | mapped |
-| 5.12, 5.13 | Selection of systems, models and features | Out of scope | — | out of scope (control-frameworks.md) |
-| 5.14 | Evaluation thresholds agreed by business owners, developers and reviewers | Boundary | — | boundary (control-frameworks.md) |
+| 5.12, 5.13 | Selection of systems, models and features | Out of scope | none | out of scope (control-frameworks.md) |
+| 5.14 | Evaluation thresholds agreed by business owners, developers and reviewers | Boundary | none | boundary (control-frameworks.md) |
 | 5.15 | Guardrails tested for agent failure modes | Planned | `AdversarialTestCase`, `FailureDrill` | mapped |
 | 5.16(a) | Secure deployment: input validation, API authentication, encryption, DLP | Partial | `Tool`, `permittedAPI`, `scopeTool` | mapped |
 | 5.16(b) | Role-based access, MFA, separation of duties | Partial | `Tool`, `permittedAPI`, `scopeTool` | mapped |
@@ -69,5 +69,5 @@ A term is mapped to a paragraph when one of its citations to the MAS AIRG regist
 | 5.25(a)(b) | Significance of changes; re-approval; version control and rollback | Planned | `PolicyRule`, `deploymentVersion` | mapped |
 | 5.25(c) | Enhanced controls on automatic updates | Planned | `PolicyRule`, `deploymentVersion` | mapped |
 | 5.26 | Retirement and decommissioning | Added | `UseCaseStatusScheme` | mapped |
-| 6.1, 6.2 | Competence, training and resources | Out of scope | — | out of scope (control-frameworks.md) |
-| 6.3 | Technology infrastructure adequate for AI | Out of scope | — | out of scope (control-frameworks.md) |
+| 6.1, 6.2 | Competence, training and resources | Out of scope | none | out of scope (control-frameworks.md) |
+| 6.3 | Technology infrastructure adequate for AI | Out of scope | none | out of scope (control-frameworks.md) |

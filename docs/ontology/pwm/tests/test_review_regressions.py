@@ -368,9 +368,9 @@ def test_historical_review_boundary_and_distinct_signatures():
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     ontology = Graph().parse(BASE / 'pwm.ttl')
     assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
-    from datetime import date, timedelta
-    later = date.fromisoformat(str(due)) + timedelta(days=1)
-    g.set((E('HistoricalReviewDecision'), at, Literal(str(later) + 'T00:00:00Z', datatype=XSD.dateTime)))
+    from datetime import datetime, timedelta
+    later = datetime.fromisoformat(str(due).replace('Z', '+00:00')) + timedelta(days=1)
+    g.set((E('HistoricalReviewDecision'), at, Literal(later.isoformat(), datatype=XSD.dateTime)))
     g.remove((E('Communication'), P('communicationSigner'), E('PersonModelRisk')))
     g.add((E('Communication'), P('communicationSigner'), E('PersonRM')))
     conforms, report, _ = validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')
