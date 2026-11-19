@@ -1151,6 +1151,15 @@ Every drill checks that policy, monitoring, containment and evidence remain inta
 - Verify fleet budgets, cancellation, intervention, affected-client tracing, incident closure and end-to-end reconstruction from independently sourced evidence.
 - **Acceptance:** Defined high-impact client interactions reconstruct the complete principal → authority → policy → tool execution → verified outcome chain, including interruption and key rotation.
 
+### E8. Consumer-Agent Purchase Authority and Human-Service Handoff (Proposal Watch)
+
+**Driver:** European Commission's 11 November 2026 proposed Digital Fairness Act and CPC revision. **Not enacted**; this is a proposal, not binding law. Scope for regulated financial services must be assessed by the bank. No default change to runtime enforcement.
+
+- For client-facing agents authorized to buy or contract for customers, support external purpose- and transaction-scoped consumer-authority evidence, clear price/action disclosure and transaction lineage.
+- Support independently attested handoff to a human service channel where bank policy or applicable final law requires it. Kognita must not become the service channel or decide legal contract validity.
+- Expose bank-configured controls for manipulative offers and sensitive-data-driven personalization; legal/fairness determination remains with the institution.
+- Keep the proposed-law profile disabled unless approved by institution policy or final applicable requirements.
+
 ### 0.8.x hardening queue (before implementation)
 
 1. **P0:** Nested Code Mode/MCP enforcement and direct-SDK bypass regression tests (E1).
