@@ -1,0 +1,11 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q3. What information did the AI use? Items retrieved on each call in the interaction's runs, with their hashes.
+# Bind ?interaction to the interaction under examination.
+SELECT ?run ?call ?item ?contentHash WHERE {
+  ?run a pwm:Run ; pwm:partOfInteraction ?interaction .
+  ?call pwm:inRun ?run ; pwm:retrievedItem ?item .
+  OPTIONAL { ?item pwm:contentHash ?contentHash }
+}

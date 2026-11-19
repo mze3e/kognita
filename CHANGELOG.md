@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Ontology (PWM)
+
+- PWM 0.10 (19 Nov 2026): builds the roadmap's 0.9 and 0.10 scope in one release. New module 13 for business scope (costs and charges, inducement disclosure, product approval and target market review, complaint outcomes, periodic suitability review, orders, executions, allocations, best-execution records, corporate actions, income, CRS and FATCA reporting records, lending facilities, performance provenance). New artifacts under `docs/ontology/pwm`: the MAS AIRG paragraph map, an AI inventory profile, ten reconstruction queries, a mapping table for 114 Kognita vocabulary values and 25 policies, a JSON-LD context with a round trip that reads a signed Kognita evidence export as PWM RDF, five jurisdiction profiles and a code-list profile. All datatypes are now in the OWL 2 datatype map. Open: citation verification, FIBO alignment of the operations terms, the OWL DL and HermiT runs, and register exports in the round trip. See `docs/ontology/pwm/CHANGELOG.md` and `GAP_ANALYSIS.md`.
+
+### Continuous integration
+
+- The PWM job regenerates every generated PWM artifact and fails on any difference, then runs the PWM tests.
+
 ## [0.9.0] - 2026-11-19
 
 This release is a minor version because it renames identifiers and values (see Changed, below). Releases before 1.0 may break compatibility between minor versions.

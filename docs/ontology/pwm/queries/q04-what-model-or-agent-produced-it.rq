@@ -1,0 +1,13 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q4. What model or agent produced it? Model, provider, version and calling agent for each model call.
+# Bind ?interaction to the interaction under examination.
+SELECT ?call ?model ?provider ?modelVersion ?agent ?promptHash ?responseHash WHERE {
+  ?run a pwm:Run ; pwm:partOfInteraction ?interaction .
+  ?call a pwm:ModelCall ; pwm:inRun ?run ; pwm:usesModel ?model ; pwm:providedBy ?provider ; pwm:modelVersion ?modelVersion .
+  OPTIONAL { ?call pwm:callAgent ?agent }
+  OPTIONAL { ?call pwm:promptHash ?promptHash }
+  OPTIONAL { ?call pwm:responseHash ?responseHash }
+}

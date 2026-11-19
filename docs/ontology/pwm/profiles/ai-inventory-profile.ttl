@@ -1,0 +1,49 @@
+# =============================================================================
+#  PWM profile: AI inventory (MAS AIRG 4.5 to 4.7 and footnote 25)
+#
+#  Checks that an inventory of AI use cases and agents carries every attribute
+#  MAS AIRG 4.7 lists, and for agents the footnote 25 attributes. A firm applies
+#  this profile to its register in addition to pwm-shapes.ttl:
+#
+#    pyshacl -s profiles/ai-inventory-profile.ttl -e pwm.ttl -i rdfs register.ttl
+#
+#  The profile checks that attributes are recorded. Whether they are right is
+#  the firm's control function's decision (MAS AIRG 4.3, 4.9).
+# =============================================================================
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix pwm:     <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix pwmref:  <https://ahmedmuzammil.com/ontology/pwm#ref-> .
+@prefix pwmprof: <https://ahmedmuzammil.com/ontology/pwm/profiles/inventory#> .
+
+<https://ahmedmuzammil.com/ontology/pwm/profiles/inventory> a owl:Ontology ;
+    dcterms:title "PWM profile: AI inventory"@en ;
+    dcterms:requires <https://ahmedmuzammil.com/ontology/pwm/0.10> ;
+    dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
+
+pwmprof:UseCaseInventoryShape a sh:NodeShape ; rdfs:label "AI use case inventory entry"@en ; sh:targetClass pwm:AIUseCase ;
+    dcterms:source pwmref:MAS-AIRG ;
+    sh:property [ sh:path pwm:hasPurpose ; sh:minCount 1 ; sh:message "Inventory attribute missing: purpose (MAS AIRG 4.7)." ] ;
+    sh:property [ sh:path pwm:approvedJurisdiction ; sh:minCount 1 ; sh:message "Inventory attribute missing: approved scope, jurisdiction (MAS AIRG 4.7)." ] ;
+    sh:property [ sh:path pwm:modelType ; sh:minCount 1 ; sh:message "Inventory attribute missing: model type (MAS AIRG 4.7)." ] ;
+    sh:property [ sh:path pwm:usesDataClass ; sh:minCount 1 ; sh:message "Inventory attribute missing: data used, by classification (MAS AIRG 4.7)." ] ;
+    sh:property [ sh:path pwm:dependsOn ; sh:minCount 1 ; sh:message "Inventory attribute missing: dependencies (MAS AIRG 4.6, 4.7)." ] ;
+    sh:property [ sh:path pwm:lifecycleStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Inventory attribute missing: lifecycle status (MAS AIRG 4.7)." ] ;
+    sh:property [ sh:path pwm:hasMaterialityAssessment ; sh:minCount 1 ; sh:message "Inventory attribute missing: materiality assessment (MAS AIRG 4.7, 4.10)." ] ;
+    sh:property [ sh:path pwm:riskTier ; sh:minCount 1 ; sh:message "Inventory attribute missing: risk tier (MAS AIRG 4.7)." ] ;
+    sh:property [ sh:path pwm:nextReviewDate ; sh:minCount 1 ; sh:message "Inventory attribute missing: review status, next review time (MAS AIRG 4.7)." ] ;
+    sh:property [ sh:path pwm:hasDocumentation ; sh:minCount 1 ; sh:message "Inventory attribute missing: documentation (MAS AIRG 4.7)." ] ;
+    sh:property [ sh:path pwm:hasAccountabilityRole ; sh:qualifiedValueShape [ sh:class pwm:BusinessOwner ] ; sh:qualifiedMinCount 1 ; sh:message "Inventory attribute missing: a business owner (MAS AIRG 4.7, 3.5)." ] ;
+    sh:property [ sh:path pwm:hasAccountabilityRole ; sh:qualifiedValueShape [ sh:class pwm:TechnologyOwner ] ; sh:qualifiedMinCount 1 ; sh:message "Inventory attribute missing: a technology owner (MAS AIRG 4.7, 3.5)." ] .
+
+pwmprof:AgentInventoryShape a sh:NodeShape ; rdfs:label "AI agent inventory entry"@en ; sh:targetClass pwm:AIAgent ;
+    dcterms:source pwmref:MAS-AIRG ;
+    sh:property [ sh:path pwm:agentIdentifier ; sh:minCount 1 ; sh:maxCount 1 ; sh:message "Agent attribute missing: identifier (MAS AIRG 4.7, footnote 25)." ] ;
+    sh:property [ sh:path pwm:permittedTool ; sh:minCount 1 ; sh:message "Agent attribute missing: tools and systems accessible (MAS AIRG 4.7, footnote 25)." ] ;
+    sh:property [ sh:path pwm:hasComponent ; sh:minCount 1 ; sh:message "Agent attribute missing: components (MAS AIRG 4.7, footnote 25)." ] ;
+    sh:property [ sh:path pwm:hasBlastRadiusLimit ; sh:minCount 1 ; sh:message "Agent attribute missing: guardrails, a blast-radius limit (MAS AIRG 4.7, footnote 25)." ] ;
+    sh:property [ sh:path pwm:registeredForUseCase ; sh:minCount 1 ; sh:message "Agent attribute missing: the use case it is registered for (MAS AIRG 4.7)." ] .

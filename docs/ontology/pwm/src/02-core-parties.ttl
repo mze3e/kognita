@@ -47,8 +47,8 @@ pwm:supersedes a owl:ObjectProperty ; rdfs:range owl:Thing ;
 
 pwm:nextReviewDate a owl:DatatypeProperty ;
     rdfs:label "next review date"@en ;
-    skos:definition "Date by which a record must be reviewed. Past this date the record is treated as expired."@en ;
-    rdfs:range xsd:date ;
+    skos:definition "Time by which a record must be reviewed. A decision made after this instant treats the record as expired. A date-only value from earlier versions is read as the end of that day."@en ;
+    rdfs:range xsd:dateTime ;
     pwm:inModule pwm:ModuleCore ;
     pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10: ongoing due diligence" ] ,
                  [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.11, 4.13: assessments regularly reviewed" ] ,

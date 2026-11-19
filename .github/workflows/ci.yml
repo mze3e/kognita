@@ -61,7 +61,11 @@ jobs:
         working-directory: docs/ontology/pwm
         run: |
           python3 tools/gen_module12.py
+          python3 tools/gen_module13.py
           python3 tools/build.py
+          python3 tools/gen_airg_map.py
+          python3 tools/gen_mapping.py
+          python3 tools/roundtrip.py context
           git diff --exit-code -- .
 
       - name: Validate example and negative fixture

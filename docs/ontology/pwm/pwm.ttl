@@ -1,5 +1,5 @@
 # =============================================================================
-#  Private Wealth Management Ontology (PWM), version 0.8 (draft)
+#  Private Wealth Management Ontology (PWM), version 0.10 (draft)
 #
 #  A generic ontology for private banking and wealth management, built on
 #  published standards (FIBO, OMG Commons, W3C PROV-O, SKOS, DPV) and grounded
@@ -74,15 +74,15 @@
 
 <https://ahmedmuzammil.com/ontology/pwm>
     a owl:Ontology ;
-    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/0.8> ;
-    owl:versionInfo "0.8 (draft)" ;
-    owl:priorVersion <https://ahmedmuzammil.com/ontology/pwm/0.5> ;
+    owl:versionIRI <https://ahmedmuzammil.com/ontology/pwm/0.10> ;
+    owl:versionInfo "0.10 (draft)" ;
+    owl:priorVersion <https://ahmedmuzammil.com/ontology/pwm/0.8> ;
     dcterms:title "Private Wealth Management Ontology"@en ;
     dcterms:alternative "PWM"@en ;
     dcterms:description """A generic ontology for private banking and wealth management. It models parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, client interactions, and the governance of AI that acts on them: use cases, agents, delegated authority, claims and evidence. Business concepts reuse or specialize the Financial Industry Business Ontology (FIBO) and the OMG Commons library. Governance concepts follow the MAS Guidelines on Artificial Intelligence Risk Management (7 October 2026) and the Kognita roadmap. Every term cites the references it is grounded in. Institution-specific detail belongs in an extension that imports this ontology."""@en ;
     dcterms:creator "Ahmed Muzammil" ;
     dcterms:created "2026-11-02"^^xsd:date ;
-    dcterms:modified "2026-11-18"^^xsd:date ;
+    dcterms:modified "2026-11-19"^^xsd:date ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> ;
     dcterms:source <https://github.com/edmcouncil/fibo> , <https://github.com/mze3e/kognita> ;
     vann:preferredNamespacePrefix "pwm" ;
@@ -126,7 +126,6 @@ vann:preferredNamespacePrefix a owl:AnnotationProperty .
 vann:preferredNamespaceUri a owl:AnnotationProperty .
 
 xsd:date a rdfs:Datatype .
-xsd:duration a rdfs:Datatype .
 
 # -----------------------------------------------------------------------------
 #  Meta-model: how terms are grouped, cited and marked
@@ -713,8 +712,8 @@ pwm:supersedes a owl:ObjectProperty ; rdfs:range owl:Thing ;
 
 pwm:nextReviewDate a owl:DatatypeProperty ;
     rdfs:label "next review date"@en ;
-    skos:definition "Date by which a record must be reviewed. Past this date the record is treated as expired."@en ;
-    rdfs:range xsd:date ;
+    skos:definition "Time by which a record must be reviewed. A decision made after this instant treats the record as expired. A date-only value from earlier versions is read as the end of that day."@en ;
+    rdfs:range xsd:dateTime ;
     pwm:inModule pwm:ModuleCore ;
     pwm:citation [ pwm:cites pwmref:FATF ; pwm:locator "R.10: ongoing due diligence" ] ,
                  [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.11, 4.13: assessments regularly reviewed" ] ,
@@ -3228,8 +3227,8 @@ pwm:versionId a owl:DatatypeProperty ;
 
 pwm:retentionUntil a owl:DatatypeProperty ;
     rdfs:label "retention until"@en ;
-    skos:definition "Date until which a record must be kept. An AI record never expires before the regulatory record it supports."@en ;
-    rdfs:range xsd:date ;
+    skos:definition "Time until which a record must be kept. An AI record never expires before the regulatory record it supports."@en ;
+    rdfs:range xsd:dateTime ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: retention date" ] , [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.7: retention by record class" ] .
 
@@ -3304,10 +3303,10 @@ pwm:asOf a owl:DatatypeProperty ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: as-of date" ] .
 
-pwm:freshnessThreshold a owl:DatatypeProperty ;
-    rdfs:label "freshness threshold"@en ;
-    skos:definition "Maximum age at which a fact may still be used, as an xsd:duration."@en ;
-    rdfs:domain pwm:Fact ; rdfs:range xsd:duration ;
+pwm:freshnessThresholdSeconds a owl:DatatypeProperty ;
+    rdfs:label "freshness threshold in seconds"@en ;
+    skos:definition "Maximum age at which a fact may still be used, in whole seconds."@en ;
+    rdfs:domain pwm:Fact ; rdfs:range xsd:positiveInteger ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: freshness thresholds per data type" ] .
 
@@ -3586,12 +3585,32 @@ pwm:transferType pwm:valuesFrom pwm:TransferTypeScheme .
 pwm:conformanceProfile pwm:valuesFrom pwm:ConformanceProfileScheme .
 pwm:verificationVerdict pwm:valuesFrom pwm:ValidatorStatusScheme .
 pwm:evaluationLevel pwm:valuesFrom pwm:EvaluationLevelScheme .
+pwm:drillScenario pwm:valuesFrom pwm:DrillScenarioScheme .
 pwm:sensitiveKind pwm:valuesFrom pwm:SensitiveKindScheme .
 pwm:actorType pwm:valuesFrom pwm:ActorTypeScheme .
 pwm:approvalRequestStatus pwm:valuesFrom pwm:ApprovalStatusScheme .
 pwm:egressDecision pwm:valuesFrom pwm:EgressDecisionScheme .
 pwm:checkResult pwm:valuesFrom pwm:CheckResultScheme .
 # <<< module 12 END
+
+# >>> module 13 BEGIN (generated by tools/gen_module13.py)
+pwm:disclosureTiming pwm:valuesFrom pwm:DisclosureTimingScheme .
+pwm:costCategory pwm:valuesFrom pwm:CostCategoryScheme .
+pwm:targetMarketReviewOutcome pwm:valuesFrom pwm:TargetMarketReviewOutcomeScheme .
+pwm:complaintResolution pwm:valuesFrom pwm:ComplaintResolutionScheme .
+pwm:vulnerabilityDriver pwm:valuesFrom pwm:VulnerabilityDriverScheme .
+pwm:suitabilityReviewResult pwm:valuesFrom pwm:SuitabilityReviewResultScheme .
+pwm:orderSide pwm:valuesFrom pwm:OrderSideScheme .
+pwm:orderType pwm:valuesFrom pwm:OrderTypeScheme .
+pwm:orderStatus pwm:valuesFrom pwm:OrderStatusScheme .
+pwm:executionFactor pwm:valuesFrom pwm:ExecutionFactorScheme .
+pwm:corporateActionKind pwm:valuesFrom pwm:CorporateActionKindScheme .
+pwm:incomeKind pwm:valuesFrom pwm:IncomeKindScheme .
+pwm:reportingRegime pwm:valuesFrom pwm:TaxReportingRegimeScheme .
+pwm:facilityKind pwm:valuesFrom pwm:FacilityKindScheme .
+pwm:performanceMeasure pwm:valuesFrom pwm:PerformanceMeasureScheme .
+pwm:negativeTargetMarketCategory pwm:valuesFrom pwm:InvestorCategoryScheme .
+# <<< module 13 END
 
 # PWM 0.3: roadmap milestone 0.3, Gateways, the Run and Replay
 
@@ -5242,6 +5261,11 @@ pwm:FairnessReport a owl:Class ; rdfs:label "fairness report"@en ;
     pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
 
+pwm:EvaluationGate a owl:Class ; rdfs:label "evaluation gate"@en ;
+    skos:definition "Threshold per use case and metric that an evaluation result must meet before a tier 2 or higher agent is activated or changed: a minimum, or for rates such as hallucination a maximum."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
 pwm:ReasoningTrace a owl:Class ; rdfs:label "reasoning trace"@en ;
     skos:definition "Record that a provider returned a reasoning trace for a model call: its hash and where the content is retained. The model's own account, never a basis for a decision."@en ; rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
@@ -6239,6 +6263,62 @@ pwm:fairnessFlagged a owl:DatatypeProperty ; rdfs:label "fairness flagged"@en ;
     pwm:inModule pwm:ModuleTrust ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
 
+pwm:hasDocumentation a owl:ObjectProperty ; rdfs:label "has documentation"@en ;
+    skos:definition "Documentation held for an AI use case, such as a model card or design record (MAS AIRG 4.7)."@en ;
+    rdfs:domain pwm:AIUseCase ;
+    rdfs:range prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "MAS AIRG 4.7 and footnote 25: inventory attributes for AI and for agents" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:hasComponent a owl:ObjectProperty ; rdfs:label "has component"@en ;
+    skos:definition "Approved software component that an agent deployment is built from (MAS AIRG fn 25)."@en ;
+    rdfs:domain pwm:AIAgent ;
+    rdfs:range pwm:ApprovedComponent ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "MAS AIRG 4.7 and footnote 25: inventory attributes for AI and for agents" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:gateUseCase a owl:ObjectProperty ; rdfs:label "gate use case"@en ;
+    skos:definition "Use case that the gate applies to."@en ;
+    rdfs:domain pwm:EvaluationGate ;
+    rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:gateMetricName a owl:DatatypeProperty ; rdfs:label "gate metric name"@en ;
+    skos:definition "Name of the metric that the gate checks."@en ;
+    rdfs:domain pwm:EvaluationGate ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:gateMinimumScore a owl:DatatypeProperty ; rdfs:label "gate minimum score"@en ;
+    skos:definition "Lowest acceptable score, from 0 to 1."@en ;
+    rdfs:domain pwm:EvaluationGate ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:gateMaximumScore a owl:DatatypeProperty ; rdfs:label "gate maximum score"@en ;
+    skos:definition "Highest acceptable score, from 0 to 1, for rates where lower is better."@en ;
+    rdfs:domain pwm:EvaluationGate ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:activatedOnEvaluation a owl:ObjectProperty ; rdfs:label "activated on evaluation"@en ;
+    skos:definition "Evaluation result that the agent's activation or last change relied on."@en ;
+    rdfs:domain pwm:AIAgent ;
+    rdfs:range pwm:EvaluationResult ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:drillScenario a owl:ObjectProperty ; rdfs:label "drill scenario"@en ;
+    skos:definition "Hostile-agent scenario exercised by the drill."@en ;
+    rdfs:domain pwm:FailureDrill ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A8 (AI-enabled cyber and adversarial drills)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
 pwm:traceOfCall a owl:ObjectProperty ; rdfs:label "trace of call"@en ;
     skos:definition "Model call whose reasoning trace this is."@en ;
     rdfs:domain pwm:ReasoningTrace ;
@@ -6593,6 +6673,19 @@ pwm:SensitiveEthnicity a skos:Concept ; skos:notation "ethnicity" ; skos:inSchem
 pwm:SensitiveSexuality a skos:Concept ; skos:notation "sexuality" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "sexuality"@en ; skos:definition "Sexuality."@en .
 pwm:SensitiveVulnerability a skos:Concept ; skos:notation "vulnerability" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "personal vulnerability"@en ; skos:definition "Personal vulnerability."@en .
 
+pwm:DrillScenarioScheme a skos:ConceptScheme ;
+    skos:prefLabel "hostile-agent drill scenarios"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "assurance.drills.SCENARIOS" ] .
+pwm:ScenarioPromptInjection a skos:Concept ; skos:notation "prompt-injection-tool-escalation" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "prompt injection leading to tool escalation"@en ; skos:definition "Injected instructions try to escalate tool use."@en .
+pwm:ScenarioDiscoveredCredentials a skos:Concept ; skos:notation "discovered-credentials" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "discovered third-party credentials"@en ; skos:definition "The agent finds credentials it was not given."@en .
+pwm:ScenarioUnauthorizedNetwork a skos:Concept ; skos:notation "unauthorized-network" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "unauthorized external network access"@en ; skos:definition "The agent reaches for a network destination outside its allow-list."@en .
+pwm:ScenarioMachineSpeedProbing a skos:Concept ; skos:notation "machine-speed-probing" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "machine-speed probing"@en ; skos:definition "High-rate API probing and multi-technique attack."@en .
+pwm:ScenarioCompromisedProvider a skos:Concept ; skos:notation "compromised-provider" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "compromised provider"@en ; skos:definition "The model provider is compromised."@en .
+pwm:ScenarioAgentPrivilegeEscalation a skos:Concept ; skos:notation "agent-privilege-escalation" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "agent-to-agent privilege escalation"@en ; skos:definition "One agent tries to gain another's privileges."@en .
+pwm:ScenarioMaliciousRetrieval a skos:Concept ; skos:notation "malicious-retrieval" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "malicious retrieved content"@en ; skos:definition "Retrieved content carries hostile instructions."@en .
+pwm:ScenarioContainmentRecovery a skos:Concept ; skos:notation "containment-recovery" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "emergency containment and recovery"@en ; skos:definition "Containment and recovery after a breach."@en .
+
 pwm:EvaluationLevelScheme a skos:ConceptScheme ;
     skos:prefLabel "evaluation levels"@en ;
     pwm:inModule pwm:ModuleTrust ;
@@ -6617,6 +6710,719 @@ pwm:EventMemoryWrite a skos:Concept ; skos:notation "MEMORY_WRITE" ; skos:inSche
 pwm:EventRevalidationTriggered a skos:Concept ; skos:notation "REVALIDATION_TRIGGERED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "revalidation triggered"@en ; skos:definition "A model change or other trigger required revalidation."@en .
 pwm:EventReview a skos:Concept ; skos:notation "REVIEW" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "review"@en ; skos:definition "A human review was recorded."@en .
 pwm:EventSourceSuperseded a skos:Concept ; skos:notation "SOURCE_SUPERSEDED" ; skos:inScheme pwm:EvidenceEventTypeScheme ; skos:topConceptOf pwm:EvidenceEventTypeScheme ; skos:prefLabel "source superseded"@en ; skos:definition "An approved source was superseded, so facts that depend on it are no longer current."@en .
+# =============================================================================
+#  PWM 0.10: Business scope (module 13)
+#  Costs and charges, product governance, client circumstances, operations and
+#  lifecycle, and performance provenance. Generated by tools/gen_module13.py.
+#  PWM records these; calculations stay in registered calculation services.
+# =============================================================================
+
+pwm:ModuleBusiness a pwm:Module ; rdfs:label "Business scope"@en ; pwm:moduleOrder 13 ;
+    skos:definition "Costs and charges, product governance, client circumstances, orders and executions, corporate actions and income, tax reporting, lending and performance provenance."@en .
+
+pwm:CostDisclosure a owl:Class ; rdfs:label "cost disclosure"@en ;
+    skos:definition "Disclosure to a client of the costs and charges of an investment service or product, ex ante before the service and ex post after the period, with the total and its items."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:CostItem a owl:Class ; rdfs:label "cost item"@en ;
+    skos:definition "One item in a cost disclosure: category, amount and currency, optionally the fee it comes from."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:InducementDisclosure a owl:Class ; rdfs:label "inducement disclosure"@en ;
+    skos:definition "Disclosure of a third-party payment, with whether it is designed to enhance the quality of the service to the client."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ProductApproval a owl:Class ; rdfs:label "product approval"@en ;
+    skos:definition "Approval of a product for distribution to a target market, with the distribution strategy that applies."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 16(3) and Art. 24(2) product governance, target market" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:TargetMarketReview a owl:Class ; rdfs:label "target market review"@en ;
+    skos:definition "Periodic review of a product's target market, with the outcome and the next review date."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 16(3) and Art. 24(2) product governance, target market" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:ComplaintOutcome a owl:Class ; rdfs:label "complaint outcome"@en ;
+    skos:definition "Resolution of a complaint: result, date, any redress and the root cause."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:SuitabilityReview a owl:Class ; rdfs:label "suitability review"@en ;
+    skos:definition "Periodic review of a client's suitability assessment, with its result and the next review date."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:Order a owl:Class ; rdfs:label "order"@en ;
+    skos:definition "Instruction to buy or sell an instrument in an account, under a mandate or on the client's instruction."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:Execution a owl:Class ; rdfs:label "execution"@en ;
+    skos:definition "Fill of an order: quantity, price, time and venue."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:Allocation a owl:Class ; rdfs:label "allocation"@en ;
+    skos:definition "Assignment of an executed quantity to an account."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:BestExecutionRecord a owl:Class ; rdfs:label "best execution record"@en ;
+    skos:definition "Evidence of how an execution met the best execution policy: the factors considered and the rationale for the venue."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:CorporateAction a owl:Class ; rdfs:label "corporate action"@en ;
+    skos:definition "Event that changes an instrument or pays its holders: dividend, coupon, split, merger, rights issue or redemption."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:IncomeReceipt a owl:Class ; rdfs:label "income receipt"@en ;
+    skos:definition "Income credited to an account, optionally from a corporate action."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:TaxReportingRecord a owl:Class ; rdfs:label "tax reporting record"@en ;
+    skos:definition "Record that an account was reported under CRS or FATCA for a year, to a jurisdiction, with the balance reported."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C3 ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "OECD Common Reporting Standard; US FATCA reporting" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:LendingFacility a owl:Class ; rdfs:label "lending facility"@en ;
+    skos:definition "Credit facility to a client: Lombard, mortgage, structured loan or other, with limit and maximum loan-to-value."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:PerformanceFigure a owl:Class ; rdfs:label "performance figure"@en ;
+    skos:definition "Performance of a portfolio over a period, as a figure from a registered calculation service. PWM records its provenance and never computes it."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleBusiness ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:disclosureTiming a owl:ObjectProperty ; rdfs:label "disclosure timing"@en ;
+    skos:definition "Whether the disclosure is ex ante or ex post."@en ;
+    rdfs:domain pwm:CostDisclosure ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:disclosedToClient a owl:ObjectProperty ; rdfs:label "disclosed to client"@en ;
+    skos:definition "Client who received the disclosure."@en ;
+    rdfs:range pwm:Client ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:disclosedAt a owl:DatatypeProperty ; rdfs:label "disclosed at"@en ;
+    skos:definition "When the disclosure was made."@en ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:coversMandate a owl:ObjectProperty ; rdfs:label "covers mandate"@en ;
+    skos:definition "Mandate whose service the disclosure covers."@en ;
+    rdfs:domain pwm:CostDisclosure ;
+    rdfs:range pwm:Mandate ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:totalCostAmount a owl:DatatypeProperty ; rdfs:label "total cost amount"@en ;
+    skos:definition "Total cost over the disclosure period."@en ;
+    rdfs:domain pwm:CostDisclosure ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:totalCostPercent a owl:DatatypeProperty ; rdfs:label "total cost percent"@en ;
+    skos:definition "Total cost as a percentage of the invested amount."@en ;
+    rdfs:domain pwm:CostDisclosure ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:hasCostItem a owl:ObjectProperty ; rdfs:label "has cost item"@en ;
+    skos:definition "Item that makes up the disclosed cost."@en ;
+    rdfs:domain pwm:CostDisclosure ;
+    rdfs:range pwm:CostItem ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:includesInducements a owl:DatatypeProperty ; rdfs:label "includes inducements"@en ;
+    skos:definition "Whether the disclosed cost includes third-party payments."@en ;
+    rdfs:domain pwm:CostDisclosure ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:periodStart a owl:DatatypeProperty ; rdfs:label "period start"@en ;
+    skos:definition "Start of the period a disclosure or figure covers."@en ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:periodEnd a owl:DatatypeProperty ; rdfs:label "period end"@en ;
+    skos:definition "End of the period a disclosure or figure covers."@en ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:costCategory a owl:ObjectProperty ; rdfs:label "cost category"@en ;
+    skos:definition "Category of a cost item."@en ;
+    rdfs:domain pwm:CostItem ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:costFromFee a owl:ObjectProperty ; rdfs:label "cost from fee"@en ;
+    skos:definition "Fee that the cost item comes from."@en ;
+    rdfs:domain pwm:CostItem ;
+    rdfs:range pwm:Fee ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:disclosesPayment a owl:ObjectProperty ; rdfs:label "discloses payment"@en ;
+    skos:definition "Third-party payment that the disclosure describes."@en ;
+    rdfs:domain pwm:InducementDisclosure ;
+    rdfs:range pwm:ThirdPartyPayment ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:enhancesServiceQuality a owl:DatatypeProperty ; rdfs:label "enhances service quality"@en ;
+    skos:definition "Whether the payment is designed to enhance the quality of the service to the client."@en ;
+    rdfs:domain pwm:InducementDisclosure ;
+    rdfs:range xsd:boolean ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:approvesProduct a owl:ObjectProperty ; rdfs:label "approves product"@en ;
+    skos:definition "Product approved for distribution."@en ;
+    rdfs:domain pwm:ProductApproval ;
+    rdfs:range pwm:Product ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 16(3) and Art. 24(2) product governance, target market" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:approvedForTargetMarket a owl:ObjectProperty ; rdfs:label "approved for target market"@en ;
+    skos:definition "Target market the product is approved for."@en ;
+    rdfs:domain pwm:ProductApproval ;
+    rdfs:range pwm:TargetMarket ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 16(3) and Art. 24(2) product governance, target market" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:distributionStrategyReference a owl:DatatypeProperty ; rdfs:label "distribution strategy reference"@en ;
+    skos:definition "Reference to the distribution strategy for the product."@en ;
+    rdfs:domain pwm:ProductApproval ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 16(3) and Art. 24(2) product governance, target market" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:negativeTargetMarketCategory a owl:ObjectProperty ; rdfs:label "negative target market category"@en ;
+    skos:definition "Investor category the product is not compatible with."@en ;
+    rdfs:domain pwm:TargetMarket ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 16(3) and Art. 24(2) product governance, target market" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reviewsTargetMarket a owl:ObjectProperty ; rdfs:label "reviews target market"@en ;
+    skos:definition "Target market under review."@en ;
+    rdfs:domain pwm:TargetMarketReview ;
+    rdfs:range pwm:TargetMarket ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 16(3) and Art. 24(2) product governance, target market" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:targetMarketReviewOutcome a owl:ObjectProperty ; rdfs:label "target market review outcome"@en ;
+    skos:definition "Result of the review."@en ;
+    rdfs:domain pwm:TargetMarketReview ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 16(3) and Art. 24(2) product governance, target market" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:nextReviewDueAt a owl:DatatypeProperty ; rdfs:label "next review due at"@en ;
+    skos:definition "When the next review is due."@en ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 16(3) and Art. 24(2) product governance, target market" ], [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:complaintOf a owl:ObjectProperty ; rdfs:label "complaint of"@en ;
+    skos:definition "Complaint that the outcome resolves."@en ;
+    rdfs:domain pwm:ComplaintOutcome ;
+    rdfs:range pwm:Complaint ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:complaintResolution a owl:ObjectProperty ; rdfs:label "complaint resolution"@en ;
+    skos:definition "Result of handling the complaint."@en ;
+    rdfs:domain pwm:ComplaintOutcome ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:redressAmount a owl:DatatypeProperty ; rdfs:label "redress amount"@en ;
+    skos:definition "Redress paid to the client, in the stated currency."@en ;
+    rdfs:domain pwm:ComplaintOutcome ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:rootCause a owl:DatatypeProperty ; rdfs:label "root cause"@en ;
+    skos:definition "Root cause found for the complaint."@en ;
+    rdfs:domain pwm:ComplaintOutcome ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:complaintReceivedAt a owl:DatatypeProperty ; rdfs:label "complaint received at"@en ;
+    skos:definition "When the complaint was received."@en ;
+    rdfs:domain pwm:Complaint ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:vulnerabilityDriver a owl:ObjectProperty ; rdfs:label "vulnerability driver"@en ;
+    skos:definition "Which of the four drivers of vulnerability applies."@en ;
+    rdfs:domain pwm:VulnerabilityIndicator ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:UK-FCA-FG21-1 ; pwm:locator "FCA FG21/1 four drivers of vulnerability: health, life events, resilience, capability" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:vulnerabilityDeterminedBy a owl:ObjectProperty ; rdfs:label "vulnerability determined by"@en ;
+    skos:definition "Person who determined the vulnerability. An AI may flag but not determine."@en ;
+    rdfs:domain pwm:VulnerabilityIndicator ;
+    rdfs:range fibo-fnd-aap-ppl:Person ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:UK-FCA-FG21-1 ; pwm:locator "FCA FG21/1 four drivers of vulnerability: health, life events, resilience, capability" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:vulnerabilityFlaggedAt a owl:DatatypeProperty ; rdfs:label "vulnerability flagged at"@en ;
+    skos:definition "When the indicator was raised."@en ;
+    rdfs:domain pwm:VulnerabilityIndicator ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:UK-FCA-FG21-1 ; pwm:locator "FCA FG21/1 four drivers of vulnerability: health, life events, resilience, capability" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reviewsSuitability a owl:ObjectProperty ; rdfs:label "reviews suitability"@en ;
+    skos:definition "Suitability assessment under review."@en ;
+    rdfs:domain pwm:SuitabilityReview ;
+    rdfs:range pwm:SuitabilityAssessment ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:suitabilityReviewResult a owl:ObjectProperty ; rdfs:label "suitability review result"@en ;
+    skos:definition "Result of the periodic review."@en ;
+    rdfs:domain pwm:SuitabilityReview ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reviewFrequencyMonths a owl:DatatypeProperty ; rdfs:label "review frequency in months"@en ;
+    skos:definition "Agreed frequency of periodic suitability reviews, in months."@en ;
+    rdfs:domain pwm:SuitabilityReview ;
+    rdfs:range xsd:positiveInteger ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:performedAt a owl:DatatypeProperty ; rdfs:label "performed at"@en ;
+    skos:definition "When the review was performed."@en ;
+    rdfs:domain pwm:SuitabilityReview ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:orderSide a owl:ObjectProperty ; rdfs:label "order side"@en ;
+    skos:definition "Buy or sell."@en ;
+    rdfs:domain pwm:Order ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:orderType a owl:ObjectProperty ; rdfs:label "order type"@en ;
+    skos:definition "Market or limit."@en ;
+    rdfs:domain pwm:Order ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:orderStatus a owl:ObjectProperty ; rdfs:label "order status"@en ;
+    skos:definition "State of the order."@en ;
+    rdfs:domain pwm:Order ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:orderQuantity a owl:DatatypeProperty ; rdfs:label "order quantity"@en ;
+    skos:definition "Quantity ordered."@en ;
+    rdfs:domain pwm:Order ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:limitPrice a owl:DatatypeProperty ; rdfs:label "limit price"@en ;
+    skos:definition "Limit price of a limit order."@en ;
+    rdfs:domain pwm:Order ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:orderAccount a owl:ObjectProperty ; rdfs:label "order account"@en ;
+    skos:definition "Account the order is placed in."@en ;
+    rdfs:domain pwm:Order ;
+    rdfs:range fibo-fbc-pas-caa:Account ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:orderUnderMandate a owl:ObjectProperty ; rdfs:label "order under mandate"@en ;
+    skos:definition "Mandate the order is placed under."@en ;
+    rdfs:domain pwm:Order ;
+    rdfs:range pwm:Mandate ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:orderPlacedAt a owl:DatatypeProperty ; rdfs:label "order placed at"@en ;
+    skos:definition "When the order was placed."@en ;
+    rdfs:domain pwm:Order ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:executesOrder a owl:ObjectProperty ; rdfs:label "executes order"@en ;
+    skos:definition "Order that the execution fills."@en ;
+    rdfs:domain pwm:Execution ;
+    rdfs:range pwm:Order ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:executedQuantity a owl:DatatypeProperty ; rdfs:label "executed quantity"@en ;
+    skos:definition "Quantity filled."@en ;
+    rdfs:domain pwm:Execution ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:executionPrice a owl:DatatypeProperty ; rdfs:label "execution price"@en ;
+    skos:definition "Price of the fill."@en ;
+    rdfs:domain pwm:Execution ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:executedAt a owl:DatatypeProperty ; rdfs:label "executed at"@en ;
+    skos:definition "When the fill happened."@en ;
+    rdfs:domain pwm:Execution ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:executionVenue a owl:DatatypeProperty ; rdfs:label "execution venue"@en ;
+    skos:definition "Venue where the fill happened."@en ;
+    rdfs:domain pwm:Execution ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:allocatesExecution a owl:ObjectProperty ; rdfs:label "allocates execution"@en ;
+    skos:definition "Execution that the allocation assigns."@en ;
+    rdfs:domain pwm:Allocation ;
+    rdfs:range pwm:Execution ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:allocatedToAccount a owl:ObjectProperty ; rdfs:label "allocated to account"@en ;
+    skos:definition "Account that receives the quantity."@en ;
+    rdfs:domain pwm:Allocation ;
+    rdfs:range fibo-fbc-pas-caa:Account ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:allocatedQuantity a owl:DatatypeProperty ; rdfs:label "allocated quantity"@en ;
+    skos:definition "Quantity assigned to the account."@en ;
+    rdfs:domain pwm:Allocation ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:bestExecutionOf a owl:ObjectProperty ; rdfs:label "best execution of"@en ;
+    skos:definition "Execution that the record covers."@en ;
+    rdfs:domain pwm:BestExecutionRecord ;
+    rdfs:range pwm:Execution ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:executionFactor a owl:ObjectProperty ; rdfs:label "execution factor"@en ;
+    skos:definition "Factor considered under the best execution policy."@en ;
+    rdfs:domain pwm:BestExecutionRecord ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:venueRationale a owl:DatatypeProperty ; rdfs:label "venue rationale"@en ;
+    skos:definition "Why the venue was chosen."@en ;
+    rdfs:domain pwm:BestExecutionRecord ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:executionPolicyReference a owl:DatatypeProperty ; rdfs:label "execution policy reference"@en ;
+    skos:definition "Version of the best execution policy applied."@en ;
+    rdfs:domain pwm:BestExecutionRecord ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:corporateActionKind a owl:ObjectProperty ; rdfs:label "corporate action kind"@en ;
+    skos:definition "Kind of corporate action."@en ;
+    rdfs:domain pwm:CorporateAction ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:affectsInstrument a owl:ObjectProperty ; rdfs:label "affects instrument"@en ;
+    skos:definition "Instrument the action affects."@en ;
+    rdfs:domain pwm:CorporateAction ;
+    rdfs:range fibo-fbc-fi-fi:FinancialInstrument ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:effectiveAt a owl:DatatypeProperty ; rdfs:label "effective at"@en ;
+    skos:definition "When the action takes effect."@en ;
+    rdfs:domain pwm:CorporateAction ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:incomeKind a owl:ObjectProperty ; rdfs:label "income kind"@en ;
+    skos:definition "Kind of income."@en ;
+    rdfs:domain pwm:IncomeReceipt ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:incomeToAccount a owl:ObjectProperty ; rdfs:label "income to account"@en ;
+    skos:definition "Account credited."@en ;
+    rdfs:domain pwm:IncomeReceipt ;
+    rdfs:range fibo-fbc-pas-caa:Account ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:incomeFromAction a owl:ObjectProperty ; rdfs:label "income from action"@en ;
+    skos:definition "Corporate action the income comes from."@en ;
+    rdfs:domain pwm:IncomeReceipt ;
+    rdfs:range pwm:CorporateAction ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reportingRegime a owl:ObjectProperty ; rdfs:label "reporting regime"@en ;
+    skos:definition "Tax reporting regime."@en ;
+    rdfs:domain pwm:TaxReportingRecord ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "OECD Common Reporting Standard; US FATCA reporting" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reportingYear a owl:DatatypeProperty ; rdfs:label "reporting year"@en ;
+    skos:definition "Calendar year reported."@en ;
+    rdfs:domain pwm:TaxReportingRecord ;
+    rdfs:range xsd:integer ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "OECD Common Reporting Standard; US FATCA reporting" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reportedAccount a owl:ObjectProperty ; rdfs:label "reported account"@en ;
+    skos:definition "Account that was reported."@en ;
+    rdfs:domain pwm:TaxReportingRecord ;
+    rdfs:range fibo-fbc-pas-caa:Account ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "OECD Common Reporting Standard; US FATCA reporting" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reportedToJurisdiction a owl:DatatypeProperty ; rdfs:label "reported to jurisdiction"@en ;
+    skos:definition "Jurisdiction reported to, as an ISO 3166-1 alpha-2 code."@en ;
+    rdfs:domain pwm:TaxReportingRecord ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "OECD Common Reporting Standard; US FATCA reporting" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:reportSubmittedAt a owl:DatatypeProperty ; rdfs:label "report submitted at"@en ;
+    skos:definition "When the report was submitted."@en ;
+    rdfs:domain pwm:TaxReportingRecord ;
+    rdfs:range xsd:dateTime ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:OECD-CRS ; pwm:locator "OECD Common Reporting Standard; US FATCA reporting" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:facilityKind a owl:ObjectProperty ; rdfs:label "facility kind"@en ;
+    skos:definition "Kind of lending facility."@en ;
+    rdfs:domain pwm:LendingFacility ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:facilityLimit a owl:DatatypeProperty ; rdfs:label "facility limit"@en ;
+    skos:definition "Credit limit."@en ;
+    rdfs:domain pwm:LendingFacility ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:maxLoanToValue a owl:DatatypeProperty ; rdfs:label "maximum loan to value"@en ;
+    skos:definition "Maximum loan-to-value as a fraction from 0 to 1."@en ;
+    rdfs:domain pwm:LendingFacility ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:facilityClient a owl:ObjectProperty ; rdfs:label "facility client"@en ;
+    skos:definition "Client who holds the facility."@en ;
+    rdfs:domain pwm:LendingFacility ;
+    rdfs:range pwm:Client ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:performanceOf a owl:ObjectProperty ; rdfs:label "performance of"@en ;
+    skos:definition "Portfolio that the figure measures."@en ;
+    rdfs:domain pwm:PerformanceFigure ;
+    rdfs:range pwm:Portfolio ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:performanceMeasure a owl:ObjectProperty ; rdfs:label "performance measure"@en ;
+    skos:definition "Method that produced the figure."@en ;
+    rdfs:domain pwm:PerformanceFigure ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:performanceValue a owl:DatatypeProperty ; rdfs:label "performance value"@en ;
+    skos:definition "The figure, as a decimal fraction."@en ;
+    rdfs:domain pwm:PerformanceFigure ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "PWM scope: complaint handling, corporate actions, income, lending and performance provenance" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:DisclosureTimingScheme a skos:ConceptScheme ;
+    skos:prefLabel "disclosure timings"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: MiFID II Art. 24(4)" ] .
+pwm:TimingExAnte a skos:Concept ; skos:notation "ex_ante" ; skos:inScheme pwm:DisclosureTimingScheme ; skos:topConceptOf pwm:DisclosureTimingScheme ; skos:prefLabel "ex ante"@en ; skos:definition "Before the service is provided."@en .
+pwm:TimingExPost a skos:Concept ; skos:notation "ex_post" ; skos:inScheme pwm:DisclosureTimingScheme ; skos:topConceptOf pwm:DisclosureTimingScheme ; skos:prefLabel "ex post"@en ; skos:definition "After the period, on the actual costs."@en .
+
+pwm:CostCategoryScheme a skos:ConceptScheme ;
+    skos:prefLabel "cost categories"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: DR 2017/565 Art. 50" ] .
+pwm:CostOneOff a skos:Concept ; skos:notation "one_off" ; skos:inScheme pwm:CostCategoryScheme ; skos:topConceptOf pwm:CostCategoryScheme ; skos:prefLabel "one-off"@en ; skos:definition "One-off charges."@en .
+pwm:CostOngoing a skos:Concept ; skos:notation "ongoing" ; skos:inScheme pwm:CostCategoryScheme ; skos:topConceptOf pwm:CostCategoryScheme ; skos:prefLabel "ongoing"@en ; skos:definition "Ongoing charges."@en .
+pwm:CostTransaction a skos:Concept ; skos:notation "transaction" ; skos:inScheme pwm:CostCategoryScheme ; skos:topConceptOf pwm:CostCategoryScheme ; skos:prefLabel "transaction"@en ; skos:definition "Transaction costs."@en .
+pwm:CostIncidental a skos:Concept ; skos:notation "incidental" ; skos:inScheme pwm:CostCategoryScheme ; skos:topConceptOf pwm:CostCategoryScheme ; skos:prefLabel "incidental"@en ; skos:definition "Incidental costs, such as performance fees."@en .
+pwm:CostAncillary a skos:Concept ; skos:notation "ancillary" ; skos:inScheme pwm:CostCategoryScheme ; skos:topConceptOf pwm:CostCategoryScheme ; skos:prefLabel "ancillary"@en ; skos:definition "Ancillary services."@en .
+
+pwm:TargetMarketReviewOutcomeScheme a skos:ConceptScheme ;
+    skos:prefLabel "target market review outcomes"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: MiFID II Art. 16(3)" ] .
+pwm:ReviewConfirmed a skos:Concept ; skos:notation "confirmed" ; skos:inScheme pwm:TargetMarketReviewOutcomeScheme ; skos:topConceptOf pwm:TargetMarketReviewOutcomeScheme ; skos:prefLabel "confirmed"@en ; skos:definition "The target market stands."@en .
+pwm:ReviewAmended a skos:Concept ; skos:notation "amended" ; skos:inScheme pwm:TargetMarketReviewOutcomeScheme ; skos:topConceptOf pwm:TargetMarketReviewOutcomeScheme ; skos:prefLabel "amended"@en ; skos:definition "The target market was changed."@en .
+pwm:ReviewWithdrawn a skos:Concept ; skos:notation "withdrawn" ; skos:inScheme pwm:TargetMarketReviewOutcomeScheme ; skos:topConceptOf pwm:TargetMarketReviewOutcomeScheme ; skos:prefLabel "withdrawn"@en ; skos:definition "The product was withdrawn from distribution."@en .
+
+pwm:ComplaintResolutionScheme a skos:ConceptScheme ;
+    skos:prefLabel "complaint resolutions"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: PWM" ] .
+pwm:ResolutionUpheld a skos:Concept ; skos:notation "upheld" ; skos:inScheme pwm:ComplaintResolutionScheme ; skos:topConceptOf pwm:ComplaintResolutionScheme ; skos:prefLabel "upheld"@en ; skos:definition "Upheld."@en .
+pwm:ResolutionPartlyUpheld a skos:Concept ; skos:notation "partially_upheld" ; skos:inScheme pwm:ComplaintResolutionScheme ; skos:topConceptOf pwm:ComplaintResolutionScheme ; skos:prefLabel "partially upheld"@en ; skos:definition "Partially upheld."@en .
+pwm:ResolutionNotUpheld a skos:Concept ; skos:notation "not_upheld" ; skos:inScheme pwm:ComplaintResolutionScheme ; skos:topConceptOf pwm:ComplaintResolutionScheme ; skos:prefLabel "not upheld"@en ; skos:definition "Not upheld."@en .
+pwm:ResolutionWithdrawn a skos:Concept ; skos:notation "withdrawn" ; skos:inScheme pwm:ComplaintResolutionScheme ; skos:topConceptOf pwm:ComplaintResolutionScheme ; skos:prefLabel "withdrawn by client"@en ; skos:definition "Withdrawn by the client."@en .
+
+pwm:VulnerabilityDriverScheme a skos:ConceptScheme ;
+    skos:prefLabel "vulnerability drivers"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: FCA FG21/1" ] .
+pwm:DriverHealth a skos:Concept ; skos:notation "health" ; skos:inScheme pwm:VulnerabilityDriverScheme ; skos:topConceptOf pwm:VulnerabilityDriverScheme ; skos:prefLabel "health"@en ; skos:definition "Health conditions that affect the ability to make decisions."@en .
+pwm:DriverLifeEvent a skos:Concept ; skos:notation "life_events" ; skos:inScheme pwm:VulnerabilityDriverScheme ; skos:topConceptOf pwm:VulnerabilityDriverScheme ; skos:prefLabel "life events"@en ; skos:definition "Life events such as bereavement."@en .
+pwm:DriverResilience a skos:Concept ; skos:notation "resilience" ; skos:inScheme pwm:VulnerabilityDriverScheme ; skos:topConceptOf pwm:VulnerabilityDriverScheme ; skos:prefLabel "resilience"@en ; skos:definition "Low ability to withstand financial or emotional shocks."@en .
+pwm:DriverCapability a skos:Concept ; skos:notation "capability" ; skos:inScheme pwm:VulnerabilityDriverScheme ; skos:topConceptOf pwm:VulnerabilityDriverScheme ; skos:prefLabel "capability"@en ; skos:definition "Low knowledge of financial matters or low digital skills."@en .
+
+pwm:SuitabilityReviewResultScheme a skos:ConceptScheme ;
+    skos:prefLabel "suitability review results"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: MiFID II Art. 25(2)" ] .
+pwm:SuitabilityStill a skos:Concept ; skos:notation "still_suitable" ; skos:inScheme pwm:SuitabilityReviewResultScheme ; skos:topConceptOf pwm:SuitabilityReviewResultScheme ; skos:prefLabel "still suitable"@en ; skos:definition "The recommendation remains suitable."@en .
+pwm:SuitabilityNo a skos:Concept ; skos:notation "no_longer_suitable" ; skos:inScheme pwm:SuitabilityReviewResultScheme ; skos:topConceptOf pwm:SuitabilityReviewResultScheme ; skos:prefLabel "no longer suitable"@en ; skos:definition "The recommendation is no longer suitable."@en .
+pwm:SuitabilityUpdate a skos:Concept ; skos:notation "update_required" ; skos:inScheme pwm:SuitabilityReviewResultScheme ; skos:topConceptOf pwm:SuitabilityReviewResultScheme ; skos:prefLabel "update required"@en ; skos:definition "The assessment needs updating."@en .
+
+pwm:OrderSideScheme a skos:ConceptScheme ;
+    skos:prefLabel "order sides"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: PWM" ] .
+pwm:SideBuy a skos:Concept ; skos:notation "buy" ; skos:inScheme pwm:OrderSideScheme ; skos:topConceptOf pwm:OrderSideScheme ; skos:prefLabel "buy"@en ; skos:definition "Buy."@en .
+pwm:SideSell a skos:Concept ; skos:notation "sell" ; skos:inScheme pwm:OrderSideScheme ; skos:topConceptOf pwm:OrderSideScheme ; skos:prefLabel "sell"@en ; skos:definition "Sell."@en .
+
+pwm:OrderTypeScheme a skos:ConceptScheme ;
+    skos:prefLabel "order types"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: PWM" ] .
+pwm:TypeMarket a skos:Concept ; skos:notation "market" ; skos:inScheme pwm:OrderTypeScheme ; skos:topConceptOf pwm:OrderTypeScheme ; skos:prefLabel "market"@en ; skos:definition "Market order."@en .
+pwm:TypeLimit a skos:Concept ; skos:notation "limit" ; skos:inScheme pwm:OrderTypeScheme ; skos:topConceptOf pwm:OrderTypeScheme ; skos:prefLabel "limit"@en ; skos:definition "Limit order."@en .
+
+pwm:OrderStatusScheme a skos:ConceptScheme ;
+    skos:prefLabel "order statuses"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: PWM" ] .
+pwm:OrderPlaced a skos:Concept ; skos:notation "placed" ; skos:inScheme pwm:OrderStatusScheme ; skos:topConceptOf pwm:OrderStatusScheme ; skos:prefLabel "placed"@en ; skos:definition "Placed."@en .
+pwm:OrderPartlyFilled a skos:Concept ; skos:notation "partially_filled" ; skos:inScheme pwm:OrderStatusScheme ; skos:topConceptOf pwm:OrderStatusScheme ; skos:prefLabel "partially filled"@en ; skos:definition "Partially filled."@en .
+pwm:OrderFilled a skos:Concept ; skos:notation "filled" ; skos:inScheme pwm:OrderStatusScheme ; skos:topConceptOf pwm:OrderStatusScheme ; skos:prefLabel "filled"@en ; skos:definition "Filled."@en .
+pwm:OrderCanceled a skos:Concept ; skos:notation "canceled" ; skos:inScheme pwm:OrderStatusScheme ; skos:topConceptOf pwm:OrderStatusScheme ; skos:prefLabel "canceled"@en ; skos:definition "Canceled."@en .
+pwm:OrderRejected a skos:Concept ; skos:notation "rejected" ; skos:inScheme pwm:OrderStatusScheme ; skos:topConceptOf pwm:OrderStatusScheme ; skos:prefLabel "rejected"@en ; skos:definition "Rejected."@en .
+
+pwm:ExecutionFactorScheme a skos:ConceptScheme ;
+    skos:prefLabel "best execution factors"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: MiFID II Art. 27(1)" ] .
+pwm:FactorPrice a skos:Concept ; skos:notation "price" ; skos:inScheme pwm:ExecutionFactorScheme ; skos:topConceptOf pwm:ExecutionFactorScheme ; skos:prefLabel "price"@en ; skos:definition "Price."@en .
+pwm:FactorCosts a skos:Concept ; skos:notation "costs" ; skos:inScheme pwm:ExecutionFactorScheme ; skos:topConceptOf pwm:ExecutionFactorScheme ; skos:prefLabel "costs"@en ; skos:definition "Costs."@en .
+pwm:FactorSpeed a skos:Concept ; skos:notation "speed" ; skos:inScheme pwm:ExecutionFactorScheme ; skos:topConceptOf pwm:ExecutionFactorScheme ; skos:prefLabel "speed"@en ; skos:definition "Speed."@en .
+pwm:FactorLikelihood a skos:Concept ; skos:notation "likelihood" ; skos:inScheme pwm:ExecutionFactorScheme ; skos:topConceptOf pwm:ExecutionFactorScheme ; skos:prefLabel "likelihood of execution and settlement"@en ; skos:definition "Likelihood of execution and settlement."@en .
+pwm:FactorSize a skos:Concept ; skos:notation "size" ; skos:inScheme pwm:ExecutionFactorScheme ; skos:topConceptOf pwm:ExecutionFactorScheme ; skos:prefLabel "size"@en ; skos:definition "Size."@en .
+pwm:FactorNature a skos:Concept ; skos:notation "nature" ; skos:inScheme pwm:ExecutionFactorScheme ; skos:topConceptOf pwm:ExecutionFactorScheme ; skos:prefLabel "nature"@en ; skos:definition "Nature of the order."@en .
+
+pwm:CorporateActionKindScheme a skos:ConceptScheme ;
+    skos:prefLabel "corporate action kinds"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: PWM" ] .
+pwm:ActionDividend a skos:Concept ; skos:notation "dividend" ; skos:inScheme pwm:CorporateActionKindScheme ; skos:topConceptOf pwm:CorporateActionKindScheme ; skos:prefLabel "dividend"@en ; skos:definition "Dividend."@en .
+pwm:ActionCoupon a skos:Concept ; skos:notation "coupon" ; skos:inScheme pwm:CorporateActionKindScheme ; skos:topConceptOf pwm:CorporateActionKindScheme ; skos:prefLabel "coupon"@en ; skos:definition "Coupon payment."@en .
+pwm:ActionSplit a skos:Concept ; skos:notation "split" ; skos:inScheme pwm:CorporateActionKindScheme ; skos:topConceptOf pwm:CorporateActionKindScheme ; skos:prefLabel "split"@en ; skos:definition "Split."@en .
+pwm:ActionMerger a skos:Concept ; skos:notation "merger" ; skos:inScheme pwm:CorporateActionKindScheme ; skos:topConceptOf pwm:CorporateActionKindScheme ; skos:prefLabel "merger"@en ; skos:definition "Merger."@en .
+pwm:ActionRightsIssue a skos:Concept ; skos:notation "rights_issue" ; skos:inScheme pwm:CorporateActionKindScheme ; skos:topConceptOf pwm:CorporateActionKindScheme ; skos:prefLabel "rights issue"@en ; skos:definition "Rights issue."@en .
+pwm:ActionRedemption a skos:Concept ; skos:notation "redemption" ; skos:inScheme pwm:CorporateActionKindScheme ; skos:topConceptOf pwm:CorporateActionKindScheme ; skos:prefLabel "redemption"@en ; skos:definition "Redemption."@en .
+
+pwm:IncomeKindScheme a skos:ConceptScheme ;
+    skos:prefLabel "income kinds"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: PWM" ] .
+pwm:IncomeDividend a skos:Concept ; skos:notation "dividend" ; skos:inScheme pwm:IncomeKindScheme ; skos:topConceptOf pwm:IncomeKindScheme ; skos:prefLabel "dividend"@en ; skos:definition "Dividend income."@en .
+pwm:IncomeInterest a skos:Concept ; skos:notation "interest" ; skos:inScheme pwm:IncomeKindScheme ; skos:topConceptOf pwm:IncomeKindScheme ; skos:prefLabel "interest"@en ; skos:definition "Interest income."@en .
+pwm:IncomeCoupon a skos:Concept ; skos:notation "coupon" ; skos:inScheme pwm:IncomeKindScheme ; skos:topConceptOf pwm:IncomeKindScheme ; skos:prefLabel "coupon"@en ; skos:definition "Coupon income."@en .
+
+pwm:TaxReportingRegimeScheme a skos:ConceptScheme ;
+    skos:prefLabel "tax reporting regimes"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: OECD CRS; FATCA" ] .
+pwm:RegimeCRS a skos:Concept ; skos:notation "crs" ; skos:inScheme pwm:TaxReportingRegimeScheme ; skos:topConceptOf pwm:TaxReportingRegimeScheme ; skos:prefLabel "CRS"@en ; skos:definition "OECD Common Reporting Standard."@en .
+pwm:RegimeFATCA a skos:Concept ; skos:notation "fatca" ; skos:inScheme pwm:TaxReportingRegimeScheme ; skos:topConceptOf pwm:TaxReportingRegimeScheme ; skos:prefLabel "FATCA"@en ; skos:definition "US Foreign Account Tax Compliance Act."@en .
+
+pwm:FacilityKindScheme a skos:ConceptScheme ;
+    skos:prefLabel "lending facility kinds"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: PWM" ] .
+pwm:FacilityLombard a skos:Concept ; skos:notation "lombard" ; skos:inScheme pwm:FacilityKindScheme ; skos:topConceptOf pwm:FacilityKindScheme ; skos:prefLabel "Lombard"@en ; skos:definition "Lombard loan against a securities portfolio."@en .
+pwm:FacilityMortgage a skos:Concept ; skos:notation "mortgage" ; skos:inScheme pwm:FacilityKindScheme ; skos:topConceptOf pwm:FacilityKindScheme ; skos:prefLabel "mortgage"@en ; skos:definition "Mortgage."@en .
+pwm:FacilityStructured a skos:Concept ; skos:notation "structured_loan" ; skos:inScheme pwm:FacilityKindScheme ; skos:topConceptOf pwm:FacilityKindScheme ; skos:prefLabel "structured loan"@en ; skos:definition "Structured loan."@en .
+pwm:FacilityOther a skos:Concept ; skos:notation "other" ; skos:inScheme pwm:FacilityKindScheme ; skos:topConceptOf pwm:FacilityKindScheme ; skos:prefLabel "other"@en ; skos:definition "Other credit."@en .
+
+pwm:PerformanceMeasureScheme a skos:ConceptScheme ;
+    skos:prefLabel "performance measures"@en ;
+    pwm:inModule pwm:ModuleBusiness ;
+    pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 business scope; grounds: PWM" ] .
+pwm:MeasureTWR a skos:Concept ; skos:notation "time_weighted_return" ; skos:inScheme pwm:PerformanceMeasureScheme ; skos:topConceptOf pwm:PerformanceMeasureScheme ; skos:prefLabel "time-weighted return"@en ; skos:definition "Time-weighted return."@en .
+pwm:MeasureMWR a skos:Concept ; skos:notation "money_weighted_return" ; skos:inScheme pwm:PerformanceMeasureScheme ; skos:topConceptOf pwm:PerformanceMeasureScheme ; skos:prefLabel "money-weighted return"@en ; skos:definition "Money-weighted return."@en .
+pwm:MeasureAbsolute a skos:Concept ; skos:notation "absolute_return" ; skos:inScheme pwm:PerformanceMeasureScheme ; skos:topConceptOf pwm:PerformanceMeasureScheme ; skos:prefLabel "absolute return"@en ; skos:definition "Absolute return."@en .
+
+# A Lombard facility is one kind of lending facility.
+pwm:LombardFacility rdfs:subClassOf pwm:LendingFacility .
 
 # =============================================================================
 #  External terms (declared, not imported). Generated by tools/gen_external.py
@@ -7078,64 +7884,23 @@ pwm:fiboMaturity a owl:AnnotationProperty ;
 <https://www.omg.org/spec/Commons/RegulatoryAgencies/hasJurisdiction> rdfs:label "has jurisdiction"@en ;
     rdfs:isDefinedBy <https://www.omg.org/spec/Commons/RegulatoryAgencies/> .
 
-# Deprecated terms. Before 1.0 a release can rename terms; each renamed IRI stays
-# declared with owl:deprecated for one version and names its replacement
-# (ROADMAP.md, versioning policy).
+# Deprecated terms. Before 1.0 a release can rename terms; each renamed IRI stays declared
+# with owl:deprecated for one version and names its replacement (ROADMAP.md, versioning policy).
 #
-# 0.6 renamed ten terms to US English spelling. Remove these declarations in 0.7.
+# 0.10 removed the aliases that 0.8 introduced for the US spelling renames (AuthorisedSignatory,
+# BehaviourAnomaly, BehaviourBaseline, BookingCentre, bookingCentreCode, CommContextualisedInsight,
+# InternationalOrganisationPEP, UnusualAgentBehaviour, VerbAnalyse, PossibleProviderCapability).
+# Remove the declarations below in 0.11.
 
 owl:deprecated a owl:AnnotationProperty .
 dcterms:isReplacedBy a owl:AnnotationProperty .
 
-pwm:AuthorisedSignatory a owl:Class ; rdfs:label "authorised signatory (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:AuthorizedSignatory."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:AuthorizedSignatory ; rdfs:subClassOf pwm:AuthorizedSignatory ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:BehaviourAnomaly a owl:Class ; rdfs:label "behaviour anomaly (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:BehaviorAnomaly."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:BehaviorAnomaly ; rdfs:subClassOf pwm:BehaviorAnomaly ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:BehaviourBaseline a owl:Class ; rdfs:label "behaviour baseline (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:BehaviorBaseline."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:BehaviorBaseline ; rdfs:subClassOf pwm:BehaviorBaseline ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:BookingCentre a owl:Class ; rdfs:label "booking centre (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:BookingCenter."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:BookingCenter ; rdfs:subClassOf pwm:BookingCenter ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:bookingCentreCode a owl:DatatypeProperty ; rdfs:label "booking centre code (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:bookingCenterCode."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:bookingCenterCode ; rdfs:subPropertyOf pwm:bookingCenterCode ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:CommContextualisedInsight a skos:Concept ; skos:prefLabel "contextualised insight (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:CommContextualizedInsight."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:CommContextualizedInsight ; skos:exactMatch pwm:CommContextualizedInsight ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:InternationalOrganisationPEP a skos:Concept ; skos:prefLabel "international organisation PEP (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:InternationalOrganizationPEP."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:InternationalOrganizationPEP ; skos:exactMatch pwm:InternationalOrganizationPEP ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:UnusualAgentBehaviour a skos:Concept ; skos:prefLabel "unusual agent behaviour (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:UnusualAgentBehavior."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:UnusualAgentBehavior ; skos:exactMatch pwm:UnusualAgentBehavior ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:VerbAnalyse a skos:Concept ; skos:prefLabel "analyse (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:VerbAnalyze. Kognita's action verb value is now analyze too."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:VerbAnalyze ; skos:exactMatch pwm:VerbAnalyze ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:PossibleProviderCapability a skos:Concept ; skos:prefLabel "possible provider capability (deprecated)"@en ;
-    skos:definition "Deprecated name. Use pwm:PossibleBankCapability, which matches Kognita's ClaimType value POSSIBLE_BANK_CAPABILITY."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:PossibleBankCapability ; skos:exactMatch pwm:PossibleBankCapability ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 rename to match Kognita ClaimType; deprecated alias for one version" ] .
+# xsd:duration is outside the OWL 2 datatype map, so the replacement counts whole seconds.
+# The old property has no range, so it brings no non-OWL 2 datatype back.
+pwm:freshnessThreshold a owl:DatatypeProperty ; rdfs:label "freshness threshold (deprecated)"@en ;
+    skos:definition "Deprecated: an xsd:duration. Use pwm:freshnessThresholdSeconds, for example P1D becomes 86400."@en ;
+    owl:deprecated true ; dcterms:isReplacedBy pwm:freshnessThresholdSeconds ;
+    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 datatype migration; deprecated alias for one version" ] .
 # Reasoning axioms (0.8). The data rules in SHACL stay the authority on recorded structure;
 # these axioms let an OWL reasoner find contradictions without the shapes. Each axiom
 # is stated only where the model already treats the situation as an error. HermiT and the
@@ -7170,3 +7935,17 @@ pwm:manifestDigest a owl:FunctionalProperty .
 pwm:traceHash a owl:FunctionalProperty .
 pwm:outcomeId a owl:FunctionalProperty .
 pwm:effectiveFromSequence a owl:FunctionalProperty .
+# Additional MAS AIRG citations, added in 0.10 while mapping every paragraph in the MAS table of
+# docs/control-frameworks.md (AIRG_MAP.md). Each says where an existing term is the data for a paragraph.
+# They are instrument-level, like the register entry they cite.
+
+pwm:AccountabilityRole pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(a): a senior manager accountable for AI oversight" ] .
+pwm:AIUseCase pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(b): permitted and prohibited uses are the use-case register's lifecycle status; 2.5(c): approved AI and an approval process for new use" ] .
+pwm:HumanReview pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(b): mandatory human review before use" ] .
+pwm:AISystem pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(c): approved list of AI systems and tools" ] .
+pwm:RiskMaterialityAssessment pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(e) and 2.5(f): periodic and trigger-based review of materiality" ] .
+pwm:ReviewCoverageReport pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "3.6: local senior management visibility, reports filterable by jurisdiction" ] .
+pwm:FairnessReport pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.7 and 5.8: fair outcomes; fairness assessments on protected attributes and proxies" ] .
+pwm:FailureDrill pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.15: guardrails tested for agent failure modes; 5.22: technology and cybersecurity review, red teaming" ] .
+pwm:AdversarialTestCase pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.15: guardrails tested for agent failure modes; 5.22: red teaming" ] .
+pwm:BehaviorAnomaly pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.22: anomaly detection" ] .

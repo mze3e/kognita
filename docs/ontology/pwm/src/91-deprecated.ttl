@@ -1,58 +1,17 @@
-# Deprecated terms. Before 1.0 a release can rename terms; each renamed IRI stays
-# declared with owl:deprecated for one version and names its replacement
-# (ROADMAP.md, versioning policy).
+# Deprecated terms. Before 1.0 a release can rename terms; each renamed IRI stays declared
+# with owl:deprecated for one version and names its replacement (ROADMAP.md, versioning policy).
 #
-# 0.6 renamed ten terms to US English spelling. Remove these declarations in 0.7.
+# 0.10 removed the aliases that 0.8 introduced for the US spelling renames (AuthorisedSignatory,
+# BehaviourAnomaly, BehaviourBaseline, BookingCentre, bookingCentreCode, CommContextualisedInsight,
+# InternationalOrganisationPEP, UnusualAgentBehaviour, VerbAnalyse, PossibleProviderCapability).
+# Remove the declarations below in 0.11.
 
 owl:deprecated a owl:AnnotationProperty .
 dcterms:isReplacedBy a owl:AnnotationProperty .
 
-pwm:AuthorisedSignatory a owl:Class ; rdfs:label "authorised signatory (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:AuthorizedSignatory."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:AuthorizedSignatory ; rdfs:subClassOf pwm:AuthorizedSignatory ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:BehaviourAnomaly a owl:Class ; rdfs:label "behaviour anomaly (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:BehaviorAnomaly."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:BehaviorAnomaly ; rdfs:subClassOf pwm:BehaviorAnomaly ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:BehaviourBaseline a owl:Class ; rdfs:label "behaviour baseline (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:BehaviorBaseline."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:BehaviorBaseline ; rdfs:subClassOf pwm:BehaviorBaseline ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:BookingCentre a owl:Class ; rdfs:label "booking centre (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:BookingCenter."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:BookingCenter ; rdfs:subClassOf pwm:BookingCenter ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:bookingCentreCode a owl:DatatypeProperty ; rdfs:label "booking centre code (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:bookingCenterCode."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:bookingCenterCode ; rdfs:subPropertyOf pwm:bookingCenterCode ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:CommContextualisedInsight a skos:Concept ; skos:prefLabel "contextualised insight (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:CommContextualizedInsight."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:CommContextualizedInsight ; skos:exactMatch pwm:CommContextualizedInsight ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:InternationalOrganisationPEP a skos:Concept ; skos:prefLabel "international organisation PEP (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:InternationalOrganizationPEP."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:InternationalOrganizationPEP ; skos:exactMatch pwm:InternationalOrganizationPEP ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:UnusualAgentBehaviour a skos:Concept ; skos:prefLabel "unusual agent behaviour (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:UnusualAgentBehavior."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:UnusualAgentBehavior ; skos:exactMatch pwm:UnusualAgentBehavior ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:VerbAnalyse a skos:Concept ; skos:prefLabel "analyse (deprecated)"@en ;
-    skos:definition "Deprecated spelling. Use pwm:VerbAnalyze. Kognita's action verb value is now analyze too."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:VerbAnalyze ; skos:exactMatch pwm:VerbAnalyze ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 US English rename; deprecated alias for one version" ] .
-
-pwm:PossibleProviderCapability a skos:Concept ; skos:prefLabel "possible provider capability (deprecated)"@en ;
-    skos:definition "Deprecated name. Use pwm:PossibleBankCapability, which matches Kognita's ClaimType value POSSIBLE_BANK_CAPABILITY."@en ;
-    owl:deprecated true ; dcterms:isReplacedBy pwm:PossibleBankCapability ; skos:exactMatch pwm:PossibleBankCapability ;
-    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.6 rename to match Kognita ClaimType; deprecated alias for one version" ] .
+# xsd:duration is outside the OWL 2 datatype map, so the replacement counts whole seconds.
+# The old property has no range, so it brings no non-OWL 2 datatype back.
+pwm:freshnessThreshold a owl:DatatypeProperty ; rdfs:label "freshness threshold (deprecated)"@en ;
+    skos:definition "Deprecated: an xsd:duration. Use pwm:freshnessThresholdSeconds, for example P1D becomes 86400."@en ;
+    owl:deprecated true ; dcterms:isReplacedBy pwm:freshnessThresholdSeconds ;
+    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 datatype migration; deprecated alias for one version" ] .

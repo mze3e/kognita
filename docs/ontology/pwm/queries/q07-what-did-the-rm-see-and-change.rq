@@ -1,0 +1,11 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q7. What did the RM see and change? Each review edit with the hashes of the input, the approved output and the diff.
+# Bind ?interaction to the interaction under examination.
+SELECT ?review ?edit ?beforeHash ?afterHash ?diffLocator WHERE {
+  ?review a pwm:HumanReview ; pwm:partOfInteraction ?interaction ; pwm:reviewEdit ?edit .
+  ?edit pwm:beforeHash ?beforeHash ; pwm:afterHash ?afterHash .
+  OPTIONAL { ?edit pwm:diffLocator ?diffLocator }
+}

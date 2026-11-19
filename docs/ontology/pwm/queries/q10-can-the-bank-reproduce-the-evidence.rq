@@ -1,0 +1,10 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q10. Can the bank reproduce that evidence later? The reconstruction report: chain and pinned hashes verified, and any findings.
+# Bind ?interaction to the interaction under examination.
+SELECT ?report ?chainVerified ?pinnedHashesVerified ?finding WHERE {
+  ?report a pwm:ReconstructionReport ; pwm:partOfInteraction ?interaction ; pwm:chainVerified ?chainVerified ; pwm:pinnedHashesVerified ?pinnedHashesVerified .
+  OPTIONAL { ?report pwm:hasFinding ?finding }
+}

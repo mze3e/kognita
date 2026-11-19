@@ -1,0 +1,29 @@
+# PWM code-list profile (worked example): a firm replaces the illustrative risk scale with its own.
+#
+# A profile has two files. This one rebinds the coded properties to the firm's scheme. The
+# shapes file next to it switches off PWM's generated code-list shapes for those properties and
+# enforces the firm's codes instead. Load both with pwm.ttl and pwm-shapes.ttl:
+#
+#   shapes = pwm-shapes.ttl + profiles/code-list-profile-example.shapes.ttl
+#   ontology = pwm.ttl + profiles/code-list-profile-example.ttl
+#
+# See README.md, "Replacing a code list", for what deactivation does and does not cover.
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix pwm:     <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix firm:    <https://example.org/firm/ontology#> .
+
+<https://example.org/firm/code-list-profile> a owl:Ontology ;
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.10> .
+
+firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "firm risk scale"@en .
+firm:Conservative a skos:Concept ; skos:inScheme firm:RiskScale ; skos:topConceptOf firm:RiskScale ; skos:notation "C" ; skos:prefLabel "conservative"@en .
+firm:Balanced a skos:Concept ; skos:inScheme firm:RiskScale ; skos:topConceptOf firm:RiskScale ; skos:notation "B" ; skos:prefLabel "balanced"@en .
+firm:Growth a skos:Concept ; skos:inScheme firm:RiskScale ; skos:topConceptOf firm:RiskScale ; skos:notation "G" ; skos:prefLabel "growth"@en .
+
+pwm:riskProfileLevel pwm:valuesFrom firm:RiskScale .
+pwm:productRiskLevel pwm:valuesFrom firm:RiskScale .
+pwm:targetRiskProfile pwm:valuesFrom firm:RiskScale .

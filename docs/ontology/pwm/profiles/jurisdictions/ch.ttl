@@ -1,0 +1,24 @@
+# PWM jurisdiction profile: Switzerland
+#
+# Data, not ontology. Maps the Switzerland investor categories that PWM defines to the generic
+# retail and non-retail categories that cross-jurisdiction rules use. Each category's legal
+# source is in its definition in pwm.ttl. Disclosure triggers and cross-border rules are not
+# asserted here: whether and when a firm must disclose AI use, and which activities may be
+# carried out across a border, is the firm's compliance function's decision, recorded in the
+# firm's own rules (pack policies, PolicyRule records). A profile never adds an axiom to the ontology.
+# Status: derived from the PWM code lists; not independently verified against the legal texts.
+
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix pwm:     <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix pwmprof: <https://ahmedmuzammil.com/ontology/pwm/profiles#> .
+
+<https://ahmedmuzammil.com/ontology/pwm/profiles/jurisdictions/ch> a owl:Ontology ;
+    dcterms:title "PWM jurisdiction profile: Switzerland"@en ;
+    pwmprof:jurisdictionCode "CH" ;
+    pwmprof:status "derived from PWM code lists; not independently verified" .
+
+pwm:PrivateClientCH skos:broader pwm:RetailCategory .
+pwm:ProfessionalClientCH skos:broader pwm:NonRetailCategory .
+pwm:InstitutionalClientCH skos:broader pwm:NonRetailCategory .

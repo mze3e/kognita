@@ -202,7 +202,7 @@ ex:Bad05AgentIdentityShape a ns1:AIAgent ;
     ns1:hasBlastRadiusLimit ex:Limit ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:maxAutonomyLevel ns1:L3Draft ;
-    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime ;
     ns1:operatesFor ex:PersonRM ;
     ns1:permittedField "riskProfile" ;
     ns1:permittedTool ex:ToolDraftNote,
@@ -408,7 +408,7 @@ ex:Bad05DeploymentEnforcementShape a ns1:AIUseCase ;
     ns1:lifecycleStatus ns1:StatusLive ;
     ns1:lowRiskSamplingRate 0.10 ;
     ns1:modelType "Language model with retrieval from approved sources" ;
-    ns1:nextReviewDate "2027-05-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-05-01T23:59:59Z"^^xsd:dateTime ;
     ns1:retentionPolicy ex:ContentPolicy ;
     ns1:riskTier ns1:Tier3 ;
     ns1:usesDataClass ns1:C2 .
@@ -1531,7 +1531,7 @@ ex:SharedAgentA a ns1:AIAgent ;
     ns1:effectiveAutonomyLevel ns1:L0Retrieve ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:maxAutonomyLevel ns1:L0Retrieve ;
-    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime ;
     ns1:operatesFor ex:PersonRM ;
     ns1:permittedField "riskProfile" ;
     ns1:permittedTool ex:ToolPortfolioRead ;
@@ -1550,7 +1550,7 @@ ex:SharedAgentB a ns1:AIAgent ;
     ns1:effectiveAutonomyLevel ns1:L0Retrieve ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:maxAutonomyLevel ns1:L0Retrieve ;
-    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime ;
     ns1:operatesFor ex:PersonRM ;
     ns1:permittedField "riskProfile" ;
     ns1:permittedTool ex:ToolPortfolioRead ;
@@ -1580,8 +1580,8 @@ ex:UnrelatedLimitCall a ns1:ModelCall ;
     ns1:usesModel ex:Model ;
     ns1:workloadIdentity ex:Workload .
 
-<https://example.org/pwm-example-invalid> dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.8/pwm-shapes.ttl> ;
-    dcterms:title "PWM 0.8 negative test fixture"@en .
+<https://example.org/pwm-example-invalid> dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.10/pwm-shapes.ttl> ;
+    dcterms:title "PWM 0.10 negative test fixture"@en .
 
 ex:Bad05OverLimit a ns1:BlastRadiusObservation ;
     ns1:observedLimit ex:Limit ;
@@ -1604,7 +1604,7 @@ ex:BadAgentOverreach a ns1:AIAgent ;
     ns1:deploymentVersion "sha256:0000000000000000000000000000000000000000000000000000000000000002" ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:maxAutonomyLevel ns1:L2Recommend ;
-    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime ;
     ns1:operatesFor ex:PersonRM ;
     ns1:permittedTool ex:BadToolExecute,
         ex:ToolPortfolioRead ;
@@ -1628,7 +1628,7 @@ ex:BadGatewayConfig a ns1:AIUseCase ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:isMediated true ;
     ns1:lifecycleStatus ns1:StatusSuspended ;
-    ns1:nextReviewDate "2027-01-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-01-01T23:59:59Z"^^xsd:dateTime ;
     ns1:retentionPolicy ex:ContentPolicy ;
     ns1:riskTier ns1:Tier1 .
 
@@ -1713,7 +1713,7 @@ ex:BadUseCaseNoKnowledgeLead a ns1:AIUseCase ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:isMediated true ;
     ns1:lifecycleStatus ns1:StatusPilot ;
-    ns1:nextReviewDate "2027-05-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-05-01T23:59:59Z"^^xsd:dateTime ;
     ns1:retentionPolicy ex:ContentPolicy ;
     ns1:riskTier ns1:Tier3 .
 
@@ -1735,7 +1735,7 @@ ex:BadUseCaseSelfApproved a ns1:AIUseCase ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:isMediated true ;
     ns1:lifecycleStatus ns1:StatusLive ;
-    ns1:nextReviewDate "2027-05-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-05-01T23:59:59Z"^^xsd:dateTime ;
     ns1:retentionPolicy ex:ContentPolicy ;
     ns1:riskTier ns1:Tier1 .
 
@@ -1757,7 +1757,7 @@ ex:BadUseCaseUnapproved a ns1:AIUseCase ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:isMediated true ;
     ns1:lifecycleStatus ns1:StatusLive ;
-    ns1:nextReviewDate "2027-05-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-05-01T23:59:59Z"^^xsd:dateTime ;
     ns1:retentionPolicy ex:ContentPolicy ;
     ns1:riskTier ns1:Tier1 .
 
@@ -2151,7 +2151,7 @@ ex:OutsideAppetite a ns1:AIUseCase ;
     ns1:lifecycleStatus ns1:StatusLive ;
     ns1:lowRiskSamplingRate 0.10 ;
     ns1:modelType "Language model with retrieval from approved sources" ;
-    ns1:nextReviewDate "2027-05-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-05-01T23:59:59Z"^^xsd:dateTime ;
     ns1:retentionPolicy ex:ContentPolicy ;
     ns1:riskTier ns1:Tier3 ;
     ns1:usesDataClass ns1:C2 .
@@ -2199,7 +2199,7 @@ ex:TimezoneReviewUseCase a ns1:AIUseCase ;
     ns1:lifecycleStatus ns1:StatusLive ;
     ns1:lowRiskSamplingRate 0.10 ;
     ns1:modelType "Language model with retrieval from approved sources" ;
-    ns1:nextReviewDate "2026-11-03"^^xsd:date ;
+    ns1:nextReviewDate "2026-11-03T23:59:59Z"^^xsd:dateTime ;
     ns1:retentionPolicy ex:ContentPolicy ;
     ns1:riskTier ns1:Tier3 ;
     ns1:usesDataClass ns1:C2 .
@@ -2272,7 +2272,7 @@ ex:LateApprovalAgent a ns1:AIAgent ;
     ns1:hasBlastRadiusLimit ex:Limit ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:maxAutonomyLevel ns1:L5BoundedAutonomy ;
-    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime ;
     ns1:operatesFor ex:PersonRM ;
     ns1:permittedField "riskProfile" ;
     ns1:permittedTool ex:ToolDraftNote,
@@ -2333,7 +2333,7 @@ ex:HighAgent a ns1:AIAgent ;
     ns1:hasBlastRadiusLimit ex:Limit ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:maxAutonomyLevel ns1:L5BoundedAutonomy ;
-    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime ;
     ns1:operatesFor ex:PersonRM ;
     ns1:permittedField "riskProfile" ;
     ns1:permittedTool ex:ToolDraftNote,
@@ -2371,7 +2371,7 @@ ex:MaxOnlyAgent a ns1:AIAgent ;
     ns1:hasBlastRadiusLimit ex:Limit ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:maxAutonomyLevel ns1:L5BoundedAutonomy ;
-    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime ;
     ns1:operatesFor ex:PersonRM ;
     ns1:permittedField "riskProfile" ;
     ns1:permittedTool ex:ToolDraftNote,
@@ -2447,7 +2447,7 @@ ex:Bad05EffectiveAboveMax a ns1:AIAgent ;
     ns1:effectiveAutonomyLevel ns1:L3Draft ;
     ns1:hasPurpose ex:PurposeMeetingPrep ;
     ns1:maxAutonomyLevel ns1:L1Explain ;
-    ns1:nextReviewDate "2027-02-01"^^xsd:date ;
+    ns1:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime ;
     ns1:operatesFor ex:PersonRM ;
     ns1:registeredForUseCase ex:UseCaseMeetingPrep ;
     ns1:workloadIdentity ex:Bad05EffectiveAboveMaxIdentity .
@@ -2551,6 +2551,10 @@ ex:ProviderOther a pwm:ModelProvider ; rdfs:label "Other provider (fictional)"@e
 ex:ProviderUnregistered a pwm:ModelProvider ; rdfs:label "Unregistered provider (fictional)"@en .
 ex:SameProviderVerifier a pwm:Verifier ; pwm:verifierAgent ex:Agent ; pwm:verifierModelCard ex:SameProviderCard .
 ex:SameProviderCard a pwm:ModelCard ; pwm:providedBy ex:Provider ; pwm:modelVersion "other-version" ; rdfs:label "Same provider card (fictional)"@en .
+ex:BadEvalLow a pwm:EvaluationResult ; pwm:evaluatesAgent ex:Agent ; pwm:evaluatedVersion "agent-1.5" ; pwm:evaluatedModelVersion "model-2026-09" ; pwm:evaluationLevel pwm:LevelAgent ; pwm:hasMetricValue ex:BadMetricLow, ex:BadMetricRate .
+ex:BadMetricLow a pwm:EvaluationMetricValue ; pwm:metricName "groundedness" ; pwm:metricScore "0.50"^^xsd:decimal .
+ex:BadMetricRate a pwm:EvaluationMetricValue ; pwm:metricName "hallucination rate" ; pwm:metricScore "0.30"^^xsd:decimal .
+ex:Agent pwm:activatedOnEvaluation ex:BadEvalLow .
 ex:UnapprovedModelCard a pwm:ModelCard ; rdfs:label "Unapproved fallback model card (fictional)"@en .
 ex:GatewayCall pwm:providedBy ex:ProviderUnregistered .
 
@@ -2597,5 +2601,29 @@ ex:BadTrustLearningExport a pwm:LearningExport ; pwm:exportPurpose "Training" ; 
 ex:BadTrustLearningExclusion a pwm:LearningExclusion ; pwm:exclusionReason "Withdrawn" .
 ex:BadTrustSensitiveBlocked a pwm:SensitiveAttributeInference ; pwm:sensitiveKind pwm:SensitiveHealth ; pwm:permittedByUseCase false ; pwm:blockedByPolicy false ; pwm:changesClientTreatment false .
 ex:BadTrustSensitiveDetermination a pwm:SensitiveAttributeInference ; pwm:sensitiveKind pwm:SensitiveVulnerability ; pwm:permittedByUseCase true ; pwm:blockedByPolicy false ; pwm:changesClientTreatment true .
+ex:BadTrustGate a pwm:EvaluationGate ; pwm:gateUseCase ex:UseCaseMeetingPrep ; pwm:gateMetricName "accuracy" .
 ex:BadTrustConformance a pwm:SupervisoryConformanceReport ; pwm:conformanceProfile pwm:ProfileFCA ; pwm:reportAsOf "2026-11-10T12:00:00+08:00"^^xsd:dateTime .
 # <<< module 12 END
+
+# >>> module 13 BEGIN (generated by tools/gen_module13.py)
+ex:BadBizCostDisclosure a pwm:CostDisclosure ; pwm:disclosureTiming pwm:TimingExAnte ; pwm:disclosedToClient ex:Client ; pwm:disclosedAt "2026-11-02T10:00:00+08:00"^^xsd:dateTime ; pwm:coversMandate ex:Mandate ; pwm:totalCostAmount "10"^^xsd:decimal ; pwm:includesInducements false ; pwm:hasCostItem ex:CostItem1 .
+ex:BadBizExPost a pwm:CostDisclosure ; pwm:disclosureTiming pwm:TimingExPost ; pwm:disclosedToClient ex:Client ; pwm:disclosedAt "2026-12-31T10:00:00+08:00"^^xsd:dateTime ; pwm:coversMandate ex:Mandate ; pwm:totalCostAmount "10"^^xsd:decimal ; pwm:currency "SGD" ; pwm:includesInducements false ; pwm:hasCostItem ex:CostItem1 .
+ex:BadBizCostItem a pwm:CostItem ; pwm:amount "5"^^xsd:decimal ; pwm:currency "SGD" .
+ex:BadBizInducement a pwm:InducementDisclosure ; pwm:disclosesPayment ex:ThirdPartyPayment1 ; pwm:disclosedToClient ex:Client ; pwm:disclosedAt "2026-11-02T10:00:00+08:00"^^xsd:dateTime .
+ex:BadBizProductApproval a pwm:ProductApproval ; pwm:approvesProduct ex:Product ; pwm:approvedForTargetMarket ex:TargetMarket1 ; pwm:approvedBy ex:CommitteeDG ; prov:generatedAtTime "2026-09-01T00:00:00+08:00"^^xsd:dateTime .
+ex:BadBizTargetMarketReview a pwm:TargetMarketReview ; pwm:reviewsTargetMarket ex:TargetMarket1 ; pwm:targetMarketReviewOutcome pwm:ReviewConfirmed ; pwm:reviewedAt "2027-10-01T00:00:00+08:00"^^xsd:dateTime ; pwm:nextReviewDueAt "2026-10-01T00:00:00+08:00"^^xsd:dateTime .
+ex:BadBizComplaintOutcome a pwm:ComplaintOutcome ; pwm:complaintOf ex:Complaint1 ; pwm:complaintResolution pwm:ResolutionUpheld ; pwm:reviewedAt "2026-11-01T00:00:00+08:00"^^xsd:dateTime ; pwm:redressAmount "50.00"^^xsd:decimal .
+ex:BadBizSuitabilityReview a pwm:SuitabilityReview ; pwm:reviewsSuitability ex:Suitability ; pwm:suitabilityReviewResult pwm:SuitabilityNo ; pwm:reviewFrequencyMonths "12"^^xsd:positiveInteger ; pwm:performedAt "2028-01-01T00:00:00+08:00"^^xsd:dateTime ; pwm:nextReviewDueAt "2027-11-02T00:00:00+08:00"^^xsd:dateTime .
+ex:BadBizLimitOrder a pwm:Order ; pwm:orderSide pwm:SideSell ; pwm:orderType pwm:TypeLimit ; pwm:orderStatus pwm:OrderPlaced ; pwm:orderQuantity "10"^^xsd:decimal ; pwm:inInstrument ex:Bond ; pwm:orderAccount ex:Account ; pwm:orderPlacedAt "2026-11-03T11:00:00+08:00"^^xsd:dateTime .
+ex:BadBizOverfill a pwm:Execution ; pwm:executesOrder ex:Order1 ; pwm:executedQuantity "150"^^xsd:decimal ; pwm:executionPrice "99.40"^^xsd:decimal ; pwm:executedAt "2026-11-03T11:06:00+08:00"^^xsd:dateTime ; pwm:executionVenue "Synthetic venue" .
+ex:BadBizEarlyFill a pwm:Execution ; pwm:executesOrder ex:Order1 ; pwm:executedQuantity "10"^^xsd:decimal ; pwm:executionPrice "99.40"^^xsd:decimal ; pwm:executedAt "2026-11-03T10:00:00+08:00"^^xsd:dateTime ; pwm:executionVenue "Synthetic venue" .
+ex:BadBizOverAllocation a pwm:Allocation ; pwm:allocatesExecution ex:Execution1 ; pwm:allocatedToAccount ex:Account ; pwm:allocatedQuantity "50"^^xsd:decimal .
+ex:BadBizAllocation a pwm:Allocation ; pwm:allocatesExecution ex:Execution1 ; pwm:allocatedToAccount ex:Account .
+ex:BadBizBestExecution a pwm:BestExecutionRecord ; pwm:bestExecutionOf ex:Execution1 ; pwm:executionFactor pwm:FactorPrice ; pwm:executionPolicyReference "p-1" .
+ex:BadBizCorporateAction a pwm:CorporateAction ; pwm:corporateActionKind pwm:ActionSplit ; pwm:affectsInstrument ex:Bond .
+ex:BadBizIncome a pwm:IncomeReceipt ; pwm:incomeKind pwm:IncomeInterest ; pwm:amount "1"^^xsd:decimal ; pwm:currency "SGD" .
+ex:BadBizTaxReport a pwm:TaxReportingRecord ; pwm:reportingRegime pwm:RegimeFATCA ; pwm:reportingYear "2026"^^xsd:integer ; pwm:reportedAccount ex:Account ; pwm:reportedToJurisdiction "usa" ; pwm:amount "1"^^xsd:decimal ; pwm:currency "USD" ; pwm:reportSubmittedAt "2027-03-01T00:00:00+08:00"^^xsd:dateTime .
+ex:BadBizFacility a pwm:LendingFacility ; pwm:facilityKind pwm:FacilityMortgage ; pwm:facilityClient ex:Client ; pwm:facilityLimit "1"^^xsd:decimal ; pwm:currency "SGD" ; pwm:maxLoanToValue "1.5"^^xsd:decimal .
+ex:BadBizPerformance a pwm:PerformanceFigure ; pwm:performanceOf ex:Portfolio ; pwm:performanceMeasure pwm:MeasureMWR ; pwm:performanceValue "0.01"^^xsd:decimal ; pwm:periodStart "2026-01-01T00:00:00+08:00"^^xsd:dateTime ; pwm:periodEnd "2026-10-31T00:00:00+08:00"^^xsd:dateTime .
+ex:BadBizPerformancePeriod a pwm:PerformanceFigure ; pwm:performanceOf ex:Portfolio ; pwm:performanceMeasure pwm:MeasureMWR ; pwm:performanceValue "0.01"^^xsd:decimal ; pwm:periodStart "2026-12-01T00:00:00+08:00"^^xsd:dateTime ; pwm:periodEnd "2026-10-31T00:00:00+08:00"^^xsd:dateTime ; pwm:calculatedBy ex:ValuationService .
+# <<< module 13 END

@@ -1,0 +1,18 @@
+# Shapes half of the worked code-list profile. Switches off PWM's generated shapes for the three
+# risk-scale properties and enforces the firm's codes instead.
+
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix pwm:     <https://ahmedmuzammil.com/ontology/pwm#> .
+@prefix pwmsh:   <https://ahmedmuzammil.com/ontology/pwm/shapes#> .
+@prefix firm:    <https://example.org/firm/ontology#> .
+@prefix firmsh:  <https://example.org/firm/shapes#> .
+
+pwmsh:CodeList_riskProfileLevel sh:deactivated true .
+pwmsh:CodeList_productRiskLevel sh:deactivated true .
+pwmsh:CodeList_targetRiskProfile sh:deactivated true .
+
+firmsh:RiskScaleShape a sh:NodeShape ;
+    sh:targetSubjectsOf pwm:riskProfileLevel , pwm:productRiskLevel , pwm:targetRiskProfile ;
+    sh:property [ sh:path pwm:riskProfileLevel ; sh:in ( firm:Conservative firm:Balanced firm:Growth ) ; sh:message "riskProfileLevel must be a code of the firm risk scale." ] ;
+    sh:property [ sh:path pwm:productRiskLevel ; sh:in ( firm:Conservative firm:Balanced firm:Growth ) ; sh:message "productRiskLevel must be a code of the firm risk scale." ] ;
+    sh:property [ sh:path pwm:targetRiskProfile ; sh:in ( firm:Conservative firm:Balanced firm:Growth ) ; sh:message "targetRiskProfile must be a code of the firm risk scale." ] .

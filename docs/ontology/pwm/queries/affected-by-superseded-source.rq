@@ -1,0 +1,9 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+# House-view and source change propagation (Kognita 0.6 item 4): claims, recommendations and
+# communications that rely on a source that a later version supersedes.
+SELECT ?superseded ?replacement ?affected ?affectedKind WHERE {
+  ?replacement pwm:supersedes ?superseded .
+  { ?affected pwm:citesSource ?superseded . BIND("cites the superseded source" AS ?affectedKind) }
+  UNION
+  { ?communication pwm:derivedFromDecision/pwm:decisionOn/pwm:citesSource ?superseded . BIND(?communication AS ?affected) BIND("communicated from a decision that cites it" AS ?affectedKind) }
+}

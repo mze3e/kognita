@@ -163,8 +163,8 @@ pwm:versionId a owl:DatatypeProperty ;
 
 pwm:retentionUntil a owl:DatatypeProperty ;
     rdfs:label "retention until"@en ;
-    skos:definition "Date until which a record must be kept. An AI record never expires before the regulatory record it supports."@en ;
-    rdfs:range xsd:date ;
+    skos:definition "Time until which a record must be kept. An AI record never expires before the regulatory record it supports."@en ;
+    rdfs:range xsd:dateTime ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 8: retention date" ] , [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.7: retention by record class" ] .
 
@@ -239,10 +239,10 @@ pwm:asOf a owl:DatatypeProperty ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: as-of date" ] .
 
-pwm:freshnessThreshold a owl:DatatypeProperty ;
-    rdfs:label "freshness threshold"@en ;
-    skos:definition "Maximum age at which a fact may still be used, as an xsd:duration."@en ;
-    rdfs:domain pwm:Fact ; rdfs:range xsd:duration ;
+pwm:freshnessThresholdSeconds a owl:DatatypeProperty ;
+    rdfs:label "freshness threshold in seconds"@en ;
+    skos:definition "Maximum age at which a fact may still be used, in whole seconds."@en ;
+    rdfs:domain pwm:Fact ; rdfs:range xsd:positiveInteger ;
     pwm:inModule pwm:ModuleEvidence ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.6 item 2: freshness thresholds per data type" ] .
 

@@ -1,15 +1,15 @@
-# Private Wealth Management Ontology (PWM) 0.8
+# Private Wealth Management Ontology (PWM) 0.10
 
 > Generated from the Turtle sources by `tools/build.py`. Do not edit by hand.
 
 | | |
 |---|---|
-| Version | 0.8 (draft), 2026-11-18 |
+| Version | 0.10 (draft), 2026-11-19 |
 | Ontology IRI | https://ahmedmuzammil.com/ontology/pwm |
-| Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.8 |
+| Version IRI | https://ahmedmuzammil.com/ontology/pwm/0.10 |
 | Namespace | `pwm:` https://ahmedmuzammil.com/ontology/pwm# |
 | Shapes | https://ahmedmuzammil.com/ontology/pwm/shapes (`pwm-shapes.ttl`), latest pointer |
-| Shapes version IRI | https://ahmedmuzammil.com/ontology/pwm/0.8/pwm-shapes.ttl |
+| Shapes version IRI | https://ahmedmuzammil.com/ontology/pwm/0.10/pwm-shapes.ttl |
 | License | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | Author | Ahmed Muzammil |
 | Web page | https://ahmedmuzammil.com/ontology/pwm |
@@ -20,9 +20,9 @@ A generic ontology for private banking and wealth management. It models parties 
 
 ## Status
 
-Draft for comment. Version 0.8 brings PWM level with Kognita software 0.8: it adds milestone 0.7 (trust and resilience), milestone 0.8 (runtime assurance) and the milestone 0.6 records the 0.5 review found missing, and uses US English throughout. Terms, code lists and rules may change before 1.0, and every change is recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
+Draft for comment. Version 0.10 completes the catch-up with Kognita 0.8 and finishes the business scope and the supervisory-readiness artifacts the roadmap set for 0.9 and 0.10: costs and charges, product governance, client circumstances, operations and lifecycle, performance provenance, an AI inventory profile, reconstruction queries, a Kognita mapping table, a JSON-LD round trip, jurisdiction profiles and a code-list profile. Citations are not all verified yet: see the dagger count below. Terms, code lists and rules may change before 1.0, and every change is recorded in the change log. It is not legal advice: the regulatory citations show where a term comes from, not how a rule applies to a given firm.
 
-Size: 231 classes, 273 object properties, 307 datatype properties, 63 code lists with 320 codes, 168 data rules plus 84 generated code-list rules, 47 references and 1789 citations. 39 FIBO terms are specialized or mapped. 24 of 47 references are still cited at instrument level (marked † on each citation); the rest are verified.
+Size: 244 classes, 317 object properties, 342 datatype properties, 79 code lists with 382 codes, 186 data rules plus 101 generated code-list rules, 47 references and 2004 citations. 39 FIBO terms are specialized or mapped. 24 of 47 references are still cited at instrument level (marked † on each citation); the rest are verified.
 
 ## Scope
 
@@ -38,13 +38,12 @@ In scope:
 - AI governance: the use-case inventory, risk materiality, accountability, agents, tools, delegated authority and autonomy
 - Trust and resilience: signed and anchored evidence, key management, the model-provider register, failover, the dependency map, drills, retention by record class and incident reports
 - Runtime assurance: agent manifests, external-agent assertions, deployment attestations, update approvals, component approvals, production outcomes and supervisory conformance reports
+- Business operations: costs and charges, product governance, client circumstances, orders, executions and allocations with best-execution evidence, corporate actions and income, CRS and FATCA reporting records, lending facilities and performance figures as provenance
 - Information governance, facts and claims, policy decisions and hash-chained evidence
 
-Not in 0.8:
+Not in 0.10:
 
-- Orders, execution and the trade lifecycle; corporate actions
-- Performance and attribution methods (only the provenance of figures is modeled)
-- Tax reporting detail (CRS and FATCA reporting records), lending beyond the Lombard facility
+- Calculation of costs, performance, tax or limits: PWM records the figure and its provenance, never the method
 - Any institution's thresholds, scales, product shelf or internal names: these belong in an extension
 
 ## Design principles
@@ -52,7 +51,7 @@ Not in 0.8:
 1. **Reuse before inventing.** Business terms specialize or map to FIBO first (Release before Provisional), then OMG Commons, W3C PROV-O and DPV. A term is defined here only when none fits, and it is marked NEW.
 2. **Declare, don't import.** External terms are declared with their label, source and FIBO maturity instead of importing whole ontologies, so the file loads on its own. Specialization uses rdfs:subClassOf; looser alignment uses SKOS exact, close and related matches.
 3. **Every term cites its grounds.** Each class, property and code list carries at least one citation with a locator: an article, paragraph, roadmap item or slide. The reference register records how each source was checked.
-4. **Logic in OWL, codes in SKOS, rules in SHACL.** The ontology uses light OWL axioms that an extension can build on. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. Code lists are SKOS concept schemes. Data rules are SHACL shapes kept in a separate file.
+4. **Logic in OWL, codes in SKOS, rules in SHACL.** The ontology uses light OWL axioms that an extension can build on. Every datatype is in the OWL 2 datatype map: 0.10 migrated nextReviewDate and retentionUntil to xsd:dateTime and replaced freshnessThreshold (xsd:duration) with freshnessThresholdSeconds. Code lists are SKOS concept schemes. Data rules are SHACL shapes kept in a separate file.
 5. **Context speed and classification.** Each class states how fast its facts change and the data classification it carries by default. Fast facts, such as positions and prices, are looked up live and are never cached or embedded for AI.
 6. **Accountability stays with people.** Accountability roles are played by named people. A shape rejects any record that names an AI agent in one.
 7. **US English.** PWM-defined names, labels and prose use US English spelling, for example authorized, behavior, center and specialize. Names reused from OMG Commons or FIBO keep the spelling of their source. Kognita uses US spelling in its identifiers and values too, so PWM notations equal the Kognita values. A renamed term stays declared as a deprecated alias for one version.
@@ -90,7 +89,7 @@ DelegatedAuthority and KillSwitch definitions are cached policy/config in SlowCo
 
 | # | Module | Covers | Classes | Properties | Code lists |
 |---|---|---|---|---|---|
-| 0 | [Core patterns](#ModuleCore) | Assessments, validity periods and supersession: the patterns every other module reuses. | 5 | 8 | 0 |
+| 0 | [Core patterns](#ModuleCore) | Assessments, validity periods and supersession: the patterns every other module reuses. | 1 | 8 | 0 |
 | 1 | [Parties, roles and relationships](#ModuleParties) | Clients, related parties, legal arrangements, providers and the relationship that binds them. | 30 | 16 | 2 |
 | 2 | [Due diligence, financial crime and tax](#ModuleCompliance) | Customer due diligence, risk rating, source of wealth, screening and tax residency. | 8 | 4 | 2 |
 | 3 | [Investor profile and suitability](#ModuleSuitability) | Regulatory investor classification, risk profile, knowledge and experience, sustainability preferences, and suitability and appropriateness. | 10 | 15 | 5 |
@@ -102,7 +101,8 @@ DelegatedAuthority and KillSwitch definitions are cached policy/config in SlowCo
 | 9 | [Information governance, claims and evidence](#ModuleEvidence) | Governed documents and definitions, facts and claims, policy decisions and the evidence that reconstructs them. | 37 | 98 | 14 |
 | 10 | [Ingestion, policy and lifecycle controls](#ModuleLifecycle) | Structured ingestion and the missing policy, review and monitoring records for milestone 0.4. | 17 | 68 | 2 |
 | 11 | [Agents, authority and fleets](#ModuleAgents) | Workload identities, scoped human authority, autonomy evidence, containment and fleet controls. | 25 | 113 | 2 |
-| 12 | [Trust, resilience and assurance](#ModuleTrust) | Signed and anchored evidence, provider and dependency registers, failover and drills, retention by record class, incident reports and runtime assurance records. | 34 | 171 | 15 |
+| 12 | [Trust, resilience and assurance](#ModuleTrust) | Signed and anchored evidence, provider and dependency registers, failover and drills, retention by record class, incident reports and runtime assurance records. | 35 | 179 | 16 |
+| 13 | [Business scope](#ModuleBusiness) | Costs and charges, product governance, client circumstances, orders and executions, corporate actions and income, tax reporting, lending and performance provenance. | 16 | 71 | 15 |
 
 <a id="ModuleCore"></a>
 
@@ -124,38 +124,6 @@ Dated, attributable record of an evaluation of a party, product, portfolio or AI
 - **Properties:** [`assesses`](#assesses)
 - **References:** **ONT** [PROV-O](#ref-W3C-PROV-O) prov:Entity, prov:wasAttributedTo, prov:generatedAtTime; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) Shared pattern for dated evaluations
 
-<a id="AuthorisedSignatory"></a>
-#### authorised signatory (deprecated) (`pwm:AuthorisedSignatory`)
-
-Deprecated spelling. Use pwm:AuthorizedSignatory.
-
-- **Specializes:** [authorized signatory](#AuthorizedSignatory)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.6 US English rename; deprecated alias for one version
-
-<a id="BehaviourAnomaly"></a>
-#### behaviour anomaly (deprecated) (`pwm:BehaviourAnomaly`)
-
-Deprecated spelling. Use pwm:BehaviorAnomaly.
-
-- **Specializes:** [behavior anomaly](#BehaviorAnomaly)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.6 US English rename; deprecated alias for one version
-
-<a id="BehaviourBaseline"></a>
-#### behaviour baseline (deprecated) (`pwm:BehaviourBaseline`)
-
-Deprecated spelling. Use pwm:BehaviorBaseline.
-
-- **Specializes:** [behavior baseline](#BehaviorBaseline)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.6 US English rename; deprecated alias for one version
-
-<a id="BookingCentre"></a>
-#### booking centre (deprecated) (`pwm:BookingCentre`)
-
-Deprecated spelling. Use pwm:BookingCenter.
-
-- **Specializes:** [booking center](#BookingCenter)
-- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.6 US English rename; deprecated alias for one version
-
 ### Properties
 
 | Property | Domain → range | Definition | References |
@@ -165,9 +133,9 @@ Deprecated spelling. Use pwm:BookingCenter.
 | <a id="approvedBy"></a>`pwm:approvedBy` approved by | any → [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons) | Role whose holder approved this record. | **REG** [MAS AIRG](#ref-MAS-AIRG) 4.13: control function approves materiality; 5.21: approval body |
 | <a id="validFrom"></a>`pwm:validFrom` valid from | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Start of the period in which a record, rule or document is in force. Close match: [Date Valid](http://purl.org/dc/terms/valid) (DCMI). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.3: policy rows effective-dated; 0.6 item 8: standards are effective-dated; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: effective date as a minimum label |
 | <a id="validUntil"></a>`pwm:validUntil` valid until | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | End of the period in which a record, rule or document is in force. Absent while it remains in force. Close match: [Date Valid](http://purl.org/dc/terms/valid) (DCMI). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: created, effective, superseded and expiry dates |
-| <a id="nextReviewDate"></a>`pwm:nextReviewDate` next review date | any → [date](http://www.w3.org/2001/XMLSchema#date) (XSD) | Date by which a record must be reviewed. Past this date the record is treated as expired. | **REG** [FATF Recommendations](#ref-FATF)† R.10: ongoing due diligence; **REG** [MAS AIRG](#ref-MAS-AIRG) 4.11, 4.13: assessments regularly reviewed; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: past its review date, a use case is a DENY |
+| <a id="nextReviewDate"></a>`pwm:nextReviewDate` next review date | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Time by which a record must be reviewed. A decision made after this instant treats the record as expired. A date-only value from earlier versions is read as the end of that day. | **REG** [FATF Recommendations](#ref-FATF)† R.10: ongoing due diligence; **REG** [MAS AIRG](#ref-MAS-AIRG) 4.11, 4.13: assessments regularly reviewed; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: past its review date, a use case is a DENY |
 | <a id="rationale"></a>`pwm:rationale` rationale | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Reasons for an assessment or decision, stated as facts and evidence rather than as a bare score. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 10: reasons, not scores |
-| <a id="bookingCentreCode"></a>`pwm:bookingCentreCode` booking centre code (deprecated) | any → any | Deprecated spelling. Use pwm:bookingCenterCode. Sub-property of [booking center code](#bookingCenterCode). | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.6 US English rename; deprecated alias for one version |
+| <a id="freshnessThreshold"></a>`pwm:freshnessThreshold` freshness threshold (deprecated) | any → any | Deprecated: an xsd:duration. Use pwm:freshnessThresholdSeconds, for example P1D becomes 86400. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 datatype migration; deprecated alias for one version |
 
 <a id="ModuleParties"></a>
 
@@ -766,7 +734,7 @@ Versioned record of a client's choice of one or more sustainability categories, 
 
 Two generic top concepts, retail and non-retail, with jurisdiction-specific categories beneath them. Thresholds stay in each jurisdiction's rules, not in the ontology.
 
-Used by: [`appliesToInvestorCategory`](#appliesToInvestorCategory), [`investorCategory`](#investorCategory)
+Used by: [`appliesToInvestorCategory`](#appliesToInvestorCategory), [`investorCategory`](#investorCategory), [`negativeTargetMarketCategory`](#negativeTargetMarketCategory)
 
 References: **REG** [FinSA](#ref-CH-FINSA) Art. 4; **REG** [MiFID II](#ref-EU-MIFID2)† Annex II; Art. 30; **REG** [HK Professional Investor Rules](#ref-HK-PI-RULES)† Professional investor; **REG** [Securities and Futures Act (SG)](#ref-SG-SFA) s4A; **REG** [FCA COBS](#ref-UK-FCA-COBS)† COBS 3; **REG** [SEC Regulation D](#ref-US-REG-D)† Rule 501(a)
 
@@ -1098,7 +1066,7 @@ Monetary value of a portfolio, account or holding at a stated time, produced by 
 
 Credit extended to a client against a pledged portfolio of financial assets, with an advance rate per asset.
 
-- **Specializes:** [collateralized loan](https://spec.edmcouncil.org/fibo/ontology/LOAN/LoansGeneral/Loans/CollateralizedLoan) (FIBO, Release)
+- **Specializes:** [collateralized loan](https://spec.edmcouncil.org/fibo/ontology/LOAN/LoansGeneral/Loans/CollateralizedLoan) (FIBO, Release), [lending facility](#LendingFacility)
 - **Also called:** securities-backed loan
 - **Handling:** fast context, default classification C2
 - **Properties:** [`securedBy`](#securedBy)
@@ -1171,6 +1139,7 @@ Description of the clients a product is designed for, and those it is not, by ca
 
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** slow context, default classification C1
+- **Properties:** [`negativeTargetMarketCategory`](#negativeTargetMarketCategory)
 - **References:** **REG** [MiFID II](#ref-EU-MIFID2)† Art. 16(3), 24(2)
 
 <a id="ApprovedProductList"></a>
@@ -1363,6 +1332,7 @@ Expression of dissatisfaction by a client, linked to the interaction, output, mo
 
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** default classification C2
+- **Properties:** [`complaintReceivedAt`](#complaintReceivedAt)
 - **References:** **REG** [MAS Fair Dealing Guidelines](#ref-MAS-FAIR-DEALING)† Fair dealing outcomes; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 15: outcomes and near misses
 
 <a id="VulnerabilityIndicator"></a>
@@ -1372,6 +1342,7 @@ Flag that a client may be vulnerable, raised for human review. AI may raise the 
 
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** default classification C3
+- **Properties:** [`vulnerabilityDriver`](#vulnerabilityDriver), [`vulnerabilityDeterminedBy`](#vulnerabilityDeterminedBy), [`vulnerabilityFlaggedAt`](#vulnerabilityFlaggedAt)
 - **References:** **REG** [FCA FG21/1](#ref-UK-FCA-FG21-1)† Fair treatment of vulnerable customers; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 10: vulnerable-client safeguards
 
 <a id="Consent"></a>
@@ -1523,8 +1494,8 @@ Specific real-world context that an AI model or system is applied to, registered
 
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** slow context, default classification C1
-- **Properties:** [`approvedJurisdiction`](#approvedJurisdiction), [`modelType`](#modelType), [`lifecycleStatus`](#lifecycleStatus), [`isMediated`](#isMediated), [`riskTier`](#riskTier), [`hasMaterialityAssessment`](#hasMaterialityAssessment), [`retentionPolicy`](#retentionPolicy), [`enforcementAttestation`](#enforcementAttestation), [`deploymentMode`](#deploymentMode), [`approvedFallbackModel`](#approvedFallbackModel), [`permitsSelfVerification`](#permitsSelfVerification), [`requiresReasoningTrace`](#requiresReasoningTrace)
-- **References:** **ISO** [ISO/IEC 42001](#ref-ISO-IEC-42001)† AI management system; **REG** [MAS AIRG](#ref-MAS-AIRG) 1.4(c) use case; 4.5 to 4.9 inventory; 4.7 attributes; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: use-case register; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 19: an unregistered use case is refused
+- **Properties:** [`approvedJurisdiction`](#approvedJurisdiction), [`modelType`](#modelType), [`lifecycleStatus`](#lifecycleStatus), [`isMediated`](#isMediated), [`riskTier`](#riskTier), [`hasMaterialityAssessment`](#hasMaterialityAssessment), [`retentionPolicy`](#retentionPolicy), [`enforcementAttestation`](#enforcementAttestation), [`deploymentMode`](#deploymentMode), [`approvedFallbackModel`](#approvedFallbackModel), [`permitsSelfVerification`](#permitsSelfVerification), [`hasDocumentation`](#hasDocumentation), [`requiresReasoningTrace`](#requiresReasoningTrace)
+- **References:** **ISO** [ISO/IEC 42001](#ref-ISO-IEC-42001)† AI management system; **REG** [MAS AIRG](#ref-MAS-AIRG) 1.4(c) use case; 4.5 to 4.9 inventory; 4.7 attributes; **REG** [MAS AIRG](#ref-MAS-AIRG) 2.5(b): permitted and prohibited uses are the use-case register's lifecycle status; 2.5(c): approved AI and an approval process for new use; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: use-case register; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 19: an unregistered use case is refused
 
 <a id="AISystem"></a>
 #### AI system (`pwm:AISystem`)
@@ -1536,7 +1507,7 @@ Machine-based system of one or more models and other components that derives out
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Close match:** [AI System](https://w3id.org/dpv/ai#AISystem) (DPV-AI)
 - **Handling:** slow context
-- **References:** **ISO** [ISO/IEC 22989](#ref-ISO-IEC-22989)† AI system; **REG** [EU AI Act](#ref-EU-AI-ACT)† Art. 3(1); **REG** [MAS AIRG](#ref-MAS-AIRG) 1.3 and fn 6 (definition and exclusions); 1.4(b) system
+- **References:** **ISO** [ISO/IEC 22989](#ref-ISO-IEC-22989)† AI system; **REG** [EU AI Act](#ref-EU-AI-ACT)† Art. 3(1); **REG** [MAS AIRG](#ref-MAS-AIRG) 1.3 and fn 6 (definition and exclusions); 1.4(b) system; **REG** [MAS AIRG](#ref-MAS-AIRG) 2.5(c): approved list of AI systems and tools
 
 <a id="AIModel"></a>
 #### AI model (`pwm:AIModel`)
@@ -1558,7 +1529,7 @@ Software agent that plans and takes actions with tools on behalf of a person, ho
 - **Specializes:** [SoftwareAgent](http://www.w3.org/ns/prov#SoftwareAgent) (PROV-O), [software agent](https://www.omg.org/spec/Commons/PartiesAndSituations/SoftwareAgent) (OMG Commons)
 - **Close match:** [AI Agent](https://w3id.org/dpv/ai#AIAgent) (DPV-AI)
 - **Handling:** slow context
-- **Properties:** [`registeredForUseCase`](#registeredForUseCase), [`agentIdentifier`](#agentIdentifier), [`deploymentVersion`](#deploymentVersion), [`maxAutonomyLevel`](#maxAutonomyLevel), [`permittedTool`](#permittedTool), [`deploymentDate`](#deploymentDate), [`agentOwner`](#agentOwner), [`operatesFor`](#operatesFor), [`agentStatus`](#agentStatus), [`approvedDeploymentVersion`](#approvedDeploymentVersion), [`effectiveAutonomyLevel`](#effectiveAutonomyLevel), [`hasBlastRadiusLimit`](#hasBlastRadiusLimit), [`permittedField`](#permittedField), [`deploymentModel`](#deploymentModel)
+- **Properties:** [`registeredForUseCase`](#registeredForUseCase), [`agentIdentifier`](#agentIdentifier), [`deploymentVersion`](#deploymentVersion), [`maxAutonomyLevel`](#maxAutonomyLevel), [`permittedTool`](#permittedTool), [`deploymentDate`](#deploymentDate), [`agentOwner`](#agentOwner), [`operatesFor`](#operatesFor), [`agentStatus`](#agentStatus), [`approvedDeploymentVersion`](#approvedDeploymentVersion), [`effectiveAutonomyLevel`](#effectiveAutonomyLevel), [`hasBlastRadiusLimit`](#hasBlastRadiusLimit), [`permittedField`](#permittedField), [`deploymentModel`](#deploymentModel), [`hasComponent`](#hasComponent), [`activatedOnEvaluation`](#activatedOnEvaluation)
 - **References:** **REG** [IMDA agentic AI framework](#ref-IMDA-MGF-AGENTIC)† Agentic AI governance; **REG** [MAS AIRG](#ref-MAS-AIRG) 1.11 (agent risks); fn 25 (agent identifiers, tools, components, guardrails); **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.5 item 1: agent identity
 
 <a id="ThirdPartyAI"></a>
@@ -1606,7 +1577,7 @@ Assessment of an AI use case on impact, complexity and reliance, including the a
 - **Specializes:** [assessment](#Assessment)
 - **Handling:** slow context
 - **Properties:** [`impact`](#impact), [`complexity`](#complexity), [`reliance`](#reliance), [`inherentMateriality`](#inherentMateriality), [`residualMateriality`](#residualMateriality), [`businessCriticality`](#businessCriticality), [`clientImpactClass`](#clientImpactClass), [`decisionConsequence`](#decisionConsequence), [`autonomyAxis`](#autonomyAxis)
-- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 4.10 to 4.13; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Gaps 3 and 4; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: six axes; inherent and residual materiality
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 2.5(e) and 2.5(f): periodic and trigger-based review of materiality; **REG** [MAS AIRG](#ref-MAS-AIRG) 4.10 to 4.13; **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Gaps 3 and 4; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: six axes; inherent and residual materiality
 
 <a id="AIRiskAppetite"></a>
 #### AI risk appetite (`pwm:AIRiskAppetite`)
@@ -1624,7 +1595,7 @@ Role of a named person accountable for an AI use case. Accountability can be sup
 
 - **Specializes:** [party role](https://www.omg.org/spec/Commons/PartiesAndSituations/PartyRole) (OMG Commons)
 - **Restriction:** [is played by](https://www.omg.org/spec/Commons/RolesAndCompositions/isPlayedBy) (OMG Commons) only [anything except AI agent](#AIAgent)
-- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 3.5(d): clear roles and responsibilities; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: an agent can never be named in an owner role; **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 05: a name, not a forum
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 2.5(a): a senior manager accountable for AI oversight; **REG** [MAS AIRG](#ref-MAS-AIRG) 3.5(d): clear roles and responsibilities; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 8: an agent can never be named in an owner role; **AM** [Governing agentic AI (essay)](#ref-AM-GOVERNING-AGENTIC-AI) Section 05: a name, not a forum
 
 <a id="BusinessOwner"></a>
 #### business owner (`pwm:BusinessOwner`)
@@ -2049,7 +2020,7 @@ Authoritative value from a system of record, carrying its source, owner, as-of t
 
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** medium context, default classification C2
-- **Properties:** [`freshnessThreshold`](#freshnessThreshold)
+- **Properties:** [`freshnessThresholdSeconds`](#freshnessThresholdSeconds)
 - **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: fact contract and freshness
 
 <a id="Claim"></a>
@@ -2102,7 +2073,7 @@ Append-only, hash-chained record of an event, such as a policy decision, model c
 Review of AI output or a proposed action by a competent person with authority to intervene, given a complete packet of action, reason, evidence, risks, alternatives and checks run.
 
 - **Specializes:** [Activity](http://www.w3.org/ns/prov#Activity) (PROV-O)
-- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; automation bias and decision fatigue; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11 (approval packet); item 13 (risk-based review)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 2.5(b): mandatory human review before use; **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9(a) to (d): human oversight; automation bias and decision fatigue; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 11 (approval packet); item 13 (risk-based review)
 
 <a id="AIIncident"></a>
 #### AI incident (`pwm:AIIncident`)
@@ -2421,10 +2392,10 @@ Listed authenticated system identity admitted for calls without an agent; still 
 | <a id="reconstructionQuestion"></a>`pwm:reconstructionQuestion` reconstruction question | any → [supervisory reconstruction questions](#ReconstructionQuestionScheme) | Recorded reconstructionQuestion code. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified |
 | <a id="classificationCeiling"></a>`pwm:classificationCeiling` classification ceiling | [run budget](#RunBudget) → [data classifications](#DataClassificationScheme) | Highest data sensitivity the run may touch. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.3 item 1; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.3 gateway and replay records: NEW specialized record or property; no exact standard term identified |
 | <a id="versionId"></a>`pwm:versionId` version identifier | any → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Version identifier of an asset, definition, rule, model or deployment. | **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: version ID or content hash |
-| <a id="retentionUntil"></a>`pwm:retentionUntil` retention until | any → [date](http://www.w3.org/2001/XMLSchema#date) (XSD) | Date until which a record must be kept. An AI record never expires before the regulatory record it supports. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.7: retention by record class; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: retention date |
+| <a id="retentionUntil"></a>`pwm:retentionUntil` retention until | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Time until which a record must be kept. An AI record never expires before the regulatory record it supports. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.7: retention by record class; **AM** [Filing Cabinet talk](#ref-AM-FILING-CABINET) Slide 8: retention date |
 | <a id="definesTerm"></a>`pwm:definesTerm` defines term | [governed definition](#GovernedDefinition) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Business term a governed definition defines. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 12 |
 | <a id="asOf"></a>`pwm:asOf` as of | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Time at which a fact, valuation or live authority status was true in its system of record. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: as-of date |
-| <a id="freshnessThreshold"></a>`pwm:freshnessThreshold` freshness threshold | [fact](#Fact) → [duration](http://www.w3.org/2001/XMLSchema#duration) (XSD) | Maximum age at which a fact may still be used, as an xsd:duration. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: freshness thresholds per data type |
+| <a id="freshnessThresholdSeconds"></a>`pwm:freshnessThresholdSeconds` freshness threshold in seconds | [fact](#Fact) → [positiveInteger](http://www.w3.org/2001/XMLSchema#positiveInteger) (XSD) | Maximum age at which a fact may still be used, in whole seconds. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.6 item 2: freshness thresholds per data type |
 | <a id="ruleCitation"></a>`pwm:ruleCitation` rule citation | [policy rule](#PolicyRule) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Text citing the policy, regulation or standard a rule implements. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Every decision citable to policy |
 | <a id="recordHash"></a>`pwm:recordHash` record hash | [evidence record](#EvidenceRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of an evidence record, chained to the previous record so deletion or alteration is detectable. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
 | <a id="previousRecordHash"></a>`pwm:previousRecordHash` previous record hash | [evidence record](#EvidenceRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of the record that precedes this one in the chain. Required on every record except the first in a chain. | **KOG** [Kognita regulations library](#ref-KOG-CONTROLS) Hash-chained evidence |
@@ -2838,7 +2809,7 @@ Evidence-derived counts of eligible, screened, queued and reviewed interactions 
 
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** medium context, default classification C1
-- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; 5.23: monitoring; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialized record or field; no exact standard term identified
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 3.6: local senior management visibility, reports filterable by jurisdiction; **REG** [MAS AIRG](#ref-MAS-AIRG) 5.9: human oversight; 5.23: monitoring; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) 0.4 item 13; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.4: NEW specialized record or field; no exact standard term identified
 
 <a id="CircuitBreaker"></a>
 #### circuit breaker (`pwm:CircuitBreaker`)
@@ -3110,7 +3081,7 @@ Observed deviation from an agent baseline, with automatic containment and incide
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** medium context, default classification C2
 - **Properties:** [`anomalyBaseline`](#anomalyBaseline), [`anomalyValue`](#anomalyValue), [`containmentApplied`](#containmentApplied), [`anomalyIncident`](#anomalyIncident)
-- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.22: anomaly detection; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 8; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified
 
 <a id="CapabilityGrant"></a>
 #### capability grant (`pwm:CapabilityGrant`)
@@ -3170,7 +3141,7 @@ Attack scenario specializing the existing policy test case, linked to a versione
 - **Specializes:** [policy test case](#PolicyTestCase)
 - **Handling:** slow context, default classification C2
 - **Properties:** [`threatModel`](#threatModel), [`attackKind`](#attackKind)
-- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.15: guardrails tested for agent failure modes; 5.22: red teaming; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.5 item 14; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.5: NEW specialized record or property; no exact standard term identified
 
 <a id="ThreatModel"></a>
 #### threat model (`pwm:ThreatModel`)
@@ -3533,8 +3504,8 @@ Offline simulation of one of eight fault kinds against a use case, checking the 
 
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** medium context, default classification C1
-- **Properties:** [`drillKind`](#drillKind), [`drillUseCase`](#drillUseCase), [`evidenceCompleteAfterDrill`](#evidenceCompleteAfterDrill)
-- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.7 item R10 (failure drills); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified
+- **Properties:** [`drillKind`](#drillKind), [`drillUseCase`](#drillUseCase), [`evidenceCompleteAfterDrill`](#evidenceCompleteAfterDrill), [`drillScenario`](#drillScenario)
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.15: guardrails tested for agent failure modes; 5.22: technology and cybersecurity review, red teaming; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.7 item R10 (failure drills); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified
 
 <a id="RecordClassRetention"></a>
 #### record class retention (`pwm:RecordClassRetention`)
@@ -3704,7 +3675,17 @@ Recommendation, contact and prioritization rates across firm-defined segments, w
 - **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
 - **Handling:** medium context, default classification C2
 - **Properties:** [`fairnessThreshold`](#fairnessThreshold), [`proxyAttribute`](#proxyAttribute), [`fairnessFlagged`](#fairnessFlagged)
-- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified
+- **References:** **REG** [MAS AIRG](#ref-MAS-AIRG) 5.7 and 5.8: fair outcomes; fairness assessments on protected attributes and proxies; **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified
+
+<a id="EvaluationGate"></a>
+#### evaluation gate (`pwm:EvaluationGate`)
+
+Threshold per use case and metric that an evaluation result must meet before a tier 2 or higher agent is activated or changed: a minimum, or for rates such as hallucination a maximum.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** slow context, default classification C1
+- **Properties:** [`gateUseCase`](#gateUseCase), [`gateMetricName`](#gateMetricName), [`gateMinimumScore`](#gateMinimumScore), [`gateMaximumScore`](#gateMaximumScore)
+- **References:** **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified
 
 <a id="ReasoningTrace"></a>
 #### reasoning trace (`pwm:ReasoningTrace`)
@@ -3793,6 +3774,11 @@ Special-category inference (religion, health, political views, ethnicity, sexual
 | <a id="evaluatesAgent"></a>`pwm:evaluatesAgent` evaluates agent | [evaluation result](#EvaluationResult) → [AI agent](#AIAgent) | Agent that the result evaluates. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="evaluationLevel"></a>`pwm:evaluationLevel` evaluation level | [evaluation result](#EvaluationResult) → [evaluation levels](#EvaluationLevelScheme) | Whether the model, the agent or the end-to-end system was evaluated. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="hasMetricValue"></a>`pwm:hasMetricValue` has metric value | [evaluation result](#EvaluationResult) → [evaluation metric value](#EvaluationMetricValue) | Metric value recorded in the evaluation result. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
+| <a id="hasDocumentation"></a>`pwm:hasDocumentation` has documentation | [AI use case](#AIUseCase) → [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O) | Documentation held for an AI use case, such as a model card or design record (MAS AIRG 4.7). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) MAS AIRG 4.7 and footnote 25: inventory attributes for AI and for agents; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
+| <a id="hasComponent"></a>`pwm:hasComponent` has component | [AI agent](#AIAgent) → [approved component](#ApprovedComponent) | Approved software component that an agent deployment is built from (MAS AIRG fn 25). | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) MAS AIRG 4.7 and footnote 25: inventory attributes for AI and for agents; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
+| <a id="gateUseCase"></a>`pwm:gateUseCase` gate use case | [evaluation gate](#EvaluationGate) → [AI use case](#AIUseCase) | Use case that the gate applies to. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
+| <a id="activatedOnEvaluation"></a>`pwm:activatedOnEvaluation` activated on evaluation | [AI agent](#AIAgent) → [evaluation result](#EvaluationResult) | Evaluation result that the agent's activation or last change relied on. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
+| <a id="drillScenario"></a>`pwm:drillScenario` drill scenario | [failure drill](#FailureDrill) → [hostile-agent drill scenarios](#DrillScenarioScheme) | Hostile-agent scenario exercised by the drill. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.8 item A8 (AI-enabled cyber and adversarial drills); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="traceOfCall"></a>`pwm:traceOfCall` trace of call | [reasoning trace](#ReasoningTrace) → [model call](#ModelCall) | Model call whose reasoning trace this is. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 13 (reasoning traces); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="memorySubjectClient"></a>`pwm:memorySubjectClient` memory subject client | [memory record](#MemoryRecord) → [client](#Client) | Client that a relationship memory record is about. Institutional memory names no client. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 8 (memory governance); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="exportRequester"></a>`pwm:exportRequester` export requester | [learning export](#LearningExport) → [person](https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person) (FIBO, Release) | Person who requested the export. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 9 (feedback-loop controls); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
@@ -3900,6 +3886,9 @@ Special-category inference (religion, health, political views, ethnicity, sexual
 | <a id="fairnessThreshold"></a>`pwm:fairnessThreshold` fairness threshold | [fairness report](#FairnessReport) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Disparity above which the report flags a segment to the risk owner. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="proxyAttribute"></a>`pwm:proxyAttribute` proxy attribute | [fairness report](#FairnessReport) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Attribute that stands in for, or correlates with, a protected attribute. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="fairnessFlagged"></a>`pwm:fairnessFlagged` fairness flagged | [fairness report](#FairnessReport) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether a disparity above the threshold was flagged to the risk owner. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
+| <a id="gateMetricName"></a>`pwm:gateMetricName` gate metric name | [evaluation gate](#EvaluationGate) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Name of the metric that the gate checks. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
+| <a id="gateMinimumScore"></a>`pwm:gateMinimumScore` gate minimum score | [evaluation gate](#EvaluationGate) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Lowest acceptable score, from 0 to 1. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
+| <a id="gateMaximumScore"></a>`pwm:gateMaximumScore` gate maximum score | [evaluation gate](#EvaluationGate) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Highest acceptable score, from 0 to 1, for rates where lower is better. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="traceHash"></a>`pwm:traceHash` trace hash | [reasoning trace](#ReasoningTrace) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Hash of the reasoning trace in the evidence chain; the content sits in the retention store. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 13 (reasoning traces); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="requiresReasoningTrace"></a>`pwm:requiresReasoningTrace` requires reasoning trace | [AI use case](#AIUseCase) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the use case requires a reasoning trace on material output. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 13 (reasoning traces); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
 | <a id="claimSourceSystem"></a>`pwm:claimSourceSystem` claim source system | [claim](#Claim) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | System of record that the claim's source belongs to. | **KOG** [Kognita roadmap](#ref-KOG-ROADMAP) roadmap milestone 0.6 item 1 (claim provenance envelope); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.8: NEW specialized record or property; no exact standard term identified |
@@ -4159,6 +4148,26 @@ References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) sensitive._PATTERNS
 | sexuality | <a id="SensitiveSexuality"></a>sexuality (`pwm:SensitiveSexuality`) | Sexuality. |
 | vulnerability | <a id="SensitiveVulnerability"></a>personal vulnerability (`pwm:SensitiveVulnerability`) | Personal vulnerability. |
 
+<a id="DrillScenarioScheme"></a>
+#### hostile-agent drill scenarios (`pwm:DrillScenarioScheme`)
+
+
+
+Used by: [`drillScenario`](#drillScenario)
+
+References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) assurance.drills.SCENARIOS
+
+| Code | Concept | Definition |
+|---|---|---|
+| prompt-injection-tool-escalation | <a id="ScenarioPromptInjection"></a>prompt injection leading to tool escalation (`pwm:ScenarioPromptInjection`) | Injected instructions try to escalate tool use. |
+| discovered-credentials | <a id="ScenarioDiscoveredCredentials"></a>discovered third-party credentials (`pwm:ScenarioDiscoveredCredentials`) | The agent finds credentials it was not given. |
+| unauthorized-network | <a id="ScenarioUnauthorizedNetwork"></a>unauthorized external network access (`pwm:ScenarioUnauthorizedNetwork`) | The agent reaches for a network destination outside its allow-list. |
+| machine-speed-probing | <a id="ScenarioMachineSpeedProbing"></a>machine-speed probing (`pwm:ScenarioMachineSpeedProbing`) | High-rate API probing and multi-technique attack. |
+| compromised-provider | <a id="ScenarioCompromisedProvider"></a>compromised provider (`pwm:ScenarioCompromisedProvider`) | The model provider is compromised. |
+| agent-privilege-escalation | <a id="ScenarioAgentPrivilegeEscalation"></a>agent-to-agent privilege escalation (`pwm:ScenarioAgentPrivilegeEscalation`) | One agent tries to gain another's privileges. |
+| malicious-retrieval | <a id="ScenarioMaliciousRetrieval"></a>malicious retrieved content (`pwm:ScenarioMaliciousRetrieval`) | Retrieved content carries hostile instructions. |
+| containment-recovery | <a id="ScenarioContainmentRecovery"></a>emergency containment and recovery (`pwm:ScenarioContainmentRecovery`) | Containment and recovery after a breach. |
+
 <a id="EvaluationLevelScheme"></a>
 #### evaluation levels (`pwm:EvaluationLevelScheme`)
 
@@ -4173,6 +4182,486 @@ References: **KOG** [Kognita vocabularies](#ref-KOG-VOCAB) evaluation.py and cli
 | model | <a id="LevelModel"></a>model (`pwm:LevelModel`) | The model alone. |
 | agent | <a id="LevelAgent"></a>agent (`pwm:LevelAgent`) | The agent: planning, tool selection, permission compliance, delegation, retries and escalation. |
 | system | <a id="LevelSystem"></a>system (`pwm:LevelSystem`) | The end-to-end system: model, retrieval, tools, data, agent, policies, interface and human interaction. |
+
+<a id="ModuleBusiness"></a>
+
+## Module 13: Business scope
+
+Costs and charges, product governance, client circumstances, orders and executions, corporate actions and income, tax reporting, lending and performance provenance.
+
+### Classes
+
+<a id="CostDisclosure"></a>
+#### cost disclosure (`pwm:CostDisclosure`)
+
+Disclosure to a client of the costs and charges of an investment service or product, ex ante before the service and ex post after the period, with the total and its items.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`disclosureTiming`](#disclosureTiming), [`coversMandate`](#coversMandate), [`totalCostAmount`](#totalCostAmount), [`totalCostPercent`](#totalCostPercent), [`hasCostItem`](#hasCostItem), [`includesInducements`](#includesInducements)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="CostItem"></a>
+#### cost item (`pwm:CostItem`)
+
+One item in a cost disclosure: category, amount and currency, optionally the fee it comes from.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`costCategory`](#costCategory), [`costFromFee`](#costFromFee)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="InducementDisclosure"></a>
+#### inducement disclosure (`pwm:InducementDisclosure`)
+
+Disclosure of a third-party payment, with whether it is designed to enhance the quality of the service to the client.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`disclosesPayment`](#disclosesPayment), [`enhancesServiceQuality`](#enhancesServiceQuality)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="ProductApproval"></a>
+#### product approval (`pwm:ProductApproval`)
+
+Approval of a product for distribution to a target market, with the distribution strategy that applies.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C1
+- **Properties:** [`approvesProduct`](#approvesProduct), [`approvedForTargetMarket`](#approvedForTargetMarket), [`distributionStrategyReference`](#distributionStrategyReference)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 16(3) and Art. 24(2) product governance, target market; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="TargetMarketReview"></a>
+#### target market review (`pwm:TargetMarketReview`)
+
+Periodic review of a product's target market, with the outcome and the next review date.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C1
+- **Properties:** [`reviewsTargetMarket`](#reviewsTargetMarket), [`targetMarketReviewOutcome`](#targetMarketReviewOutcome)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 16(3) and Art. 24(2) product governance, target market; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="ComplaintOutcome"></a>
+#### complaint outcome (`pwm:ComplaintOutcome`)
+
+Resolution of a complaint: result, date, any redress and the root cause.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`complaintOf`](#complaintOf), [`complaintResolution`](#complaintResolution), [`redressAmount`](#redressAmount), [`rootCause`](#rootCause)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance
+
+<a id="SuitabilityReview"></a>
+#### suitability review (`pwm:SuitabilityReview`)
+
+Periodic review of a client's suitability assessment, with its result and the next review date.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`reviewsSuitability`](#reviewsSuitability), [`suitabilityReviewResult`](#suitabilityReviewResult), [`reviewFrequencyMonths`](#reviewFrequencyMonths), [`performedAt`](#performedAt)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="Order"></a>
+#### order (`pwm:Order`)
+
+Instruction to buy or sell an instrument in an account, under a mandate or on the client's instruction.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`orderSide`](#orderSide), [`orderType`](#orderType), [`orderStatus`](#orderStatus), [`orderQuantity`](#orderQuantity), [`limitPrice`](#limitPrice), [`orderAccount`](#orderAccount), [`orderUnderMandate`](#orderUnderMandate), [`orderPlacedAt`](#orderPlacedAt)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="Execution"></a>
+#### execution (`pwm:Execution`)
+
+Fill of an order: quantity, price, time and venue.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`executesOrder`](#executesOrder), [`executedQuantity`](#executedQuantity), [`executionPrice`](#executionPrice), [`executedAt`](#executedAt), [`executionVenue`](#executionVenue)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="Allocation"></a>
+#### allocation (`pwm:Allocation`)
+
+Assignment of an executed quantity to an account.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`allocatesExecution`](#allocatesExecution), [`allocatedToAccount`](#allocatedToAccount), [`allocatedQuantity`](#allocatedQuantity)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="BestExecutionRecord"></a>
+#### best execution record (`pwm:BestExecutionRecord`)
+
+Evidence of how an execution met the best execution policy: the factors considered and the rationale for the venue.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C1
+- **Properties:** [`bestExecutionOf`](#bestExecutionOf), [`executionFactor`](#executionFactor), [`venueRationale`](#venueRationale), [`executionPolicyReference`](#executionPolicyReference)
+- **References:** **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="CorporateAction"></a>
+#### corporate action (`pwm:CorporateAction`)
+
+Event that changes an instrument or pays its holders: dividend, coupon, split, merger, rights issue or redemption.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C1
+- **Properties:** [`corporateActionKind`](#corporateActionKind), [`affectsInstrument`](#affectsInstrument), [`effectiveAt`](#effectiveAt)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance
+
+<a id="IncomeReceipt"></a>
+#### income receipt (`pwm:IncomeReceipt`)
+
+Income credited to an account, optionally from a corporate action.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`incomeKind`](#incomeKind), [`incomeToAccount`](#incomeToAccount), [`incomeFromAction`](#incomeFromAction)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance
+
+<a id="TaxReportingRecord"></a>
+#### tax reporting record (`pwm:TaxReportingRecord`)
+
+Record that an account was reported under CRS or FATCA for a year, to a jurisdiction, with the balance reported.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C3
+- **Properties:** [`reportingRegime`](#reportingRegime), [`reportingYear`](#reportingYear), [`reportedAccount`](#reportedAccount), [`reportedToJurisdiction`](#reportedToJurisdiction), [`reportSubmittedAt`](#reportSubmittedAt)
+- **References:** **REG** [OECD CRS](#ref-OECD-CRS) OECD Common Reporting Standard; US FATCA reporting; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified
+
+<a id="LendingFacility"></a>
+#### lending facility (`pwm:LendingFacility`)
+
+Credit facility to a client: Lombard, mortgage, structured loan or other, with limit and maximum loan-to-value.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`facilityKind`](#facilityKind), [`facilityLimit`](#facilityLimit), [`maxLoanToValue`](#maxLoanToValue), [`facilityClient`](#facilityClient)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance
+
+<a id="PerformanceFigure"></a>
+#### performance figure (`pwm:PerformanceFigure`)
+
+Performance of a portfolio over a period, as a figure from a registered calculation service. PWM records its provenance and never computes it.
+
+- **Specializes:** [Entity](http://www.w3.org/ns/prov#Entity) (PROV-O)
+- **Handling:** medium context, default classification C2
+- **Properties:** [`performanceOf`](#performanceOf), [`performanceMeasure`](#performanceMeasure), [`performanceValue`](#performanceValue)
+- **References:** **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance
+
+### Properties
+
+| Property | Domain → range | Definition | References |
+|---|---|---|---|
+| <a id="disclosureTiming"></a>`pwm:disclosureTiming` disclosure timing | [cost disclosure](#CostDisclosure) → [disclosure timings](#DisclosureTimingScheme) | Whether the disclosure is ex ante or ex post. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="disclosedToClient"></a>`pwm:disclosedToClient` disclosed to client | any → [client](#Client) | Client who received the disclosure. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="coversMandate"></a>`pwm:coversMandate` covers mandate | [cost disclosure](#CostDisclosure) → [mandate](#Mandate) | Mandate whose service the disclosure covers. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="hasCostItem"></a>`pwm:hasCostItem` has cost item | [cost disclosure](#CostDisclosure) → [cost item](#CostItem) | Item that makes up the disclosed cost. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="costCategory"></a>`pwm:costCategory` cost category | [cost item](#CostItem) → [cost categories](#CostCategoryScheme) | Category of a cost item. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="costFromFee"></a>`pwm:costFromFee` cost from fee | [cost item](#CostItem) → [fee](#Fee) | Fee that the cost item comes from. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="disclosesPayment"></a>`pwm:disclosesPayment` discloses payment | [inducement disclosure](#InducementDisclosure) → [third-party payment](#ThirdPartyPayment) | Third-party payment that the disclosure describes. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="approvesProduct"></a>`pwm:approvesProduct` approves product | [product approval](#ProductApproval) → [product](#Product) | Product approved for distribution. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 16(3) and Art. 24(2) product governance, target market; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="approvedForTargetMarket"></a>`pwm:approvedForTargetMarket` approved for target market | [product approval](#ProductApproval) → [target market](#TargetMarket) | Target market the product is approved for. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 16(3) and Art. 24(2) product governance, target market; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="negativeTargetMarketCategory"></a>`pwm:negativeTargetMarketCategory` negative target market category | [target market](#TargetMarket) → [investor categories](#InvestorCategoryScheme) | Investor category the product is not compatible with. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 16(3) and Art. 24(2) product governance, target market; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="reviewsTargetMarket"></a>`pwm:reviewsTargetMarket` reviews target market | [target market review](#TargetMarketReview) → [target market](#TargetMarket) | Target market under review. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 16(3) and Art. 24(2) product governance, target market; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="targetMarketReviewOutcome"></a>`pwm:targetMarketReviewOutcome` target market review outcome | [target market review](#TargetMarketReview) → [target market review outcomes](#TargetMarketReviewOutcomeScheme) | Result of the review. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 16(3) and Art. 24(2) product governance, target market; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="complaintOf"></a>`pwm:complaintOf` complaint of | [complaint outcome](#ComplaintOutcome) → [complaint](#Complaint) | Complaint that the outcome resolves. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="complaintResolution"></a>`pwm:complaintResolution` complaint resolution | [complaint outcome](#ComplaintOutcome) → [complaint resolutions](#ComplaintResolutionScheme) | Result of handling the complaint. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="vulnerabilityDriver"></a>`pwm:vulnerabilityDriver` vulnerability driver | [vulnerability indicator](#VulnerabilityIndicator) → [vulnerability drivers](#VulnerabilityDriverScheme) | Which of the four drivers of vulnerability applies. | **REG** [FCA FG21/1](#ref-UK-FCA-FG21-1)† FCA FG21/1 four drivers of vulnerability: health, life events, resilience, capability; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="vulnerabilityDeterminedBy"></a>`pwm:vulnerabilityDeterminedBy` vulnerability determined by | [vulnerability indicator](#VulnerabilityIndicator) → [person](https://spec.edmcouncil.org/fibo/ontology/FND/AgentsAndPeople/People/Person) (FIBO, Release) | Person who determined the vulnerability. An AI may flag but not determine. | **REG** [FCA FG21/1](#ref-UK-FCA-FG21-1)† FCA FG21/1 four drivers of vulnerability: health, life events, resilience, capability; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="reviewsSuitability"></a>`pwm:reviewsSuitability` reviews suitability | [suitability review](#SuitabilityReview) → [suitability assessment](#SuitabilityAssessment) | Suitability assessment under review. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="suitabilityReviewResult"></a>`pwm:suitabilityReviewResult` suitability review result | [suitability review](#SuitabilityReview) → [suitability review results](#SuitabilityReviewResultScheme) | Result of the periodic review. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="orderSide"></a>`pwm:orderSide` order side | [order](#Order) → [order sides](#OrderSideScheme) | Buy or sell. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="orderType"></a>`pwm:orderType` order type | [order](#Order) → [order types](#OrderTypeScheme) | Market or limit. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="orderStatus"></a>`pwm:orderStatus` order status | [order](#Order) → [order statuses](#OrderStatusScheme) | State of the order. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="orderAccount"></a>`pwm:orderAccount` order account | [order](#Order) → [account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Account) (FIBO, Release) | Account the order is placed in. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="orderUnderMandate"></a>`pwm:orderUnderMandate` order under mandate | [order](#Order) → [mandate](#Mandate) | Mandate the order is placed under. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="executesOrder"></a>`pwm:executesOrder` executes order | [execution](#Execution) → [order](#Order) | Order that the execution fills. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="allocatesExecution"></a>`pwm:allocatesExecution` allocates execution | [allocation](#Allocation) → [execution](#Execution) | Execution that the allocation assigns. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="allocatedToAccount"></a>`pwm:allocatedToAccount` allocated to account | [allocation](#Allocation) → [account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Account) (FIBO, Release) | Account that receives the quantity. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="bestExecutionOf"></a>`pwm:bestExecutionOf` best execution of | [best execution record](#BestExecutionRecord) → [execution](#Execution) | Execution that the record covers. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="executionFactor"></a>`pwm:executionFactor` execution factor | [best execution record](#BestExecutionRecord) → [best execution factors](#ExecutionFactorScheme) | Factor considered under the best execution policy. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="corporateActionKind"></a>`pwm:corporateActionKind` corporate action kind | [corporate action](#CorporateAction) → [corporate action kinds](#CorporateActionKindScheme) | Kind of corporate action. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="affectsInstrument"></a>`pwm:affectsInstrument` affects instrument | [corporate action](#CorporateAction) → [financial instrument](https://spec.edmcouncil.org/fibo/ontology/FBC/FinancialInstruments/FinancialInstruments/FinancialInstrument) (FIBO, Release) | Instrument the action affects. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="incomeKind"></a>`pwm:incomeKind` income kind | [income receipt](#IncomeReceipt) → [income kinds](#IncomeKindScheme) | Kind of income. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="incomeToAccount"></a>`pwm:incomeToAccount` income to account | [income receipt](#IncomeReceipt) → [account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Account) (FIBO, Release) | Account credited. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="incomeFromAction"></a>`pwm:incomeFromAction` income from action | [income receipt](#IncomeReceipt) → [corporate action](#CorporateAction) | Corporate action the income comes from. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="reportingRegime"></a>`pwm:reportingRegime` reporting regime | [tax reporting record](#TaxReportingRecord) → [tax reporting regimes](#TaxReportingRegimeScheme) | Tax reporting regime. | **REG** [OECD CRS](#ref-OECD-CRS) OECD Common Reporting Standard; US FATCA reporting; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="reportedAccount"></a>`pwm:reportedAccount` reported account | [tax reporting record](#TaxReportingRecord) → [account](https://spec.edmcouncil.org/fibo/ontology/FBC/ProductsAndServices/ClientsAndAccounts/Account) (FIBO, Release) | Account that was reported. | **REG** [OECD CRS](#ref-OECD-CRS) OECD Common Reporting Standard; US FATCA reporting; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="facilityKind"></a>`pwm:facilityKind` facility kind | [lending facility](#LendingFacility) → [lending facility kinds](#FacilityKindScheme) | Kind of lending facility. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="facilityClient"></a>`pwm:facilityClient` facility client | [lending facility](#LendingFacility) → [client](#Client) | Client who holds the facility. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="performanceOf"></a>`pwm:performanceOf` performance of | [performance figure](#PerformanceFigure) → [portfolio](#Portfolio) | Portfolio that the figure measures. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="performanceMeasure"></a>`pwm:performanceMeasure` performance measure | [performance figure](#PerformanceFigure) → [performance measures](#PerformanceMeasureScheme) | Method that produced the figure. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="disclosedAt"></a>`pwm:disclosedAt` disclosed at | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | When the disclosure was made. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="totalCostAmount"></a>`pwm:totalCostAmount` total cost amount | [cost disclosure](#CostDisclosure) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Total cost over the disclosure period. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="totalCostPercent"></a>`pwm:totalCostPercent` total cost percent | [cost disclosure](#CostDisclosure) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Total cost as a percentage of the invested amount. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="includesInducements"></a>`pwm:includesInducements` includes inducements | [cost disclosure](#CostDisclosure) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the disclosed cost includes third-party payments. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="periodStart"></a>`pwm:periodStart` period start | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | Start of the period a disclosure or figure covers. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="periodEnd"></a>`pwm:periodEnd` period end | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | End of the period a disclosure or figure covers. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(4)(c) costs and charges information; Delegated Regulation 2017/565 Art. 50; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="enhancesServiceQuality"></a>`pwm:enhancesServiceQuality` enhances service quality | [inducement disclosure](#InducementDisclosure) → [boolean](http://www.w3.org/2001/XMLSchema#boolean) (XSD) | Whether the payment is designed to enhance the quality of the service to the client. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 24(9) inducements; Delegated Regulation 2017/565 Art. 11; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="distributionStrategyReference"></a>`pwm:distributionStrategyReference` distribution strategy reference | [product approval](#ProductApproval) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Reference to the distribution strategy for the product. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 16(3) and Art. 24(2) product governance, target market; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="nextReviewDueAt"></a>`pwm:nextReviewDueAt` next review due at | any → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | When the next review is due. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 16(3) and Art. 24(2) product governance, target market; **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="redressAmount"></a>`pwm:redressAmount` redress amount | [complaint outcome](#ComplaintOutcome) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Redress paid to the client, in the stated currency. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="rootCause"></a>`pwm:rootCause` root cause | [complaint outcome](#ComplaintOutcome) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Root cause found for the complaint. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="complaintReceivedAt"></a>`pwm:complaintReceivedAt` complaint received at | [complaint](#Complaint) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | When the complaint was received. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="vulnerabilityFlaggedAt"></a>`pwm:vulnerabilityFlaggedAt` vulnerability flagged at | [vulnerability indicator](#VulnerabilityIndicator) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | When the indicator was raised. | **REG** [FCA FG21/1](#ref-UK-FCA-FG21-1)† FCA FG21/1 four drivers of vulnerability: health, life events, resilience, capability; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="reviewFrequencyMonths"></a>`pwm:reviewFrequencyMonths` review frequency in months | [suitability review](#SuitabilityReview) → [positiveInteger](http://www.w3.org/2001/XMLSchema#positiveInteger) (XSD) | Agreed frequency of periodic suitability reviews, in months. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="performedAt"></a>`pwm:performedAt` performed at | [suitability review](#SuitabilityReview) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | When the review was performed. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 25(2) suitability, periodic assessment under Delegated Regulation 2017/565 Art. 54(12); **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="orderQuantity"></a>`pwm:orderQuantity` order quantity | [order](#Order) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Quantity ordered. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="limitPrice"></a>`pwm:limitPrice` limit price | [order](#Order) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Limit price of a limit order. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="orderPlacedAt"></a>`pwm:orderPlacedAt` order placed at | [order](#Order) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | When the order was placed. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="executedQuantity"></a>`pwm:executedQuantity` executed quantity | [execution](#Execution) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Quantity filled. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="executionPrice"></a>`pwm:executionPrice` execution price | [execution](#Execution) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Price of the fill. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="executedAt"></a>`pwm:executedAt` executed at | [execution](#Execution) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | When the fill happened. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="executionVenue"></a>`pwm:executionVenue` execution venue | [execution](#Execution) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Venue where the fill happened. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="allocatedQuantity"></a>`pwm:allocatedQuantity` allocated quantity | [allocation](#Allocation) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Quantity assigned to the account. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="venueRationale"></a>`pwm:venueRationale` venue rationale | [best execution record](#BestExecutionRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Why the venue was chosen. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="executionPolicyReference"></a>`pwm:executionPolicyReference` execution policy reference | [best execution record](#BestExecutionRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Version of the best execution policy applied. | **REG** [MiFID II](#ref-EU-MIFID2)† MiFID II Art. 27 best execution; Delegated Regulation 2017/565 Art. 64; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="effectiveAt"></a>`pwm:effectiveAt` effective at | [corporate action](#CorporateAction) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | When the action takes effect. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="reportingYear"></a>`pwm:reportingYear` reporting year | [tax reporting record](#TaxReportingRecord) → [integer](http://www.w3.org/2001/XMLSchema#integer) (XSD) | Calendar year reported. | **REG** [OECD CRS](#ref-OECD-CRS) OECD Common Reporting Standard; US FATCA reporting; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="reportedToJurisdiction"></a>`pwm:reportedToJurisdiction` reported to jurisdiction | [tax reporting record](#TaxReportingRecord) → [string](http://www.w3.org/2001/XMLSchema#string) (XSD) | Jurisdiction reported to, as an ISO 3166-1 alpha-2 code. | **REG** [OECD CRS](#ref-OECD-CRS) OECD Common Reporting Standard; US FATCA reporting; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="reportSubmittedAt"></a>`pwm:reportSubmittedAt` report submitted at | [tax reporting record](#TaxReportingRecord) → [dateTime](http://www.w3.org/2001/XMLSchema#dateTime) (XSD) | When the report was submitted. | **REG** [OECD CRS](#ref-OECD-CRS) OECD Common Reporting Standard; US FATCA reporting; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified |
+| <a id="facilityLimit"></a>`pwm:facilityLimit` facility limit | [lending facility](#LendingFacility) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Credit limit. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="maxLoanToValue"></a>`pwm:maxLoanToValue` maximum loan to value | [lending facility](#LendingFacility) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | Maximum loan-to-value as a fraction from 0 to 1. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+| <a id="performanceValue"></a>`pwm:performanceValue` performance value | [performance figure](#PerformanceFigure) → [decimal](http://www.w3.org/2001/XMLSchema#decimal) (XSD) | The figure, as a decimal fraction. | **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10: NEW specialized record or property; no exact standard term identified; **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) PWM scope: complaint handling, corporate actions, income, lending and performance provenance |
+
+### Code lists
+
+<a id="DisclosureTimingScheme"></a>
+#### disclosure timings (`pwm:DisclosureTimingScheme`)
+
+
+
+Used by: [`disclosureTiming`](#disclosureTiming)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: MiFID II Art. 24(4)
+
+| Code | Concept | Definition |
+|---|---|---|
+| ex_ante | <a id="TimingExAnte"></a>ex ante (`pwm:TimingExAnte`) | Before the service is provided. |
+| ex_post | <a id="TimingExPost"></a>ex post (`pwm:TimingExPost`) | After the period, on the actual costs. |
+
+<a id="CostCategoryScheme"></a>
+#### cost categories (`pwm:CostCategoryScheme`)
+
+
+
+Used by: [`costCategory`](#costCategory)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: DR 2017/565 Art. 50
+
+| Code | Concept | Definition |
+|---|---|---|
+| one_off | <a id="CostOneOff"></a>one-off (`pwm:CostOneOff`) | One-off charges. |
+| ongoing | <a id="CostOngoing"></a>ongoing (`pwm:CostOngoing`) | Ongoing charges. |
+| transaction | <a id="CostTransaction"></a>transaction (`pwm:CostTransaction`) | Transaction costs. |
+| incidental | <a id="CostIncidental"></a>incidental (`pwm:CostIncidental`) | Incidental costs, such as performance fees. |
+| ancillary | <a id="CostAncillary"></a>ancillary (`pwm:CostAncillary`) | Ancillary services. |
+
+<a id="TargetMarketReviewOutcomeScheme"></a>
+#### target market review outcomes (`pwm:TargetMarketReviewOutcomeScheme`)
+
+
+
+Used by: [`targetMarketReviewOutcome`](#targetMarketReviewOutcome)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: MiFID II Art. 16(3)
+
+| Code | Concept | Definition |
+|---|---|---|
+| confirmed | <a id="ReviewConfirmed"></a>confirmed (`pwm:ReviewConfirmed`) | The target market stands. |
+| amended | <a id="ReviewAmended"></a>amended (`pwm:ReviewAmended`) | The target market was changed. |
+| withdrawn | <a id="ReviewWithdrawn"></a>withdrawn (`pwm:ReviewWithdrawn`) | The product was withdrawn from distribution. |
+
+<a id="ComplaintResolutionScheme"></a>
+#### complaint resolutions (`pwm:ComplaintResolutionScheme`)
+
+
+
+Used by: [`complaintResolution`](#complaintResolution)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: PWM
+
+| Code | Concept | Definition |
+|---|---|---|
+| upheld | <a id="ResolutionUpheld"></a>upheld (`pwm:ResolutionUpheld`) | Upheld. |
+| partially_upheld | <a id="ResolutionPartlyUpheld"></a>partially upheld (`pwm:ResolutionPartlyUpheld`) | Partially upheld. |
+| not_upheld | <a id="ResolutionNotUpheld"></a>not upheld (`pwm:ResolutionNotUpheld`) | Not upheld. |
+| withdrawn | <a id="ResolutionWithdrawn"></a>withdrawn by client (`pwm:ResolutionWithdrawn`) | Withdrawn by the client. |
+
+<a id="VulnerabilityDriverScheme"></a>
+#### vulnerability drivers (`pwm:VulnerabilityDriverScheme`)
+
+
+
+Used by: [`vulnerabilityDriver`](#vulnerabilityDriver)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: FCA FG21/1
+
+| Code | Concept | Definition |
+|---|---|---|
+| health | <a id="DriverHealth"></a>health (`pwm:DriverHealth`) | Health conditions that affect the ability to make decisions. |
+| life_events | <a id="DriverLifeEvent"></a>life events (`pwm:DriverLifeEvent`) | Life events such as bereavement. |
+| resilience | <a id="DriverResilience"></a>resilience (`pwm:DriverResilience`) | Low ability to withstand financial or emotional shocks. |
+| capability | <a id="DriverCapability"></a>capability (`pwm:DriverCapability`) | Low knowledge of financial matters or low digital skills. |
+
+<a id="SuitabilityReviewResultScheme"></a>
+#### suitability review results (`pwm:SuitabilityReviewResultScheme`)
+
+
+
+Used by: [`suitabilityReviewResult`](#suitabilityReviewResult)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: MiFID II Art. 25(2)
+
+| Code | Concept | Definition |
+|---|---|---|
+| still_suitable | <a id="SuitabilityStill"></a>still suitable (`pwm:SuitabilityStill`) | The recommendation remains suitable. |
+| no_longer_suitable | <a id="SuitabilityNo"></a>no longer suitable (`pwm:SuitabilityNo`) | The recommendation is no longer suitable. |
+| update_required | <a id="SuitabilityUpdate"></a>update required (`pwm:SuitabilityUpdate`) | The assessment needs updating. |
+
+<a id="OrderSideScheme"></a>
+#### order sides (`pwm:OrderSideScheme`)
+
+
+
+Used by: [`orderSide`](#orderSide)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: PWM
+
+| Code | Concept | Definition |
+|---|---|---|
+| buy | <a id="SideBuy"></a>buy (`pwm:SideBuy`) | Buy. |
+| sell | <a id="SideSell"></a>sell (`pwm:SideSell`) | Sell. |
+
+<a id="OrderTypeScheme"></a>
+#### order types (`pwm:OrderTypeScheme`)
+
+
+
+Used by: [`orderType`](#orderType)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: PWM
+
+| Code | Concept | Definition |
+|---|---|---|
+| market | <a id="TypeMarket"></a>market (`pwm:TypeMarket`) | Market order. |
+| limit | <a id="TypeLimit"></a>limit (`pwm:TypeLimit`) | Limit order. |
+
+<a id="OrderStatusScheme"></a>
+#### order statuses (`pwm:OrderStatusScheme`)
+
+
+
+Used by: [`orderStatus`](#orderStatus)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: PWM
+
+| Code | Concept | Definition |
+|---|---|---|
+| placed | <a id="OrderPlaced"></a>placed (`pwm:OrderPlaced`) | Placed. |
+| partially_filled | <a id="OrderPartlyFilled"></a>partially filled (`pwm:OrderPartlyFilled`) | Partially filled. |
+| filled | <a id="OrderFilled"></a>filled (`pwm:OrderFilled`) | Filled. |
+| canceled | <a id="OrderCanceled"></a>canceled (`pwm:OrderCanceled`) | Canceled. |
+| rejected | <a id="OrderRejected"></a>rejected (`pwm:OrderRejected`) | Rejected. |
+
+<a id="ExecutionFactorScheme"></a>
+#### best execution factors (`pwm:ExecutionFactorScheme`)
+
+
+
+Used by: [`executionFactor`](#executionFactor)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: MiFID II Art. 27(1)
+
+| Code | Concept | Definition |
+|---|---|---|
+| price | <a id="FactorPrice"></a>price (`pwm:FactorPrice`) | Price. |
+| costs | <a id="FactorCosts"></a>costs (`pwm:FactorCosts`) | Costs. |
+| speed | <a id="FactorSpeed"></a>speed (`pwm:FactorSpeed`) | Speed. |
+| likelihood | <a id="FactorLikelihood"></a>likelihood of execution and settlement (`pwm:FactorLikelihood`) | Likelihood of execution and settlement. |
+| size | <a id="FactorSize"></a>size (`pwm:FactorSize`) | Size. |
+| nature | <a id="FactorNature"></a>nature (`pwm:FactorNature`) | Nature of the order. |
+
+<a id="CorporateActionKindScheme"></a>
+#### corporate action kinds (`pwm:CorporateActionKindScheme`)
+
+
+
+Used by: [`corporateActionKind`](#corporateActionKind)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: PWM
+
+| Code | Concept | Definition |
+|---|---|---|
+| dividend | <a id="ActionDividend"></a>dividend (`pwm:ActionDividend`) | Dividend. |
+| coupon | <a id="ActionCoupon"></a>coupon (`pwm:ActionCoupon`) | Coupon payment. |
+| split | <a id="ActionSplit"></a>split (`pwm:ActionSplit`) | Split. |
+| merger | <a id="ActionMerger"></a>merger (`pwm:ActionMerger`) | Merger. |
+| rights_issue | <a id="ActionRightsIssue"></a>rights issue (`pwm:ActionRightsIssue`) | Rights issue. |
+| redemption | <a id="ActionRedemption"></a>redemption (`pwm:ActionRedemption`) | Redemption. |
+
+<a id="IncomeKindScheme"></a>
+#### income kinds (`pwm:IncomeKindScheme`)
+
+
+
+Used by: [`incomeKind`](#incomeKind)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: PWM
+
+| Code | Concept | Definition |
+|---|---|---|
+| dividend | <a id="IncomeDividend"></a>dividend (`pwm:IncomeDividend`) | Dividend income. |
+| interest | <a id="IncomeInterest"></a>interest (`pwm:IncomeInterest`) | Interest income. |
+| coupon | <a id="IncomeCoupon"></a>coupon (`pwm:IncomeCoupon`) | Coupon income. |
+
+<a id="TaxReportingRegimeScheme"></a>
+#### tax reporting regimes (`pwm:TaxReportingRegimeScheme`)
+
+
+
+Used by: [`reportingRegime`](#reportingRegime)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: OECD CRS; FATCA
+
+| Code | Concept | Definition |
+|---|---|---|
+| crs | <a id="RegimeCRS"></a>CRS (`pwm:RegimeCRS`) | OECD Common Reporting Standard. |
+| fatca | <a id="RegimeFATCA"></a>FATCA (`pwm:RegimeFATCA`) | US Foreign Account Tax Compliance Act. |
+
+<a id="FacilityKindScheme"></a>
+#### lending facility kinds (`pwm:FacilityKindScheme`)
+
+
+
+Used by: [`facilityKind`](#facilityKind)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: PWM
+
+| Code | Concept | Definition |
+|---|---|---|
+| lombard | <a id="FacilityLombard"></a>Lombard (`pwm:FacilityLombard`) | Lombard loan against a securities portfolio. |
+| mortgage | <a id="FacilityMortgage"></a>mortgage (`pwm:FacilityMortgage`) | Mortgage. |
+| structured_loan | <a id="FacilityStructured"></a>structured loan (`pwm:FacilityStructured`) | Structured loan. |
+| other | <a id="FacilityOther"></a>other (`pwm:FacilityOther`) | Other credit. |
+
+<a id="PerformanceMeasureScheme"></a>
+#### performance measures (`pwm:PerformanceMeasureScheme`)
+
+
+
+Used by: [`performanceMeasure`](#performanceMeasure)
+
+References: **NEW** [PWM practitioner definition](#ref-PWM-PRACTICE) 0.10 business scope; grounds: PWM
+
+| Code | Concept | Definition |
+|---|---|---|
+| time_weighted_return | <a id="MeasureTWR"></a>time-weighted return (`pwm:MeasureTWR`) | Time-weighted return. |
+| money_weighted_return | <a id="MeasureMWR"></a>money-weighted return (`pwm:MeasureMWR`) | Money-weighted return. |
+| absolute_return | <a id="MeasureAbsolute"></a>absolute return (`pwm:MeasureAbsolute`) | Absolute return. |
 
 <a id="rules"></a>
 
@@ -4884,7 +5373,7 @@ Applies to subjects of [requires two signatures](#requiresTwoSignatures). Source
 
 Applies to [policy decision](#PolicyDecision). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
 
-- A decision made after the use-case review date expires must be DENY (Kognita 0.4 item 8).
+- A decision made after the use-case review time expires must be DENY (Kognita 0.4 item 8).
 
 <a id="RiskAppetiteDecisionShape"></a>
 ### RiskAppetiteDecisionShape
@@ -5929,6 +6418,29 @@ Applies to [fairness report](#FairnessReport). Sources: [Kognita roadmap](#ref-K
 
 *Checks recorded evidence; runtime enforcement remains external.*
 
+<a id="EvaluationGateShape"></a>
+### EvaluationGateShape
+
+Applies to [evaluation gate](#EvaluationGate). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:gateUseCase: minimum count 1, maximum count 1, class pwm:AIUseCase.
+- pwm:gateMetricName: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:gateMinimumScore: between 0 and 1.
+- pwm:gateMaximumScore: between 0 and 1.
+- A gate states a minimum or a maximum score, not both and not neither (Kognita 0.6 item 11).
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ActivationGateShape"></a>
+### ActivationGateShape
+
+Applies to [AI agent](#AIAgent). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- An agent activated on an evaluation result that misses a minimum gate for its use case (Kognita 0.6 item 11).
+- An agent activated on an evaluation result that exceeds a maximum gate for its use case (Kognita 0.6 item 11).
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
 <a id="ReasoningTraceShape"></a>
 ### ReasoningTraceShape
 
@@ -5998,12 +6510,222 @@ Applies to [sensitive attribute inference](#SensitiveAttributeInference). Source
 
 *Checks recorded evidence; runtime enforcement remains external.*
 
+<a id="CostDisclosureShape"></a>
+### CostDisclosureShape
+
+Applies to [cost disclosure](#CostDisclosure). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:disclosureTiming: minimum count 1, maximum count 1.
+- pwm:disclosedToClient: minimum count 1, maximum count 1, class pwm:Client.
+- pwm:disclosedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:coversMandate: minimum count 1, maximum count 1, class pwm:Mandate.
+- pwm:totalCostAmount: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:currency: minimum count 1, maximum count 1.
+- pwm:hasCostItem: minimum count 1, class pwm:CostItem.
+- pwm:includesInducements: minimum count 1, maximum count 1, datatype xsd:boolean.
+- An ex post disclosure states the period it covers (MiFID II Art. 24(4); Delegated Regulation 2017/565 Art. 50).
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="CostItemShape"></a>
+### CostItemShape
+
+Applies to [cost item](#CostItem). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:costCategory: minimum count 1, maximum count 1.
+- pwm:amount: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:currency: minimum count 1, maximum count 1.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="InducementDisclosureShape"></a>
+### InducementDisclosureShape
+
+Applies to [inducement disclosure](#InducementDisclosure). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:disclosesPayment: minimum count 1, maximum count 1, class pwm:ThirdPartyPayment.
+- pwm:disclosedToClient: minimum count 1, maximum count 1, class pwm:Client.
+- pwm:disclosedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:enhancesServiceQuality: minimum count 1, maximum count 1, datatype xsd:boolean.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ProductApprovalShape"></a>
+### ProductApprovalShape
+
+Applies to [product approval](#ProductApproval). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:approvesProduct: minimum count 1, maximum count 1, class pwm:Product.
+- pwm:approvedForTargetMarket: minimum count 1, maximum count 1, class pwm:TargetMarket.
+- pwm:distributionStrategyReference: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:approvedBy: minimum count 1, maximum count 1.
+- prov:generatedAtTime: minimum count 1, maximum count 1, datatype xsd:dateTime.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="TargetMarketReviewShape"></a>
+### TargetMarketReviewShape
+
+Applies to [target market review](#TargetMarketReview). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:reviewsTargetMarket: minimum count 1, maximum count 1, class pwm:TargetMarket.
+- pwm:targetMarketReviewOutcome: minimum count 1, maximum count 1.
+- pwm:reviewedAt: minimum count 1, maximum count 1, datatype xsd:dateTime, before the next review date.
+- pwm:nextReviewDueAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ComplaintOutcomeShape"></a>
+### ComplaintOutcomeShape
+
+Applies to [complaint outcome](#ComplaintOutcome). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:complaintOf: minimum count 1, maximum count 1, class pwm:Complaint.
+- pwm:complaintResolution: minimum count 1, maximum count 1.
+- pwm:reviewedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- Redress needs a currency (Kognita record of the outcome).
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="SuitabilityReviewShape"></a>
+### SuitabilityReviewShape
+
+Applies to [suitability review](#SuitabilityReview). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:reviewsSuitability: minimum count 1, maximum count 1, class pwm:SuitabilityAssessment.
+- pwm:suitabilityReviewResult: minimum count 1, maximum count 1.
+- pwm:reviewFrequencyMonths: minimum count 1, maximum count 1, datatype xsd:positiveInteger.
+- pwm:performedAt: minimum count 1, maximum count 1, datatype xsd:dateTime, before the next review date.
+- pwm:nextReviewDueAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="OrderShape"></a>
+### OrderShape
+
+Applies to [order](#Order). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:orderSide: minimum count 1, maximum count 1.
+- pwm:orderType: minimum count 1, maximum count 1.
+- pwm:orderStatus: minimum count 1, maximum count 1.
+- pwm:orderQuantity: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:inInstrument: minimum count 1, maximum count 1, class fibo-fbc-fi-fi:FinancialInstrument.
+- pwm:orderAccount: minimum count 1, maximum count 1, class fibo-fbc-pas-caa:Account.
+- pwm:orderPlacedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- A limit order states its limit price.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="ExecutionShape"></a>
+### ExecutionShape
+
+Applies to [execution](#Execution). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:executesOrder: minimum count 1, maximum count 1, class pwm:Order.
+- pwm:executedQuantity: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:executionPrice: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:executedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- pwm:executionVenue: minimum count 1, maximum count 1, datatype xsd:string.
+- A fill cannot exceed the order quantity.
+- Allocations of one execution cannot add up to more than was executed.
+- A fill cannot happen before the order was placed.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="AllocationShape"></a>
+### AllocationShape
+
+Applies to [allocation](#Allocation). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:allocatesExecution: minimum count 1, maximum count 1, class pwm:Execution.
+- pwm:allocatedToAccount: minimum count 1, maximum count 1, class fibo-fbc-pas-caa:Account.
+- pwm:allocatedQuantity: minimum count 1, maximum count 1, datatype xsd:decimal.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="BestExecutionRecordShape"></a>
+### BestExecutionRecordShape
+
+Applies to [best execution record](#BestExecutionRecord). Sources: [MiFID II](#ref-EU-MIFID2), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:bestExecutionOf: minimum count 1, maximum count 1, class pwm:Execution.
+- pwm:executionFactor: minimum count 1.
+- pwm:venueRationale: minimum count 1, maximum count 1, datatype xsd:string.
+- pwm:executionPolicyReference: minimum count 1, maximum count 1, datatype xsd:string.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="CorporateActionShape"></a>
+### CorporateActionShape
+
+Applies to [corporate action](#CorporateAction). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:corporateActionKind: minimum count 1, maximum count 1.
+- pwm:affectsInstrument: minimum count 1, maximum count 1, class fibo-fbc-fi-fi:FinancialInstrument.
+- pwm:effectiveAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="IncomeReceiptShape"></a>
+### IncomeReceiptShape
+
+Applies to [income receipt](#IncomeReceipt). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:incomeKind: minimum count 1, maximum count 1.
+- pwm:incomeToAccount: minimum count 1, maximum count 1, class fibo-fbc-pas-caa:Account.
+- pwm:amount: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:currency: minimum count 1, maximum count 1.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="TaxReportingRecordShape"></a>
+### TaxReportingRecordShape
+
+Applies to [tax reporting record](#TaxReportingRecord). Sources: [OECD CRS](#ref-OECD-CRS), [PWM practitioner definition](#ref-PWM-PRACTICE).
+
+- pwm:reportingRegime: minimum count 1, maximum count 1.
+- pwm:reportingYear: minimum count 1, maximum count 1, datatype xsd:integer.
+- pwm:reportedAccount: minimum count 1, maximum count 1, class fibo-fbc-pas-caa:Account.
+- pwm:reportedToJurisdiction: an ISO 3166-1 alpha-2 code.
+- pwm:amount: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:currency: minimum count 1, maximum count 1.
+- pwm:reportSubmittedAt: minimum count 1, maximum count 1, datatype xsd:dateTime.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="LendingFacilityShape"></a>
+### LendingFacilityShape
+
+Applies to [lending facility](#LendingFacility). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:facilityKind: minimum count 1, maximum count 1.
+- pwm:facilityClient: minimum count 1, maximum count 1, class pwm:Client.
+- pwm:facilityLimit: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:currency: minimum count 1, maximum count 1.
+- pwm:maxLoanToValue: between 0 and 1.
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
+<a id="PerformanceFigureShape"></a>
+### PerformanceFigureShape
+
+Applies to [performance figure](#PerformanceFigure). Sources: [Kognita roadmap](#ref-KOG-ROADMAP).
+
+- pwm:performanceOf: minimum count 1, maximum count 1, class pwm:Portfolio.
+- pwm:performanceMeasure: minimum count 1, maximum count 1.
+- pwm:performanceValue: minimum count 1, maximum count 1, datatype xsd:decimal.
+- pwm:periodStart: minimum count 1, maximum count 1, datatype xsd:dateTime, before periodEnd.
+- pwm:periodEnd: minimum count 1, maximum count 1, datatype xsd:dateTime.
+- A performance figure cites a registered calculation service; PWM never computes it (Kognita 0.6 item 6).
+
+*Checks recorded evidence; runtime enforcement remains external.*
+
 <a id="CodeListShapes"></a>
 ### Code lists
 
 Applies to every coded property. Sources: [SKOS](#ref-W3C-SKOS).
 
-- Each of the 84 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
+- Each of the 101 coded properties takes its values only from the code list it is bound to with pwm:valuesFrom. The shapes, named pwmsh:CodeList_ followed by the property name, are generated from the bindings. List replacement requires firm shapes and review of handwritten constraints and code-dependent rules; see https://github.com/mze3e/kognita/blob/main/docs/ontology/pwm/README.md.
 
 ## Extending PWM for an institution
 
@@ -6021,7 +6743,7 @@ Save as `firm.ttl`:
 @prefix firm: <https://example.org/firm/ontology#> .
 
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.8> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.10> .
 
 # The firm's own risk scale, in place of the illustrative one
 firm:RiskScale a skos:ConceptScheme ; skos:prefLabel "Firm risk scale"@en .
@@ -6151,12 +6873,43 @@ Other code lists may require changes to handwritten constraints and code-depende
 
 | Version | Date | Change |
 |---|---|---|
+| 0.10 | 2026-11-19 | Built the roadmap releases 0.9 (business scope) and 0.10 (supervisory readiness and binding to Kognita) as one release. New module 13: costs and charges (CostDisclosure, CostItem, InducementDisclosure), product governance (ProductApproval, TargetMarketReview, negative target market), client circumstances (ComplaintOutcome, SuitabilityReview, structured vulnerability drivers), operations (Order, Execution, Allocation, BestExecutionRecord, CorporateAction, IncomeReceipt, TaxReportingRecord for CRS and FATCA, LendingFacility with LombardFacility as one kind) and PerformanceFigure, which records provenance and never computes. Module 12 additions: EvaluationGate with an activation check, the eight hostile-agent drill scenarios as codes, inventory attributes hasDocumentation and hasComponent. Artifacts: an AI inventory profile (MAS AIRG 4.7 and footnote 25), the ten reconstruction questions as SPARQL queries plus an inventory report and a superseded-source query, a mapping table from all 114 Kognita vocabulary values and 25 policy-pack policies to PWM IRIs, a JSON-LD context and a round trip that reads a signed Kognita evidence export as PWM RDF and checks the chain and the shapes, five jurisdiction profiles (SG, HK, CH, EU, UK) as data, a worked code-list profile, and an AIRG paragraph map that maps every paragraph row in the MAS table of the control frameworks to PWM terms or to boundary. Datatype migration: nextReviewDate and retentionUntil are xsd:dateTime and freshnessThreshold is replaced by freshnessThresholdSeconds, so every datatype is in the OWL 2 datatype map; a review time is now an instant, and a date-only value from earlier versions reads as the end of that day. The 0.8 deprecated aliases are removed. Not done: verification of the 24 instrument-level citations (each is marked in SPEC), FIBO alignment for the new operations terms, the OWL DL profile and HermiT runs (need ROBOT), and a JSON-LD context for register exports (evidence exports only). |
 | 0.8 | 2026-11-18 | Brought PWM level with Kognita software 0.8, built as one release that covers milestones 0.6 to 0.8: milestone 0.7 trust and resilience (signing keys, rotation and revocation, anchors, recovery bundles, external reviews, the model-provider register, failover, model-change detection, the dependency map, concentration measures, failure drills, retention by record class, incident reports), milestone 0.8 runtime assurance (assurance policy, agent manifest, external-agent assertions, deployment attestations, update approvals, approved components and advisories, technology transfer classification, production outcomes, supervisory conformance reports) and the milestone 0.6 records the 0.5 review found missing (verifier independence, evaluation evidence, fairness reports, reasoning traces, claim envelope fields, memory governance, learning exports and exclusions, sensitive attribute inferences). New module 12. Every Kognita vocabulary enum now has a PWM code list whose notations equal the enum values, checked by tests/test_kognita_vocabulary.py: 15 missing evidence event types and the ActorType, ApprovalStatus, EgressDecision and CheckResult lists added, and every one of the 320 concepts has a notation. Renamed to US English with deprecated aliases kept for one version: AuthorisedSignatory, BehaviourAnomaly, BehaviourBaseline, BookingCentre, bookingCentreCode, CommContextualisedInsight, InternationalOrganisationPEP, UnusualAgentBehaviour and VerbAnalyse; PossibleProviderCapability renamed PossibleBankCapability to match Kognita. Ranges added to ten properties that had none. Reasoning axioms added: disjoint mandate types and disjoint agent, model, use case, system and provider, AI agent disjoint from person, and 14 functional properties. Every class and property now has example data or a documented exception, enforced by tests/test_example_coverage.py. Kognita itself moved to US spelling for its identifiers, values and modules, so the verb, drill, reason-code and attribute notations changed with it (analyze, license, unauthorized-network, C1-LABELED, booking_center). Source pinned to Kognita 0.9.0. |
 | 0.5 | 2026-11-04 | Merged the 0.4 live authority observations and evidence-chain build check. Corrected delegation rank direction, typed review expiry, resolved held approvals before allowed actions, explicit field scope and PROV prefixes; refined constraint messages. Aligned to roadmap milestone 0.5: workload identity, explicit scoped and expiring human authority, autonomy evidence and step-down, blast-radius caps, content trust, instruction assurance, anomaly records, narrowing delegation chains, capability grants, fleets, sandbox output, reversibility, adversarial tests, enforcement attestations and stopping in-flight calls. Existing governance terms are reused. Configuration/grants are SlowContext; execution evidence and sandbox decision output are MediumContext. AuthorityLiveStatus uses FastContext for delegation revocation and kill-switch state; firm limits and promotion gates require dated approval by a risk committee, data governance committee or chief risk officer. Authority checks bind completed approval to the governing policy, use case and run, compare call classification by rank, cover every tool verb and require live entitlement scope coverage. Review fixes reject duplicate credential references on distinct workload identities, apply maximum autonomy as fallback for irreversible approval, and clarify that grant checks apply only when a call relies on a grant. Review of 4 Nov 2026: removed the duplicate liveStatusSubject, liveStatusValue and observedAt fields, keeping the canonical statusOf, revoked or engaged, asOf and observedBy; a delegation's permitted data class is now a checked ceiling (DelegationCeilingShape); an agent's effective autonomy cannot exceed its maximum (AgentAutonomyShape). |
 | 0.4 | 2026-11-03 | Context review: durable execution evidence, snapshots and checkpoints use MediumContext; DelegatedAuthority and KillSwitch use SlowContext; FastContext is reserved for live financial state. Aligned to roadmap milestone 0.4: structured ingestion provenance, versioned declarative policy and scenarios, policy packs, recorder replay, RM edit hashes, review queues and coverage, scoped breaker incidents, affected-client results and outcome classifications. Existing lifecycle and register terms are reused; removed graph item 2 adds nothing. |
 | 0.3 | 2026-11-03 | Aligned to roadmap milestone 0.3: run budgets, durable approval continuation, gateway model and MCP calls, classifier evidence, pinned checks and retention, reconstruction coverage, failure mode and authenticated client identity bindings. Review fixes: ProxyCall uses the pre-drafting PolicyDecisionModelAllow for its portfolio read, preserving the evidence chain. retentionDuration uses xsd:nonNegativeInteger in whole days; legacy date and duration ranges remain unchanged with an explicit datatype-map limitation and migration open item. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. Governed calls require a held decision in the same run with an ApprovalRequest at a checkpoint in the call's run resolved as ApprovalApproved; pending, denied, missing-request and cross-run cases, including decisions naming two runs with approval only in the other run, violate GovernedCallShape (KOG roadmap 0.3 item 2; MAS AIRG 5.9). |
 | 0.2 | 2026-11-03 | Reverified FIBO grounding and maturity; added EU sustainability preferences, code list, two written rules and fixtures; versioned shapes IRI; clarified software release 0.7.0 provenance and repaired the control framework link. |
 | 0.1 | 2026-11-02 | First public draft: 10 modules, reference register, SHACL shapes, example data and negative tests. |
+
+## Gap analysis for 0.10
+
+Compared PWM 0.8 with the roadmap's 0.9 (business scope and verified sources) and 0.10 (supervisory readiness and binding to Kognita) before adding terms and artifacts. Business terms are in `src/13-business-scope.ttl`, generated by `tools/gen_module13.py` with their shapes, example data and negative fixtures.
+
+## 0.9 business scope
+
+| Roadmap item | Already present in 0.8 | Added in 0.10 |
+|---|---|---|
+| Costs and charges | `Fee`, `ThirdPartyPayment` | `CostDisclosure` (ex ante and ex post; an ex post disclosure must state its period), `CostItem`, `InducementDisclosure` with the quality-enhancement flag |
+| Product governance | `TargetMarket`, `ApprovedProductList` | `ProductApproval`, `TargetMarketReview` (review before next due), `negativeTargetMarketCategory` |
+| Client circumstances | `VulnerabilityIndicator`, `Complaint`, `PeriodicReview` (due diligence) | `vulnerabilityDriver` (the four FCA FG21/1 drivers), determination by a person, `ComplaintOutcome`, `SuitabilityReview` |
+| Operations | `Position`, `LombardFacility`, `hasHolding` | `Order` (a limit order states its price), `Execution` (not above the order, not before it, allocations not above the fill), `Allocation`, `BestExecutionRecord` with the six MiFID II factors, `CorporateAction`, `IncomeReceipt`, `TaxReportingRecord` (CRS and FATCA), `LendingFacility` with `LombardFacility` as a subclass |
+| Performance | `Valuation` with a calculation service | `PerformanceFigure`: must cite a registered calculation service; period start before end |
+| Citation verification | 24 of 47 at instrument level | **Not done.** Needs the official texts. The new regulatory citations are instrument-level and marked with a dagger in SPEC |
+| FIBO alignment of operations terms | none | **Not done.** Needs FIBO IRIs checked against the pinned commit |
+
+## 0.10 supervisory readiness and binding
+
+| Roadmap item | Added in 0.10 |
+|---|---|
+| AIRG paragraph map | `AIRG_MAP.md`, generated: every paragraph row of the MAS table in control-frameworks.md is mapped to PWM terms or to boundary. Ten existing terms gained MAS AIRG citations to close nine gaps |
+| Inventory profile | `profiles/ai-inventory-profile.ttl` (MAS AIRG 4.7 and footnote 25) and `queries/inventory-report.rq` |
+| Reconstruction queries | `queries/q01` to `q10`, one per question, each tested against the example interaction; plus `affected-by-superseded-source.rq` for house-view and source change propagation |
+| Mapping table | `mapping/kognita-pwm-map.json`: 114 vocabulary values and 25 policies; the vocabulary check already ran in CI |
+| JSON-LD context and round trip | `context/pwm-evidence.jsonld` and `tools/roundtrip.py`: a signed export written by Kognita, verified by Kognita, read as PWM RDF that passes the chain check and the shapes. Evidence exports only |
+| Jurisdiction profiles | `profiles/jurisdictions/` for SG, HK, CH, EU and UK: investor categories mapped to retail or non-retail, as data. Disclosure triggers and cross-border rules are left to the firm |
+| Code-list profiles | `profiles/code-list-profile-example.*` with a test on the full example |
+| 0.6 to 0.8 leftovers | `EvaluationGate` and an activation check; the eight hostile-agent drill scenarios as codes; `hasDocumentation` and `hasComponent` for inventory attributes |
+| Datatypes | `nextReviewDate` and `retentionUntil` are `xsd:dateTime`; `freshnessThresholdSeconds` replaces `freshnessThreshold` |
 
 ## Gap analysis for 0.8
 
@@ -6292,19 +7045,19 @@ Three checks were added after testing the 0.5 shapes by breaking one fact at a t
 Review regression fixtures in `examples/pwm-review-invalid.ttl` additionally isolate missing and exceeded delegation scope-cap observations and an unregistered decision use case. A within-cap observation provides the positive counterpart. These supplemental cases are tested separately from the counted main negative fixture.
 
 
-## Verification for 0.8
+## Verification for 0.10
 
 New 0.8 records specialize prov:Entity except ProductionOutcome, which specializes InteractionOutcome. They are records about evidence, keys, registers, drills and assurance, not prov:Activity. The 31 Kognita event types are all present in EvidenceEventTypeScheme; MODEL_REFUSAL stays as the one PWM-only value. Code-list notations equal Kognita enum values exactly, checked by tests/test_kognita_vocabulary.py. No new FIBO, OMG or DPV matches are asserted. Ten renamed terms stay declared as deprecated aliases for one version.
 
 New 0.5 records specialize prov:Entity except HumanEntitlement and CapabilityGrant (OMG Commons Authorization), AdversarialTestCase (PolicyTestCase, itself a prov:Entity), and ApprovingAuthorityRole (OMG Commons PartyRole) with RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer subclasses. AuthorityRevocation, FleetHalt and ActionStop are records about interventions, not prov:Activity. AIAgent retains prov:SoftwareAgent and OMG SoftwareAgent. Existing Run, governed calls and Replay retain their activity parents. No new external matches are asserted. All new datatype-property ranges use OWL 2 datatype-map datatypes.
 
-There are 253 node shapes: 168 written targeted shapes, 84 generated targeted shapes and one untargeted helper.
+There are 288 node shapes: 186 written targeted shapes, 101 generated targeted shapes and one untargeted helper.
 
-The positive example contains 309 typed records. The negative fixture contains 308 typed records. There are 214 typed violating records, 94 typed supporting records and 5 untyped violating subjects, yielding 239 expected violations across 219 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
+The positive example contains 330 typed records. The negative fixture contains 332 typed records. There are 234 typed violating records, 98 typed supporting records and 7 untyped violating subjects, yielding 262 expected violations across 241 focus nodes. tools/validate.py checks the exact expected violation multiset; the regression tests require negative coverage of every written shape.
 
-The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.8/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
+The shapes version IRI is `https://ahmedmuzammil.com/ontology/pwm/0.10/pwm-shapes.ttl`; the unversioned shapes IRI remains the latest pointer. Publication is separate from this build.
 
-All 168 written rules have negative fixtures. Two generated code-list rules are exercised there; all 84 generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. Review dates remain valid through the end of that day; absent timezones are interpreted as UTC. A decision on an expired use case must be DENY.
+All 186 written rules have negative fixtures. Two generated code-list rules are exercised there; all 101 generated rules are tested by regression tests. The positive example conforms and its evidence chain is unbroken. All ten reconstruction questions have recorded answers. Every datatype is in the OWL 2 datatype map: 0.10 migrated nextReviewDate and retentionUntil to xsd:dateTime and replaced freshnessThreshold (xsd:duration) with freshnessThresholdSeconds. ROBOT verifies HermiT consistency, also against the merged positive example. No DL profile conformance is claimed for example data using xsd:date and xsd:duration outside the OWL 2 DL datatype map. SHACL checks recorded structure; it does not retrieve payloads, recompute hashes or execute runtime controls. Review expiry is evaluated at a policy decision's recorded generatedAtTime, requiring exactly one timestamp on every decision; historical decisions are judged at their decision time. A review time is an instant; a decision after it must be DENY. A value without an offset is read as UTC. A decision on an expired use case must be DENY.
 
 New 0.4 PROV specializations: IngestedDocument, DeclarativePolicy, PolicyChange, PolicyTestCase, PolicyPack, FlightRecorderSession, RMReviewEdit, ReviewQueue, ReviewQueueEntry, ReviewCoverageReport, AffectedClientQuery, AffectedClientResult and InteractionOutcome specialize prov:Entity. Replay specializes prov:Activity. DocumentElement specializes existing DocumentSection (OMG Commons Document); CircuitBreaker specializes KillSwitch; CircuitBreakerTrip specializes AIIncident (prov:Entity). No PROV activity parent is asserted for recorder manifests, edits or trips.
 

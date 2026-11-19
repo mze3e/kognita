@@ -109,14 +109,14 @@ def test_version_and_counts(tmp_path):
     g = Graph().parse(BASE / 'pwm.ttl')
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     site = 'https://ahmedmuzammil.com/ontology/pwm'
-    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.8')
-    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.8/pwm-shapes.ttl')
-    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.8 (draft)'
-    assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.5')
-    assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.5/pwm-shapes.ttl')
-    assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 325
-    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 253
-    assert len(set(example().subjects(RDF.type, None))) == 309
+    assert g.value(URIRef(site), OWL.versionIRI) == URIRef(site + '/0.10')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.versionIRI) == URIRef(site + '/0.10/pwm-shapes.ttl')
+    assert str(g.value(URIRef(site), OWL.versionInfo)) == '0.10 (draft)'
+    assert g.value(URIRef(site), OWL.priorVersion) == URIRef(site + '/0.8')
+    assert shapes.value(URIRef(site + '/shapes'), OWL.priorVersion) == URIRef(site + '/0.8/pwm-shapes.ttl')
+    assert len(set(g.subjects(RDF.type, SKOS.Concept))) == 382
+    assert len(set(shapes.subjects(RDF.type, validator.SH.NodeShape))) == 288
+    assert len(set(example().subjects(RDF.type, None))) == 330
     import shutil
     shutil.copytree(BASE / 'src', tmp_path / 'src')
     shutil.copy(BASE / 'pwm-shapes.ttl', tmp_path / 'pwm-shapes.ttl')
@@ -124,9 +124,9 @@ def test_version_and_counts(tmp_path):
     shutil.copy(BASE / 'GAP_ANALYSIS.md', tmp_path / 'GAP_ANALYSIS.md')
     counts = builder.build(tmp_path, None)['counts']
     assert (counts['classes'], counts['objectProperties'], counts['datatypeProperties'],
-            counts['codeLists'], counts['rules'], counts['codeListRules']) == (231, 273, 307, 63, 168, 84)
-    assert sum(validator.EXPECTED.values()) == 239
-    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 308
+            counts['codeLists'], counts['rules'], counts['codeListRules']) == (244, 317, 342, 79, 186, 101)
+    assert sum(validator.EXPECTED.values()) == 262
+    assert len(set(Graph().parse(BASE / 'examples/pwm-example-invalid.ttl').subjects(RDF.type, None))) == 332
     assert f"yielding {sum(validator.EXPECTED.values())} expected violations" in (tmp_path / "SPEC.md").read_text()
     first_spec = (tmp_path / 'SPEC.md').read_text()
     status_row = next(row for row in first_spec.splitlines() if '<a id="statusOf"></a>' in row)
@@ -184,7 +184,7 @@ def test_every_generated_code_list_rule():
     actual = {(report.value(r, validator.SH.focusNode), report.value(r, validator.SH.resultPath))
               for r in report.subjects(RDF.type, validator.SH.ValidationResult)}
     assert actual == expected
-    assert len(actual) == 84
+    assert len(actual) == 101
 
 
 def test_sustainability_preference_edges():
@@ -364,7 +364,7 @@ def test_historical_review_boundary_and_distinct_signatures():
         g.add((E('HistoricalReviewDecision'), predicate, value))
     due = g.value(E('UseCaseMeetingPrep'), P('nextReviewDate'))
     at = URIRef('http://www.w3.org/ns/prov#generatedAtTime')
-    g.set((E('HistoricalReviewDecision'), at, Literal(str(due) + 'T23:59:59Z', datatype=XSD.dateTime)))
+    g.set((E('HistoricalReviewDecision'), at, Literal(str(due), datatype=XSD.dateTime)))
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     ontology = Graph().parse(BASE / 'pwm.ttl')
     assert validate(g, shacl_graph=shapes, ont_graph=ontology, inference='rdfs')[0]
@@ -638,7 +638,7 @@ def test_review_date_without_timestamp_is_not_evaluated():
     g.add((E('UntimedDecision'), RDF.type, P('PolicyDecision')))
     g.add((E('UntimedDecision'), P('underUseCase'), E('ExpiredUseCase')))
     g.add((E('UntimedDecision'), P('decisionOutcome'), P('OutcomeAllow')))
-    g.add((E('ExpiredUseCase'), P('nextReviewDate'), Literal('2000-01-01', datatype=XSD.date)))
+    g.add((E('ExpiredUseCase'), P('nextReviewDate'), Literal('2000-01-01T23:59:59Z', datatype=XSD.dateTime)))
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     for shape in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
         if shape != URIRef(validator.PWMSH + 'PastReviewDecisionShape'):
@@ -673,7 +673,7 @@ def test_review_expiry_compares_typed_instants(timestamp, expired):
     g.add((E('TimedDecision'), P('decisionOutcome'), P('OutcomeAllow')))
     g.add((E('TimedDecision'), URIRef('http://www.w3.org/ns/prov#generatedAtTime'),
            Literal(timestamp, datatype=XSD.dateTime)))
-    g.add((E('ReviewUseCase'), P('nextReviewDate'), Literal('2026-11-03', datatype=XSD.date)))
+    g.add((E('ReviewUseCase'), P('nextReviewDate'), Literal('2026-11-03T23:59:59Z', datatype=XSD.dateTime)))
     shapes = Graph().parse(BASE / 'pwm-shapes.ttl')
     for shape in set(shapes.subjects(RDF.type, validator.SH.NodeShape)):
         if shape != URIRef(validator.PWMSH + 'PastReviewDecisionShape'):
@@ -850,7 +850,7 @@ def prepare_held_approval(g, decision):
 ])
 def test_agent_review_uses_typed_utc_instants(timestamp, allowed):
     g = example()
-    g.set((E('Agent'), P('nextReviewDate'), Literal('2026-11-03', datatype=XSD.date)))
+    g.set((E('Agent'), P('nextReviewDate'), Literal('2026-11-03T23:59:59Z', datatype=XSD.dateTime)))
     g.set((E('PolicyDecisionModelAllow'), URIRef('http://www.w3.org/ns/prov#generatedAtTime'),
            Literal(timestamp, datatype=XSD.dateTime)))
     assert validate_05(g, ['AgentDecisionShape']) == allowed

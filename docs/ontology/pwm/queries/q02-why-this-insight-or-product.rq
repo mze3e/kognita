@@ -1,0 +1,10 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q2. Why this insight or product? The recommendation, the product, its rationale and the sources it cites.
+# Bind ?interaction to the interaction under examination.
+SELECT ?recommendation ?product ?rationale ?source WHERE {
+  ?recommendation a pwm:Recommendation ; pwm:partOfInteraction ?interaction ; pwm:recommendsProduct ?product ; pwm:rationale ?rationale .
+  OPTIONAL { ?recommendation pwm:citesSource ?source }
+}

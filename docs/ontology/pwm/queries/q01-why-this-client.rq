@@ -1,0 +1,11 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q1. Why this client? The origination that selected the client, its trigger and rationale.
+# Bind ?interaction to the interaction under examination.
+SELECT ?origination ?client ?trigger ?rationale ?startedAt WHERE {
+  ?origination a pwm:Origination ; pwm:partOfInteraction ?interaction ; pwm:withClient ?client ;
+               pwm:originationTrigger ?trigger ; pwm:rationale ?rationale .
+  OPTIONAL { ?origination prov:startedAtTime ?startedAt }
+}

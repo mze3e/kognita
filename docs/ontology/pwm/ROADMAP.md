@@ -1,8 +1,8 @@
 # PWM Ontology Roadmap: 0.1 to 1.0
 
-Revised 18 November 2026. The first version of this plan was written on 2 November, before 0.2 to 0.5 were built. The 5 November revision followed what was built to 0.5. This revision follows the 0.5 review, which found PWM three Kognita milestones behind, and the 0.8 release that closed that gap.
+Revised 19 November 2026. The first version of this plan was written on 2 November, before 0.2 to 0.5 were built. The 5 November revision followed what was built to 0.5. This revision follows the 0.5 review, which found PWM three Kognita milestones behind, and the 0.8 release that closed that gap.
 
-**Where a matching Kognita milestone exists, PWM version N follows Kognita roadmap milestone N** ([docs/ROADMAP.md](../../ROADMAP.md)). Versions 0.1 to 0.5 and 0.8 exist as drafts. PWM 0.8 is built as one release that covers Kognita milestones 0.6 to 0.8, so there are no separate PWM 0.6 or 0.7 releases. The business items from the first plan that no milestone covered are scheduled in 0.9 and 0.10, numbered so they can no longer be mistaken for Kognita milestones, and the release candidates come after.
+**Where a matching Kognita milestone exists, PWM version N follows Kognita roadmap milestone N** ([docs/ROADMAP.md](../../ROADMAP.md)). Versions 0.1 to 0.5, 0.8 and 0.10 exist as drafts. PWM 0.8 was built as one release that covers Kognita milestones 0.6 to 0.8, and PWM 0.10 as one release that covers the planned 0.9 and 0.10 scope, so there are no separate PWM 0.6, 0.7 or 0.9 releases. The business items from the first plan that no milestone covered are scheduled in 0.9 and 0.10, numbered so they can no longer be mistaken for Kognita milestones, and the release candidates come after.
 
 ## Where 1.0 should land
 
@@ -27,8 +27,8 @@ Four tests define it:
 | 0.6 | 0.6 Claims | Folded into 0.8 (the verification, evaluation, reasoning, memory, learning and sensitive-attribute records); see below | Done in 0.8, with open items |
 | 0.7 | 0.7 Trust and Resilience | Folded into 0.8 | Done in 0.8 |
 | 0.8 | 0.8 Supervisory Alignment and Runtime Assurance | Trust and resilience, runtime assurance, the 0.6 gaps, Kognita vocabulary parity, US English | Draft, 18 Nov 2026 |
-| 0.9 | None: business scope | Verified sources, costs and charges, product governance, operations | Planned |
-| 0.10 | None: adoption | Supervisory readiness and binding to Kognita | Planned |
+| 0.9 | None: business scope | Costs and charges, product governance, client circumstances, operations; verified sources | Built in 0.10, citation verification open |
+| 0.10 | None: adoption | Supervisory readiness and binding to Kognita | Draft, 19 Nov 2026, with open items |
 | 1.0-rc | None | External review, freeze, conformance kit | Planned |
 | 1.0 | 1.0 Production Ready | Stable | Planned, before 7 Oct 2028 |
 
@@ -83,7 +83,9 @@ PWM already has a basic claim record from 0.1. The first step is a gap analysis 
 
 **Built on 18 November 2026:** the assurance policy, agent manifest, external-agent assertions, deployment attestations, third-party update approvals, approved components and advisories, technology transfer classification, production outcomes and supervisory conformance reports, with shapes, example data and negative tests. The Kognita 0.8 AI cyber drill scenarios are covered by the existing `AdversarialTestCase` and the new `FailureDrill`; per-scenario codes for the eight hostile-agent drills are not yet modeled.
 
-## 0.9 Business scope and verified sources
+## 0.9 Business scope and verified sources: built in 0.10, with open items
+
+**Built on 19 November 2026 (module 13):** costs and charges, inducement disclosure, product approval, target market review and negative target market, complaint outcomes, periodic suitability review, structured vulnerability drivers, orders, executions, allocations, best-execution records, corporate actions, income, CRS and FATCA reporting records, lending facilities (Lombard as one kind) and performance figures as provenance. Each has terms, shapes, example data and negative tests. **Still open:** citation verification (24 of 47 references remain instrument-level; the new regulatory citations are instrument-level too), FIBO alignment of the operations terms (needs verified FIBO IRIs and was not attempted), and a ready-made distribution-strategy model beyond a reference.
 
 **Goal:** finish the business model the first plan promised, and make every citation one a reviewer can trust. This release is not tied to a Kognita milestone.
 
@@ -96,7 +98,9 @@ PWM already has a basic claim record from 0.1. The first step is a gap analysis 
 
 **Exit:** zero instrument-level references; each new area has terms, shapes, an example and FIBO alignment.
 
-## 0.10 Supervisory readiness and binding to Kognita
+## 0.10 Supervisory readiness and binding to Kognita: built, with open items
+
+**Built on 19 November 2026:** `AIRG_MAP.md` (every paragraph row of the MAS table in control-frameworks.md mapped to PWM terms or to boundary), `profiles/ai-inventory-profile.ttl`, `queries/` (the ten reconstruction questions, an inventory report and a superseded-source query), `mapping/kognita-pwm-map.json` (114 vocabulary values and 25 policies), `context/pwm-evidence.jsonld` with `tools/roundtrip.py` and a signed Kognita export read back as PWM RDF, five jurisdiction profiles, and a worked code-list profile, each with tests. **Still open:** the round trip covers evidence exports, not register exports; the sample export is committed, not regenerated in CI; the AIRG map is only as complete as the table in control-frameworks.md and its citations are instrument-level; the jurisdiction profiles carry investor categories only, with no disclosure triggers or cross-border rules, which stay with the firm; and the exit condition that Kognita's CI produces PWM data from live code is not yet wired.
 
 **Goal:** produce from PWM data what MAS expects under Sections 3 and 4, and make PWM the data contract Kognita actually uses.
 
@@ -166,3 +170,4 @@ These run through every release:
 - **2026-11-02.** Jurisdiction thresholds and rule tables kept as data profiles, not ontology terms, so the core stays generic.
 - **2026-11-05.** Renumbered to follow the Kognita milestones as built: PWM 0.3 to 0.5 map to Kognita 0.3 to 0.5, and 0.6 and 0.7 will map to Kognita 0.6 and 0.7. The business items the first plan put in 0.2 to 0.6 and no Kognita milestone covers moved to 0.8 and 0.9.
 - **2026-11-18.** Review of PWM 0.5 found it three Kognita milestones behind and the 0.8 label used twice. Built PWM 0.8 as one release covering Kognita 0.6 to 0.8, renumbered the unrelated business-scope and supervisory-readiness releases to 0.9 and 0.10, adopted US English for all PWM-defined names, and made vocabulary parity, example coverage and axioms failing tests. Renamed terms keep deprecated aliases for one version.
+- **2026-11-19.** Built the planned 0.9 and 0.10 scope as PWM 0.10, in one release, because the 0.10 artifacts depend on the 0.9 terms. Migrated the last non-OWL-2 datatypes. Removed the 0.8 deprecated aliases as promised. Exit conditions that need official texts, ROBOT or reviewers are listed as open rather than claimed.

@@ -2,6 +2,8 @@
 import re, pathlib, json
 ROOT = pathlib.Path("/home/user/kognita/docs/ontology/pwm")
 LOC = {
+ "INV":"MAS AIRG 4.7 and footnote 25: inventory attributes for AI and for agents",
+ "C11G":"roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)", "A8":"roadmap milestone 0.8 item A8 (AI-enabled cyber and adversarial drills)",
  "C1":"roadmap milestone 0.6 item 1 (claim provenance envelope)", "C8":"roadmap milestone 0.6 item 8 (memory governance)", "C9":"roadmap milestone 0.6 item 9 (feedback-loop controls)", "C10":"roadmap milestone 0.6 item 10 (sensitive attribute controls)",
  "C7":"roadmap milestone 0.6 item 7 (verification gate)", "C11":"roadmap milestone 0.6 item 11 (evaluation evidence gate)", "C13":"roadmap milestone 0.6 item 13 (reasoning traces)",
  "T1":"roadmap milestone 0.7 item T1 (Ed25519 signing)", "T3":"roadmap milestone 0.7 item T3 (external review API)",
@@ -58,6 +60,7 @@ C = [
 ("EvaluationResult","evaluation result","Recorded evaluation of an agent version on a model version at the model, agent or system level, with metric values and the deployment content hash that identifies the evaluated behavior.","prov:Entity","Medium","C1",["C11"]),
 ("EvaluationMetricValue","evaluation metric value","One named metric in an evaluation result, such as accuracy, groundedness, hallucination rate or escalation correctness.","prov:Entity","Medium","C1",["C11"]),
 ("FairnessReport","fairness report","Recommendation, contact and prioritization rates across firm-defined segments, with the disparity threshold, named proxy attributes and a flag to the risk owner.","prov:Entity","Medium","C2",["C11"]),
+("EvaluationGate","evaluation gate","Threshold per use case and metric that an evaluation result must meet before a tier 2 or higher agent is activated or changed: a minimum, or for rates such as hallucination a maximum.","prov:Entity","Slow","C1",["C11G"]),
 ("ReasoningTrace","reasoning trace","Record that a provider returned a reasoning trace for a model call: its hash and where the content is retained. The model's own account, never a basis for a decision.","prov:Entity","Medium","C2",["C13"]),
 ("LearningExport","learning export","Governed export of interactions, RM edits or outcomes to a training, fine-tuning or evaluation pipeline: purpose, anonymization, validation, approval and requester recorded. Never the default.","prov:Entity","Medium","C2",["C9"]),
 ("LearningExclusion","learning exclusion","Exclusion of a client or record from every future learning export. The exclusion holds permanently.","prov:Entity","Medium","C2",["C9"]),
@@ -206,6 +209,14 @@ P = [
 ("fairnessThreshold","d","fairness threshold","Disparity above which the report flags a segment to the risk owner.","pwm:FairnessReport","xsd:decimal",["C11"]),
 ("proxyAttribute","d","proxy attribute","Attribute that stands in for, or correlates with, a protected attribute.","pwm:FairnessReport","xsd:string",["C11"]),
 ("fairnessFlagged","d","fairness flagged","Whether a disparity above the threshold was flagged to the risk owner.","pwm:FairnessReport","xsd:boolean",["C11"]),
+("hasDocumentation","o","has documentation","Documentation held for an AI use case, such as a model card or design record (MAS AIRG 4.7).","pwm:AIUseCase","prov:Entity",["INV"]),
+("hasComponent","o","has component","Approved software component that an agent deployment is built from (MAS AIRG fn 25).","pwm:AIAgent","pwm:ApprovedComponent",["INV"]),
+("gateUseCase","o","gate use case","Use case that the gate applies to.","pwm:EvaluationGate","pwm:AIUseCase",["C11G"]),
+("gateMetricName","d","gate metric name","Name of the metric that the gate checks.","pwm:EvaluationGate","xsd:string",["C11G"]),
+("gateMinimumScore","d","gate minimum score","Lowest acceptable score, from 0 to 1.","pwm:EvaluationGate","xsd:decimal",["C11G"]),
+("gateMaximumScore","d","gate maximum score","Highest acceptable score, from 0 to 1, for rates where lower is better.","pwm:EvaluationGate","xsd:decimal",["C11G"]),
+("activatedOnEvaluation","o","activated on evaluation","Evaluation result that the agent's activation or last change relied on.","pwm:AIAgent","pwm:EvaluationResult",["C11G"]),
+("drillScenario","c","drill scenario","Hostile-agent scenario exercised by the drill.","pwm:FailureDrill","skos:Concept",["A8"],"DrillScenarioScheme"),
 ("traceOfCall","o","trace of call","Model call whose reasoning trace this is.","pwm:ReasoningTrace","pwm:ModelCall",["C13"]),
 ("traceHash","d","trace hash","Hash of the reasoning trace in the evidence chain; the content sits in the retention store.","pwm:ReasoningTrace","xsd:string",["C13"]),
 ("requiresReasoningTrace","d","requires reasoning trace","Whether the use case requires a reasoning trace on material output.","pwm:AIUseCase","xsd:boolean",["C13"]),
@@ -256,6 +267,7 @@ S = [
 ("ConformanceProfileScheme","supervisory conformance profiles","assurance.reports.PROFILES",[("ProfileMAS","MAS","MAS","Monetary Authority of Singapore."),("ProfileHKMAART","HKMA-ART","HKMA ART","Hong Kong Monetary Authority."),("ProfileFSB","FSB","FSB","Financial Stability Board sound practices."),("ProfileOCC","OCC","OCC","US Office of the Comptroller of the Currency examiner considerations."),("ProfileSEC","SEC","SEC","Selected US Securities and Exchange Commission themes."),("ProfileFCA","FCA","FCA","Selected UK Financial Conduct Authority themes.")]),
 ]
 S.append(("SensitiveKindScheme","special categories","sensitive._PATTERNS",[("SensitiveReligion","religion","religion","Religion."),("SensitiveHealth","health","health","Health."),("SensitivePolitical","political_views","political views","Political views."),("SensitiveEthnicity","ethnicity","ethnicity","Ethnicity."),("SensitiveSexuality","sexuality","sexuality","Sexuality."),("SensitiveVulnerability","vulnerability","personal vulnerability","Personal vulnerability.")]))
+S.append(("DrillScenarioScheme","hostile-agent drill scenarios","assurance.drills.SCENARIOS",[("ScenarioPromptInjection","prompt-injection-tool-escalation","prompt injection leading to tool escalation","Injected instructions try to escalate tool use."),("ScenarioDiscoveredCredentials","discovered-credentials","discovered third-party credentials","The agent finds credentials it was not given."),("ScenarioUnauthorizedNetwork","unauthorized-network","unauthorized external network access","The agent reaches for a network destination outside its allow-list."),("ScenarioMachineSpeedProbing","machine-speed-probing","machine-speed probing","High-rate API probing and multi-technique attack."),("ScenarioCompromisedProvider","compromised-provider","compromised provider","The model provider is compromised."),("ScenarioAgentPrivilegeEscalation","agent-privilege-escalation","agent-to-agent privilege escalation","One agent tries to gain another's privileges."),("ScenarioMaliciousRetrieval","malicious-retrieval","malicious retrieved content","Retrieved content carries hostile instructions."),("ScenarioContainmentRecovery","containment-recovery","emergency containment and recovery","Containment and recovery after a breach.")]))
 S.append(("EvaluationLevelScheme","evaluation levels","evaluation.py and cli evaluation record --level",[("LevelModel","model","model","The model alone."),("LevelAgent","agent","agent","The agent: planning, tool selection, permission compliance, delegation, retries and escalation."),("LevelSystem","system","system","The end-to-end system: model, retrieval, tools, data, agent, policies, interface and human interaction.")]))
 EVENTS = [("EventAnchorPublished","ANCHOR_PUBLISHED","anchor published","A chain-head checkpoint was published to an external sink."),
 ("EventAssurance","ASSURANCE","assurance","A runtime assurance record was evidenced: manifest, attestation, update approval, component approval, drill or production outcome."),
@@ -393,6 +405,13 @@ add("EvaluationResult","pwm:EvaluationResult",[prop("evaluatesAgent",1,1,None,"p
 add("EvaluationMetricValue","pwm:EvaluationMetricValue",[S1("metricName"),
  "    sh:property [ sh:path pwm:metricScore ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0 ; sh:maxInclusive 1 ; sh:message \"pwm:metricScore: minimum count 1, maximum count 1, between 0 and 1.\" ]"])
 add("FairnessReport","pwm:FairnessReport",[prop("fairnessThreshold",1,1,"xsd:decimal"),prop("fairnessFlagged",1,1,"xsd:boolean"),prop("proxyAttribute",0,None,"xsd:string")])
+add("EvaluationGate","pwm:EvaluationGate",[prop("gateUseCase",1,1,None,"pwm:AIUseCase"),S1("gateMetricName"),
+ "    sh:property [ sh:path pwm:gateMinimumScore ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0 ; sh:maxInclusive 1 ; sh:message \"pwm:gateMinimumScore: between 0 and 1.\" ]",
+ "    sh:property [ sh:path pwm:gateMaximumScore ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0 ; sh:maxInclusive 1 ; sh:message \"pwm:gateMaximumScore: between 0 and 1.\" ]",
+ "    sh:xone ( [ sh:property [ sh:path pwm:gateMinimumScore ; sh:minCount 1 ] ] [ sh:property [ sh:path pwm:gateMaximumScore ; sh:minCount 1 ] ] ) ;\n    sh:message \"A gate states a minimum or a maximum score, not both and not neither (Kognita 0.6 item 11).\""])
+add("ActivationGate","pwm:AIAgent",[
+ sparql("An agent activated on an evaluation result that misses a minimum gate for its use case (Kognita 0.6 item 11).","            SELECT $this ?value WHERE {\n                $this pwm:activatedOnEvaluation ?value ; pwm:registeredForUseCase ?uc .\n                ?gate a pwm:EvaluationGate ; pwm:gateUseCase ?uc ; pwm:gateMetricName ?m ; pwm:gateMinimumScore ?min .\n                ?value pwm:hasMetricValue ?mv . ?mv pwm:metricName ?m ; pwm:metricScore ?s .\n                FILTER (?s < ?min)\n            }"),
+ sparql("An agent activated on an evaluation result that exceeds a maximum gate for its use case (Kognita 0.6 item 11).","            SELECT $this ?value WHERE {\n                $this pwm:activatedOnEvaluation ?value ; pwm:registeredForUseCase ?uc .\n                ?gate a pwm:EvaluationGate ; pwm:gateUseCase ?uc ; pwm:gateMetricName ?m ; pwm:gateMaximumScore ?max .\n                ?value pwm:hasMetricValue ?mv . ?mv pwm:metricName ?m ; pwm:metricScore ?s .\n                FILTER (?s > ?max)\n            }")])
 add("ReasoningTrace","pwm:ReasoningTrace",[prop("traceOfCall",1,1,None,"pwm:ModelCall"),S1("traceHash"),prop("retainedIn",1,1)])
 SH.append('pwmsh:ClaimEnvelopeShape a sh:NodeShape ; rdfs:label "ClaimEnvelopeShape"@en ; sh:targetClass pwm:Claim ;\n    dcterms:source pwmref:KOG-ROADMAP ; rdfs:comment "Roadmap milestone 0.6 item 1. A verified claim carries its source and retrieval record."@en ;\n'
  + sparql("A verified claim names its source system and record and the source and retrieval times, so an RM can see why they are seeing it (Kognita 0.6 item 1).",
@@ -455,6 +474,13 @@ ex:ClaimVerification1 a pwm:ClaimVerification ; pwm:verifiedClaim ex:ClaimRiskPr
 ex:Evaluation1 a pwm:EvaluationResult ; pwm:evaluatesAgent ex:Agent ; pwm:evaluatedVersion "agent-1.4" ; pwm:evaluatedModelVersion "model-2026-09" ; pwm:evaluationLevel pwm:LevelAgent ; pwm:evaluationDeploymentHash "{'3'*64}" ; pwm:hasMetricValue ex:Metric1, ex:Metric2 .
 ex:Metric1 a pwm:EvaluationMetricValue ; pwm:metricName "groundedness" ; pwm:metricScore "0.96"^^xsd:decimal .
 ex:Metric2 a pwm:EvaluationMetricValue ; pwm:metricName "hallucination rate" ; pwm:metricScore "0.02"^^xsd:decimal .
+ex:UseCaseMeetingPrep pwm:hasDocumentation ex:ModelCard .
+ex:Agent pwm:hasComponent ex:Component1 .
+ex:Worker pwm:hasComponent ex:Component1 ; pwm:hasBlastRadiusLimit ex:Limit .
+ex:Gate1 a pwm:EvaluationGate ; pwm:gateUseCase ex:UseCaseMeetingPrep ; pwm:gateMetricName "groundedness" ; pwm:gateMinimumScore "0.90"^^xsd:decimal .
+ex:Gate2 a pwm:EvaluationGate ; pwm:gateUseCase ex:UseCaseMeetingPrep ; pwm:gateMetricName "hallucination rate" ; pwm:gateMaximumScore "0.05"^^xsd:decimal .
+ex:Agent pwm:activatedOnEvaluation ex:Evaluation1 .
+ex:Drill2 a pwm:FailureDrill ; pwm:drillKind pwm:DrillCompromisedModel ; pwm:drillScenario pwm:ScenarioCompromisedProvider ; pwm:drillUseCase ex:UseCaseMeetingPrep ; pwm:evidenceCompleteAfterDrill true ; pwm:gatewayFailureMode pwm:FailClosed .
 ex:Fairness1 a pwm:FairnessReport ; pwm:fairnessThreshold "0.10"^^xsd:decimal ; pwm:fairnessFlagged false ; pwm:proxyAttribute "postcode" .
 ex:Trace1 a pwm:ReasoningTrace ; pwm:traceOfCall ex:GatewayCall ; pwm:traceHash "sha256:{'4'*64}" ; pwm:retainedIn ex:RetainedPrompt .
 ex:ClaimRiskProfile pwm:claimSourceSystem "portfolio-system (fictional)" ; pwm:claimSourceRecord "risk-profile/0001" ; pwm:claimSourceTimestamp "2026-11-03T08:00:00+08:00"^^xsd:dateTime ; pwm:claimRetrievalTimestamp "2026-11-03T09:59:30+08:00"^^xsd:dateTime ; pwm:calculationMethod "none: recorded value" ; pwm:claimPromptVersion "meeting-v3" ; pwm:claimConfidence "0.97"^^xsd:decimal ; pwm:claimPolicyStatus "may reach RM" .
@@ -511,13 +537,14 @@ BAD = [
 ("BadTrustLearningExclusion","LearningExclusionShape",None,'a pwm:LearningExclusion ; pwm:exclusionReason "Withdrawn"'),
 ("BadTrustSensitiveBlocked","SensitiveAttributeInferenceShape",None,'a pwm:SensitiveAttributeInference ; pwm:sensitiveKind pwm:SensitiveHealth ; pwm:permittedByUseCase false ; pwm:blockedByPolicy false ; pwm:changesClientTreatment false'),
 ("BadTrustSensitiveDetermination","SensitiveAttributeInferenceShape",None,'a pwm:SensitiveAttributeInference ; pwm:sensitiveKind pwm:SensitiveVulnerability ; pwm:permittedByUseCase true ; pwm:blockedByPolicy false ; pwm:changesClientTreatment true'),
+("BadTrustGate","EvaluationGateShape",None,'a pwm:EvaluationGate ; pwm:gateUseCase ex:UseCaseMeetingPrep ; pwm:gateMetricName "accuracy"'),
 ("BadTrustConformance","SupervisoryConformanceReportShape","coversControl",'a pwm:SupervisoryConformanceReport ; pwm:conformanceProfile pwm:ProfileFCA ; pwm:reportAsOf "2026-11-10T12:00:00+08:00"^^xsd:dateTime'),
 ]
 SUPPORT = '''ex:ProviderOther a pwm:ModelProvider ; rdfs:label "Other provider (fictional)"@en .
 ex:ProviderUnregistered a pwm:ModelProvider ; rdfs:label "Unregistered provider (fictional)"@en .
 ex:SameProviderVerifier a pwm:Verifier ; pwm:verifierAgent ex:Agent ; pwm:verifierModelCard ex:SameProviderCard .
 ex:SameProviderCard a pwm:ModelCard ; pwm:providedBy ex:Provider ; pwm:modelVersion "other-version" ; rdfs:label "Same provider card (fictional)"@en .
-ex:UnapprovedModelCard a pwm:ModelCard ; rdfs:label "Unapproved fallback model card (fictional)"@en .
+ex:BadEvalLow a pwm:EvaluationResult ; pwm:evaluatesAgent ex:Agent ; pwm:evaluatedVersion "agent-1.5" ; pwm:evaluatedModelVersion "model-2026-09" ; pwm:evaluationLevel pwm:LevelAgent ; pwm:hasMetricValue ex:BadMetricLow, ex:BadMetricRate .\nex:BadMetricLow a pwm:EvaluationMetricValue ; pwm:metricName "groundedness" ; pwm:metricScore "0.50"^^xsd:decimal .\nex:BadMetricRate a pwm:EvaluationMetricValue ; pwm:metricName "hallucination rate" ; pwm:metricScore "0.30"^^xsd:decimal .\nex:Agent pwm:activatedOnEvaluation ex:BadEvalLow .\nex:UnapprovedModelCard a pwm:ModelCard ; rdfs:label "Unapproved fallback model card (fictional)"@en .
 ex:GatewayCall pwm:providedBy ex:ProviderUnregistered .
 '''
 # POSITIVE example also needs approvedFallbackModel on the use case and a fallback provider registration for ProviderOther in the negative fixture (not needed).
@@ -530,6 +557,7 @@ def expected():
     for n,s,p,t in BAD:
         shape = s if s.endswith("Shape") else s+"Shape"
         out.append((n,shape,p))
+    out.append(("Agent","ActivationGateShape",None)); out.append(("Agent","ActivationGateShape",None))
     out.append(("GatewayCall","RegisteredProviderCallShape",None))
     out.append(("GatewayCall","ModelCallShape","providedBy"))  # the extra provider also breaks the single-provider rule
     return out
@@ -539,18 +567,18 @@ if __name__=="__main__":
     (ROOT/"src/12-trust-resilience-assurance.ttl").write_text(ttl_module())
     # bindings
     b=ROOT/"src/08-code-list-bindings.ttl"; t=b.read_text()
-    t=re.sub(r"\n"+re.escape(BEGIN)+r".*?"+re.escape(END)+r"\n","\n",t,flags=re.S)
+    t=re.sub(r"\n+"+re.escape(BEGIN)+r".*?"+re.escape(END)+r"\n","\n",t,flags=re.S)
     b.write_text(t.rstrip("\n")+"\n\n"+BEGIN+"\n"+bindings()+END+"\n")
     sf=ROOT/"src/shapes/pwm-shapes.ttl"; t=sf.read_text()
-    t=re.sub(r"\n"+re.escape(BEGIN)+r".*?"+re.escape(END)+r"\n","\n",t,flags=re.S)
+    t=re.sub(r"\n+"+re.escape(BEGIN)+r".*?"+re.escape(END)+r"\n","\n",t,flags=re.S)
     sf.write_text(t.rstrip("\n")+"\n\n"+BEGIN+"\n"+shapes_text()+END+"\n")
     pos,bad=example_blocks()
     for fn,blk in (("examples/pwm-example.ttl",pos),("examples/pwm-example-invalid.ttl",bad)):
         f=ROOT/fn; t=f.read_text()
-        t=re.sub(r"\n"+re.escape(BEGIN)+r".*?"+re.escape(END)+r"\n","\n",t,flags=re.S)
+        t=re.sub(r"\n+"+re.escape(BEGIN)+r".*?"+re.escape(END)+r"\n","\n",t,flags=re.S)
         f.write_text(t.rstrip("\n")+"\n\n"+BEGIN+"\n"+blk+END+"\n")
     vf=ROOT/"tools/validate.py"; t=vf.read_text()
-    t=re.sub(r"\n"+re.escape(BEGIN)+r".*?"+re.escape(END)+r"\n","\n",t,flags=re.S)
+    t=re.sub(r"\n+"+re.escape(BEGIN)+r".*?"+re.escape(END)+r"\n","\n",t,flags=re.S)
     anchor="\ndef local(term):"
     blk=BEGIN+"\nEXPECTED.update("+repr(expected())+")\n"+END+"\n"
     t=t.replace(anchor,"\n"+blk+anchor,1)

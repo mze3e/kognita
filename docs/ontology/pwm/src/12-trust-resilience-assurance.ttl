@@ -162,6 +162,11 @@ pwm:FairnessReport a owl:Class ; rdfs:label "fairness report"@en ;
     pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
 
+pwm:EvaluationGate a owl:Class ; rdfs:label "evaluation gate"@en ;
+    skos:definition "Threshold per use case and metric that an evaluation result must meet before a tier 2 or higher agent is activated or changed: a minimum, or for rates such as hallucination a maximum."@en ; rdfs:subClassOf prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:SlowContext ; pwm:defaultClassification pwm:C1 ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
 pwm:ReasoningTrace a owl:Class ; rdfs:label "reasoning trace"@en ;
     skos:definition "Record that a provider returned a reasoning trace for a model call: its hash and where the content is retained. The model's own account, never a basis for a decision."@en ; rdfs:subClassOf prov:Entity ;
     pwm:inModule pwm:ModuleTrust ; pwm:contextSpeed pwm:MediumContext ; pwm:defaultClassification pwm:C2 ;
@@ -1159,6 +1164,62 @@ pwm:fairnessFlagged a owl:DatatypeProperty ; rdfs:label "fairness flagged"@en ;
     pwm:inModule pwm:ModuleTrust ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
 
+pwm:hasDocumentation a owl:ObjectProperty ; rdfs:label "has documentation"@en ;
+    skos:definition "Documentation held for an AI use case, such as a model card or design record (MAS AIRG 4.7)."@en ;
+    rdfs:domain pwm:AIUseCase ;
+    rdfs:range prov:Entity ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "MAS AIRG 4.7 and footnote 25: inventory attributes for AI and for agents" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:hasComponent a owl:ObjectProperty ; rdfs:label "has component"@en ;
+    skos:definition "Approved software component that an agent deployment is built from (MAS AIRG fn 25)."@en ;
+    rdfs:domain pwm:AIAgent ;
+    rdfs:range pwm:ApprovedComponent ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "MAS AIRG 4.7 and footnote 25: inventory attributes for AI and for agents" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:gateUseCase a owl:ObjectProperty ; rdfs:label "gate use case"@en ;
+    skos:definition "Use case that the gate applies to."@en ;
+    rdfs:domain pwm:EvaluationGate ;
+    rdfs:range pwm:AIUseCase ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:gateMetricName a owl:DatatypeProperty ; rdfs:label "gate metric name"@en ;
+    skos:definition "Name of the metric that the gate checks."@en ;
+    rdfs:domain pwm:EvaluationGate ;
+    rdfs:range xsd:string ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:gateMinimumScore a owl:DatatypeProperty ; rdfs:label "gate minimum score"@en ;
+    skos:definition "Lowest acceptable score, from 0 to 1."@en ;
+    rdfs:domain pwm:EvaluationGate ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:gateMaximumScore a owl:DatatypeProperty ; rdfs:label "gate maximum score"@en ;
+    skos:definition "Highest acceptable score, from 0 to 1, for rates where lower is better."@en ;
+    rdfs:domain pwm:EvaluationGate ;
+    rdfs:range xsd:decimal ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:activatedOnEvaluation a owl:ObjectProperty ; rdfs:label "activated on evaluation"@en ;
+    skos:definition "Evaluation result that the agent's activation or last change relied on."@en ;
+    rdfs:domain pwm:AIAgent ;
+    rdfs:range pwm:EvaluationResult ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
+pwm:drillScenario a owl:ObjectProperty ; rdfs:label "drill scenario"@en ;
+    skos:definition "Hostile-agent scenario exercised by the drill."@en ;
+    rdfs:domain pwm:FailureDrill ;
+    rdfs:range skos:Concept ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "roadmap milestone 0.8 item A8 (AI-enabled cyber and adversarial drills)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+
 pwm:traceOfCall a owl:ObjectProperty ; rdfs:label "trace of call"@en ;
     skos:definition "Model call whose reasoning trace this is."@en ;
     rdfs:domain pwm:ReasoningTrace ;
@@ -1512,6 +1573,19 @@ pwm:SensitivePolitical a skos:Concept ; skos:notation "political_views" ; skos:i
 pwm:SensitiveEthnicity a skos:Concept ; skos:notation "ethnicity" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "ethnicity"@en ; skos:definition "Ethnicity."@en .
 pwm:SensitiveSexuality a skos:Concept ; skos:notation "sexuality" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "sexuality"@en ; skos:definition "Sexuality."@en .
 pwm:SensitiveVulnerability a skos:Concept ; skos:notation "vulnerability" ; skos:inScheme pwm:SensitiveKindScheme ; skos:topConceptOf pwm:SensitiveKindScheme ; skos:prefLabel "personal vulnerability"@en ; skos:definition "Personal vulnerability."@en .
+
+pwm:DrillScenarioScheme a skos:ConceptScheme ;
+    skos:prefLabel "hostile-agent drill scenarios"@en ;
+    pwm:inModule pwm:ModuleTrust ;
+    pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "assurance.drills.SCENARIOS" ] .
+pwm:ScenarioPromptInjection a skos:Concept ; skos:notation "prompt-injection-tool-escalation" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "prompt injection leading to tool escalation"@en ; skos:definition "Injected instructions try to escalate tool use."@en .
+pwm:ScenarioDiscoveredCredentials a skos:Concept ; skos:notation "discovered-credentials" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "discovered third-party credentials"@en ; skos:definition "The agent finds credentials it was not given."@en .
+pwm:ScenarioUnauthorizedNetwork a skos:Concept ; skos:notation "unauthorized-network" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "unauthorized external network access"@en ; skos:definition "The agent reaches for a network destination outside its allow-list."@en .
+pwm:ScenarioMachineSpeedProbing a skos:Concept ; skos:notation "machine-speed-probing" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "machine-speed probing"@en ; skos:definition "High-rate API probing and multi-technique attack."@en .
+pwm:ScenarioCompromisedProvider a skos:Concept ; skos:notation "compromised-provider" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "compromised provider"@en ; skos:definition "The model provider is compromised."@en .
+pwm:ScenarioAgentPrivilegeEscalation a skos:Concept ; skos:notation "agent-privilege-escalation" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "agent-to-agent privilege escalation"@en ; skos:definition "One agent tries to gain another's privileges."@en .
+pwm:ScenarioMaliciousRetrieval a skos:Concept ; skos:notation "malicious-retrieval" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "malicious retrieved content"@en ; skos:definition "Retrieved content carries hostile instructions."@en .
+pwm:ScenarioContainmentRecovery a skos:Concept ; skos:notation "containment-recovery" ; skos:inScheme pwm:DrillScenarioScheme ; skos:topConceptOf pwm:DrillScenarioScheme ; skos:prefLabel "emergency containment and recovery"@en ; skos:definition "Containment and recovery after a breach."@en .
 
 pwm:EvaluationLevelScheme a skos:ConceptScheme ;
     skos:prefLabel "evaluation levels"@en ;

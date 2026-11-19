@@ -1,5 +1,5 @@
 # =============================================================================
-#  PWM 0.8 example data
+#  PWM 0.10 example data
 #
 #  Synthetic data for a fictional firm, Example Private Bank. No real client,
 #  person, firm or security appears here. Identifiers are well formed but
@@ -29,9 +29,9 @@
 @prefix ex:       <https://example.org/pwm-example#> .
 
 <https://example.org/pwm-example> a owl:Ontology ;
-    dcterms:title "PWM 0.8 example data"@en ;
+    dcterms:title "PWM 0.10 example data"@en ;
     dcterms:description "Synthetic data for a fictional firm, Example Private Bank. No real client, person, firm or security."@en ;
-    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.8/pwm-shapes.ttl> ;
+    dcterms:conformsTo <https://ahmedmuzammil.com/ontology/pwm/0.10/pwm-shapes.ttl> ;
     dcterms:license <https://creativecommons.org/licenses/by-sa/4.0/> .
 
 # --- People (fictional) --------------------------------------------------------------------
@@ -89,7 +89,7 @@ ex:Coverage a pwm:CoverageAssignment ;
 ex:CDD a pwm:CustomerDueDiligence ;
     pwm:assesses ex:Client ;
     pwm:validFrom "2024-02-20T00:00:00+08:00"^^xsd:dateTime ;
-    pwm:nextReviewDate "2027-02-20"^^xsd:date .
+    pwm:nextReviewDate "2027-02-20T23:59:59Z"^^xsd:dateTime .
 
 ex:AMLRating a pwm:CustomerRiskRating ;
     pwm:assesses ex:Client ;
@@ -125,7 +125,7 @@ ex:RiskProfileV2 a pwm:InvestorRiskProfile ;
     pwm:investmentHorizonYears 7.0 ;
     pwm:supersedes ex:RiskProfileV1 ;
     pwm:validFrom "2026-03-15T00:00:00+08:00"^^xsd:dateTime ;
-    pwm:nextReviewDate "2027-03-15"^^xsd:date ;
+    pwm:nextReviewDate "2027-03-15T23:59:59Z"^^xsd:dateTime ;
     prov:wasAttributedTo ex:RM .
 
 ex:Mandate a pwm:AdvisoryMandate ;
@@ -202,7 +202,7 @@ ex:CommunicationPolicyV31 a pwm:GovernedInformationAsset ;
     pwm:contentHash "sha256:2411474079047729f80de850da3514ddec700c41958923cbd8b1fc13168a49d5" ;
     pwm:validFrom "2025-01-01T00:00:00+08:00"^^xsd:dateTime ;
     pwm:validUntil "2026-01-01T00:00:00+08:00"^^xsd:dateTime ;
-    pwm:retentionUntil "2032-12-31"^^xsd:date .
+    pwm:retentionUntil "2032-12-31T23:59:59Z"^^xsd:dateTime .
 
 ex:CommunicationPolicy a pwm:GovernedInformationAsset ;
     rdfs:label "Client communication policy, version 3.2 (fictional)"@en ;
@@ -211,7 +211,7 @@ ex:CommunicationPolicy a pwm:GovernedInformationAsset ;
     pwm:versionId "3.2" ;
     pwm:supersedes ex:CommunicationPolicyV31 ;
     pwm:validFrom "2026-01-01T00:00:00+08:00"^^xsd:dateTime ;
-    pwm:retentionUntil "2033-12-31"^^xsd:date ;
+    pwm:retentionUntil "2033-12-31T23:59:59Z"^^xsd:dateTime ;
     pwm:hasSection ex:CommunicationPolicySection4 .
 
 ex:CommunicationPolicySection4 a pwm:DocumentSection ;
@@ -248,7 +248,7 @@ ex:UseCaseMeetingPrep a pwm:AIUseCase ;
     pwm:lifecycleStatus pwm:StatusLive ;
     pwm:riskTier pwm:Tier3 ;
     pwm:isMediated true ;
-    pwm:nextReviewDate "2027-05-01"^^xsd:date ;
+    pwm:nextReviewDate "2027-05-01T23:59:59Z"^^xsd:dateTime ;
     pwm:hasAccountabilityRole ex:BusinessOwner , ex:TechnologyOwner , ex:RiskOwner , ex:KnowledgeLead , ex:Validator ;
     pwm:hasMaterialityAssessment ex:Materiality .
 
@@ -286,7 +286,7 @@ ex:Agent a pwm:AIAgent ;
     pwm:registeredForUseCase ex:UseCaseMeetingPrep ;
     pwm:deploymentVersion "sha256:fe17d8288da18bb3cc7a178d050b9af718c402a10d4f5d338633dfe0af0e1787" ;
     pwm:permittedTool ex:ToolPortfolioRead , ex:ToolDraftNote ;
-    pwm:nextReviewDate "2027-02-01"^^xsd:date .
+    pwm:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime .
 
 ex:Delegation a pwm:DelegatedAuthority ;
     rdfs:label "RM authorizes the meeting preparation agent for client 0001 until the meeting is prepared"@en ;
@@ -313,7 +313,7 @@ ex:FactRiskProfile a pwm:Fact ;
     prov:wasDerivedFrom ex:RiskProfileV2 ;
     prov:wasAttributedTo ex:SuitabilitySystem ;
     pwm:asOf "2026-11-03T09:58:00+08:00"^^xsd:dateTime ;
-    pwm:freshnessThreshold "P1D"^^xsd:duration ;
+    pwm:freshnessThresholdSeconds "86400"^^xsd:positiveInteger ;
     pwm:staleAction pwm:StaleSuppress ;
     pwm:classification pwm:C2 .
 
@@ -323,7 +323,7 @@ ex:FactPortfolioValue a pwm:Fact ;
     prov:wasDerivedFrom ex:PortfolioValuation ;
     pwm:calculatedBy ex:ValuationService ;
     pwm:asOf "2026-11-01T17:00:00+08:00"^^xsd:dateTime ;
-    pwm:freshnessThreshold "P1D"^^xsd:duration ;
+    pwm:freshnessThresholdSeconds "86400"^^xsd:positiveInteger ;
     pwm:staleAction pwm:StaleWarn ;
     pwm:classification pwm:C2 .
 
@@ -624,7 +624,7 @@ ex:ReadScope a pwm:AuthorityScope ; pwm:aboutClient ex:Client ; pwm:hasPurpose e
     pwm:classification pwm:C1 ; pwm:scopeTool ex:ToolPortfolioRead ; pwm:scopeField "riskProfile" ; pwm:jurisdictionCode "SG" .
 ex:Worker a pwm:AIAgent ; pwm:agentIdentifier "AGENT-RM-WORKER-01" ; pwm:maxAutonomyLevel pwm:L0Retrieve ; pwm:effectiveAutonomyLevel pwm:L0Retrieve ;
     pwm:registeredForUseCase ex:UseCaseMeetingPrep ; pwm:deploymentVersion "worker-v1" ; pwm:approvedDeploymentVersion "worker-v1" ;
-    pwm:nextReviewDate "2027-02-01"^^xsd:date ; pwm:agentOwner ex:PersonHeadOfAdvisory ; pwm:operatesFor ex:PersonRM ; pwm:workloadIdentity ex:WorkerIdentity ;
+    pwm:nextReviewDate "2027-02-01T23:59:59Z"^^xsd:dateTime ; pwm:agentOwner ex:PersonHeadOfAdvisory ; pwm:operatesFor ex:PersonRM ; pwm:workloadIdentity ex:WorkerIdentity ;
     pwm:hasPurpose ex:PurposeMeetingPrep ; pwm:deploymentDate "2026-11-03T00:00:00Z"^^xsd:dateTime ; pwm:deploymentModel ex:Model ; pwm:deploymentEnvironment "production" ; pwm:agentStatus pwm:StatusLive ;
     pwm:permittedTool ex:ToolPortfolioRead ; pwm:permittedField "riskProfile" .
 ex:WorkerIdentity a pwm:WorkloadIdentity ; pwm:credentialReference "urn:synthetic:credential:worker-01"^^xsd:anyURI ; pwm:credentialIssuer "urn:synthetic:issuer"^^xsd:anyURI ;
@@ -935,6 +935,13 @@ ex:ClaimVerification1 a pwm:ClaimVerification ; pwm:verifiedClaim ex:ClaimRiskPr
 ex:Evaluation1 a pwm:EvaluationResult ; pwm:evaluatesAgent ex:Agent ; pwm:evaluatedVersion "agent-1.4" ; pwm:evaluatedModelVersion "model-2026-09" ; pwm:evaluationLevel pwm:LevelAgent ; pwm:evaluationDeploymentHash "3333333333333333333333333333333333333333333333333333333333333333" ; pwm:hasMetricValue ex:Metric1, ex:Metric2 .
 ex:Metric1 a pwm:EvaluationMetricValue ; pwm:metricName "groundedness" ; pwm:metricScore "0.96"^^xsd:decimal .
 ex:Metric2 a pwm:EvaluationMetricValue ; pwm:metricName "hallucination rate" ; pwm:metricScore "0.02"^^xsd:decimal .
+ex:UseCaseMeetingPrep pwm:hasDocumentation ex:ModelCard .
+ex:Agent pwm:hasComponent ex:Component1 .
+ex:Worker pwm:hasComponent ex:Component1 ; pwm:hasBlastRadiusLimit ex:Limit .
+ex:Gate1 a pwm:EvaluationGate ; pwm:gateUseCase ex:UseCaseMeetingPrep ; pwm:gateMetricName "groundedness" ; pwm:gateMinimumScore "0.90"^^xsd:decimal .
+ex:Gate2 a pwm:EvaluationGate ; pwm:gateUseCase ex:UseCaseMeetingPrep ; pwm:gateMetricName "hallucination rate" ; pwm:gateMaximumScore "0.05"^^xsd:decimal .
+ex:Agent pwm:activatedOnEvaluation ex:Evaluation1 .
+ex:Drill2 a pwm:FailureDrill ; pwm:drillKind pwm:DrillCompromisedModel ; pwm:drillScenario pwm:ScenarioCompromisedProvider ; pwm:drillUseCase ex:UseCaseMeetingPrep ; pwm:evidenceCompleteAfterDrill true ; pwm:gatewayFailureMode pwm:FailClosed .
 ex:Fairness1 a pwm:FairnessReport ; pwm:fairnessThreshold "0.10"^^xsd:decimal ; pwm:fairnessFlagged false ; pwm:proxyAttribute "postcode" .
 ex:Trace1 a pwm:ReasoningTrace ; pwm:traceOfCall ex:GatewayCall ; pwm:traceHash "sha256:4444444444444444444444444444444444444444444444444444444444444444" ; pwm:retainedIn ex:RetainedPrompt .
 ex:ClaimRiskProfile pwm:claimSourceSystem "portfolio-system (fictional)" ; pwm:claimSourceRecord "risk-profile/0001" ; pwm:claimSourceTimestamp "2026-11-03T08:00:00+08:00"^^xsd:dateTime ; pwm:claimRetrievalTimestamp "2026-11-03T09:59:30+08:00"^^xsd:dateTime ; pwm:calculationMethod "none: recorded value" ; pwm:claimPromptVersion "meeting-v3" ; pwm:claimConfidence "0.97"^^xsd:decimal ; pwm:claimPolicyStatus "may reach RM" .
@@ -946,3 +953,30 @@ ex:LearningExclusion2 a pwm:LearningExclusion ; pwm:exclusionReason "Record excl
 ex:Sensitive1 a pwm:SensitiveAttributeInference ; pwm:sensitiveKind pwm:SensitiveVulnerability ; pwm:permittedByUseCase true ; pwm:blockedByPolicy false ; pwm:changesClientTreatment false ; pwm:reviewedByRM ex:PersonRM .
 ex:Conformance1 a pwm:SupervisoryConformanceReport ; pwm:conformanceProfile pwm:ProfileMAS ; pwm:reportAsOf "2026-11-10T12:00:00+08:00"^^xsd:dateTime ; pwm:coversControl "A1", "A3" ; pwm:referencesEvidence ex:Evidence1 .
 # <<< module 12 END
+
+# >>> module 13 BEGIN (generated by tools/gen_module13.py)
+
+# --- Module 13: business scope (synthetic) ------------------------------------------------------
+ex:CostDisclosure1 a pwm:CostDisclosure ; pwm:disclosureTiming pwm:TimingExAnte ; pwm:disclosedToClient ex:Client ; pwm:disclosedAt "2026-11-02T10:00:00+08:00"^^xsd:dateTime ; pwm:coversMandate ex:Mandate ; pwm:totalCostAmount "1200.00"^^xsd:decimal ; pwm:totalCostPercent "1.2"^^xsd:decimal ; pwm:currency "SGD" ; pwm:includesInducements true ; pwm:hasCostItem ex:CostItem1, ex:CostItem2 .
+ex:CostDisclosure2 a pwm:CostDisclosure ; pwm:disclosureTiming pwm:TimingExPost ; pwm:disclosedToClient ex:Client ; pwm:disclosedAt "2026-12-31T10:00:00+08:00"^^xsd:dateTime ; pwm:coversMandate ex:Mandate ; pwm:totalCostAmount "1180.00"^^xsd:decimal ; pwm:currency "SGD" ; pwm:includesInducements false ; pwm:periodStart "2026-01-01T00:00:00+08:00"^^xsd:dateTime ; pwm:periodEnd "2026-12-31T00:00:00+08:00"^^xsd:dateTime ; pwm:hasCostItem ex:CostItem1 .
+ex:CostItem1 a pwm:CostItem ; pwm:costCategory pwm:CostOngoing ; pwm:amount "1000.00"^^xsd:decimal ; pwm:currency "SGD" ; pwm:costFromFee ex:Fee1 .
+ex:CostItem2 a pwm:CostItem ; pwm:costCategory pwm:CostTransaction ; pwm:amount "200.00"^^xsd:decimal ; pwm:currency "SGD" .
+ex:InducementDisclosure1 a pwm:InducementDisclosure ; pwm:disclosesPayment ex:ThirdPartyPayment1 ; pwm:disclosedToClient ex:Client ; pwm:disclosedAt "2026-11-02T10:00:00+08:00"^^xsd:dateTime ; pwm:enhancesServiceQuality true .
+ex:ProductApproval1 a pwm:ProductApproval ; pwm:approvesProduct ex:Product ; pwm:approvedForTargetMarket ex:TargetMarket1 ; pwm:distributionStrategyReference "urn:synthetic:distribution-strategy:0001" ; pwm:approvedBy ex:CommitteeDG ; prov:generatedAtTime "2026-09-01T00:00:00+08:00"^^xsd:dateTime .
+ex:CommitteeDG a pwm:DataGovernanceCommittee ; rdfs:label "Approving committee (fictional)"@en .
+ex:TargetMarket1 pwm:negativeTargetMarketCategory pwm:RetailInvestorSG .
+ex:TargetMarketReview1 a pwm:TargetMarketReview ; pwm:reviewsTargetMarket ex:TargetMarket1 ; pwm:targetMarketReviewOutcome pwm:ReviewConfirmed ; pwm:reviewedAt "2026-10-01T00:00:00+08:00"^^xsd:dateTime ; pwm:nextReviewDueAt "2027-10-01T00:00:00+08:00"^^xsd:dateTime .
+ex:Complaint1 pwm:complaintReceivedAt "2026-10-20T09:00:00+08:00"^^xsd:dateTime .
+ex:ComplaintOutcome1 a pwm:ComplaintOutcome ; pwm:complaintOf ex:Complaint1 ; pwm:complaintResolution pwm:ResolutionPartlyUpheld ; pwm:reviewedAt "2026-11-01T00:00:00+08:00"^^xsd:dateTime ; pwm:redressAmount "50.00"^^xsd:decimal ; pwm:currency "SGD" ; pwm:rootCause "Late statement run" .
+ex:Vulnerability1 pwm:vulnerabilityDriver pwm:DriverLifeEvent ; pwm:vulnerabilityDeterminedBy ex:PersonRM ; pwm:vulnerabilityFlaggedAt "2026-10-25T09:00:00+08:00"^^xsd:dateTime .
+ex:SuitabilityReview1 a pwm:SuitabilityReview ; pwm:reviewsSuitability ex:Suitability ; pwm:suitabilityReviewResult pwm:SuitabilityStill ; pwm:reviewFrequencyMonths "12"^^xsd:positiveInteger ; pwm:performedAt "2026-11-02T00:00:00+08:00"^^xsd:dateTime ; pwm:nextReviewDueAt "2027-11-02T00:00:00+08:00"^^xsd:dateTime .
+ex:Order1 a pwm:Order ; pwm:orderSide pwm:SideBuy ; pwm:orderType pwm:TypeLimit ; pwm:orderStatus pwm:OrderFilled ; pwm:orderQuantity "100"^^xsd:decimal ; pwm:limitPrice "99.50"^^xsd:decimal ; pwm:inInstrument ex:Bond ; pwm:orderAccount ex:Account ; pwm:orderUnderMandate ex:Mandate ; pwm:orderPlacedAt "2026-11-03T11:00:00+08:00"^^xsd:dateTime .
+ex:Execution1 a pwm:Execution ; pwm:executesOrder ex:Order1 ; pwm:executedQuantity "100"^^xsd:decimal ; pwm:executionPrice "99.40"^^xsd:decimal ; pwm:executedAt "2026-11-03T11:05:00+08:00"^^xsd:dateTime ; pwm:executionVenue "Synthetic venue" .
+ex:Allocation1 a pwm:Allocation ; pwm:allocatesExecution ex:Execution1 ; pwm:allocatedToAccount ex:Account ; pwm:allocatedQuantity "100"^^xsd:decimal .
+ex:BestExecution1 a pwm:BestExecutionRecord ; pwm:bestExecutionOf ex:Execution1 ; pwm:executionFactor pwm:FactorPrice, pwm:FactorCosts, pwm:FactorLikelihood ; pwm:venueRationale "Best displayed price with settlement certainty" ; pwm:executionPolicyReference "best-execution-policy-2026-1" .
+ex:CorporateAction1 a pwm:CorporateAction ; pwm:corporateActionKind pwm:ActionCoupon ; pwm:affectsInstrument ex:Bond ; pwm:effectiveAt "2026-12-15T00:00:00+08:00"^^xsd:dateTime .
+ex:Income1 a pwm:IncomeReceipt ; pwm:incomeKind pwm:IncomeCoupon ; pwm:incomeToAccount ex:Account ; pwm:incomeFromAction ex:CorporateAction1 ; pwm:amount "2500.00"^^xsd:decimal ; pwm:currency "SGD" .
+ex:TaxReport1 a pwm:TaxReportingRecord ; pwm:reportingRegime pwm:RegimeCRS ; pwm:reportingYear "2026"^^xsd:integer ; pwm:reportedAccount ex:Account ; pwm:reportedToJurisdiction "SG" ; pwm:amount "1000000.00"^^xsd:decimal ; pwm:currency "SGD" ; pwm:reportSubmittedAt "2027-05-01T00:00:00+08:00"^^xsd:dateTime .
+ex:Lombard1 pwm:facilityKind pwm:FacilityLombard ; pwm:facilityClient ex:Client ; pwm:facilityLimit "500000.00"^^xsd:decimal ; pwm:currency "SGD" ; pwm:maxLoanToValue "0.50"^^xsd:decimal .
+ex:Performance1 a pwm:PerformanceFigure ; pwm:performanceOf ex:Portfolio ; pwm:performanceMeasure pwm:MeasureTWR ; pwm:performanceValue "0.042"^^xsd:decimal ; pwm:periodStart "2026-01-01T00:00:00+08:00"^^xsd:dateTime ; pwm:periodEnd "2026-10-31T00:00:00+08:00"^^xsd:dateTime ; pwm:calculatedBy ex:ValuationService ; pwm:hasBenchmark ex:Benchmark1 .
+# <<< module 13 END
