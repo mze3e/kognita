@@ -35,7 +35,7 @@ Everything below needs a machine, a tool or a source that the cloud session did 
 
 11. **Round trip in CI.** `examples/kognita-export.json` is committed. Add a CI step that writes a fresh export with `tools/roundtrip.py make` (needs Kognita installed plus `rdflib` and `pyshacl`) and then runs `python3 tools/roundtrip.py check <file>`. Extend the context to register exports.
 12. **Publication.** The site (ahmedmuzammil.com) was unreachable from the cloud session. Nothing was deployed. To publish: run `python3 tools/build.py --site PATH`, make `https://ahmedmuzammil.com/ontology/pwm/0.10` and `.../0.10/pwm-shapes.ttl` resolve, and check that the published pages match the repository.
-13. **Releases.** Kognita 0.9.0 was not tagged and not published to PyPI or npm. No pull request was opened.
+13. **Releases.** Kognita 0.9.0 is in [pull request 172](https://github.com/mze3e/kognita/pull/172). It is not yet tagged or published to PyPI or npm.
 
 ## Breaking changes to communicate
 

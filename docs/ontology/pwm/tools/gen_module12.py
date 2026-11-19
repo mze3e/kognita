@@ -1,6 +1,6 @@
 """Generate PWM module 12 (trust, resilience and assurance): ontology, shapes, example and negative fixtures."""
-import re, pathlib, json
-ROOT = pathlib.Path("/home/user/kognita/docs/ontology/pwm")
+import re, pathlib
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 LOC = {
  "INV":"MAS AIRG 4.7 and footnote 25: inventory attributes for AI and for agents",
  "C11G":"roadmap milestone 0.6 item 11 (evaluation evidence gate: thresholds per use case)", "A8":"roadmap milestone 0.8 item A8 (AI-enabled cyber and adversarial drills)",
@@ -583,5 +583,4 @@ if __name__=="__main__":
     blk=BEGIN+"\nEXPECTED.update("+repr(expected())+")\n"+END+"\n"
     t=t.replace(anchor,"\n"+blk+anchor,1)
     vf.write_text(t)
-    json.dump(expected(),open("/tmp/claude-0/-home-user/ef20d718-f5a9-5c36-a3e6-895a702c9c5b/scratchpad/exp12.json","w"))
     print("generated",len(C),"classes",len(P),"properties",len(S),"schemes",len(BAD),"bad fixtures")

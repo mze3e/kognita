@@ -7,14 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Ontology (PWM)
-
-- PWM 0.10 (19 Nov 2026): builds the roadmap's 0.9 and 0.10 scope in one release. New module 13 for business scope (costs and charges, inducement disclosure, product approval and target market review, complaint outcomes, periodic suitability review, orders, executions, allocations, best-execution records, corporate actions, income, CRS and FATCA reporting records, lending facilities, performance provenance). New artifacts under `docs/ontology/pwm`: the MAS AIRG paragraph map, an AI inventory profile, ten reconstruction queries, a mapping table for 114 Kognita vocabulary values and 25 policies, a JSON-LD context with a round trip that reads a signed Kognita evidence export as PWM RDF, five jurisdiction profiles and a code-list profile. All datatypes are now in the OWL 2 datatype map. Open: citation verification, FIBO alignment of the operations terms, the OWL DL and HermiT runs, and register exports in the round trip. See `docs/ontology/pwm/CHANGELOG.md` and `GAP_ANALYSIS.md`.
-
-### Continuous integration
-
-- The PWM job regenerates every generated PWM artifact and fails on any difference, then runs the PWM tests.
-
 ## [0.9.0] - 2026-11-19
 
 This release is a minor version because it renames identifiers and values (see Changed, below). Releases before 1.0 may break compatibility between minor versions.
@@ -24,6 +16,7 @@ This release is a minor version because it renames identifiers and values (see C
 - PWM 0.8 (18 Nov 2026): brings PWM level with Kognita 0.8 in one release that covers milestones 0.6 to 0.8. New module 12 for trust and resilience (signing keys, rotation and revocation, anchors, recovery bundles, external reviews, the provider register, failover and model-change detection, the dependency map, concentration, failure drills, retention by record class, incident reports), runtime assurance (assurance policy, agent manifest, external-agent assertions, deployment attestations, update approvals, approved components and advisories, technology transfer classification, production outcomes, conformance reports) and the milestone 0.6 records found missing (verifier independence, evaluation evidence, fairness reports, reasoning traces, claim envelope, memory governance, learning exports and exclusions, sensitive attributes). Every Kognita vocabulary enum now has a PWM code list with equal notations, checked by `tests/test_kognita_vocabulary.py`; all 31 event types are present; a mismatch it found (`POSSIBLE_BANK_CAPABILITY`) is fixed. Ranges for ten properties, reasoning axioms (disjoint classes and functional properties), and example data for every class and property, enforced by `tests/test_example_coverage.py`. See `docs/ontology/pwm/CHANGELOG.md` and `REVIEW_0.5.md`.
 - PWM uses US English throughout. Nine PWM terms are renamed (`AuthorisedSignatory`, `BehaviourAnomaly`, `BehaviourBaseline`, `BookingCentre`, `bookingCentreCode`, `CommContextualisedInsight`, `InternationalOrganisationPEP`, `UnusualAgentBehaviour`, `VerbAnalyse`) and `PossibleProviderCapability` becomes `PossibleBankCapability`; each old IRI stays declared as a deprecated alias for one version.
 - PWM roadmap renumbered: the business-scope and supervisory-readiness releases are 0.9 and 0.10, so they no longer share a number with Kognita 0.8. The source is pinned to Kognita 0.8.0.
+- PWM 0.10 (19 Nov 2026): builds the roadmap's 0.9 and 0.10 scope in one release. New module 13 for business scope (costs and charges, inducement disclosure, product approval and target market review, complaint outcomes, periodic suitability review, orders, executions, allocations, best-execution records, corporate actions, income, CRS and FATCA reporting records, lending facilities, performance provenance). New artifacts under `docs/ontology/pwm`: the MAS AIRG paragraph map, an AI inventory profile, ten reconstruction queries, a mapping table for 114 Kognita vocabulary values and 25 policies, a JSON-LD context with a round trip that reads a signed Kognita evidence export as PWM RDF, five jurisdiction profiles and a code-list profile. All datatypes are now in the OWL 2 datatype map. Open: citation verification, FIBO alignment of the operations terms, the OWL DL and HermiT runs, and register exports in the round trip. See `docs/ontology/pwm/CHANGELOG.md` and `GAP_ANALYSIS.md`.
 
 ### Changed
 
@@ -38,7 +31,7 @@ This release is a minor version because it renames identifiers and values (see C
 
 ### Continuous integration
 
-- A PWM job rebuilds the ontology and fails on any diff, then runs the SHACL validation and the PWM tests, including the Kognita vocabulary parity check.
+- A PWM job regenerates every generated PWM artifact and fails on any difference, then runs the SHACL validation and the PWM tests, including the Kognita vocabulary parity check.
 
 ## [0.8.0] - 2026-11-09
 
@@ -439,7 +432,9 @@ Known open review findings (fixes are planned for 0.5.1):
 - Multi-provider LLM support (Anthropic, OpenAI, Groq, Gemini, Ollama)
 - Streamlit demo application
 
-[Unreleased]: https://github.com/mze3e/kognita/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/mze3e/kognita/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/mze3e/kognita/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/mze3e/kognita/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/mze3e/kognita/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/mze3e/kognita/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/mze3e/kognita/compare/v0.5.2...v0.6.0
