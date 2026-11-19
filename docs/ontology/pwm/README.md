@@ -32,7 +32,7 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 
 IRIs: ontology `https://ahmedmuzammil.com/ontology/pwm`, version `https://ahmedmuzammil.com/ontology/pwm/0.8` (resolves to the Turtle file), namespace `https://ahmedmuzammil.com/ontology/pwm#` (each term resolves to its entry on the web page). Shapes use `https://ahmedmuzammil.com/ontology/pwm/0.8/pwm-shapes.ttl` as their version IRI; the unversioned `https://ahmedmuzammil.com/ontology/pwm/shapes` is the latest pointer.
 
-The roadmap source is pinned to software release **0.8.0**. PWM version N follows Kognita roadmap milestone N: PWM 0.8 covers milestones 0.6 to 0.8 in one release (see [ROADMAP.md](ROADMAP.md)). See the source verification table in SPEC for every FIBO IRI and its maturity.
+The roadmap source is pinned to software release **0.9.0**. PWM version N follows Kognita roadmap milestone N: PWM 0.8 covers milestones 0.6 to 0.8 in one release (see [ROADMAP.md](ROADMAP.md)). See the source verification table in SPEC for every FIBO IRI and its maturity.
 
 ## Using it
 

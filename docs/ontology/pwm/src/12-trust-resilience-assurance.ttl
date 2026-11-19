@@ -1353,28 +1353,28 @@ pwm:actorType a owl:ObjectProperty ; rdfs:label "actor type"@en ;
     rdfs:domain pwm:EvidenceRecord ;
     rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleTrust ;
-    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.8.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.9.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
 
 pwm:approvalRequestStatus a owl:ObjectProperty ; rdfs:label "approval request status"@en ;
     skos:definition "State of an approval request, including the first signature of a two-signature approval."@en ;
     rdfs:domain pwm:ApprovalRequest ;
     rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleTrust ;
-    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.8.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.9.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
 
 pwm:egressDecision a owl:ObjectProperty ; rdfs:label "egress decision"@en ;
     skos:definition "Whether data left for a provider unchanged, redacted or not at all."@en ;
     rdfs:domain pwm:EvidenceRecord ;
     rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleTrust ;
-    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.8.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.9.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
 
 pwm:checkResult a owl:ObjectProperty ; rdfs:label "check result"@en ;
     skos:definition "Verdict of one policy check."@en ;
     rdfs:domain pwm:PolicyCheck ;
     rdfs:range skos:Concept ;
     pwm:inModule pwm:ModuleTrust ;
-    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.8.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "vocabulary.py (Kognita 0.9.0)" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.8: NEW specialized record or property; no exact standard term identified" ] .
 
 pwm:ActorTypeScheme a skos:ConceptScheme ;
     skos:prefLabel "actor types"@en ;

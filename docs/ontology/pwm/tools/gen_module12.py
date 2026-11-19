@@ -16,8 +16,8 @@ LOC = {
  "A2":"roadmap milestone 0.8 item A2 (external-agent trust)", "A3":"roadmap milestone 0.8 item A3 (outcome validation)",
  "A4":"roadmap milestone 0.8 item A4 (third-party update gate)", "A5":"roadmap milestone 0.8 items A5 to A7, A10 and A11 (attestations)",
  "A9":"roadmap milestone 0.8 item A9 (software supply chain)", "A10":"roadmap milestone 0.8 item A10 (technology transfer)",
- "A12":"roadmap milestone 0.8 item A12 (supervisory conformance profiles)", "V":"vocabulary.py (Kognita 0.8.0)",
- "L":"roadmap milestone 0.6 and vocabulary.py (Kognita 0.8.0)",
+ "A12":"roadmap milestone 0.8 item A12 (supervisory conformance profiles)", "V":"vocabulary.py (Kognita 0.9.0)",
+ "L":"roadmap milestone 0.6 and vocabulary.py (Kognita 0.9.0)",
 }
 NEWP = "0.8: NEW specialized record or property; no exact standard term identified"
 def cit(*keys, ref="KOG-ROADMAP", new=True):

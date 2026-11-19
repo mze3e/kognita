@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-19
+
+This release is a minor version because it renames identifiers and values (see Changed, below). Releases before 1.0 may break compatibility between minor versions.
+
 ### Ontology (PWM)
 
 - PWM 0.8 (18 Nov 2026): brings PWM level with Kognita 0.8 in one release that covers milestones 0.6 to 0.8. New module 12 for trust and resilience (signing keys, rotation and revocation, anchors, recovery bundles, external reviews, the provider register, failover and model-change detection, the dependency map, concentration, failure drills, retention by record class, incident reports), runtime assurance (assurance policy, agent manifest, external-agent assertions, deployment attestations, update approvals, approved components and advisories, technology transfer classification, production outcomes, conformance reports) and the milestone 0.6 records found missing (verifier independence, evaluation evidence, fairness reports, reasoning traces, claim envelope, memory governance, learning exports and exclusions, sensitive attributes). Every Kognita vocabulary enum now has a PWM code list with equal notations, checked by `tests/test_kognita_vocabulary.py`; all 31 event types are present; a mismatch it found (`POSSIBLE_BANK_CAPABILITY`) is fixed. Ranges for ten properties, reasoning axioms (disjoint classes and functional properties), and example data for every class and property, enforced by `tests/test_example_coverage.py`. See `docs/ontology/pwm/CHANGELOG.md` and `REVIEW_0.5.md`.
