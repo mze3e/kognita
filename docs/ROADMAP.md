@@ -1153,7 +1153,7 @@ Every drill checks that policy, monitoring, containment and evidence remain inta
 
 ### E8. Consumer-Agent Purchase Authority and Human-Service Handoff (Proposal Watch)
 
-**Driver:** European Commission's 11 November 2026 proposed Digital Fairness Act and CPC revision. **Not enacted**; this is a proposal, not binding law. Scope for regulated financial services must be assessed by the bank. No default change to runtime enforcement.
+**Driver:** European Commission's 11 November 2026 proposed Digital Fairness Act and CPC revision. **Not enacted**; this is a proposal, not binding law. In the draft, Article 26 does not apply to the provision of financial services, and Article 25 does not apply to investment services. Other provisions still require the bank to assess scope for regulated financial services. No default change to runtime enforcement.
 
 - For client-facing agents authorized to buy or contract for customers, support external purpose- and transaction-scoped consumer-authority evidence, clear price/action disclosure and transaction lineage.
 - Support independently attested handoff to a human service channel where bank policy or applicable final law requires it. Kognita must not become the service channel or decide legal contract validity.
