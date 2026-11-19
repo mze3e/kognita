@@ -44,12 +44,12 @@ workflow.
 ## Configure a reviewed deployment
 
 Start with an existing registered agent, linked use case, evaluation and approved
-behaviour deployment. For a live agent, configure the policy and install all evidence for its exact
+behavior deployment. For a live agent, configure the policy and install all evidence for its exact
 binding in one transaction, verify admission, then commit. Alternatively, use a
 maintenance window: stop normal operation before committing the policy, obtain
 and commit the bound evidence, verify admission, then resume operation. A policy
 committed without its required evidence immediately denies admission. For a deployment change, submit the update packet and evaluation,
-approve the changed behaviour, and refresh deployment-bound attestations before
+approve the changed behavior, and refresh deployment-bound attestations before
 running it. An updated deployment cannot reuse the previous attestations.
 
 ```python
@@ -113,9 +113,9 @@ attest(session, agent.name, packet, evidence=writer,
        actor_id="bank-runtime", now=now)
 ```
 
-| Kind | Required claims | Admission/report behaviour |
+| Kind | Required claims | Admission/report behavior |
 |---|---|---|
-| `privacy` | `context_digest` | Fingerprints purpose, linked use-case purpose, tools/connectors, data classes/sources, memory behaviour, model/provider declarations, jurisdiction, autonomy and client impact. A material change or policy replacement invalidates it. |
+| `privacy` | `context_digest` | Fingerprints purpose, linked use-case purpose, tools/connectors, data classes/sources, memory behavior, model/provider declarations, jurisdiction, autonomy and client impact. A material change or policy replacement invalidates it. |
 | `environment` | `enforced: true`, nonempty `network_policy`, `isolation`, `credential_scope`, `sandbox_identity`, `termination_path` references | Required before high-risk admission and activation. The signed record binds the deployment and policy. |
 | `monitoring` | `from_sequence`, `through_sequence`, `action_hashes`, `unexplained_external_actions` | Reconciles exact local action hashes against independently supplied telemetry. Missing or unexplained actions create a finding. Actions outside the attested window also prevent admission when required. Refresh coverage after actions; there is no assumption that a future action was already monitored. |
 | `transfer` | `transfer_digest`, `approved: true` | The digest comes from `transfer_digest(policy)`. It binds institution-supplied origin, destination, transfer type and legal-policy reference; Kognita does not classify the law. |
@@ -156,7 +156,7 @@ identifier, regression evidence reference, rollback target/plan and accountable
 owner. Before `approve_deployment` installs it, a current agent/system evaluation
 must match the agent version, model version and candidate deployment digest.
 Populate the optional `EvaluationResult.deployment_hash` for this evaluation.
-An earlier evaluation for a different behaviour is insufficient. The packet's
+An earlier evaluation for a different behavior is insufficient. The packet's
 previous-deployment binding prevents reuse after another change.
 
 `approve_components` records unique package names/versions, SHA-256 SBOM/lockfile
@@ -195,7 +195,7 @@ Keep these administrative transactions short. An incomplete required evidence
 write refuses the operation and rolls back the entire safety transition.
 
 `export_manifest` returns JSON plus an Ed25519-signed digest for stable identity,
-behaviour version, owner/principal/use case, live authority and expiry, autonomy,
+behavior version, owner/principal/use case, live authority and expiry, autonomy,
 client impact, permitted tools/data/jurisdictions, dependencies and kill mechanism.
 `verify_manifest` takes an independent public PEM. `compare_manifest` compares
 identity, live authority and observed dependency evidence, producing findings for

@@ -178,7 +178,7 @@ def _usecase(session, usecase_id: str):
 
 
 def _tier_of(entry) -> int:
-    """Integer tiers 1 to 4 are honoured. A missing tier is not tier 2 or above.
+    """Integer tiers 1 to 4 are honored. A missing tier is not tier 2 or above.
 
     Any other stored value fails closed as tier 4, so a non-integer cannot
     skip the verifier or unlock the tier 1 exception.
@@ -301,7 +301,7 @@ def verify_claim(
     try:
         parsed = _ValidatorStatus(status)
     except ValueError:
-        raise ValueError("C7-STATUS: validator status is not recognised") from None
+        raise ValueError("C7-STATUS: validator status is not recognized") from None
     claim = _claim(session, claim_id)
     registered = _verifiers(session)
     supplied = _text(verifier_id)

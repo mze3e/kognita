@@ -9,7 +9,7 @@ from kognita.envelope import Check
 from kognita.models import as_utc, utcnow
 from kognita.vocabulary import CheckResult, ActorType, EventType
 
-_VERBS = {"read": 0, "analyse": 1, "recommend": 2, "draft": 3,
+_VERBS = {"read": 0, "analyze": 1, "recommend": 2, "draft": 3,
           "queue": 4, "send": 4, "execute": 4}
 
 
@@ -34,7 +34,7 @@ def _checks(envelope, agent, at, usecases=None):
          and envelope.principal == agent.principal
          and agent.deployment_date is not None
          and isinstance(agent.model, str) and bool(agent.model.strip()))
-    # Context cannot grant permissions. It supplies the behaviour being checked,
+    # Context cannot grant permissions. It supplies the behavior being checked,
     # whose digest must match an owner-approved manifest.
     try:
         digest = _deployment_hash(agent, envelope.context.get("deployment", permissions.get("_deployment")))
@@ -71,7 +71,7 @@ def _change(session, agent, level, evidence, actor_id, action, payload):
     current = (agent.tool_allowlist or {}).get("_deployment")
     if _deployment_hash(agent, current) == agent.deployment_hash:
         candidate.deployment_hash = _deployment_hash(candidate, current)
-    # A reduction cannot approve unrelated, unapproved behaviour changes.
+    # A reduction cannot approve unrelated, unapproved behavior changes.
     evidence.emit(session, correlation_id=f"autonomy:{agent.name}",
                   event_type=EventType.POLICY_CHANGE, actor_type=(ActorType.SYSTEM if action == "AUTONOMY_STEP_DOWN" else ActorType.HUMAN),
                   actor_id=actor_id, payload={"action": action, "agent": agent.name,

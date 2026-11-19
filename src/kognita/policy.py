@@ -342,11 +342,11 @@ def _strip_comment(text: str) -> str:
 
 
 def _prepare(text: str) -> list[_Line]:
-    normalised = text.replace("\r\n", "\n").replace("\r", "\n")
-    if normalised.startswith("\ufeff"):
-        normalised = normalised[1:]
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    if normalized.startswith("\ufeff"):
+        normalized = normalized[1:]
     lines: list[_Line] = []
-    for number, raw in enumerate(normalised.split("\n"), start=1):
+    for number, raw in enumerate(normalized.split("\n"), start=1):
         if "\t" in raw:
             raise _YamlError("tabs are not allowed in policy YAML", line=number)
         body = _strip_comment(raw)

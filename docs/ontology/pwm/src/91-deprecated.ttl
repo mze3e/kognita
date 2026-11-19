@@ -1,0 +1,17 @@
+# Deprecated terms. Before 1.0 a release can rename terms; each renamed IRI stays declared
+# with owl:deprecated for one version and names its replacement (ROADMAP.md, versioning policy).
+#
+# 0.10 removed the aliases that 0.8 introduced for the US spelling renames (AuthorisedSignatory,
+# BehaviourAnomaly, BehaviourBaseline, BookingCentre, bookingCentreCode, CommContextualisedInsight,
+# InternationalOrganisationPEP, UnusualAgentBehaviour, VerbAnalyse, PossibleProviderCapability).
+# Remove the declarations below in 0.11.
+
+owl:deprecated a owl:AnnotationProperty .
+dcterms:isReplacedBy a owl:AnnotationProperty .
+
+# xsd:duration is outside the OWL 2 datatype map, so the replacement counts whole seconds.
+# The old property has no range, so it brings no non-OWL 2 datatype back.
+pwm:freshnessThreshold a owl:DatatypeProperty ; rdfs:label "freshness threshold (deprecated)"@en ;
+    skos:definition "Deprecated: an xsd:duration. Use pwm:freshnessThresholdSeconds, for example P1D becomes 86400."@en ;
+    owl:deprecated true ; dcterms:isReplacedBy pwm:freshnessThresholdSeconds ;
+    pwm:inModule pwm:ModuleCore ; pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.10 datatype migration; deprecated alias for one version" ] .

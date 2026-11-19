@@ -166,7 +166,7 @@ Recovery: must pass promotion gate again
 
 **Action Permissions (vertical slice):**
 ```
-Read ≠ Analyse ≠ Recommend ≠ Draft ≠ Queue ≠ Send ≠ Execute
+Read ≠ Analyze ≠ Recommend ≠ Draft ≠ Queue ≠ Send ≠ Execute
 Each is a separate permission. Recommend never implies Execute.
 ```
 
@@ -1047,7 +1047,7 @@ EVOLVE's learning loop depends on quality data. This slide shows the contract th
 **Stage:** Embedded (insert after Slide 21)
 
 **Hero Text:**
-> Type claims. Unlabelled claims can't reach an RM or client.
+> Type claims. Unlabeled claims can't reach an RM or client.
 
 **Three Claim Types:**
 
@@ -1079,7 +1079,7 @@ RECOMMENDATION:
 
 **Claim Type Violations (What Gets Blocked):**
 ```
-Unlabelled claim: "Tech sector expected to outperform"
+Unlabeled claim: "Tech sector expected to outperform"
 ├─ No type specified → Cannot determine source authority
 ├─ Block from RM view? Probably not (RM can research)
 ├─ Block from client? YES (client can't verify source)
@@ -1526,7 +1526,7 @@ LAYER 2: DOMAIN PACKS (Pluggable policy evaluators)
 │  ├─ resolve_attributes(envelope, subjects) → derive policy-relevant attributes
 │  ├─ rules() → custom rule types beyond the built-in six
 │  └─ engages(policy, context) → does this regime apply to this request?
-├─ Example packs: private-banking (cross-border rules, booking-centre), healthcare (PHI controls)
+├─ Example packs: private-banking (cross-border rules, booking-center), healthcare (PHI controls)
 ├─ Test: Conformance kit enforces all packs fail-closed, cite rules, emit evidence
 └─ Ownership: Domain experts write packs; Kognita core is domain-blind
 
@@ -1662,7 +1662,7 @@ STAGE 4: EMPOWERED
 │  ├─ Autonomy levels L0-L6 (read → explain → recommend → draft → act → bounded → broad)
 │  ├─ Evidence gates for promotion (quality ≥ 95%, exceptions < 5%, traceability 100%)
 │  ├─ Automatic step-down on drift (metrics fall → autonomy drops one level)
-│  ├─ Tool allow-lists per agent (read, analyse, recommend, draft, queue, send, execute are separate)
+│  ├─ Tool allow-lists per agent (read, analyze, recommend, draft, queue, send, execute are separate)
 │  ├─ Blast-radius limits (max clients, max value, max daily actions)
 │  ├─ External content isolation (tainted runs cannot call write tools)
 │  ├─ Instruction authenticity (channel message alone is not authorization)

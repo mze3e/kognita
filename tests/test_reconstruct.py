@@ -40,7 +40,7 @@ from kognita.tools import ToolRegistry
 from kognita.vocabulary import ActorType, Classification, EventType
 from kognita.testing.harness import FROZEN_NOW, Harness
 
-PROMPT = "Summarise the eligibility note."
+PROMPT = "Summarize the eligibility note."
 ANSWER = "Eligible under the recorded checks."
 ITEM_BODY = "cross-site eligibility for restricted datasets"
 NOT_RECORDED = (

@@ -66,24 +66,24 @@ def _release(store, text, method="", *, flag=False, audience="rm", claim_id="c1"
 
 @pytest.mark.parametrize("audience", ["rm", "client"])
 @pytest.mark.parametrize("text,method,figures,flag,reason", [
-    ("NAV is 1.25", "book@1", ("nav",), False, "C1-LABELLED"),
+    ("NAV is 1.25", "book@1", ("nav",), False, "C1-LABELED"),
     ("NAV is 1.25", "", ("nav",), False, "C6-UNCITED"),
     ("NAV is 1.25", "book@1", ("tax",), False, "C6-UNCOVERED"),
-    ("see the attached note", "book@1", ("nav",), True, "C1-LABELLED"),
+    ("see the attached note", "book@1", ("nav",), True, "C1-LABELED"),
     ("see the attached note", "", ("nav",), True, "C6-UNCITED"),
     ("NAV is twelve", "book@1", ("tax",), True, "C6-UNCOVERED"),
-    ("NAV is twelve", "book@1", ("nav",), True, "C1-LABELLED"),
+    ("NAV is twelve", "book@1", ("nav",), True, "C1-LABELED"),
 ])
 def test_release_blocks_uncited_figures(store, audience, text, method, figures, flag, reason):
     _register(store, _service(*figures))
     check = _release(store, text, method, flag=flag, audience=audience)
     assert check.check == reason
-    assert check.result == (CheckResult.PASS if reason == "C1-LABELLED" else CheckResult.FAIL)
+    assert check.result == (CheckResult.PASS if reason == "C1-LABELED" else CheckResult.FAIL)
     if reason.startswith("C6-"):
         assert "no financial math" in check.citation
     session, writer = store
     event = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence.desc())).first()
-    assert event.payload["allowed"] is (reason == "C1-LABELLED")
+    assert event.payload["allowed"] is (reason == "C1-LABELED")
     assert event.payload["authoritative_figure"] is flag
     assert event.payload["reason"] == reason
     verify_chain(session)
@@ -275,9 +275,9 @@ def test_release_does_not_let_a_citation_skip_other_gates(store):
     session, writer = store
     _register(store)
     record_claim(session, _claim("NAV is 1.25", "book@1", claim_type=None), evidence=writer, interaction_id="i")
-    unlabelled = release_claim(session, "c1", evidence=writer, interaction_id="i", usecase_id="u1")
-    assert unlabelled.result == CheckResult.FAIL
-    assert unlabelled.check == "C1-UNLABELLED"
+    unlabeled = release_claim(session, "c1", evidence=writer, interaction_id="i", usecase_id="u1")
+    assert unlabeled.result == CheckResult.FAIL
+    assert unlabeled.check == "C1-UNLABELED"
     record_claim(
         session,
         _claim("NAV is 1.25", "book@1", claim_id="c2", source_system="model"),

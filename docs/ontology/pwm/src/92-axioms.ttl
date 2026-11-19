@@ -1,0 +1,34 @@
+# Reasoning axioms (0.8). The data rules in SHACL stay the authority on recorded structure;
+# these axioms let an OWL reasoner find contradictions without the shapes. Each axiom
+# is stated only where the model already treats the situation as an error. HermiT and the
+# example check in tests/test_axioms.py keep them honest.
+#
+# Inverse properties are deliberately not declared: no consumer reads the inverse
+# direction yet, and an unpopulated term is a cost (ROADMAP.md, risks).
+
+# A mandate belongs to exactly one service type.
+[] a owl:AllDisjointClasses ;
+    owl:members ( pwm:AdvisoryMandate pwm:DiscretionaryMandate pwm:ExecutionOnlyArrangement pwm:CustodyOnlyArrangement ) .
+
+# An agent is not a model, a use case, an AI system or a model provider.
+[] a owl:AllDisjointClasses ;
+    owl:members ( pwm:AIAgent pwm:AIModel pwm:AIUseCase pwm:AISystem pwm:ModelProvider ) .
+
+# An AI agent is not a natural person. Accountability roles already refuse an agent.
+pwm:AIAgent owl:disjointWith fibo-fnd-aap-ppl:Person .
+
+# Single-valued record fields.
+pwm:recordHash a owl:FunctionalProperty .
+pwm:previousRecordHash a owl:FunctionalProperty .
+pwm:eventType a owl:FunctionalProperty .
+pwm:signature a owl:FunctionalProperty .
+pwm:evidenceSequence a owl:FunctionalProperty .
+pwm:schemaVersion a owl:FunctionalProperty .
+pwm:keyId a owl:FunctionalProperty .
+pwm:anchoredRecordHash a owl:FunctionalProperty .
+pwm:anchoredSequence a owl:FunctionalProperty .
+pwm:bundleHash a owl:FunctionalProperty .
+pwm:manifestDigest a owl:FunctionalProperty .
+pwm:traceHash a owl:FunctionalProperty .
+pwm:outcomeId a owl:FunctionalProperty .
+pwm:effectiveFromSequence a owl:FunctionalProperty .

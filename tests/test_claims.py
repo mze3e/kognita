@@ -49,7 +49,7 @@ def test_release(store, audience, typed):
     )
     check = release_claim(session, "c1", evidence=writer, interaction_id="i1", usecase_id="u1", audience=audience)
     assert check.result == (CheckResult.PASS if typed else CheckResult.FAIL)
-    assert check.check == ("C1-LABELLED" if typed else "C1-UNLABELLED")
+    assert check.check == ("C1-LABELED" if typed else "C1-UNLABELED")
     report = reconstruct(session, "i1")
     assert len(report["claims"]) == int(typed and audience == "rm")
     if typed and audience == "rm":

@@ -1,0 +1,12 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q9. What was communicated to the client? The communication, channel, content hash and the decision it derives from.
+# Bind ?interaction to the interaction under examination.
+SELECT ?communication ?client ?channel ?contentHash ?decision ?disclosed WHERE {
+  ?communication a pwm:ClientCommunication ; pwm:partOfInteraction ?interaction ; pwm:withClient ?client ; pwm:contentHash ?contentHash .
+  OPTIONAL { ?communication pwm:viaChannel ?channel }
+  OPTIONAL { ?communication pwm:derivedFromDecision ?decision }
+  OPTIONAL { ?communication pwm:aiDisclosureGiven ?disclosed }
+}

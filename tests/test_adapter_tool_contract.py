@@ -52,7 +52,7 @@ def test_adapter_preserves_registered_tool_contract(session, evidence, monkeypat
         pass
 
     metadata = dict(classification=Classification.C1, description='approved note reader',
-                    verb='analyse' if label == 'verb' else 'read',
+                    verb='analyze' if label == 'verb' else 'read',
                     required_level=1 if label == 'verb' else 0, reversible=True,
                     compensation=undo, max_duration=7.0, **({label: True} if label != 'verb' else {}))
     registry = ToolRegistry()

@@ -664,28 +664,28 @@ def vocabulary_citations(spec: UseCaseSpec) -> tuple[str, ...]:
     if not spec.purpose.strip():
         add(f"'{usecase_id}' has no purpose")
     if spec.category not in CATEGORIES:
-        add(f"category '{spec.category}' is not a recognised use-case category")
+        add(f"category '{spec.category}' is not a recognized use-case category")
     for name in ("cloud", "framework", "vector_platform", "orchestration"):
         if not isinstance(getattr(spec, name), str):
             add(f"R9: {name} must be a string")
     if spec.business_criticality not in BUSINESS_CRITICALITY:
-        add(f"business criticality '{spec.business_criticality}' is not recognised")
+        add(f"business criticality '{spec.business_criticality}' is not recognized")
     if spec.client_impact not in CLIENT_IMPACT:
-        add(f"client impact '{spec.client_impact}' is not recognised")
+        add(f"client impact '{spec.client_impact}' is not recognized")
     if spec.autonomy not in AUTONOMY_AXIS:
-        add(f"autonomy '{spec.autonomy}' is not recognised")
+        add(f"autonomy '{spec.autonomy}' is not recognized")
     if spec.decision_consequence not in DECISION_CONSEQUENCE:
-        add(f"decision consequence '{spec.decision_consequence}' is not recognised")
+        add(f"decision consequence '{spec.decision_consequence}' is not recognized")
     if spec.data_sensitivity not in DATA_SENSITIVITY:
-        add(f"data sensitivity '{spec.data_sensitivity}' is not recognised")
+        add(f"data sensitivity '{spec.data_sensitivity}' is not recognized")
     if spec.inherent_materiality not in MATERIALITY:
-        add(f"inherent materiality '{spec.inherent_materiality}' is not recognised")
+        add(f"inherent materiality '{spec.inherent_materiality}' is not recognized")
     if spec.residual_materiality not in MATERIALITY:
-        add(f"residual materiality '{spec.residual_materiality}' is not recognised")
+        add(f"residual materiality '{spec.residual_materiality}' is not recognized")
     if spec.approval_gate not in APPROVAL_GATES:
-        add(f"approval gate '{spec.approval_gate}' is not recognised")
+        add(f"approval gate '{spec.approval_gate}' is not recognized")
     if spec.explanation_depth not in EXPLANATION_DEPTHS:
-        add(f"explanation depth '{spec.explanation_depth}' is not recognised")
+        add(f"explanation depth '{spec.explanation_depth}' is not recognized")
     if not isinstance(spec.require_reasoning_trace, bool):
         add("require_reasoning_trace must be a bool")
     if isinstance(spec.maximum_autonomy, bool) or not isinstance(
@@ -1504,7 +1504,7 @@ def usecase_checks(
                 "USE_CASE_UNMEDIATED",
                 _cite(
                     entry.usecase_id,
-                    f"'{entry.usecase_id}' is unmediated and does not authorise a call",
+                    f"'{entry.usecase_id}' is unmediated and does not authorize a call",
                     entry.owner,
                 ),
             )
@@ -1696,7 +1696,7 @@ def appetite_vocabulary(appetite: Appetite) -> tuple[str, ...]:
     for category in (*appetite.allowed_categories, *appetite.prohibited_categories):
         if category not in known:
             found.append(
-                f"Risk appetite — category '{category}' is not a recognised use-case category"
+                f"Risk appetite — category '{category}' is not a recognized use-case category"
             )
     overlap = sorted(
         set(appetite.allowed_categories) & set(appetite.prohibited_categories)
@@ -1707,11 +1707,11 @@ def appetite_vocabulary(appetite: Appetite) -> tuple[str, ...]:
         )
     for impact in appetite.permitted_client_impact:
         if impact not in CLIENT_IMPACT:
-            found.append(f"Risk appetite — client impact '{impact}' is not recognised")
+            found.append(f"Risk appetite — client impact '{impact}' is not recognized")
     if appetite.maximum_residual_materiality not in MATERIALITY:
         found.append(
             "Risk appetite — maximum residual materiality "
-            f"'{appetite.maximum_residual_materiality}' is not recognised"
+            f"'{appetite.maximum_residual_materiality}' is not recognized"
         )
     if not 0 <= appetite.maximum_autonomy <= 6:
         found.append(
@@ -2670,7 +2670,7 @@ def model_call_block(
     if entry.unmediated:
         return _cite(
             entry.usecase_id,
-            f"'{entry.usecase_id}' is unmediated and does not authorise a call",
+            f"'{entry.usecase_id}' is unmediated and does not authorize a call",
             entry.owner,
         )
     if not entry.approved_models:

@@ -10,7 +10,7 @@ the same mechanics:
 Wealth pack (other repo)                Here
 ======================================  ====================================
 Client domiciled in the EU              Subject in a restricted region
-Booking centre / RM location            Home site / requester site
+Booking center / RM location            Home site / requester site
 Accredited-investor flag                Cleared-collaborator flag
 Structured note, complex product        Restricted dataset
 Two regimes both failing one request    Two regimes both failing one request

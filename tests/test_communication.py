@@ -69,7 +69,7 @@ from kognita.vocabulary import (
 from kognita.testing.harness import FROZEN_NOW, Harness
 
 NOTE = "The house view changed. Capital is at risk."
-PROMPT = "Summarise the eligibility note."
+PROMPT = "Summarize the eligibility note."
 ANSWER = "Eligible under the recorded checks."
 ITEM_BODY = "cross-site eligibility for restricted datasets"
 
@@ -168,7 +168,7 @@ def _content_policy(session, *, lanes=("client",), **rule):
         "levels": [
             "general information",
             "house view",
-            "contextualised insight",
+            "contextualized insight",
             "investment discussion",
             "product recommendation",
             "transaction",
@@ -237,7 +237,7 @@ def _allow(session, evidence, interaction_id):
 
 _MATERIAL_LEVELS = frozenset({
     "house view",
-    "contextualised insight",
+    "contextualized insight",
     "investment discussion",
     "product recommendation",
     "transaction",
@@ -888,7 +888,7 @@ def test_ai_provenance_needs_a_disclosure_decision(harness):
             evidence=harness.evidence,
             now=FROZEN_NOW,
         )
-        relabelled = _send(
+        relabeled = _send(
             session,
             harness.evidence,
             interaction.id,
@@ -914,9 +914,9 @@ def test_ai_provenance_needs_a_disclosure_decision(harness):
         )
         session.commit()
 
-    assert relabelled["outcome"] == "DENY"
-    assert relabelled["provenance"] == "AI"
-    assert relabelled["claimed_provenance"] == "human"
+    assert relabeled["outcome"] == "DENY"
+    assert relabeled["provenance"] == "AI"
+    assert relabeled["claimed_provenance"] == "human"
     assert missing["outcome"] == "DENY"
     assert "disclosure" in missing["citation"]
     assert disclosed["outcome"] == "ALLOW"
@@ -1413,7 +1413,7 @@ def test_pause_override_restrict_and_recover_are_evidenced(harness):
             citation="Intervention: observe",
             now=FROZEN_NOW,
         )
-        with pytest.raises(InterventionError, match="not an authorised human"):
+        with pytest.raises(InterventionError, match="not an authorized human"):
             pause_run(
                 session,
                 run.id,

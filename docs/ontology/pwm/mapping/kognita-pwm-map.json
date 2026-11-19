@@ -1,0 +1,904 @@
+{
+ "generated_by": "tools/gen_mapping.py",
+ "policy_packs": [
+  {
+   "disposition": "template: PWM models records, not templates",
+   "pack": "data-classification",
+   "policy": "classification-ceiling",
+   "pwm_terms": []
+  },
+  {
+   "disposition": "template: PWM models records, not templates",
+   "pack": "data-classification",
+   "policy": "restricted-classification",
+   "pwm_terms": []
+  },
+  {
+   "disposition": "template: PWM models records, not templates",
+   "pack": "geo-fencing",
+   "policy": "blocked-locations",
+   "pwm_terms": []
+  },
+  {
+   "disposition": "template: PWM models records, not templates",
+   "pack": "geo-fencing",
+   "policy": "permitted-locations",
+   "pwm_terms": []
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "booking-center",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#BookingCenter",
+    "https://ahmedmuzammil.com/ontology/pwm#ClientRelationship",
+    "https://ahmedmuzammil.com/ontology/pwm#CrossBorderRule",
+    "https://ahmedmuzammil.com/ontology/pwm#bookingCenterCode",
+    "https://ahmedmuzammil.com/ontology/pwm#isBookedAt",
+    "https://ahmedmuzammil.com/ontology/pwm#jurisdictionCode"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "client-ai-disclosure",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#ClientCommunication",
+    "https://ahmedmuzammil.com/ontology/pwm#aiDisclosureGiven"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "client-communication-content",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#ClientCommunication"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "client-communication",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#ClientCommunication"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "client-domicile",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#CrossBorderRule",
+    "https://ahmedmuzammil.com/ontology/pwm#clientDomicileCode",
+    "https://ahmedmuzammil.com/ontology/pwm#domicileCountry",
+    "https://ahmedmuzammil.com/ontology/pwm#residenceCountry"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "concentration",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#ConcentrationLimit",
+    "https://ahmedmuzammil.com/ontology/pwm#InvestmentRestriction",
+    "https://ahmedmuzammil.com/ontology/pwm#hasRestriction",
+    "https://ahmedmuzammil.com/ontology/pwm#limitValue"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "contact-frequency",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#Portfolio"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "cross-border-solicitation",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#CrossBorderActivityScheme",
+    "https://ahmedmuzammil.com/ontology/pwm#CrossBorderRule",
+    "https://ahmedmuzammil.com/ontology/pwm#appliesToActivity",
+    "https://ahmedmuzammil.com/ontology/pwm#permitted"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "kyc-onboarding",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#CustomerDueDiligence"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "mandate",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#InvestmentRestriction",
+    "https://ahmedmuzammil.com/ontology/pwm#Mandate",
+    "https://ahmedmuzammil.com/ontology/pwm#governedByMandate",
+    "https://ahmedmuzammil.com/ontology/pwm#hasRestriction",
+    "https://ahmedmuzammil.com/ontology/pwm#usesMandate"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "product-eligibility",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#ApprovedProductList",
+    "https://ahmedmuzammil.com/ontology/pwm#appliesToProduct"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "relationship-manager",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#ClientRelationship",
+    "https://ahmedmuzammil.com/ontology/pwm#CoverageAssignment",
+    "https://ahmedmuzammil.com/ontology/pwm#RelationshipManager",
+    "https://ahmedmuzammil.com/ontology/pwm#assignedRelationshipManager",
+    "https://ahmedmuzammil.com/ontology/pwm#coversRelationship"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "research-distribution",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#CrossBorderActivityScheme",
+    "https://ahmedmuzammil.com/ontology/pwm#CrossBorderRule",
+    "https://ahmedmuzammil.com/ontology/pwm#ResearchPublication",
+    "https://ahmedmuzammil.com/ontology/pwm#appliesToActivity"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "rm-location",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#CrossBorderRule",
+    "https://ahmedmuzammil.com/ontology/pwm#RelationshipManager",
+    "https://ahmedmuzammil.com/ontology/pwm#jurisdictionCode"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "suitability-report",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#SuitabilityReport"
+   ]
+  },
+  {
+   "disposition": "mapped",
+   "pack": "private-banking",
+   "policy": "suitability",
+   "pwm_terms": [
+    "https://ahmedmuzammil.com/ontology/pwm#SuitabilityAssessment",
+    "https://ahmedmuzammil.com/ontology/pwm#productRiskLevel"
+   ]
+  },
+  {
+   "disposition": "template: PWM models records, not templates",
+   "pack": "role-based-access",
+   "policy": "named-role",
+   "pwm_terms": []
+  },
+  {
+   "disposition": "template: PWM models records, not templates",
+   "pack": "role-based-access",
+   "policy": "own-subject",
+   "pwm_terms": []
+  },
+  {
+   "disposition": "template: PWM models records, not templates",
+   "pack": "time-gated-access",
+   "policy": "business-hours",
+   "pwm_terms": []
+  },
+  {
+   "disposition": "template: PWM models records, not templates",
+   "pack": "two-signature-approval-chains",
+   "policy": "release-instruction",
+   "pwm_terms": []
+  },
+  {
+   "disposition": "template: PWM models records, not templates",
+   "pack": "two-signature-approval-chains",
+   "policy": "release-payment",
+   "pwm_terms": []
+  }
+ ],
+ "pwm_namespace": "https://ahmedmuzammil.com/ontology/pwm#",
+ "vocabulary": [
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#VerbAnalyze",
+   "kognita": "ActionVerbs",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActionVerbScheme",
+   "value": "analyze"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#VerbDraft",
+   "kognita": "ActionVerbs",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActionVerbScheme",
+   "value": "draft"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#VerbExecute",
+   "kognita": "ActionVerbs",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActionVerbScheme",
+   "value": "execute"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#VerbQueue",
+   "kognita": "ActionVerbs",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActionVerbScheme",
+   "value": "queue"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#VerbRead",
+   "kognita": "ActionVerbs",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActionVerbScheme",
+   "value": "read"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#VerbRecommend",
+   "kognita": "ActionVerbs",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActionVerbScheme",
+   "value": "recommend"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#VerbSend",
+   "kognita": "ActionVerbs",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActionVerbScheme",
+   "value": "send"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ActorAgent",
+   "kognita": "ActorType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActorTypeScheme",
+   "value": "AGENT"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ActorHuman",
+   "kognita": "ActorType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActorTypeScheme",
+   "value": "HUMAN"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ActorSystem",
+   "kognita": "ActorType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ActorTypeScheme",
+   "value": "SYSTEM"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ApprovalStatusApproved",
+   "kognita": "ApprovalStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ApprovalStatusScheme",
+   "value": "APPROVED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ApprovalExpired",
+   "kognita": "ApprovalStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ApprovalStatusScheme",
+   "value": "EXPIRED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ApprovalMarked",
+   "kognita": "ApprovalStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ApprovalStatusScheme",
+   "value": "MARKED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ApprovalPending",
+   "kognita": "ApprovalStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ApprovalStatusScheme",
+   "value": "PENDING"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ApprovalRejected",
+   "kognita": "ApprovalStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ApprovalStatusScheme",
+   "value": "REJECTED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#CheckEscalate",
+   "kognita": "CheckResult",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#CheckResultScheme",
+   "value": "escalate"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#CheckFail",
+   "kognita": "CheckResult",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#CheckResultScheme",
+   "value": "fail"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#CheckPass",
+   "kognita": "CheckResult",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#CheckResultScheme",
+   "value": "pass"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#CheckRequiresHuman",
+   "kognita": "CheckResult",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#CheckResultScheme",
+   "value": "requires_human"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ConversationHypothesis",
+   "kognita": "ClaimType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ClaimTypeScheme",
+   "value": "CONVERSATION_HYPOTHESIS"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#Inference",
+   "kognita": "ClaimType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ClaimTypeScheme",
+   "value": "INFERENCE"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#PossibleBankCapability",
+   "kognita": "ClaimType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ClaimTypeScheme",
+   "value": "POSSIBLE_BANK_CAPABILITY"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#VerifiedFact",
+   "kognita": "ClaimType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ClaimTypeScheme",
+   "value": "VERIFIED_FACT"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#C0",
+   "kognita": "Classification",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DataClassificationScheme",
+   "value": "C0"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#C1",
+   "kognita": "Classification",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DataClassificationScheme",
+   "value": "C1"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#C2",
+   "kognita": "Classification",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DataClassificationScheme",
+   "value": "C2"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#C3",
+   "kognita": "Classification",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DataClassificationScheme",
+   "value": "C3"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ProfileFCA",
+   "kognita": "ConformanceProfiles",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ConformanceProfileScheme",
+   "value": "FCA"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ProfileFSB",
+   "kognita": "ConformanceProfiles",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ConformanceProfileScheme",
+   "value": "FSB"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ProfileHKMAART",
+   "kognita": "ConformanceProfiles",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ConformanceProfileScheme",
+   "value": "HKMA-ART"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ProfileMAS",
+   "kognita": "ConformanceProfiles",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ConformanceProfileScheme",
+   "value": "MAS"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ProfileOCC",
+   "kognita": "ConformanceProfiles",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ConformanceProfileScheme",
+   "value": "OCC"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ProfileSEC",
+   "kognita": "ConformanceProfiles",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ConformanceProfileScheme",
+   "value": "SEC"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#DrillApiOutage",
+   "kognita": "DrillKind",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillKindScheme",
+   "value": "api_outage"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#DrillCompromisedModel",
+   "kognita": "DrillKind",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillKindScheme",
+   "value": "compromised_model"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#DrillCorruptedContext",
+   "kognita": "DrillKind",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillKindScheme",
+   "value": "corrupted_context"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#DrillIdentityServiceFailure",
+   "kognita": "DrillKind",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillKindScheme",
+   "value": "identity_service_failure"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#DrillModelUnavailable",
+   "kognita": "DrillKind",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillKindScheme",
+   "value": "model_unavailable"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#DrillRetrievalFailure",
+   "kognita": "DrillKind",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillKindScheme",
+   "value": "retrieval_failure"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#DrillToolFailure",
+   "kognita": "DrillKind",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillKindScheme",
+   "value": "tool_failure"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#DrillVendorOutage",
+   "kognita": "DrillKind",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillKindScheme",
+   "value": "vendor_outage"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ScenarioAgentPrivilegeEscalation",
+   "kognita": "DrillScenarios",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillScenarioScheme",
+   "value": "agent-privilege-escalation"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ScenarioCompromisedProvider",
+   "kognita": "DrillScenarios",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillScenarioScheme",
+   "value": "compromised-provider"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ScenarioContainmentRecovery",
+   "kognita": "DrillScenarios",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillScenarioScheme",
+   "value": "containment-recovery"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ScenarioDiscoveredCredentials",
+   "kognita": "DrillScenarios",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillScenarioScheme",
+   "value": "discovered-credentials"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ScenarioMachineSpeedProbing",
+   "kognita": "DrillScenarios",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillScenarioScheme",
+   "value": "machine-speed-probing"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ScenarioMaliciousRetrieval",
+   "kognita": "DrillScenarios",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillScenarioScheme",
+   "value": "malicious-retrieval"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ScenarioPromptInjection",
+   "kognita": "DrillScenarios",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillScenarioScheme",
+   "value": "prompt-injection-tool-escalation"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ScenarioUnauthorizedNetwork",
+   "kognita": "DrillScenarios",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DrillScenarioScheme",
+   "value": "unauthorized-network"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EgressAllow",
+   "kognita": "EgressDecision",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EgressDecisionScheme",
+   "value": "ALLOW"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EgressDeny",
+   "kognita": "EgressDecision",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EgressDecisionScheme",
+   "value": "DENY"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EgressRedact",
+   "kognita": "EgressDecision",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EgressDecisionScheme",
+   "value": "REDACT"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventAnchorPublished",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "ANCHOR_PUBLISHED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventApproval",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "APPROVAL"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventAssurance",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "ASSURANCE"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventClaim",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "CLAIM"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventClaimVerified",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "CLAIM_VERIFIED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventClientCommunication",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "CLIENT_COMMUNICATION"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventEgress",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "EGRESS"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventErasure",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "ERASURE"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventEvaluationRecorded",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "EVALUATION_RECORDED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventExternalReviewSubmitted",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "EXTERNAL_REVIEW_SUBMITTED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventFinalDecision",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "FINAL_DECISION"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventIncidentClosed",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "INCIDENT_CLOSED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventIncidentOpened",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "INCIDENT_OPENED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventIncidentUpdated",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "INCIDENT_UPDATED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventInteraction",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "INTERACTION"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventIntervention",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "INTERVENTION"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventKeyRevoked",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "KEY_REVOKED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventKeyRotated",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "KEY_ROTATED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventLearningExport",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "LEARNING_EXPORT"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventMemoryWrite",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "MEMORY_WRITE"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventModelCall",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "MODEL_CALL"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventNearMiss",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "NEAR_MISS"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventOrigination",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "ORIGINATION"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventOutcome",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "OUTCOME"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventPolicyChange",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "POLICY_CHANGE"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventPolicyDecision",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "POLICY_DECISION"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventRetrieval",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "RETRIEVAL"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventRevalidationTriggered",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "REVALIDATION_TRIGGERED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventReview",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "REVIEW"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventSourceSuperseded",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "SOURCE_SUPERSEDED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#EventToolCall",
+   "kognita": "EventType",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#EvidenceEventTypeScheme",
+   "value": "TOOL_CALL"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#Degraded",
+   "kognita": "FailureMode",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#GatewayFailureModeScheme",
+   "value": "DEGRADED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#FailClosed",
+   "kognita": "FailureMode",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#GatewayFailureModeScheme",
+   "value": "FAIL_CLOSED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#MemoryInstitutional",
+   "kognita": "MemoryScope",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#MemoryScopeScheme",
+   "value": "INSTITUTIONAL"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#MemoryRelationship",
+   "kognita": "MemoryScope",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#MemoryScopeScheme",
+   "value": "RELATIONSHIP"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#MemoryWorking",
+   "kognita": "MemoryScope",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#MemoryScopeScheme",
+   "value": "WORKING"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#OutcomeAllow",
+   "kognita": "Outcome",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DecisionOutcomeScheme",
+   "value": "ALLOW"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#OutcomeDeny",
+   "kognita": "Outcome",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DecisionOutcomeScheme",
+   "value": "DENY"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#OutcomeEscalate",
+   "kognita": "Outcome",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DecisionOutcomeScheme",
+   "value": "ESCALATE"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#OutcomeHumanApproval",
+   "kognita": "Outcome",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DecisionOutcomeScheme",
+   "value": "HUMAN_APPROVAL"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#OutcomeObserve",
+   "kognita": "Outcome",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#DecisionOutcomeScheme",
+   "value": "OBSERVE"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#RecordAdvice",
+   "kognita": "RecordClasses",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#RecordClassScheme",
+   "value": "advice"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#RecordApprovals",
+   "kognita": "RecordClasses",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#RecordClassScheme",
+   "value": "approvals"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#RecordClientCommunications",
+   "kognita": "RecordClasses",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#RecordClassScheme",
+   "value": "client communications"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#RecordComplianceRecords",
+   "kognita": "RecordClasses",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#RecordClassScheme",
+   "value": "compliance records"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#RecordRecommendations",
+   "kognita": "RecordClasses",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#RecordClassScheme",
+   "value": "recommendations"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#RecordTransactions",
+   "kognita": "RecordClasses",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#RecordClassScheme",
+   "value": "transactions"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#SensitiveEthnicity",
+   "kognita": "SensitiveKinds",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#SensitiveKindScheme",
+   "value": "ethnicity"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#SensitiveHealth",
+   "kognita": "SensitiveKinds",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#SensitiveKindScheme",
+   "value": "health"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#SensitivePolitical",
+   "kognita": "SensitiveKinds",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#SensitiveKindScheme",
+   "value": "political_views"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#SensitiveReligion",
+   "kognita": "SensitiveKinds",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#SensitiveKindScheme",
+   "value": "religion"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#SensitiveSexuality",
+   "kognita": "SensitiveKinds",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#SensitiveKindScheme",
+   "value": "sexuality"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#SensitiveVulnerability",
+   "kognita": "SensitiveKinds",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#SensitiveKindScheme",
+   "value": "vulnerability"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#StaleRefresh",
+   "kognita": "StaleAction",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#StaleActionScheme",
+   "value": "REFRESH"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#StaleSuppress",
+   "kognita": "StaleAction",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#StaleActionScheme",
+   "value": "SUPPRESS"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#StaleWarn",
+   "kognita": "StaleAction",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#StaleActionScheme",
+   "value": "WARN"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ValidatorBlocked",
+   "kognita": "ValidatorStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ValidatorStatusScheme",
+   "value": "BLOCKED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ValidatorConflicting",
+   "kognita": "ValidatorStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ValidatorStatusScheme",
+   "value": "CONFLICTING"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ValidatorInferred",
+   "kognita": "ValidatorStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ValidatorStatusScheme",
+   "value": "INFERRED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ValidatorStale",
+   "kognita": "ValidatorStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ValidatorStatusScheme",
+   "value": "STALE"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ValidatorUnverified",
+   "kognita": "ValidatorStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ValidatorStatusScheme",
+   "value": "UNVERIFIED"
+  },
+  {
+   "concept": "https://ahmedmuzammil.com/ontology/pwm#ValidatorVerified",
+   "kognita": "ValidatorStatus",
+   "scheme": "https://ahmedmuzammil.com/ontology/pwm#ValidatorStatusScheme",
+   "value": "VERIFIED"
+  }
+ ]
+}

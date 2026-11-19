@@ -442,7 +442,7 @@ def test_rule_overlay_replaces_a_core_evaluator():
     assert pack.rules()["ATTRIBUTE_ALLOWLIST"] is replacement
 
 
-def test_private_banking_fixture_denies_cross_border_and_booking_centre(session):
+def test_private_banking_fixture_denies_cross_border_and_booking_center(session):
     pack = resolve_pack(
         "private-banking",
         user_root=Path("/no/user"),
@@ -479,9 +479,9 @@ def test_private_banking_fixture_denies_cross_border_and_booking_centre(session)
     denied_border = outcome("C-CROSS")
     assert denied_border.outcome is Outcome.DENY
     assert "cross-border-solicitation" in _cited(denied_border, session)
-    denied_centre = outcome("C-BOOK")
-    assert denied_centre.outcome is Outcome.DENY
-    assert "booking-centre" in _cited(denied_centre, session)
+    denied_center = outcome("C-BOOK")
+    assert denied_center.outcome is Outcome.DENY
+    assert "booking-center" in _cited(denied_center, session)
 
     missing = Envelope(
         principal="rm.lee",
@@ -490,7 +490,7 @@ def test_private_banking_fixture_denies_cross_border_and_booking_centre(session)
         actor_location="SG",
         subjects={"client": "C-100"},
     )
-    bare = pack.resolve_attributes(missing, {"client": {"booking_centre": "SG"}})
+    bare = pack.resolve_attributes(missing, {"client": {"booking_center": "SG"}})
     assert "contact_count" not in bare
     with pytest.raises(LookupError):
         pack.load_subjects(

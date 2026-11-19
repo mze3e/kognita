@@ -1,0 +1,13 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+# Senior-management report (MAS AIRG 4.5 to 4.7): AI use cases by risk tier, lifecycle status, owner and
+# jurisdiction, with the count of open reconstruction findings. Filter by adding
+#   FILTER (?jurisdiction = "SG")
+# or bind ?jurisdiction before running.
+SELECT ?useCase ?riskTier ?status ?jurisdiction ?owner (COUNT(DISTINCT ?finding) AS ?openFindings) WHERE {
+  ?useCase a pwm:AIUseCase ; pwm:riskTier ?riskTier ; pwm:lifecycleStatus ?status ; pwm:approvedJurisdiction ?jurisdiction .
+  OPTIONAL { ?useCase pwm:hasAccountabilityRole ?role . ?role a pwm:BusinessOwner ; cmns-rlcmp:isPlayedBy ?owner }
+  OPTIONAL { ?report pwm:underUseCase ?useCase ; pwm:hasFinding ?finding }
+}
+GROUP BY ?useCase ?riskTier ?status ?jurisdiction ?owner
+ORDER BY ?riskTier ?useCase

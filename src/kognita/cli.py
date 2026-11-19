@@ -1563,7 +1563,7 @@ def _cmd_export_request(args: argparse.Namespace) -> int:
         result = request_export(
             session,
             ExportRequest(
-                purpose=args.purpose, anonymisation=args.anonymisation,
+                purpose=args.purpose, anonymization=args.anonymization,
                 validation=args.validation, approval=args.approval,
                 requester=args.requester, records=tuple(args.record),
             ),
@@ -1797,8 +1797,9 @@ def build_parser() -> argparse.ArgumentParser:
     export_sub = learning_export.add_subparsers(dest="export_command", required=True)
     export_request = export_sub.add_parser("request", help="request an evidenced selection manifest")
     export_request.add_argument("--db", default="kognita.db", help="store path or URL")
-    for control in ("purpose", "anonymisation", "validation", "approval", "requester"):
-        export_request.add_argument(f"--{control}", default="")
+    for control in ("purpose", "anonymization", "validation", "approval", "requester"):
+        flags = [f"--{control}"] + (["--anonymisation"] if control == "anonymization" else [])  # legacy spelling
+        export_request.add_argument(*flags, dest=control, default="")
     export_request.add_argument("--record", action="append", default=[], help="record id (repeatable)")
     export_request.set_defaults(func=_cmd_export_request)
 

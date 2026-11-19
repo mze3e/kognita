@@ -7,7 +7,7 @@ scenarios:
       tool: discuss_product
       actor_location: SG
       attributes:
-        booking_centre: SG
+        booking_center: SG
         rm_location: SG
         client_domicile: SG
         solicitation: prohibited

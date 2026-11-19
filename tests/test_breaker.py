@@ -620,7 +620,7 @@ def test_revocation_of_each_dimension_denies_the_next_matching_decision(session,
             "archive",
             "Jane Smith",
             dict(attributes={"source": "archive"}),
-            dict(attributes={"source": "catalogue"}),
+            dict(attributes={"source": "catalog"}),
         ),
         (
             "client",
@@ -693,7 +693,7 @@ def test_revocation_of_each_dimension_denies_the_next_matching_decision(session,
         )
 
 
-def test_provider_revocation_stops_every_listed_use_case_and_honours_limits(session, evidence):
+def test_provider_revocation_stops_every_listed_use_case_and_honors_limits(session, evidence):
     _owners(session, evidence)
     row = revoke(
         session,

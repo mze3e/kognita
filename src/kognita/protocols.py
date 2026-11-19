@@ -15,7 +15,7 @@ from kognita.vocabulary import Classification
 
 @runtime_checkable
 class Embedder(Protocol):
-    """Turns text into a normalised vector."""
+    """Turns text into a normalized vector."""
 
     @property
     def dimension(self) -> int: ...

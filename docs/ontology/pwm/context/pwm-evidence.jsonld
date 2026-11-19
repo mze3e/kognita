@@ -1,0 +1,79 @@
+{
+ "@context": {
+  "AGENT": "pwm:ActorAgent",
+  "ANCHOR_PUBLISHED": "pwm:EventAnchorPublished",
+  "APPROVAL": "pwm:EventApproval",
+  "ASSURANCE": "pwm:EventAssurance",
+  "C0": "pwm:C0",
+  "C1": "pwm:C1",
+  "C2": "pwm:C2",
+  "C3": "pwm:C3",
+  "CLAIM": "pwm:EventClaim",
+  "CLAIM_VERIFIED": "pwm:EventClaimVerified",
+  "CLIENT_COMMUNICATION": "pwm:EventClientCommunication",
+  "EGRESS": "pwm:EventEgress",
+  "ERASURE": "pwm:EventErasure",
+  "EVALUATION_RECORDED": "pwm:EventEvaluationRecorded",
+  "EXTERNAL_REVIEW_SUBMITTED": "pwm:EventExternalReviewSubmitted",
+  "FINAL_DECISION": "pwm:EventFinalDecision",
+  "HUMAN": "pwm:ActorHuman",
+  "INCIDENT_CLOSED": "pwm:EventIncidentClosed",
+  "INCIDENT_OPENED": "pwm:EventIncidentOpened",
+  "INCIDENT_UPDATED": "pwm:EventIncidentUpdated",
+  "INTERACTION": "pwm:EventInteraction",
+  "INTERVENTION": "pwm:EventIntervention",
+  "KEY_REVOKED": "pwm:EventKeyRevoked",
+  "KEY_ROTATED": "pwm:EventKeyRotated",
+  "LEARNING_EXPORT": "pwm:EventLearningExport",
+  "MEMORY_WRITE": "pwm:EventMemoryWrite",
+  "MODEL_CALL": "pwm:EventModelCall",
+  "MODEL_REFUSAL": "pwm:EventModelRefusal",
+  "NEAR_MISS": "pwm:EventNearMiss",
+  "ORIGINATION": "pwm:EventOrigination",
+  "OUTCOME": "pwm:EventOutcome",
+  "POLICY_CHANGE": "pwm:EventPolicyChange",
+  "POLICY_DECISION": "pwm:EventPolicyDecision",
+  "RETRIEVAL": "pwm:EventRetrieval",
+  "REVALIDATION_TRIGGERED": "pwm:EventRevalidationTriggered",
+  "REVIEW": "pwm:EventReview",
+  "SOURCE_SUPERSEDED": "pwm:EventSourceSuperseded",
+  "SYSTEM": "pwm:ActorSystem",
+  "TOOL_CALL": "pwm:EventToolCall",
+  "actor_type": {
+   "@id": "pwm:actorType",
+   "@type": "@vocab"
+  },
+  "chain_start": {
+   "@id": "pwm:chainStart",
+   "@type": "xsd:boolean"
+  },
+  "classification": {
+   "@id": "pwm:classification",
+   "@type": "@vocab"
+  },
+  "event_hash": "pwm:recordHash",
+  "event_type": {
+   "@id": "pwm:eventType",
+   "@type": "@vocab"
+  },
+  "key_id": {
+   "@id": "pwm:signedBy",
+   "@type": "@id"
+  },
+  "payload_hash": "pwm:contentHash",
+  "prev_hash": "pwm:previousRecordHash",
+  "prov": "http://www.w3.org/ns/prov#",
+  "pwm": "https://ahmedmuzammil.com/ontology/pwm#",
+  "recorded_at": {
+   "@id": "prov:generatedAtTime",
+   "@type": "xsd:dateTime"
+  },
+  "schema_version": "pwm:schemaVersion",
+  "sequence": {
+   "@id": "pwm:evidenceSequence",
+   "@type": "xsd:nonNegativeInteger"
+  },
+  "signature": "pwm:signature",
+  "xsd": "http://www.w3.org/2001/XMLSchema#"
+ }
+}

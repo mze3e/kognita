@@ -598,19 +598,19 @@ def _deployment_version(session, agent_name: str, usecase_id: str, evidence, app
                     "effective": _iso(standard.effective),
                     "usecase_id": usecase,
                 })
-    behaviour = canonical_json(items)
+    behavior = canonical_json(items)
     ids: set[str] = set()
     contents: set[str] = set()
     for client_id, content in _client_pairs(session):
         ids.add(client_id)
         if content:
             contents.add(content)
-    if _contains_client(behaviour, ids, contents):
+    if _contains_client(behavior, ids, contents):
         raise ValueError("MEMORY_CLIENT_CONTENT")
     if not any(item["standard_id"] == standard_id and item["version"] == standard_version and item["usecase_id"] == usecase_id for item in items):
         raise ValueError("MEMORY_VERSION")
     deployment = dict(current)
-    deployment["memory_behaviour"] = behaviour
+    deployment["memory_behavior"] = behavior
     deployment = json.loads(canonical_json(deployment))
     allow = {**(agent.tool_allowlist or {}), "_deployment": deployment}
     agent.tool_allowlist = allow
@@ -625,7 +625,7 @@ def _deployment_version(session, agent_name: str, usecase_id: str, evidence, app
         payload={
             "action": "DEPLOYMENT_APPROVED", "agent": agent.name, "deployment_hash": digest,
             "previous_deployment_hash": previous, "standard_version": standard_version,
-            "memory_behaviour": behaviour, "citation": "S1-DEPLOYMENT",
+            "memory_behavior": behavior, "citation": "S1-DEPLOYMENT",
             "_identity": {**agent.model_dump(mode="json"), "deployment_hash": digest},
         },
     )

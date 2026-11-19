@@ -26,7 +26,7 @@ def _seed(session, evidence):
 
 
 def _request(**kw):
-    values = dict(purpose="evaluation", anonymisation="report-1", validation="checks-2",
+    values = dict(purpose="evaluation", anonymization="report-1", validation="checks-2",
                   approval="reviewer", requester="analyst", records=("interaction:a",))
     return ExportRequest(**(values | kw))
 
@@ -45,7 +45,7 @@ def test_positive_and_retained(session, evidence, purpose):
     assert verify_chain(session) == 2
 
 
-@pytest.mark.parametrize("field", ["purpose", "anonymisation", "validation", "approval", "requester"])
+@pytest.mark.parametrize("field", ["purpose", "anonymization", "validation", "approval", "requester"])
 @pytest.mark.parametrize("value", ["", "   ", False])
 def test_missing_control_denied_and_evidenced(session, evidence, field, value):
     _seed(session, evidence)
@@ -127,7 +127,7 @@ def test_cli_persistent_denials_and_exclusion(tmp_path, capsys):
         session.add(Interaction(id="a", client_id="client-a"))
         session.add(Interaction(id="b", client_id="client-b"))
         session.commit()
-    assert main(["export", "request", "--db", db, "--purpose", "training", "--anonymisation", "report", "--validation", "checks", "--requester", "analyst", "--approval", "reviewer", "--record", "interaction:a", "--record", "interaction:b"]) == 0
+    assert main(["export", "request", "--db", db, "--purpose", "training", "--anonymization", "report", "--validation", "checks", "--requester", "analyst", "--approval", "reviewer", "--record", "interaction:a", "--record", "interaction:b"]) == 0
     assert json.loads(capsys.readouterr().out)["records"] == ["interaction:b"]
 
 
@@ -178,7 +178,7 @@ def test_record_ids_cannot_overflow_store_or_select_non_outcome_events(session, 
         assert "LEARNING_UNKNOWN_RECORD" in result["reason_codes"]
 
 
-@pytest.mark.parametrize("missing", ["purpose", "anonymisation", "validation", "approval", "requester", "self-approval"])
+@pytest.mark.parametrize("missing", ["purpose", "anonymization", "validation", "approval", "requester", "self-approval"])
 def test_cli_controls_cannot_be_bypassed(tmp_path, capsys, missing):
     from kognita.db import create_all, make_engine
     db = str(tmp_path / "controls.db")
@@ -187,7 +187,7 @@ def test_cli_controls_cannot_be_bypassed(tmp_path, capsys, missing):
     with Session(engine) as session:
         session.add(Interaction(id="a", client_id="client-a"))
         session.commit()
-    controls = dict(purpose="evaluation", anonymisation="report", validation="checks",
+    controls = dict(purpose="evaluation", anonymization="report", validation="checks",
                     approval="reviewer", requester="analyst")
     if missing == "self-approval":
         controls["approval"] = " ANALYST "

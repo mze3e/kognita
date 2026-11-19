@@ -1,0 +1,14 @@
+# Additional MAS AIRG citations, added in 0.10 while mapping every paragraph in the MAS table of
+# docs/control-frameworks.md (AIRG_MAP.md). Each says where an existing term is the data for a paragraph.
+# They are instrument-level, like the register entry they cite.
+
+pwm:AccountabilityRole pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(a): a senior manager accountable for AI oversight" ] .
+pwm:AIUseCase pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(b): permitted and prohibited uses are the use-case register's lifecycle status; 2.5(c): approved AI and an approval process for new use" ] .
+pwm:HumanReview pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(b): mandatory human review before use" ] .
+pwm:AISystem pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(c): approved list of AI systems and tools" ] .
+pwm:RiskMaterialityAssessment pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "2.5(e) and 2.5(f): periodic and trigger-based review of materiality" ] .
+pwm:ReviewCoverageReport pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "3.6: local senior management visibility, reports filterable by jurisdiction" ] .
+pwm:FairnessReport pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.7 and 5.8: fair outcomes; fairness assessments on protected attributes and proxies" ] .
+pwm:FailureDrill pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.15: guardrails tested for agent failure modes; 5.22: technology and cybersecurity review, red teaming" ] .
+pwm:AdversarialTestCase pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.15: guardrails tested for agent failure modes; 5.22: red teaming" ] .
+pwm:BehaviorAnomaly pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.22: anomaly detection" ] .

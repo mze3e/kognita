@@ -8,7 +8,7 @@ from kognita.vocabulary import EventType, Outcome
 from sqlmodel import select
 
 SCENARIOS = ('prompt-injection-tool-escalation', 'discovered-credentials',
-             'unauthorised-network', 'machine-speed-probing', 'compromised-provider',
+             'unauthorized-network', 'machine-speed-probing', 'compromised-provider',
              'agent-privilege-escalation', 'malicious-retrieval', 'containment-recovery')
 
 
@@ -61,9 +61,9 @@ def simulate(session, name, scenario, envelope, *, evidence, actor_id, now=None)
         elif scenario == 'discovered-credentials':
             attack = replace(envelope, principal='__stolen_principal',
                              context={**context, 'api_key': 'fixture-not-a-real-secret'})
-        elif scenario == 'unauthorised-network':
+        elif scenario == 'unauthorized-network':
             attack = replace(envelope, tool='__network_unapproved',
-                             arguments={'destination': 'https://unauthorised.invalid'})
+                             arguments={'destination': 'https://unauthorized.invalid'})
         elif scenario == 'agent-privilege-escalation':
             attack = replace(envelope, agent_name='__untrusted_child',
                              context={**context, 'trusted_parent': name})

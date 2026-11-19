@@ -408,7 +408,7 @@ def seed_store(db_path: str) -> None:
                 "permissions": agent.tool_allowlist,
                 "data_sources": ["assigned subject profile", "internal research index"],
                 "orchestration": "Governed retrieval followed by a redacted gateway call.",
-                "memory_behaviour": "No persistent model memory; evidence retained locally.",
+                "memory_behavior": "No persistent model memory; evidence retained locally.",
             })
         from kognita.authority import Delegation, grant_to, delegate
         authority_at = utcnow()

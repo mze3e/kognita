@@ -58,7 +58,7 @@ def test_default_http_mutation_requires_compensation(session, evidence, engine):
     response = _proxy(engine, evidence, _urllib_transport).handle(
         'POST', '/mcp', headers, _call(), session=session)
     assert response.evaluation.outcome is Outcome.DENY
-    assert 'S6C-UNCANCELLABLE' in [c.citation for c in response.evaluation.failures()]
+    assert 'S6C-UNCANCELABLE' in [c.citation for c in response.evaluation.failures()]
 
 
 def test_http_local_abort_is_not_confirmed_cancellation():

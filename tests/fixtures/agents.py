@@ -12,7 +12,7 @@ from kognita.registry import register as _register, approve_deployment
 _credentials = {}
 
 _DEPLOYMENT = dict(system_prompt="", instructions="", tools=[], permissions=[],
-                   data_sources=[], orchestration="", memory_behaviour="")
+                   data_sources=[], orchestration="", memory_behavior="")
 
 
 def register(session, **kwargs):
@@ -96,7 +96,7 @@ PURPOSES = ['A Singapore briefing',
  'REVIEW',
  'RM_PRECALL',
  'Recommend a product the RM has approved',
- 'Summarise approved research for an RM',
+ 'Summarize approved research for an RM',
  'briefing',
  'notes',
  'p',
@@ -118,7 +118,7 @@ def _authority_for(envelope, snapshot):
     client = scope.get("client", ["fixture"])[0]
     scope.setdefault("client", [client])
     start, end = "2000-01-01T00:00:00+00:00", "2099-01-01T00:00:00+00:00"
-    verbs = ["read", "analyse", "recommend", "draft", "queue", "send", "execute"]
+    verbs = ["read", "analyze", "recommend", "draft", "queue", "send", "execute"]
     body = dict(human=envelope.principal, agent=envelope.agent_name,
         purpose=envelope.purpose, client=client, allowed_actions=verbs,
         allowed_data=scope, valid_from=start, valid_until=end, limits={},

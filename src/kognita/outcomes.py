@@ -8,7 +8,7 @@ that interaction.
 
 The near-miss register aggregates blocked actions and RM rejections from
 decisions, and records verifier blocks, unsafe drafts and unusual agent
-behaviour. Verifier blocks have no producer in this package; they appear
+behavior. Verifier blocks have no producer in this package; they appear
 when they are recorded.
 
 Cycle time, decision quality and reliability are computed from the
@@ -66,7 +66,7 @@ DERIVED_NEAR_MISS_KINDS: tuple[str, ...] = ("blocked action", "rm rejection")
 RECORDED_NEAR_MISS_KINDS: tuple[str, ...] = (
     "verifier block",
     "unsafe draft",
-    "unusual agent behaviour",
+    "unusual agent behavior",
 )
 
 NEAR_MISS_KINDS: tuple[str, ...] = DERIVED_NEAR_MISS_KINDS + RECORDED_NEAR_MISS_KINDS
@@ -79,7 +79,7 @@ CITE_COMPLAINT = (
 CITE_OUTCOME = "Outcomes: an outcome event links to the originating interaction"
 CITE_NEAR_MISS = (
     "Near misses: blocked actions, verifier blocks, RM rejections, unsafe drafts "
-    "and unusual agent behaviour"
+    "and unusual agent behavior"
 )
 CITE_CYCLE = "Outcome metrics: cycle time is trigger to final decision"
 CITE_QUALITY = "Outcome metrics: decision quality"
@@ -329,7 +329,7 @@ def record_near_miss(
     model_version: str = "",
     now: datetime | None = None,
 ) -> dict[str, Any]:
-    """Record a verifier block, an unsafe draft, or unusual agent behaviour.
+    """Record a verifier block, an unsafe draft, or unusual agent behavior.
 
     Blocked actions and RM rejections are read from decisions. Recording
     those kinds here is refused so the register does not count them twice.

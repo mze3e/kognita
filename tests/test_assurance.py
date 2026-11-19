@@ -253,7 +253,7 @@ def test_update_requires_current_evaluation_and_exact_owner_packet(session,setup
     from kognita.evaluation import EvaluationResult, record_evaluation, METRICS
     a,w,s,public,e,at,config=setup
     p=config(update_required=True)
-    deployment={**a.tool_allowlist['_deployment'],'instructions':'changed behaviour'}
+    deployment={**a.tool_allowlist['_deployment'],'instructions':'changed behavior'}
     candidate=type(a).model_validate(a.model_dump())
     candidate.tool_allowlist={**a.tool_allowlist,'_deployment':deployment}
     digest=_deployment_hash(candidate,deployment)

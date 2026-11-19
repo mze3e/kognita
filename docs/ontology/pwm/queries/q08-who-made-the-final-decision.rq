@@ -1,0 +1,12 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q8. Who made the final decision? The person, the result and what was decided on.
+# Bind ?interaction to the interaction under examination.
+SELECT ?decision ?person ?result ?decidedOn ?at WHERE {
+  ?decision a pwm:FinalDecision ; pwm:partOfInteraction ?interaction ; pwm:decisionResult ?result .
+  OPTIONAL { ?decision prov:wasAttributedTo ?person }
+  OPTIONAL { ?decision pwm:decisionOn ?decidedOn }
+  OPTIONAL { ?decision prov:generatedAtTime ?at }
+}

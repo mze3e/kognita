@@ -2,7 +2,7 @@
 
 A domain pack lives in its own repository and supplies its own rules, tools and
 subjects. What it must not do is quietly weaken the guarantees the core exists to
-provide: authorise before discovery, fail closed, cite every decision, evidence
+provide: authorize before discovery, fail closed, cite every decision, evidence
 everything.
 
 Run the kit against a pack::

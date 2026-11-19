@@ -22,7 +22,7 @@ from fixtures import demo_pack as dp
 from test_usecases import NOW, _open, _activate, _spec
 
 _DEPLOYMENT = dict(system_prompt="", instructions="instructions", tools=[], permissions=[],
-                   data_sources=[], orchestration="one step", memory_behaviour="none")
+                   data_sources=[], orchestration="one step", memory_behavior="none")
 
 
 def _agent(session, evidence, *, level=0, verb="read", required=0):
@@ -103,7 +103,7 @@ def test_approved_deployment_allows_and_chain_is_append_only(session, evidence):
 
 
 @pytest.mark.parametrize("field", list(_DEPLOYMENT))
-def test_each_behaviour_change_denies_until_owner_reapproves(session, evidence, field):
+def test_each_behavior_change_denies_until_owner_reapproves(session, evidence, field):
     agent = _agent(session, evidence)
     changed = {**_DEPLOYMENT, field: ["changed"]}
     envelope = _env(context={"deployment": changed})
@@ -138,7 +138,7 @@ def test_approval_requires_owner_and_complete_manifest(session, evidence):
         approve_deployment(session, "agent", deployment={}, evidence=evidence, actor_id="owner")
 
 
-@pytest.mark.parametrize("verb,level", [("read", 0), ("analyse", 1), ("recommend", 2),
+@pytest.mark.parametrize("verb,level", [("read", 0), ("analyze", 1), ("recommend", 2),
     ("draft", 3), ("queue", 4), ("send", 4), ("execute", 4), ("execute", 5), ("execute", 6)])
 def test_explicit_verbs_and_levels(session, evidence, verb, level):
     agent = _agent(session, evidence, level=level, verb=verb, required=level)
@@ -361,7 +361,7 @@ def test_changed_gateway_system_prompt_is_denied_before_upstream(session, engine
     upstream = _Upstream(b"{}")
     gateway = _gateway(engine, evidence, upstream)
     body = json.dumps({"model": "gateway-model", "messages": [
-        {"role": "system", "content": "changed behaviour"}, {"role": "user", "content": "hello"}]}).encode()
+        {"role": "system", "content": "changed behavior"}, {"role": "user", "content": "hello"}]}).encode()
     response = gateway.handle("POST", PATH, {"agent_name": "dossier-agent"}, body, session=session)
     assert response.status == 403
     assert not upstream.calls
@@ -384,7 +384,7 @@ def test_replay_pins_identity_before_a_later_deployment_approval(session, eviden
 def test_promotion_requires_the_full_deployment_observation_window(session, engine):
     agent, writer = _promotion_setup(session, engine)
     approve_deployment(session, "agent", deployment=_DEPLOYMENT, evidence=writer, actor_id="owner")
-    # A new approval of identical behaviour retains its digest and history.
+    # A new approval of identical behavior retains its digest and history.
     agent.tool_allowlist["read"]["system"] = "changed"
     approve_deployment(session, "agent", deployment=_DEPLOYMENT, evidence=writer, actor_id="owner")
     _samples(session, engine, agent, NOW - timedelta(days=1))
@@ -461,7 +461,7 @@ def test_failed_evidence_write_does_not_change_approved_deployment(session, evid
     assert _decide(agent).outcome is Outcome.ALLOW
 
 
-def test_old_deployment_outcomes_cannot_promote_current_behaviour(session, engine):
+def test_old_deployment_outcomes_cannot_promote_current_behavior(session, engine):
     agent, writer = _promotion_setup(session, engine)
     old = Agent.model_validate(agent.model_dump())
     old.deployment_hash = "superseded"

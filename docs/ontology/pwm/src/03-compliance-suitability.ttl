@@ -116,13 +116,13 @@ pwm:ScreeningDispositionScheme a skos:ConceptScheme ;
     skos:prefLabel "screening dispositions"@en ;
     pwm:inModule pwm:ModuleCompliance ;
     pwm:citation [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "Alert disposition" ] .
-pwm:ScreeningPending a skos:Concept ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
+pwm:ScreeningPending a skos:Concept ; skos:notation "pending_review" ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
     skos:prefLabel "pending review"@en ; skos:definition "Alert raised, not yet reviewed."@en .
-pwm:ScreeningFalsePositive a skos:Concept ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
+pwm:ScreeningFalsePositive a skos:Concept ; skos:notation "false_positive" ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
     skos:prefLabel "false positive"@en ; skos:definition "Reviewed; not the listed party."@en .
-pwm:ScreeningTrueMatch a skos:Concept ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
+pwm:ScreeningTrueMatch a skos:Concept ; skos:notation "true_match" ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
     skos:prefLabel "true match"@en ; skos:definition "Reviewed; confirmed as the listed party."@en .
-pwm:ScreeningEscalated a skos:Concept ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
+pwm:ScreeningEscalated a skos:Concept ; skos:notation "escalated" ; skos:inScheme pwm:ScreeningDispositionScheme ; skos:topConceptOf pwm:ScreeningDispositionScheme ;
     skos:prefLabel "escalated"@en ; skos:definition "Referred to compliance for decision."@en .
 
 # =============================================================================
@@ -131,7 +131,7 @@ pwm:ScreeningEscalated a skos:Concept ; skos:inScheme pwm:ScreeningDispositionSc
 
 pwm:InvestorClassification a owl:Class ;
     rdfs:label "investor classification"@en ;
-    skos:definition "Regulatory categorisation of a client under one jurisdiction's rules, such as retail, professional or accredited, with any opt-in or opt-out recorded."@en ;
+    skos:definition "Regulatory categorization of a client under one jurisdiction's rules, such as retail, professional or accredited, with any opt-in or opt-out recorded."@en ;
     skos:editorialNote "FIBO models qualified-investor and domicile restrictions on the instrument side (SecuritiesRestrictions). This class records the client side of the same test."@en ;
     rdfs:subClassOf pwm:Assessment ;
     skos:relatedMatch fibo-sec-sec-rst:QualifiedInvestorRestriction ;
@@ -303,37 +303,37 @@ pwm:InvestorCategoryScheme a skos:ConceptScheme ;
     pwm:citation [ pwm:cites pwmref:SG-SFA ; pwm:locator "s4A" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 4" ] ,
                  [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Annex II; Art. 30" ] , [ pwm:cites pwmref:UK-FCA-COBS ; pwm:locator "COBS 3" ] ,
                  [ pwm:cites pwmref:HK-PI-RULES ; pwm:locator "Professional investor" ] , [ pwm:cites pwmref:US-REG-D ; pwm:locator "Rule 501(a)" ] .
-pwm:RetailCategory a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:topConceptOf pwm:InvestorCategoryScheme ;
+pwm:RetailCategory a skos:Concept ; skos:notation "retail" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:topConceptOf pwm:InvestorCategoryScheme ;
     skos:prefLabel "retail"@en ; skos:definition "Client given the full protections of the jurisdiction's conduct rules."@en .
-pwm:NonRetailCategory a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:topConceptOf pwm:InvestorCategoryScheme ;
+pwm:NonRetailCategory a skos:Concept ; skos:notation "non_retail" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:topConceptOf pwm:InvestorCategoryScheme ;
     skos:prefLabel "non-retail"@en ; skos:definition "Client treated as able to bear more risk, with some protections relaxed."@en .
-pwm:RetailInvestorSG a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
+pwm:RetailInvestorSG a skos:Concept ; skos:notation "retail_investor_sg" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
     skos:prefLabel "retail investor (SG)"@en ; skos:definition "Not an accredited, expert or institutional investor under the Securities and Futures Act."@en .
-pwm:AccreditedInvestorSG a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:AccreditedInvestorSG a skos:Concept ; skos:notation "accredited_investor_sg" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "accredited investor (SG)"@en ; skos:definition "Accredited investor under s4A of the Securities and Futures Act, subject to the opt-in regime."@en .
-pwm:ExpertInvestorSG a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:ExpertInvestorSG a skos:Concept ; skos:notation "expert_investor_sg" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "expert investor (SG)"@en ; skos:definition "Expert investor under s4A of the Securities and Futures Act."@en .
-pwm:InstitutionalInvestorSG a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:InstitutionalInvestorSG a skos:Concept ; skos:notation "institutional_investor_sg" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "institutional investor (SG)"@en ; skos:definition "Institutional investor under s4A of the Securities and Futures Act."@en .
-pwm:ProfessionalInvestorHK a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:ProfessionalInvestorHK a skos:Concept ; skos:notation "professional_investor_hk" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "professional investor (HK)"@en ; skos:definition "Professional investor under the Securities and Futures Ordinance and the Professional Investor Rules."@en .
-pwm:PrivateClientCH a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
+pwm:PrivateClientCH a skos:Concept ; skos:notation "private_client_ch" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
     skos:prefLabel "private client (CH)"@en ; skos:definition "Private client under FinSA Art. 4."@en .
-pwm:ProfessionalClientCH a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:ProfessionalClientCH a skos:Concept ; skos:notation "professional_client_ch" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "professional client (CH)"@en ; skos:definition "Professional client under FinSA Art. 4."@en .
-pwm:InstitutionalClientCH a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:InstitutionalClientCH a skos:Concept ; skos:notation "institutional_client_ch" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "institutional client (CH)"@en ; skos:definition "Institutional client under FinSA Art. 4."@en .
-pwm:RetailClientEU a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
+pwm:RetailClientEU a skos:Concept ; skos:notation "retail_client_eu" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
     skos:prefLabel "retail client (EU)"@en ; skos:definition "Client that is not a professional client under MiFID II."@en .
-pwm:ProfessionalClientEU a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:ProfessionalClientEU a skos:Concept ; skos:notation "professional_client_eu" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "professional client (EU)"@en ; skos:definition "Professional client under MiFID II Annex II, per se or on request."@en .
-pwm:EligibleCounterpartyEU a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:EligibleCounterpartyEU a skos:Concept ; skos:notation "eligible_counterparty_eu" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "eligible counterparty (EU)"@en ; skos:definition "Eligible counterparty under MiFID II Art. 30."@en .
-pwm:RetailClientUK a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
+pwm:RetailClientUK a skos:Concept ; skos:notation "retail_client_uk" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:RetailCategory ;
     skos:prefLabel "retail client (UK)"@en ; skos:definition "Retail client under COBS 3."@en .
-pwm:ProfessionalClientUK a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:ProfessionalClientUK a skos:Concept ; skos:notation "professional_client_uk" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "professional client (UK)"@en ; skos:definition "Professional client under COBS 3."@en .
-pwm:AccreditedInvestorUS a skos:Concept ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
+pwm:AccreditedInvestorUS a skos:Concept ; skos:notation "accredited_investor_us" ; skos:inScheme pwm:InvestorCategoryScheme ; skos:broader pwm:NonRetailCategory ;
     skos:prefLabel "accredited investor (US)"@en ; skos:definition "Accredited investor under Regulation D, Rule 501(a)."@en .
 
 pwm:OptStatusScheme a skos:ConceptScheme ;
@@ -341,24 +341,24 @@ pwm:OptStatusScheme a skos:ConceptScheme ;
     pwm:inModule pwm:ModuleSuitability ;
     skos:scopeNote "Directions differ by jurisdiction. In Singapore an eligible investor opts in to accredited-investor status and gives up some retail protections. Under FinSA a high-net-worth retail client opts out to be treated as a professional client, and some professional clients opt in to be treated as retail. Record the resulting category on the classification."@en ;
     pwm:citation [ pwm:cites pwmref:SG-SFA ; pwm:locator "Opt-in regime" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 5" ] .
-pwm:OptDefault a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
+pwm:OptDefault a skos:Concept ; skos:notation "default" ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
     skos:prefLabel "default"@en ; skos:definition "Category applies by default, with no election."@en .
-pwm:OptedIn a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
+pwm:OptedIn a skos:Concept ; skos:notation "opted_in" ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
     skos:prefLabel "opted in"@en ; skos:definition "Client made an opt-in election under the jurisdiction's rules. Which category that moves the client into, and whether protection rises or falls, depends on the jurisdiction, so record the classification it produced."@en .
-pwm:OptedOut a skos:Concept ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
+pwm:OptedOut a skos:Concept ; skos:notation "opted_out" ; skos:inScheme pwm:OptStatusScheme ; skos:topConceptOf pwm:OptStatusScheme ;
     skos:prefLabel "opted out"@en ; skos:definition "Client made an opt-out election under the jurisdiction's rules. Which category that moves the client into, and whether protection rises or falls, depends on the jurisdiction, so record the classification it produced."@en .
 
 pwm:SuitabilityOutcomeScheme a skos:ConceptScheme ;
     skos:prefLabel "suitability outcomes"@en ;
     pwm:inModule pwm:ModuleSuitability ;
     pwm:citation [ pwm:cites pwmref:EU-MIFID2 ; pwm:locator "Art. 25(2), 25(3)" ] , [ pwm:cites pwmref:CH-FINSA ; pwm:locator "Art. 10 to 14" ] .
-pwm:Suitable a skos:Concept ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
+pwm:Suitable a skos:Concept ; skos:notation "suitable" ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
     skos:prefLabel "suitable"@en ; skos:definition "Fits the profile and mandate."@en .
-pwm:SuitableWithConditions a skos:Concept ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
+pwm:SuitableWithConditions a skos:Concept ; skos:notation "suitable_with_conditions" ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
     skos:prefLabel "suitable with conditions"@en ; skos:definition "Fits if stated conditions are met, such as a size limit."@en .
-pwm:NotSuitable a skos:Concept ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
+pwm:NotSuitable a skos:Concept ; skos:notation "not_suitable" ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
     skos:prefLabel "not suitable"@en ; skos:definition "Does not fit; may not be recommended."@en .
-pwm:InsufficientInformation a skos:Concept ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
+pwm:InsufficientInformation a skos:Concept ; skos:notation "insufficient_information" ; skos:inScheme pwm:SuitabilityOutcomeScheme ; skos:topConceptOf pwm:SuitabilityOutcomeScheme ;
     skos:prefLabel "insufficient information"@en ; skos:definition "Cannot be assessed; no recommendation may be made."@en .
 
 pwm:IllustrativeRiskScale a skos:ConceptScheme ;
@@ -421,18 +421,18 @@ pwm:SustainabilityPreferenceScheme a skos:ConceptScheme ;
     skos:definition "Three categories under Article 2(7) of 2017/565, plus explicit no preference for recording."@en ;
     pwm:inModule pwm:ModuleSuitability ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
 
-pwm:TaxonomyAlignedMinimum a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+pwm:TaxonomyAlignedMinimum a skos:Concept ; skos:notation "taxonomy_aligned_minimum" ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
     skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
     skos:prefLabel "taxonomy aligned minimum"@en ; skos:definition "Article 2(7)(a): minimum proportion of environmentally sustainable investments."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
 
-pwm:SFDRSustainableMinimum a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+pwm:SFDRSustainableMinimum a skos:Concept ; skos:notation "sfdr_sustainable_minimum" ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
     skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
     skos:prefLabel "SFDR sustainable minimum"@en ; skos:definition "Article 2(7)(b): minimum proportion of sustainable investments."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
 
-pwm:PAIConsideration a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+pwm:PAIConsideration a skos:Concept ; skos:notation "pai_consideration" ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
     skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
     skos:prefLabel "PAI consideration"@en ; skos:definition "Article 2(7)(c): principal adverse impacts considered using client-determined elements."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .
 
-pwm:NoSustainabilityPreference a skos:Concept ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
+pwm:NoSustainabilityPreference a skos:Concept ; skos:notation "no_sustainability_preference" ; skos:inScheme pwm:SustainabilityPreferenceScheme ;
     skos:topConceptOf pwm:SustainabilityPreferenceScheme ;
     skos:prefLabel "no sustainability preference"@en ; skos:definition "Explicit record that the client has no sustainability preference; not a fourth Article 2(7) category."@en ; pwm:citation [ pwm:cites pwmref:EU-SUSTAINABILITY ; pwm:locator "2021/1253 Art. 1(1), 1(6); 2017/565 Art. 2(7), 54(2)(a), (5), (10)" ] .

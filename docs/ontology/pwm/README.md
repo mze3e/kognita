@@ -1,18 +1,19 @@
 # Private Wealth Management Ontology (PWM)
 
-**Version 0.5, draft for comment (4 November 2026).**
-Web page: https://ahmedmuzammil.com/ontology/pwm · Full specification: [SPEC.md](SPEC.md) · Road to 1.0: [ROADMAP.md](ROADMAP.md)
+**Version 0.10, draft for comment (19 November 2026).**
+Web page: https://ahmedmuzammil.com/ontology/pwm · Specification: [SPEC.md](SPEC.md) · Road to 1.0: [ROADMAP.md](ROADMAP.md) · History: [CHANGELOG.md](CHANGELOG.md)
 
-PWM is a generic ontology for private banking and wealth management, and for the AI that works on it. It covers parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, the client journey from origination to communication, and the governance of AI: use cases, risk materiality, accountability, agents, delegated authority, claims and evidence.
+PWM is a generic ontology for private banking and wealth management, and for the AI that works on it. It covers parties and relationships, due diligence, investor profiling and suitability, mandates, accounts and holdings, products and research, the client journey from origination to communication, and the governance of AI: use cases, risk materiality, accountability, agents, delegated authority, claims, evidence, trust and resilience, runtime assurance, and the business operations around them: costs and charges, product governance, client circumstances, orders and executions, corporate actions, tax reporting, lending and performance provenance.
 
-It is the data model that Kognita's controls map to. Each Kognita concept it carries (outcomes, data classes C0 to C3, autonomy levels L0 to L6, communication levels, claim types, validator statuses, owner roles, risk tiers, delegated authority, the evidence chain) is cited to the roadmap item or vocabulary it comes from.
+It is the data model that Kognita's controls map to. Each Kognita concept it carries (outcomes, data classes C0 to C3, autonomy levels L0 to L6, communication levels, claim types, validator statuses, event types, owner roles, risk tiers, delegated authority, the evidence chain) is cited to the roadmap item or vocabulary it comes from, and every Kognita vocabulary enum matches a PWM code list value for value (see [Checks](#checks)).
 
 ## How it is built
 
-- **FIBO first.** Business terms specialise or map to the Financial Industry Business Ontology, then OMG Commons, W3C PROV-O and DPV. A term is defined here only when none fits, and it is marked NEW.
+- **FIBO first.** Business terms specialize or map to the Financial Industry Business Ontology, then OMG Commons, W3C PROV-O and DPV. A term is defined here only when none fits, and it is marked NEW.
 - **Declared, not imported.** External terms are declared in `src/90-external.ttl` with label, source and FIBO maturity (Release or Provisional), so `pwm.ttl` loads on its own.
-- **Every term cites its grounds.** Each class, property and code list carries citations with locators to the reference register (`src/01-references.ttl`): standards (ONT, ISO), regulation (REG), Kognita (KOG), the author's frameworks and talks (AM), or a practitioner definition (NEW). Each reference records whether it was verified against the source while drafting or cited at instrument level.
-- **OWL, SKOS and SHACL.** Light OWL axioms, code lists as SKOS concept schemes, and data rules as SHACL shapes in a separate file.
+- **Every term cites its grounds.** Each class, property and code list carries citations with locators to the reference register (`src/01-references.ttl`): standards (ONT, ISO), regulation (REG), Kognita (KOG), the author's frameworks and talks (AM), or a practitioner definition (NEW). A dagger in SPEC marks a citation that is still at instrument level, not checked paragraph by paragraph.
+- **OWL, SKOS and SHACL.** Light OWL axioms, code lists as SKOS concept schemes whose notations equal the Kognita values, and data rules as SHACL shapes in a separate file.
+- **US English.** PWM-defined names and prose use US spelling. Names reused from OMG Commons or FIBO keep the spelling of their source. Kognita uses US spelling in its identifiers and values too, so the code lists match without exceptions.
 
 ## Files
 
@@ -20,21 +21,21 @@ It is the data model that Kognita's controls map to. Each Kognita concept it car
 |---|---|
 | `pwm.ttl` | The ontology, built from `src/`. Do not edit; edit `src/` and rebuild |
 | `pwm-shapes.ttl` | Built SHACL rules and generated code-list rules. Edit `src/shapes/pwm-shapes.ttl` and rebuild |
+| `SPEC.md`, `CHANGELOG.md` | Generated from the Turtle and `tools/build.py` |
+| `ROADMAP.md`, `GAP_ANALYSIS.md`, `REVIEW_0.5.md`, `AIRG_MAP.md` | The plan to 1.0, the per-release gap analyses, the review that led to 0.8, and the MAS AIRG paragraph map (generated) |
+| `queries/` | SPARQL: one query per reconstruction question, an inventory report, and a superseded-source query |
+| `profiles/` | The AI inventory profile, a worked code-list profile and five jurisdiction profiles (data, not ontology) |
+| `mapping/`, `context/` | Machine-readable map from Kognita vocabulary values and policies to PWM IRIs; the JSON-LD context for Kognita evidence exports |
+| `src/*.ttl` | Sources: header, reference register, one file per module, code-list bindings, external declarations, deprecated aliases, axioms |
+| `src/12-trust-resilience-assurance.ttl`, `src/13-business-scope.ttl` | Generated by `tools/gen_module12.py` and `tools/gen_module13.py` together with their shapes, example data and negative fixtures |
 | `src/shapes/pwm-shapes.ttl` | Source SHACL rules, each citing the paragraph or item it enforces |
-| `SPEC.md` | The specification, generated from the Turtle |
-| `ROADMAP.md` | The plan from 0.1 to 1.0 |
-| `examples/pwm-example.ttl` | Synthetic data for a fictional firm: one client journey end to end |
+| `examples/pwm-example.ttl` | Synthetic data for a fictional firm: one client journey end to end, and every class and property |
 | `examples/pwm-example-invalid.ttl` | Negative fixture records and their supporting records |
-| `src/*.ttl` | Sources: header, reference register, one file per module group, code-list bindings, external declarations |
-| `tools/` | Build, integrity checks and validation |
+| `tools/`, `tests/` | Build, integrity checks, validation and tests |
 
-IRIs: ontology `https://ahmedmuzammil.com/ontology/pwm`, version `https://ahmedmuzammil.com/ontology/pwm/0.5` (resolves to the Turtle file), namespace `https://ahmedmuzammil.com/ontology/pwm#` (each term resolves to its entry on the web page).
+IRIs: ontology `https://ahmedmuzammil.com/ontology/pwm`, version `https://ahmedmuzammil.com/ontology/pwm/0.10` (resolves to the Turtle file), namespace `https://ahmedmuzammil.com/ontology/pwm#` (each term resolves to its entry on the web page). Shapes use `https://ahmedmuzammil.com/ontology/pwm/0.10/pwm-shapes.ttl` as their version IRI; the unversioned `https://ahmedmuzammil.com/ontology/pwm/shapes` is the latest pointer.
 
-Shapes use `https://ahmedmuzammil.com/ontology/pwm/0.5/pwm-shapes.ttl` as their version IRI. The unversioned `https://ahmedmuzammil.com/ontology/pwm/shapes` remains the latest pointer. Both retain the original host without www.
-
-The roadmap source is pinned to software release **0.7.0**, commit `9303769`, not roadmap milestone 0.7. See the source verification table in SPEC for every FIBO IRI and its maturity. The sitemap and speaking page expose no talk-specific Filing Cabinet page, so its general speaking link is retained with a note.
-
-Sustainability preferences support combined taxonomy and SFDR minimum proportions (fractions from 0 to 1), client-determined PAI elements, or exclusive no preference. EU suitability records marked `jurisdictionCode "EU"` require one preference record. These shapes check recorded structure; product matching and the full legal assessment remain with the firm.
+The roadmap source is pinned to software release **0.9.0**. PWM version N follows Kognita roadmap milestone N up to 0.8: PWM 0.8 covers milestones 0.6 to 0.8 in one release, and PWM 0.10 covers the roadmap's own 0.9 and 0.10 scope (see [ROADMAP.md](ROADMAP.md)). See the source verification table in SPEC for every FIBO IRI and its maturity.
 
 ## Using it
 
@@ -42,40 +43,50 @@ Import the version IRI:
 
 ```turtle
 <https://example.org/firm/ontology> a owl:Ontology ;
-    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.5> .
+    owl:imports <https://ahmedmuzammil.com/ontology/pwm/0.10> .
 ```
 
 The version IRI resolves to `pwm.ttl` once the web page is published. Until then, or to work offline, map it to a local copy. In Protégé, put a `catalog-v001.xml` next to your ontology:
 
 ```xml
 <catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
-  <uri name="https://ahmedmuzammil.com/ontology/pwm/0.5" uri="pwm.ttl"/>
+  <uri name="https://ahmedmuzammil.com/ontology/pwm/0.10" uri="pwm.ttl"/>
 </catalog>
 ```
 
 ROBOT reads the same catalog with `--catalog catalog-v001.xml`. With rdflib or pyshacl, load `pwm.ttl` directly.
 
-Keep an institution's detail in its own extension: specialise PWM classes, add the firm's code lists (risk scale, booking centres, product types), and add firm thresholds in a separate shapes graph. Keep confidential content out of public repositories.
+Keep an institution's detail in its own extension: specialize PWM classes, add the firm's code lists (risk scale, booking centers, product types), and add firm thresholds in a separate shapes graph. Keep confidential content out of public repositories.
 
-**Replacing a code list.** `pwm:valuesFrom` in `pwm.ttl` names PWM's default code list for each coded property, and the generated shape `pwmsh:CodeList_<property>` enforces it. A binding added in an extension does not remove PWM's: both remain in the merged graph. To use the firm's own list, for example its risk scale in place of the illustrative one:
+**Renamed terms.** The US spelling renames of 0.8 kept deprecated aliases for one version; 0.10 removed them, so move any data that still uses `AuthorisedSignatory`, `BookingCentre` and the other old IRIs listed in [CHANGELOG.md](CHANGELOG.md) to the new IRIs. 0.10 deprecates one more term, `freshnessThreshold`, in favor of `freshnessThresholdSeconds`.
+
+**Replacing a code list.** A worked profile is in `profiles/code-list-profile-example.ttl` and `.shapes.ttl`, and `tests/test_profiles.py` runs it against the full example. `pwm:valuesFrom` in `pwm.ttl` names PWM's default code list for each coded property, and the generated shape `pwmsh:CodeList_<property>` enforces it. A binding added in an extension does not remove PWM's: both remain in the merged graph. To use the firm's own list, for example its risk scale in place of the illustrative one:
 
 1. Add `pwm:valuesFrom firm:RiskScale` bindings for `pwm:riskProfileLevel`, `pwm:productRiskLevel` and `pwm:targetRiskProfile`.
 2. In the firm's shapes graph, set `sh:deactivated true` on `pwmsh:CodeList_riskProfileLevel`, `pwmsh:CodeList_productRiskLevel` and `pwmsh:CodeList_targetRiskProfile`.
-3. Add shapes enforcing the firm's allowed codes on all three properties. See the separate ontology and shapes examples and graph-loading code in [SPEC.md](SPEC.md#extending-pwm-for-an-institution).
+3. Add shapes enforcing the firm's allowed codes on all three properties. See the ontology and shapes examples and graph-loading code in [SPEC.md](SPEC.md#extending-pwm-for-an-institution).
 
-Treat the firm's binding as the one in force for this validation configuration; ontology triples do not override each other. `check.py` checks the base ontology only.
-
-Deactivation alone does not support arbitrary list replacement. Handwritten constraints and code-dependent rules still require built-in codes, including lifecycle status, communication level, classification, claim type, validator status and autonomy level. Replacing those lists requires adapting every affected handwritten constraint and rule in the firm's shapes graph too. The risk-scale example has no such additional code restrictions.
+Treat the firm's binding as the one in force for this validation configuration; ontology triples do not override each other. Deactivation alone does not support arbitrary list replacement: handwritten constraints and code-dependent rules still require built-in codes, including lifecycle status, communication level, classification, claim type, validator status and autonomy level. The risk-scale example has no such additional restrictions.
 
 ## Checks
 
 Run these commands from `docs/ontology/pwm`.
 
 ```sh
-pip install rdflib pyshacl pytest
+pip install rdflib pyshacl owlrl pytest
 
-# Rebuild pwm.ttl and SPEC.md from src/
+# Rebuild pwm.ttl, pwm-shapes.ttl, SPEC.md, CHANGELOG.md and the README counts from src/
 python3 tools/build.py
+
+# Regenerate modules 12 and 13 (ontology, shapes, example data and negative fixtures) from their generators,
+# then the generated artifacts that depend on the ontology
+python3 tools/gen_module12.py && python3 tools/gen_module13.py
+python3 tools/gen_airg_map.py && python3 tools/gen_mapping.py && python3 tools/roundtrip.py context
+python3 tools/build.py
+
+# Round trip: read the signed Kognita evidence export as PWM RDF and check chain and shapes
+python3 tools/roundtrip.py check
+# Regenerate that export with Kognita itself (needs Kognita installed: .venv/bin/python tools/roundtrip.py make)
 
 # Integrity: labels, definitions, modules, citations, code-list bindings, and every
 # FIBO, OMG Commons and DPV IRI checked against its source
@@ -93,50 +104,41 @@ python3 tools/check_shapes_terms.py pwm.ttl examples/pwm-example-invalid.ttl
 # fixture raises exactly the expected violations (-v prints them)
 python3 tools/validate.py
 
-# PWM regression tests (separate from root pytest collection)
-python3 -m pytest tests/test_review_regressions.py
+# Tests (the regression file takes several minutes because it exercises every generated shape)
+python3 -m pytest tests
 
 # OWL 2 DL profile and reasoning (ROBOT, https://robot.obolibrary.org)
 robot validate-profile --profile DL --input pwm.ttl
 robot reason --reasoner HermiT --equivalent-classes-allowed none --input pwm.ttl --output /tmp/reasoned.ttl
+ROBOT_JAR=/path/to/robot.jar python3 -m pytest tests/test_axioms.py   # HermiT on ontology plus example
 ```
+
+The tests that guard against drift:
+
+- `tests/test_kognita_vocabulary.py`: every Kognita vocabulary enum (outcomes, event types, claim types, validator statuses, memory scopes, drill kinds, record classes, action verbs, conformance profiles and more) equals its PWM code list, value for value, and every concept has a notation. A new Kognita value fails here until PWM follows.
+- `tests/test_example_coverage.py`: every class and property appears in the positive example, or is on a short, reasoned allow-list.
+- `tests/test_axioms.py`: the example satisfies the functional and disjointness axioms.
+- `tests/test_queries.py`, `tests/test_profiles.py`, `tests/test_jurisdiction_profiles.py`: the published queries answer the example interaction; the inventory and code-list profiles work; every jurisdictional investor category is in exactly one profile.
+- `tests/test_mapping.py`, `tests/test_roundtrip.py`: the mapping table and AIRG map are current and complete; a signed Kognita evidence export reads as conforming PWM data and Kognita verifies the same export.
+- `tests/test_review_regressions.py`: regressions for every earlier review finding, including one test per generated code-list shape.
 
 To reason over data, merge it with `pwm.ttl` as RDF first (for example with rdflib), so that properties keep the types `pwm.ttl` declares.
 
-Version 0.5 contains 193 domain classes, 408 properties (220 object, 188 datatype), 48 code lists with 235 codes, 130 written rules and 66 generated rules. There are 197 node shapes, including one untargeted helper, and 196 targeted shapes. The positive example contains 191 typed records. The negative fixture contains 259 typed records: 170 violating records and 89 supporting records, plus 4 untyped violating subjects, raising 193 expected violations across 174 focus nodes. It covers all 130 written shapes and two generated code-list shapes. Regression tests exercise all 66 generated code-list shapes.
+Version 0.10 contains 244 domain classes, 659 properties (317 object, 342 datatype), 79 code lists with 382 codes, 186 written rules and 101 generated rules. There are 288 node shapes, including one untargeted helper, and 287 targeted shapes. The positive example contains 330 typed records. The negative fixture contains 332 typed records: 234 violating records and 98 supporting records, plus 7 untyped violating subjects, raising 262 expected violations across 241 focus nodes. It covers all 186 written shapes and two generated code-list shapes. Regression tests exercise all 84 generated code-list shapes.
 
-Pre-existing pwm:nextReviewDate and pwm:retentionUntil use xsd:date; pwm:freshnessThreshold uses xsd:duration. These datatypes fall outside the OWL 2 datatype map. Their ranges are preserved for compatibility with 0.2. ROBOT DL profile validation passes with xsd:date and xsd:duration as declared datatypes; this does not establish conformance to the OWL 2 datatype map. Open item for a later version: migrate these legacy ranges and their data to OWL 2 datatype-map datatypes. HermiT consistency checks pass with no unsatisfiable classes. The positive example conforms, is consistent with the ontology, and has one unbroken evidence chain. The negative fixture is intentionally inconsistent under HermiT because it names an AI agent in an accountability role.
+Open items:
 
-See [the 0.5 gap analysis](GAP_ANALYSIS.md) for reused terms, additions, grounds and runtime boundaries.
-
-The inherited 0.3 model includes run budgets and consumption, durable approval checkpoints and resolution, gateway model and MCP records, classifier evidence and typed-attribute precedence, pinned policy checks and retrieved content, retention and evidenced erasure, ten-question reconstruction coverage, failure modes, and authenticated client identity bindings. Existing model, hash, provider, decision and event vocabulary is reused. New specialised records and fields cite specific 0.3 items and are marked NEW; Run, RunResumption, GovernedCall and its subclasses ModelCall, ToolCall and MCPProxiedCall, and ErasureEvent specialise prov:Activity. RunBudget, RunCheckpoint, ApprovalRequest, ApprovalResolution, BudgetExceededDenial (through PolicyDecision), AuthenticatedClientConfiguration, ClassifierOutput, EnvelopeAttribute, PolicyCheck, RetrievedItem, RetentionEntry, RetentionPolicy, ReconstructionReport, QuestionCoverage and ReconstructionFinding specialise prov:Entity. SystemTrigger specialises prov:Agent. MAS AIRG grounds use the existing 7 October 2026 register entry, including 5.9 human oversight, 5.17 reproducibility and 5.23(d) record keeping. Retention and policy checks also reuse the existing Filing Cabinet slide grounds.
+- The OWL 2 DL profile check and the HermiT run are documented above but need ROBOT; the last recorded run was for 0.5. Re-run them before publishing 0.10. Every datatype in the ontology and examples is now in the OWL 2 datatype map.
+- 24 of 47 references are still cited at instrument level, marked with a dagger in SPEC, and the citations for the 0.10 business terms are instrument-level too. Verification needs the official texts.
+- The operations terms are not aligned to FIBO yet; that needs verified FIBO IRIs.
+- The JSON-LD round trip covers evidence exports, not register exports, and its sample export is committed rather than regenerated in CI.
 
 ## Context
 
-Retention duration is measured in whole days as xsd:nonNegativeInteger. RetentionPolicy uses SlowContext/C1; AuthenticatedClientConfiguration and SystemTrigger use SlowContext/C2. The 0.4 versioned policy artefacts and breaker configuration use SlowContext; recorded evidence and review state use MediumContext. DelegatedAuthority and KillSwitch definitions are cached policy/config in SlowContext. AuthorityLiveStatus is the single shared live-status vocabulary for both controls and will be reused in 0.5 without a parallel class or code list. Live revocation and kill-switch state must be read from AuthorityLiveStatus (FastContext) at decision time, never from cache. Use the latest asOf observation at or before the decision time; conflicting observations fail closed. Runtime must obtain fresh observations; SHACL validates the recorded state only (KOG roadmap 0.4 item 14; 0.3 item 2; MAS AIRG 5.9). Durable evidence, snapshots and checkpoints use MediumContext, including inherited 0.3 records.
+Each class states how fast its facts change. SlowContext holds cached policy and configuration (versioned policy artifacts, delegations, kill-switch definitions, registers, approved components, the provider register); MediumContext holds recorded evidence, snapshots, checkpoints and review state; FastContext holds live state read at decision time, which is `AuthorityLiveStatus` for delegation revocation and kill-switch state. SHACL validates the recorded structure only; it does not fetch retained payloads, recompute content hashes, verify signatures or execute gateway controls. The example uses synthetic content references. Retention duration is measured in whole days as `xsd:nonNegativeInteger`.
 
-PWM version N aligns with Kognita roadmap milestone N. Version 0.4 adds 18 classes, 70 properties and two classification schemes for structured ingestion, declarative policy artefacts and tests, policy packs, recorder replay, RM edits, review queues and coverage, circuit-breaker incidents, affected-client results and outcomes. New terms cite individual 0.4 items and are marked NEW. Existing register, materiality, origination, decision, communication and near-miss terms are reused. MAS AIRG grounds retain the registered 7 October 2026 instrument. SPEC describes the exact PROV parents and the runtime boundary. Removed roadmap item 2 adds no model.
+## Status and license
 
-The shapes validate recorded structure and relationships. They do not fetch retained payloads, execute gateway controls, or recompute content hashes. The example uses synthetic content references; production reconstruction must retrieve the retained content and compare hashes. A report records that verification result and any mismatch finding. Per-use-case degraded mode permits only local models without client data and requires evidence after recovery; this policy meaning is recorded in the code definition, while enforcement belongs to the gateway.
-
-PWM 0.5 adds 20 classes, 110 properties and two code lists. Item-level KOG grounds cover all sixteen roadmap items; NEW marks specialised definitions. Existing MAS AIRG, IMDA, EVOLVE and Governing agentic AI references supply relevant governance grounds. No new external ontology matches are asserted. See [GAP_ANALYSIS.md](GAP_ANALYSIS.md#pwm-05-gap-analysis) for reused terms, constraints and runtime boundaries. New ranges use OWL 2 datatype-map datatypes. Credential examples contain opaque synthetic references only.
-The build validates the positive example and calls `chain_problems` before reporting an unbroken evidence chain. A broken chain fails the build.
-
-## Status and licence
-
-Draft. Terms may change before 1.0; changes are recorded in the change log in SPEC.md. Regulatory citations show where a term comes from, not how a rule applies to a firm; they are not legal advice.
+Draft. Terms may change before 1.0; changes are recorded in [CHANGELOG.md](CHANGELOG.md) and in the change log in SPEC.md. Regulatory citations show where a term comes from, not how a rule applies to a firm; they are not legal advice.
 
 The ontology, shapes, examples and specification in this folder are licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The scripts in `tools/` are MIT, like the rest of Kognita. FIBO is MIT-licensed by the EDM Council.
-
-The 0.3 review fixes use `xsd:nonNegativeInteger` in whole days for `retentionDuration`, with matching shapes and example data. `RetentionPolicy` now uses `SlowContext` and `C1`; `AuthenticatedClientConfiguration` and the persistent configured identity `SystemTrigger` use `SlowContext` and retain `C2`. Inherited execution records, durable evidence, snapshots and checkpoints use `MediumContext`. `PolicyDecision` and `EvidenceRecord` also use `MediumContext`; `DelegatedAuthority` and `KillSwitch` use `SlowContext` for governance configuration.
-
-The proxy portfolio read uses the pre-drafting PolicyDecisionModelAllow. Held calls require an approved request whose checkpoint belongs to the call's run, including when the decision names multiple runs.
-
-AuthorityLiveStatus from 0.4 remains in FastContext under the 3 Nov 2026 design decisions. An observation names statusOf, asOf and observedBy, with revoked for a delegation or engaged for a kill switch. 0.5 briefly carried a second set of fields (liveStatusSubject, liveStatusValue, observedAt); they were removed on 4 Nov 2026 before release, so every observation uses one format and a conflicting pair can no longer pass. DelegatedAuthority and KillSwitch definitions remain SlowContext. Gateways retrieve live observations at decision time; SHACL checks the record, not freshness against a remote system.
-
-Firm-specific BlastRadiusLimit and AutonomyPromotionGate records each require exactly one riskControlApproval. The RiskControlApproval record identifies approverRole and approvedAt. ApprovingAuthorityRole specialises OMG Commons PartyRole; its permitted subclasses are RiskCommittee, DataGovernanceCommittee and ChiefRiskOfficer. The role sets and approves the limit or gate. This configuration approval is distinct from an individual transition's ownerApproval and independentValidation. The positive example includes risk-committee approval for its limit and gate; negative fixtures reject missing control approval, an unauthorized approver and missing approval time.
-Shape sources live in `src/shapes/pwm-shapes.ttl`; the build copies them and regenerates the code-list rules. Review expiry uses typed timestamps and dates, treating absent timezones as UTC and allowing the entire review date. Every policy decision requires exactly one recorded timestamp.
-
-Completed human approvals resolve a held HUMAN_APPROVAL decision at a suspended checkpoint. A later ALLOW cites that resolution through humanApproval in the same run, use case and policy. The resolution must precede the allowed step-up decision or irreversible call. Pending requests cannot authorize execution.
-
-A delegation's permitsDataClass is a checked ceiling: it must cover the classification of the delegation's scope, and a child delegation cannot permit a higher class than its parent (DelegationCeilingShape). An agent's effective autonomy level cannot exceed its maximum (AgentAutonomyShape). Both were added in the 4 Nov 2026 review.

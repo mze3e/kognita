@@ -12,7 +12,7 @@ from sqlmodel import Session, SQLModel, create_engine
 # Importing the models registers them on SQLModel.metadata, which create_all needs.
 # Spelled as a submodule import rather than ``from kognita import models``: this
 # module is imported *by* ``kognita/__init__.py``, so the parent package is only
-# partially initialised at this point and may not carry the attribute yet.
+# partially initialized at this point and may not carry the attribute yet.
 import kognita.providers as _providers  # noqa: F401,E402
 import kognita.models as _models  # noqa: F401,E402
 

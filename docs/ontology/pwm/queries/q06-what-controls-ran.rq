@@ -1,0 +1,12 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q6. What suitability or policy controls ran? Each decision in the runs, its outcome, rule and checks.
+# Bind ?interaction to the interaction under examination.
+SELECT ?decision ?outcome ?rule ?ruleVersion ?check WHERE {
+  ?run a pwm:Run ; pwm:partOfInteraction ?interaction .
+  ?decision a pwm:PolicyDecision ; pwm:inRun ?run ; pwm:decisionOutcome ?outcome ; pwm:decidedByRule ?rule .
+  OPTIONAL { ?rule pwm:versionId ?ruleVersion }
+  OPTIONAL { ?decision pwm:hasCheck ?check }
+}

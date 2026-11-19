@@ -199,7 +199,7 @@ approval = open_approval(
 ## Related
 
 - ADR 0006 (two-signature) works seamlessly with proposals: first signature proposes, second applies.
-- Tier 2 item 5 (versioned artefacts) is complementary: proposals track before-state; artefacts track versions post-apply.
+- Tier 2 item 5 (versioned artifacts) is complementary: proposals track before-state; artifacts track versions post-apply.
 - Governance fixture pack: all xfails in two-signature and propose-then-apply tests flip to passing.
 
 ## Design notes

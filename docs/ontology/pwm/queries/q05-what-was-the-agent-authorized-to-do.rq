@@ -1,0 +1,11 @@
+PREFIX pwm: <https://ahmedmuzammil.com/ontology/pwm#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX cmns-rlcmp: <https://www.omg.org/spec/Commons/RolesAndCompositions/>
+
+# Q5. What was the agent authorized to do? The delegation a call relied on, who granted it, to whom and for how long.
+# Bind ?interaction to the interaction under examination.
+SELECT ?call ?delegation ?grantedBy ?agent ?validFrom ?validUntil WHERE {
+  ?run a pwm:Run ; pwm:partOfInteraction ?interaction .
+  ?call pwm:inRun ?run ; pwm:reliesOnDelegation ?delegation .
+  ?delegation pwm:delegatedBy ?grantedBy ; pwm:delegatedTo ?agent ; pwm:validFrom ?validFrom ; pwm:validUntil ?validUntil .
+}

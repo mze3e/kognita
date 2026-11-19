@@ -37,7 +37,7 @@ class _Clock:
 
 def _term(
     version="1", superseded_by="", effective=EARLIER, term="AUM",
-    ref="catalogue:aum", owner="Finance",
+    ref="catalog:aum", owner="Finance",
 ):
     return GovernedTerm(term, ref, owner, version, effective, superseded_by)
 
@@ -94,7 +94,7 @@ def _send(session, writer, interaction_id, content):
 def test_current_citation_releases_and_a_missing_one_does_not(store, audience):
     cited = _release(store, _claim("Client AUM is 10", ("AUM", "1"), claim_id=f"ok-{audience}"), audience)
     missing = _release(store, _claim("Client AUM is 10", claim_id=f"no-{audience}"), audience)
-    assert cited.result == CheckResult.PASS and cited.check == "C1-LABELLED"
+    assert cited.result == CheckResult.PASS and cited.check == "C1-LABELED"
     assert missing.result == CheckResult.FAIL and missing.check == "C12-MISSING"
     session, writer, _ = store
     event = session.exec(select(EvidenceEvent).order_by(EvidenceEvent.sequence.desc())).first()
@@ -144,7 +144,7 @@ def test_term_outside_the_claim_text_does_not_require_a_citation(store):
 def test_phrase_spacing_is_not_a_bypass(store):
     session, writer, _ = store
     register_term(
-        session, _term(term="net new money", ref="catalogue:nnm"),
+        session, _term(term="net new money", ref="catalog:nnm"),
         evidence=writer, interaction_id="setup",
     )
     blocked = [
@@ -164,7 +164,7 @@ def test_phrase_spacing_is_not_a_bypass(store):
 def test_longer_word_is_not_the_governed_term(store):
     session, writer, _ = store
     register_term(
-        session, _term(term="concentration", ref="catalogue:concentration"),
+        session, _term(term="concentration", ref="catalog:concentration"),
         evidence=writer, interaction_id="setup",
     )
     assert _release(store, _claim("concentrations rose", claim_id="plural")).result == CheckResult.PASS
@@ -224,7 +224,7 @@ def test_relabel_does_not_bypass_a_missing_definition(store):
 def test_another_terms_current_version_is_not_a_citation(store):
     session, writer, _ = store
     register_term(
-        session, _term(term="concentration", ref="catalogue:concentration"),
+        session, _term(term="concentration", ref="catalog:concentration"),
         evidence=writer, interaction_id="setup",
     )
     wrong_term = _claim("AUM is 10", ("concentration", "1"), claim_id="wrong-term")
@@ -238,7 +238,7 @@ def test_another_terms_current_version_is_not_a_citation(store):
 def test_two_governed_terms_need_more_than_one_citation(store):
     session, writer, _ = store
     register_term(
-        session, _term(term="concentration", ref="catalogue:concentration"),
+        session, _term(term="concentration", ref="catalog:concentration"),
         evidence=writer, interaction_id="setup",
     )
     text = "AUM and concentration both rose"
@@ -249,11 +249,11 @@ def test_two_governed_terms_need_more_than_one_citation(store):
 def test_ambiguous_current_versions_fail_closed(store):
     session, writer, _ = store
     register_term(
-        session, _term(term="VaR", ref="catalogue:var", version="1"),
+        session, _term(term="VaR", ref="catalog:var", version="1"),
         evidence=writer, interaction_id="setup",
     )
     register_term(
-        session, _term(term="VaR", ref="catalogue:var", version="2"),
+        session, _term(term="VaR", ref="catalog:var", version="2"),
         evidence=writer, interaction_id="setup",
     )
     claim = _claim("VaR is 3", ("VaR", "1"), claim_id="var")
@@ -274,7 +274,7 @@ def test_versions_cannot_be_rewritten_revived_or_spoofed(store):
         register_term(session, _term(), evidence=writer, interaction_id="setup")
     with pytest.raises(ValueError, match="C12-INVALID"):
         register_term(
-            session, GovernedTerm("aum", "catalogue:aum", "Finance", "9", EARLIER),
+            session, GovernedTerm("aum", "catalog:aum", "Finance", "9", EARLIER),
             evidence=writer, interaction_id="setup",
         )
 
@@ -286,7 +286,7 @@ def test_changed_definition_content_fails_closed(store):
     assert "Finance" not in json.dumps(event.payload)
     body = json.loads(RetentionStore().read(session, event.payload["term_hash"]))
     assert body["owner"] == "Finance"
-    assert body["definition_ref"] == "catalogue:aum"
+    assert body["definition_ref"] == "catalog:aum"
     row = session.get(RetainedContent, event.payload["term_hash"])
     row.body = row.body.replace("Finance", "changed")
     session.add(row)
@@ -377,7 +377,7 @@ def test_affected_lists_only_previous_versions(tmp_path, capsys):
         assert [item["content_hash"] for item in report["communications"]] == [old_communication]
         early = affected_by_definition(session, "aum", start=T1, end=T2, as_of=T5)
         assert early["claims"] == [] and early["recommendations"] == [] and early["communications"] == []
-        during = affected_by_definition(session, "catalogue:aum", start=T2, end=T3, as_of=T5)
+        during = affected_by_definition(session, "catalog:aum", start=T2, end=T3, as_of=T5)
         assert [item["claim_id"] for item in during["claims"]] == ["c-bare", "c-old"]
         assert [item["rendered_hash"] for item in during["recommendations"]] == [old_hash]
         later = affected_by_definition(session, "AUM", start=T4, end=T5, as_of=T5)
@@ -417,17 +417,17 @@ def test_cli_register_list_and_affected(store, capsys):
     assert json.loads(capsys.readouterr().out)["claims"] == []
     assert main([
         "definition", "register", "--db", path, "--term", "AUM",
-        "--definition-ref", "catalogue:aum", "--owner", "Finance", "--version", "2",
+        "--definition-ref", "catalog:aum", "--owner", "Finance", "--version", "2",
         "--effective", "2024-01-01T00:00:00+00:00",
     ]) == 0
     assert json.loads(capsys.readouterr().out)["version"] == "2"
     assert main([
         "definition", "register", "--db", path, "--term", "AUM",
-        "--definition-ref", "catalogue:aum", "--owner", "Finance", "--version", "1",
+        "--definition-ref", "catalog:aum", "--owner", "Finance", "--version", "1",
         "--effective", "2020-01-01T00:00:00+00:00", "--superseded-by", "2",
     ]) == 0
     capsys.readouterr()
-    assert main(["evidence", "affected", "--db", path, "--definition", "catalogue:aum"]) == 0
+    assert main(["evidence", "affected", "--db", path, "--definition", "catalog:aum"]) == 0
     report = json.loads(capsys.readouterr().out)
     assert [item["claim_id"] for item in report["claims"]] == ["c1"]
     assert report["current_version"] == "2"
@@ -447,7 +447,7 @@ def test_cli_register_list_and_affected(store, capsys):
     assert main(["evidence", "affected", "--db", path, "--model", "1"]) == 2
     assert main([
         "definition", "register", "--db", path, "--term", "AUM",
-        "--definition-ref", "catalogue:aum", "--owner", "Finance", "--version", "3",
+        "--definition-ref", "catalog:aum", "--owner", "Finance", "--version", "3",
         "--effective", "yesterday",
     ]) == 2
 

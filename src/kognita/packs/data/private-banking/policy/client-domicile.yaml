@@ -12,4 +12,4 @@ rule:
       - AE
       - GB
   on_violation: fail
-  description: "Recognised client domiciles."
+  description: "Recognized client domiciles."

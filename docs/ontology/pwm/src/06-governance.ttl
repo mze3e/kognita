@@ -57,7 +57,7 @@ pwm:ThirdPartyAI a owl:Class ;
 
 pwm:ModelProvider a owl:Class ;
     rdfs:label "model provider"@en ;
-    skos:definition "Organisation that supplies AI models or AI services, tracked for concentration, change notification and exit."@en ;
+    skos:definition "Organization that supplies AI models or AI services, tracked for concentration, change notification and exit."@en ;
     rdfs:subClassOf cmns-org:ServiceProvider ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.11(c) concentration; 5.11(d) change management" ] ,
@@ -167,7 +167,7 @@ pwm:IndependentValidator a owl:Class ;
 
 pwm:DelegatedAuthority a owl:Class ;
     rdfs:label "delegated authority"@en ;
-    skos:definition "Authorisation that binds a person, an agent, a purpose, a client, permitted actions, permitted data, a period and limits. Specific, temporary, revocable, and ended by task completion as well as by time."@en ;
+    skos:definition "Authorization that binds a person, an agent, a purpose, a client, permitted actions, permitted data, a period and limits. Specific, temporary, revocable, and ended by task completion as well as by time."@en ;
     skos:scopeNote "A request is allowed only if the person holds the entitlement and the agent holds a live delegation for it."@en ;
     rdfs:subClassOf cmns-bauth:Authorization ;
     pwm:inModule pwm:ModuleGovernance ;
@@ -184,7 +184,7 @@ pwm:AutonomyPromotionGate a owl:Class ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:contextSpeed pwm:SlowContext ;
     pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Stage 4: allow more autonomy only when quality metrics improve" ] ,
-                 [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 04: autonomy is a licence, not a launch setting" ] ,
+                 [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 04: autonomy is a license, not a launch setting" ] ,
                  [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: evidence gates for promotion; automatic step-down" ] .
 
 pwm:OutcomeMetric a owl:Class ;
@@ -248,7 +248,7 @@ pwm:usesDataClass a owl:ObjectProperty ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7: data used; 5.4(d): data classification" ] .
 
-pwm:dependsOn a owl:ObjectProperty ;
+pwm:dependsOn a owl:ObjectProperty ; rdfs:range [ a owl:Class ; owl:unionOf ( pwm:AISystem pwm:AIModel pwm:ModelProvider pwm:AIUseCase ) ] ;
     rdfs:label "depends on"@en ;
     skos:definition "AI system, model, provider or other use case that a use case relies on."@en ;
     pwm:inModule pwm:ModuleGovernance ;
@@ -368,10 +368,10 @@ pwm:agentIdentifier a owl:DatatypeProperty ;
 
 pwm:deploymentVersion a owl:DatatypeProperty ;
     rdfs:label "deployment version"@en ;
-    skos:definition "Hash over an agent's system prompt, instructions, tools, permissions, data sources, orchestration and memory behaviour. Any change needs re-approval before the agent can act."@en ;
+    skos:definition "Hash over an agent's system prompt, instructions, tools, permissions, data sources, orchestration and memory behavior. Any change needs re-approval before the agent can act."@en ;
     rdfs:domain pwm:AIAgent ; rdfs:range xsd:string ;
     pwm:inModule pwm:ModuleGovernance ;
-    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 1: deployment version covers behaviour" ] , [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.25: change management" ] .
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 1: deployment version covers behavior" ] , [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.25: change management" ] .
 
 pwm:maxAutonomyLevel a owl:ObjectProperty ;
     rdfs:label "maximum autonomy level"@en ;
@@ -409,7 +409,7 @@ pwm:boundaryTier a owl:ObjectProperty ;
     pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Stage 4: the three-tier boundary system" ] ,
                  [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 03: three-tier boundaries" ] .
 
-pwm:delegatedBy a owl:ObjectProperty ;
+pwm:delegatedBy a owl:ObjectProperty ; rdfs:range fibo-fnd-aap-ppl:Person ;
     rdfs:label "delegated by"@en ;
     skos:definition "Person who grants a delegated authority. They must hold the entitlement themselves."@en ;
     rdfs:domain pwm:DelegatedAuthority ;
@@ -510,13 +510,13 @@ pwm:AutonomyLevelScheme a skos:ConceptScheme ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: autonomy levels" ] ,
                  [ pwm:cites pwmref:AM-FILING-CABINET ; pwm:locator "Slide 12: reading is not the same as acting" ] .
 pwm:L0Retrieve a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L0" ;
-    skos:prefLabel "retrieve"@en ; skos:definition "Fetch authorised information."@en .
+    skos:prefLabel "retrieve"@en ; skos:definition "Fetch authorized information."@en .
 pwm:L1Explain a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L1" ;
-    skos:prefLabel "explain"@en ; skos:definition "Summarise or explain retrieved information."@en .
+    skos:prefLabel "explain"@en ; skos:definition "Summarize or explain retrieved information."@en .
 pwm:L2Recommend a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L2" ;
     skos:prefLabel "recommend"@en ; skos:definition "Propose an option. Recommending never implies permission to execute."@en .
 pwm:L3Draft a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L3" ;
-    skos:prefLabel "draft"@en ; skos:definition "Prepare an artefact a person reviews before use."@en .
+    skos:prefLabel "draft"@en ; skos:definition "Prepare an artifact a person reviews before use."@en .
 pwm:L4ActAfterApproval a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L4" ;
     skos:prefLabel "act after approval"@en ; skos:definition "Take an action once a named person, not the requester, has approved that exact action."@en .
 pwm:L5BoundedAutonomy a skos:Concept ; skos:inScheme pwm:AutonomyLevelScheme ; skos:topConceptOf pwm:AutonomyLevelScheme ; skos:notation "L5" ;
@@ -530,36 +530,36 @@ pwm:BoundaryTierScheme a skos:ConceptScheme ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:EVOLVE ; pwm:locator "Stage 4: the three-tier boundary system" ] ,
                  [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 03" ] .
-pwm:AlwaysDo a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
-    skos:prefLabel "always do"@en ; skos:definition "Safe, reversible, inside the mandate and already authorised, such as retrieving authorised data or drafting an internal briefing."@en .
-pwm:AskFirst a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
+pwm:AlwaysDo a skos:Concept ; skos:notation "always_do" ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
+    skos:prefLabel "always do"@en ; skos:definition "Safe, reversible, inside the mandate and already authorized, such as retrieving authorized data or drafting an internal briefing."@en .
+pwm:AskFirst a skos:Concept ; skos:notation "ask_first" ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
     skos:prefLabel "ask first"@en ; skos:definition "Consequential or client-facing; the agent prepares and a person decides."@en .
-pwm:NeverDo a skos:Concept ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
+pwm:NeverDo a skos:Concept ; skos:notation "never_do" ; skos:inScheme pwm:BoundaryTierScheme ; skos:topConceptOf pwm:BoundaryTierScheme ;
     skos:prefLabel "never do"@en ; skos:definition "Outside this agent's scope, whatever it is asked, enforced in its permissions rather than by asking. Which actions sit here is set per agent, for example sending client communications for an agent that only drafts."@en .
 
 pwm:ActionVerbScheme a skos:ConceptScheme ;
     skos:prefLabel "action verbs"@en ;
     pwm:inModule pwm:ModuleGovernance ;
-    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: read, analyse, recommend, draft, queue, send and execute" ] .
-pwm:VerbRead a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "read"@en ; skos:definition "Read information."@en .
-pwm:VerbAnalyse a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "analyse"@en ; skos:definition "Derive insight from information."@en .
-pwm:VerbRecommend a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "recommend"@en ; skos:definition "Propose an option."@en .
-pwm:VerbDraft a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "draft"@en ; skos:definition "Prepare an artefact."@en .
-pwm:VerbQueue a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "queue"@en ; skos:definition "Place an artefact for release by a person."@en .
-pwm:VerbSend a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "send"@en ; skos:definition "Release an artefact outside the institution."@en .
-pwm:VerbExecute a skos:Concept ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "execute"@en ; skos:definition "Change a system of record or move value."@en .
+    pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.5 item 3: read, analyze, recommend, draft, queue, send and execute" ] .
+pwm:VerbRead a skos:Concept ; skos:notation "read" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "read"@en ; skos:definition "Read information."@en .
+pwm:VerbAnalyze a skos:Concept ; skos:notation "analyze" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "analyze"@en ; skos:definition "Derive insight from information."@en .
+pwm:VerbRecommend a skos:Concept ; skos:notation "recommend" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "recommend"@en ; skos:definition "Propose an option."@en .
+pwm:VerbDraft a skos:Concept ; skos:notation "draft" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "draft"@en ; skos:definition "Prepare an artifact."@en .
+pwm:VerbQueue a skos:Concept ; skos:notation "queue" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "queue"@en ; skos:definition "Place an artifact for release by a person."@en .
+pwm:VerbSend a skos:Concept ; skos:notation "send" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "send"@en ; skos:definition "Release an artifact outside the institution."@en .
+pwm:VerbExecute a skos:Concept ; skos:notation "execute" ; skos:inScheme pwm:ActionVerbScheme ; skos:topConceptOf pwm:ActionVerbScheme ; skos:prefLabel "execute"@en ; skos:definition "Change a system of record or move value."@en .
 
 pwm:UseCaseStatusScheme a skos:ConceptScheme ;
     skos:prefLabel "use-case lifecycle statuses"@en ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.STATUSES" ] , [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "4.7; 5.2 fn 28 (pilots); 5.26 (decommissioning)" ] .
-pwm:StatusPilot a skos:Concept ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
+pwm:StatusPilot a skos:Concept ; skos:notation "pilot" ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
     skos:prefLabel "pilot"@en ; skos:definition "Limited by end date, named users and success criteria."@en ; skos:closeMatch ai:DeploymentStage .
-pwm:StatusLive a skos:Concept ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
+pwm:StatusLive a skos:Concept ; skos:notation "live" ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
     skos:prefLabel "live"@en ; skos:definition "In production use."@en ; skos:closeMatch ai:OperationStage .
-pwm:StatusSuspended a skos:Concept ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
+pwm:StatusSuspended a skos:Concept ; skos:notation "suspended" ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
     skos:prefLabel "suspended"@en ; skos:definition "Stopped pending review; decisions are refused."@en .
-pwm:StatusRetired a skos:Concept ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
+pwm:StatusRetired a skos:Concept ; skos:notation "retired" ; skos:inScheme pwm:UseCaseStatusScheme ; skos:topConceptOf pwm:UseCaseStatusScheme ;
     skos:prefLabel "retired"@en ; skos:definition "Decommissioned; its agents are stopped and retention applies."@en ; skos:closeMatch ai:DecommissionStage .
 
 pwm:RiskTierScheme a skos:ConceptScheme ;
@@ -567,7 +567,7 @@ pwm:RiskTierScheme a skos:ConceptScheme ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 8: risk tier 1 to 4" ] .
 pwm:Tier1 a skos:Concept ; skos:inScheme pwm:RiskTierScheme ; skos:topConceptOf pwm:RiskTierScheme ; skos:notation "1" ;
-    skos:prefLabel "tier 1"@en ; skos:definition "Research summarisation."@en .
+    skos:prefLabel "tier 1"@en ; skos:definition "Research summarization."@en .
 pwm:Tier2 a skos:Concept ; skos:inScheme pwm:RiskTierScheme ; skos:topConceptOf pwm:RiskTierScheme ; skos:notation "2" ;
     skos:prefLabel "tier 2"@en ; skos:definition "Client intelligence and meeting preparation."@en .
 pwm:Tier3 a skos:Concept ; skos:inScheme pwm:RiskTierScheme ; skos:topConceptOf pwm:RiskTierScheme ; skos:notation "3" ;
@@ -600,29 +600,29 @@ pwm:DecisionConsequenceScheme a skos:ConceptScheme ;
     skos:prefLabel "decision consequences"@en ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.DECISION_CONSEQUENCE" ] .
-pwm:ConsequenceInformational a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "informational"@en ; skos:definition "Informs only."@en .
-pwm:ConsequenceOperational a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "operational"@en ; skos:definition "Changes an internal operation."@en .
-pwm:ConsequenceClientCommunication a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "client communication"@en ; skos:definition "Determines what reaches a client."@en .
-pwm:ConsequenceSuitability a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "suitability"@en ; skos:definition "Bears on whether advice is suitable."@en .
-pwm:ConsequenceFinancialAction a skos:Concept ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "financial action"@en ; skos:definition "Moves value or changes a position."@en .
+pwm:ConsequenceInformational a skos:Concept ; skos:notation "informational" ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "informational"@en ; skos:definition "Informs only."@en .
+pwm:ConsequenceOperational a skos:Concept ; skos:notation "operational" ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "operational"@en ; skos:definition "Changes an internal operation."@en .
+pwm:ConsequenceClientCommunication a skos:Concept ; skos:notation "client_communication" ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "client communication"@en ; skos:definition "Determines what reaches a client."@en .
+pwm:ConsequenceSuitability a skos:Concept ; skos:notation "suitability" ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "suitability"@en ; skos:definition "Bears on whether advice is suitable."@en .
+pwm:ConsequenceFinancialAction a skos:Concept ; skos:notation "financial_action" ; skos:inScheme pwm:DecisionConsequenceScheme ; skos:topConceptOf pwm:DecisionConsequenceScheme ; skos:prefLabel "financial action"@en ; skos:definition "Moves value or changes a position."@en .
 
 pwm:AutonomyAxisScheme a skos:ConceptScheme ;
     skos:prefLabel "use-case autonomy axis"@en ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.AUTONOMY_AXIS" ] .
-pwm:AutonomyNone a skos:Concept ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "none"@en ; skos:definition "No autonomous action."@en .
-pwm:AutonomyAssisted a skos:Concept ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "assisted"@en ; skos:definition "Assists a person who acts."@en .
-pwm:AutonomyConditional a skos:Concept ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "conditional"@en ; skos:definition "Acts under conditions or approval."@en .
-pwm:AutonomyHigh a skos:Concept ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "high"@en ; skos:definition "Acts with little human involvement."@en .
+pwm:AutonomyNone a skos:Concept ; skos:notation "none" ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "none"@en ; skos:definition "No autonomous action."@en .
+pwm:AutonomyAssisted a skos:Concept ; skos:notation "assisted" ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "assisted"@en ; skos:definition "Assists a person who acts."@en .
+pwm:AutonomyConditional a skos:Concept ; skos:notation "conditional" ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "conditional"@en ; skos:definition "Acts under conditions or approval."@en .
+pwm:AutonomyHigh a skos:Concept ; skos:notation "high" ; skos:inScheme pwm:AutonomyAxisScheme ; skos:topConceptOf pwm:AutonomyAxisScheme ; skos:prefLabel "high"@en ; skos:definition "Acts with little human involvement."@en .
 
 pwm:PrimaryMetricScheme a skos:ConceptScheme ;
     skos:prefLabel "primary outcome metrics"@en ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:KOG-VOCAB ; pwm:locator "usecases.PRIMARY_METRICS" ] , [ pwm:cites pwmref:EVOLVE ; pwm:locator "Measure what matters" ] .
-pwm:MetricCycleTime a skos:Concept ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "cycle time"@en ; skos:definition "Time to complete the workflow; breaches above target."@en .
-pwm:MetricDecisionQuality a skos:Concept ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "decision quality"@en ; skos:definition "Share of outputs meeting the standard; breaches below target."@en .
-pwm:MetricReliability a skos:Concept ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "reliability"@en ; skos:definition "Share of runs completing without failure; breaches below target."@en .
-pwm:MetricKnowledgeRetention a skos:Concept ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "knowledge retention"@en ;
+pwm:MetricCycleTime a skos:Concept ; skos:notation "cycle_time" ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "cycle time"@en ; skos:definition "Time to complete the workflow; breaches above target."@en .
+pwm:MetricDecisionQuality a skos:Concept ; skos:notation "decision_quality" ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "decision quality"@en ; skos:definition "Share of outputs meeting the standard; breaches below target."@en .
+pwm:MetricReliability a skos:Concept ; skos:notation "reliability" ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "reliability"@en ; skos:definition "Share of runs completing without failure; breaches below target."@en .
+pwm:MetricKnowledgeRetention a skos:Concept ; skos:notation "knowledge_retention" ; skos:inScheme pwm:PrimaryMetricScheme ; skos:topConceptOf pwm:PrimaryMetricScheme ; skos:prefLabel "knowledge retention"@en ;
     skos:definition "Capability that remains when people leave. An EVOLVE measure; not a Kognita primary metric."@en .
 
 pwm:GovernanceRiskScheme a skos:ConceptScheme ;
@@ -630,11 +630,11 @@ pwm:GovernanceRiskScheme a skos:ConceptScheme ;
     skos:scopeNote "Five risks that sit on top of model risk when AI moves from assistance to action."@en ;
     pwm:inModule pwm:ModuleGovernance ;
     pwm:citation [ pwm:cites pwmref:AM-GOVERNING-AGENTIC-AI ; pwm:locator "Section 02: five risks" ] .
-pwm:RiskAccess a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "access"@en ; skos:definition "An agent inherits whatever its tools can reach."@en .
-pwm:RiskEvidence a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "evidence"@en ; skos:definition "The chain of retrievals, judgements and actions is not kept."@en .
-pwm:RiskOperational a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "operational"@en ; skos:definition "Agents loop, stall, call the wrong tool or keep moving when they should stop."@en .
-pwm:RiskChange a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "change"@en ; skos:definition "Behaviour changes with a prompt, tool, source or silent model update."@en .
-pwm:RiskOwnership a skos:Concept ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "ownership"@en ; skos:definition "No named person is accountable for what the agent did."@en .
+pwm:RiskAccess a skos:Concept ; skos:notation "access" ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "access"@en ; skos:definition "An agent inherits whatever its tools can reach."@en .
+pwm:RiskEvidence a skos:Concept ; skos:notation "evidence" ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "evidence"@en ; skos:definition "The chain of retrievals, judgments and actions is not kept."@en .
+pwm:RiskOperational a skos:Concept ; skos:notation "operational" ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "operational"@en ; skos:definition "Agents loop, stall, call the wrong tool or keep moving when they should stop."@en .
+pwm:RiskChange a skos:Concept ; skos:notation "change" ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "change"@en ; skos:definition "Behavior changes with a prompt, tool, source or silent model update."@en .
+pwm:RiskOwnership a skos:Concept ; skos:notation "ownership" ; skos:inScheme pwm:GovernanceRiskScheme ; skos:topConceptOf pwm:GovernanceRiskScheme ; skos:prefLabel "ownership"@en ; skos:definition "No named person is accountable for what the agent did."@en .
 
 # Live control state is separate from cached governance configuration.
 pwm:AuthorityLiveStatus a owl:Class ;
@@ -642,12 +642,12 @@ pwm:AuthorityLiveStatus a owl:Class ;
     skos:definition "Live observation of the revocation state of a DelegatedAuthority or the engaged state of a KillSwitch, effective from asOf until superseded. Read from the system of record at decision time, never from cache."@en ;
     skos:scopeNote "The single live-status vocabulary for delegation revocation and kill-switch state, retained for reuse in 0.5 without a parallel class or code list. DelegatedAuthority and KillSwitch definitions remain in SlowContext. For each subject, use the latest observation at or before the decision time. Conflicting observations at that time fail closed. SHACL checks recorded observations; runtime must obtain fresh state."@en ;
     rdfs:subClassOf prov:Entity ; pwm:contextSpeed pwm:FastContext ; pwm:defaultClassification pwm:C2 ;
-    pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+    pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialized record or field; no exact standard term identified" ] .
 
-pwm:statusOf a owl:ObjectProperty ; rdfs:label "status of"@en ; skos:definition "Authority or kill switch whose live state is observed."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range [ a owl:Class ; owl:unionOf ( pwm:DelegatedAuthority pwm:KillSwitch ) ] ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+pwm:statusOf a owl:ObjectProperty ; rdfs:label "status of"@en ; skos:definition "Authority or kill switch whose live state is observed."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range [ a owl:Class ; owl:unionOf ( pwm:DelegatedAuthority pwm:KillSwitch ) ] ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialized record or field; no exact standard term identified" ] .
 
-pwm:observedBy a owl:ObjectProperty ; rdfs:label "observed by"@en ; skos:definition "Agent that obtained the live observation from the system of record."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range prov:Agent ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+pwm:observedBy a owl:ObjectProperty ; rdfs:label "observed by"@en ; skos:definition "Agent that obtained the live observation from the system of record."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range prov:Agent ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialized record or field; no exact standard term identified" ] .
 
-pwm:revoked a owl:DatatypeProperty ; rdfs:label "revoked"@en ; skos:definition "Whether the delegated authority is currently revoked."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:boolean ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+pwm:revoked a owl:DatatypeProperty ; rdfs:label "revoked"@en ; skos:definition "Whether the delegated authority is currently revoked."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:boolean ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialized record or field; no exact standard term identified" ] .
 
-pwm:engaged a owl:DatatypeProperty ; rdfs:label "engaged"@en ; skos:definition "Whether the kill switch is currently engaged."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:boolean ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialised record or field; no exact standard term identified" ] .
+pwm:engaged a owl:DatatypeProperty ; rdfs:label "engaged"@en ; skos:definition "Whether the kill switch is currently engaged."@en ; rdfs:domain pwm:AuthorityLiveStatus ; rdfs:range xsd:boolean ; pwm:inModule pwm:ModuleGovernance ; pwm:citation [ pwm:cites pwmref:KOG-ROADMAP ; pwm:locator "0.4 item 14: circuit breaker and granular revocation; 0.3 item 2: policy evaluation boundaries" ], [ pwm:cites pwmref:MAS-AIRG ; pwm:locator "5.9: human oversight" ], [ pwm:cites pwmref:PWM-PRACTICE ; pwm:locator "0.4: NEW specialized record or field; no exact standard term identified" ] .

@@ -91,7 +91,7 @@ def test_four_scenarios_run_from_scaffold(tmp_path: Path):
         deployment = agent.tool_allowlist["_deployment"]
         assert agent.deployment_hash == _deployment_hash(agent, deployment)
         for component in ("system_prompt", "instructions", "permissions", "data_sources",
-                          "orchestration", "memory_behaviour"):
+                          "orchestration", "memory_behavior"):
             assert deployment[component]
         assert deployment["tools"] == []
         assert agent.autonomy_level == 0

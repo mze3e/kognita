@@ -28,7 +28,7 @@ Token totals and cost, when the provider response reports them, are added to
 the :class:`~kognita.tools.Run` budget.
 
 Identity, on this gateway only. Calls that do not come through here keep the
-behaviour they already have.
+behavior they already have.
 
 - Calls require a registered agent with a workload credential or a system
   trigger listed in the authenticated client configuration. Listed triggers

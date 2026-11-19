@@ -17,7 +17,7 @@ def _status(connection) -> int:
         raise ValueError('T5: migration runner supports SQLite only')
     inspector = _inspect(connection)
     if not inspector.has_table('evidence_events'):
-        raise ValueError('T5: evidence_events is absent; initialise the store first')
+        raise ValueError('T5: evidence_events is absent; initialize the store first')
     expected = set(_EvidenceEvent.__table__.columns.keys())
     actual = {column['name'] for column in inspector.get_columns('evidence_events')}
     if actual in (expected - {'schema_version'}, expected - {'schema_version', 'signature', 'key_id'}, expected - {'signature', 'key_id'}):

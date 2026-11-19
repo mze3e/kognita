@@ -1,6 +1,6 @@
 """Governed business definitions.
 
-The bank's catalogue owns what a term means. Kognita stores the reference,
+The bank's catalog owns what a term means. Kognita stores the reference,
 owner, version and effective date, and will not release a claim that uses a
 registered term unless the claim cites the version in force.
 """
@@ -102,7 +102,7 @@ def _time(value, label: str = "dates"):
 class GovernedTerm:
     """One registered version of a business term.
 
-    ``definition_ref`` is the catalogue's reference for this version, not the
+    ``definition_ref`` is the catalog's reference for this version, not the
     ``(term, version)`` citation a claim carries.
     """
 

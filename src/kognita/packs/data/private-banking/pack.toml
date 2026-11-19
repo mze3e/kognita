@@ -2,8 +2,8 @@ name = "private-banking"
 version = "1.0.0"
 purposes = ["CLIENT_DISCUSSION"]
 files = [
-  "policy/booking-centre.yaml",
-  "policy/booking-centre.scenarios.yaml",
+  "policy/booking-center.yaml",
+  "policy/booking-center.scenarios.yaml",
   "policy/rm-location.yaml",
   "policy/rm-location.scenarios.yaml",
   "policy/client-domicile.yaml",
@@ -36,7 +36,7 @@ files = [
   "policy/client-ai-disclosure.scenarios.yaml",
 ]
 [clients.C-100]
-booking_centre = "SG"
+booking_center = "SG"
 client_domicile = "SG"
 solicitation = "permitted"
 research_distribution = "permitted"
@@ -44,7 +44,7 @@ relationship_manager = "rm.lee"
 contact_count = 0
 
 [clients.C-CROSS]
-booking_centre = "SG"
+booking_center = "SG"
 client_domicile = "SG"
 solicitation = "prohibited"
 research_distribution = "permitted"
@@ -52,7 +52,7 @@ relationship_manager = "rm.lee"
 contact_count = 0
 
 [clients.C-BOOK]
-booking_centre = "US"
+booking_center = "US"
 client_domicile = "SG"
 solicitation = "permitted"
 research_distribution = "permitted"

@@ -2,7 +2,7 @@
 
 The doctrine is governance-shaped: two-signature gates,
 "agents propose, humans sign", a human-in-the-loop proposal queue, exportable
-artefacts, and falsifiable guarantees. This pack models the core: one person marks
+artifacts, and falsifiable guarantees. This pack models the core: one person marks
 a criterion met; only an owner confirms; nothing self-passes.
 
 This pack's assertions — marked `xfail(strict=True)` —

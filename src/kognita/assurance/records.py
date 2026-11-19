@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import field_validator, BaseModel, ConfigDict, Field, model_validator
 from sqlmodel import select
 
 from kognita.canonical import canonical_hash
@@ -47,8 +47,14 @@ class AssurancePolicy(Record):
     outcome_step_down: bool = False
     technology_origin: str = ''
     deployment_jurisdiction: str = ''
-    transfer_type: Literal['api', 'weights', 'licence', 'local', 'ownership'] = 'api'
+    transfer_type: Literal['api', 'weights', 'license', 'local', 'ownership'] = 'api'
     transfer_policy: str = ''
+
+    @field_validator('transfer_type', mode='before')
+    @classmethod
+    def legacy_transfer_type(cls, value):
+        """Policies stored before the US spelling change carry the old value."""
+        return 'license' if value == 'licence' else value
 
     @model_validator(mode='after')
     def independent(self):
@@ -160,7 +166,7 @@ def privacy_context(agent, p, use_case_record):
     return {'purpose': agent.purpose, 'use_case_purpose': use_case_record.get('purpose'),
         'tools': agent.tool_allowlist, 'systems': agent.permitted_systems,
         'data_classes': p.data_classes, 'data_sources': use_case_record.get('data_sources'),
-        'memory': deployment.get('memory_behaviour'), 'model': agent.model,
+        'memory': deployment.get('memory_behavior', deployment.get('memory_behaviour')), 'model': agent.model,
         'providers': use_case_record.get('model_providers'),
         'approved_models': use_case_record.get('approved_models'),
         'approved_sources': use_case_record.get('approved_sources'),

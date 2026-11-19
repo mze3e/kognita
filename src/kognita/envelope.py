@@ -1,6 +1,6 @@
 """The governance envelope — what is asked, by whom, for what purpose.
 
-Authorise before discovery: an envelope describes an *intent* and is evaluated
+Authorize before discovery: an envelope describes an *intent* and is evaluated
 before any data is fetched. It deliberately carries references to subjects
 (``subject_type`` / ``subject_id``) rather than the subjects themselves, so that
 constructing one leaks nothing.

@@ -33,7 +33,7 @@ class Delegation(_BaseModel):
     task_ref: str
 
 
-_VERBS = ("read", "analyse", "recommend", "draft", "queue", "send", "execute")
+_VERBS = ("read", "analyze", "recommend", "draft", "queue", "send", "execute")
 
 
 def _emit(session, evidence, actor_id, action, row, *, _context=None):

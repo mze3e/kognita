@@ -16,7 +16,7 @@ Do-not-contact is per client. While it stands, a later recommendation, an RM
 approval, and any tool call a ``CONTACT_FREQUENCY`` policy marks in ``tools``
 are refused. A policy with no ``tools`` list does not mark tool calls. The
 bar lifts only when :func:`reverse_do_not_contact` records a cited reversal
-by an authorised human. The name is the roadmap outcome plus reversal.
+by an authorized human. The name is the roadmap outcome plus reversal.
 """
 
 from __future__ import annotations
@@ -86,7 +86,7 @@ def originate(
     is already in force for this client is refused and not recorded.
 
     A contact-frequency policy that this recommendation would cross is
-    honoured by recording do-not-contact instead of the recommendation.
+    honored by recording do-not-contact instead of the recommendation.
     """
     at = now or utcnow()
     interaction = require_interaction(session, interaction_id)
@@ -172,9 +172,9 @@ def reverse_do_not_contact(
     """Lift do-not-contact for this interaction's client.
 
     The reversal is recorded, and it cites ``citation``. ``human`` must be an
-    authorised person for the use case: the human boundary's ``who``, or a
+    authorized person for the use case: the human boundary's ``who``, or a
     person named on the use-case register. A registered agent is not a human.
-    A missing citation, a missing human, an unauthorised human, or a client
+    A missing citation, a missing human, an unauthorized human, or a client
     who is not under do-not-contact is refused and not recorded.
     """
     at = now or utcnow()
@@ -201,16 +201,16 @@ def reverse_do_not_contact(
             f"{party} is a registered agent and cannot reverse do not contact "
             "(Origination: do not contact reversal)"
         )
-    authorised = _authorised_humans(session, interaction.use_case, at)
-    if not authorised:
+    authorized = _authorized_humans(session, interaction.use_case, at)
+    if not authorized:
         raise OriginationError(
-            f"use case {interaction.use_case or '(none)'} names no authorised "
+            f"use case {interaction.use_case or '(none)'} names no authorized "
             "human who can reverse do not contact "
             "(Origination: do not contact reversal)"
         )
-    if party not in authorised:
+    if party not in authorized:
         raise OriginationError(
-            f"{party} is not an authorised human for use case "
+            f"{party} is not an authorized human for use case "
             f"{interaction.use_case} (Origination: do not contact reversal)"
         )
     payload: dict[str, Any] = {
@@ -305,12 +305,12 @@ def _is_agent(session: Session, name: str) -> bool:
     return row is not None
 
 
-def _authorised_humans(session: Session, use_case: str, at: datetime) -> set[str]:
+def _authorized_humans(session: Session, use_case: str, at: datetime) -> set[str]:
     """People who may reverse do-not-contact for this use case.
 
     The human boundary names who must intervene. The register names the
     owners, the Knowledge Lead, the control function, and the accountability
-    seats. An empty set means nobody is authorised, and a reversal is refused.
+    seats. An empty set means nobody is authorized, and a reversal is refused.
     """
     names: set[str] = set()
     if not use_case:
@@ -590,14 +590,14 @@ def _recent_recommendations(
     return count
 
 
-authorised_humans = _authorised_humans
+authorized_humans = _authorized_humans
 
 
 __all__ = [
     "DO_NOT_CONTACT_REASONS",
     "OriginationError",
     "TRIGGERS",
-    "authorised_humans",
+    "authorized_humans",
     "contact_refusal",
     "do_not_contact_reasons",
     "originate",

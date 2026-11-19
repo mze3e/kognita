@@ -1,4 +1,4 @@
-"""The MCP proxy: authorise with run_governed, then proxy, and evidence it.
+"""The MCP proxy: authorize with run_governed, then proxy, and evidence it.
 
 Covers roadmap 0.3 item 5. An allow is proxied and evidenced. A denial is not
 proxied and returns the outcome and the citations. Free-text arguments are

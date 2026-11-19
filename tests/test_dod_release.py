@@ -153,7 +153,7 @@ def test_gateway_claim_bypasses_fail_closed(session, evidence, bypass):
                 "claim_id": "forged",
                 "audience": "rm",
                 "allowed": True,
-                "reason": "C1-LABELLED",
+                "reason": "C1-LABELED",
                 "claim_hash": "0" * 64,
             },
         )
@@ -377,7 +377,7 @@ def test_release_cover_does_not_verify_the_whole_chain(session, evidence, monkey
         raise AssertionError("the request path must not verify the chain")
 
     monkeypatch.setattr(claims, "_verify_chain", boom)
-    assert claims._release_covers(session, ANSWER, audience="rm", usecase_id="COLLABORATION").check == "C1-LABELLED"
+    assert claims._release_covers(session, ANSWER, audience="rm", usecase_id="COLLABORATION").check == "C1-LABELED"
 
 
 def test_a_value_with_an_as_of_date_but_no_owner_is_not_passed_through(session, evidence):
@@ -429,7 +429,7 @@ def test_release_scope_modes(session, evidence, scope, asked, covered):
 
     _scoped_cover(session, evidence, scope)
     check = _release_covers(session, "Scoped text.", audience="rm", **asked)
-    assert (check.check == "C1-LABELLED") is covered, check.check
+    assert (check.check == "C1-LABELED") is covered, check.check
 
 
 def test_release_scope_must_be_a_known_value():

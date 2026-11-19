@@ -12,7 +12,7 @@
 
 Content guardrails check what an AI *says*. Kognita decides whether the agent was *allowed to ask*, before any data is retrieved, and writes a tamper-evident record of the decision and the rule behind it.
 
-Your agent pulls a client's portfolio, summarises it, and sends it to a model API. Was it allowed to? With Kognita, that question has an answer you can show a regulator: which rule permitted it, which rules would have stopped it, and proof that the record hasn't been edited since.
+Your agent pulls a client's portfolio, summarizes it, and sends it to a model API. Was it allowed to? With Kognita, that question has an answer you can show a regulator: which rule permitted it, which rules would have stopped it, and proof that the record hasn't been edited since.
 
 ```python
 from datetime import datetime, timezone
@@ -27,7 +27,7 @@ start = datetime(2026, 1, 1, tzinfo=timezone.utc)
 
 with Session(engine) as session:
     session.add_all([
-        Policy(regime="BOOKING_CENTRE", rule_type="ATTRIBUTE_ALLOWLIST",
+        Policy(regime="BOOKING_CENTER", rule_type="ATTRIBUTE_ALLOWLIST",
                rule={"allow": {"actor_location": ["SG"]}},
                citation="Cross-border manual s3.2: SG-booked clients served from SG",
                effective_from=start),
@@ -54,7 +54,7 @@ for check in evaluation.basis():
 
 ```console
 DENY
-BOOKING_CENTRE   Cross-border manual s3.2: SG-booked clients served from SG
+BOOKING_CENTER   Cross-border manual s3.2: SG-booked clients served from SG
 INVESTOR_STATUS  Product governance policy s7: complex products
 ```
 
@@ -72,7 +72,7 @@ Optional extras add provider-backed embedders (`kognita[openai]`), a SQLite vect
 
 ## What it does today
 
-**Authorise before discovery.** An agent's intent is described as an envelope (who, for what purpose, with which tool, about which subject, from where) and evaluated before anything is fetched. A denial returns no data, not filtered data. Retrieval filters on zones and classification before scoring. An item with no zones is not visible in any zone.
+**Authorize before discovery.** An agent's intent is described as an envelope (who, for what purpose, with which tool, about which subject, from where) and evaluated before anything is fetched. A denial returns no data, not filtered data. Retrieval filters on zones and classification before scoring. An item with no zones is not visible in any zone.
 
 **Fail closed.** Outcomes resolve as `DENY > ESCALATE > HUMAN_APPROVAL > ALLOW`. One failing check among a hundred passes still denies, so a policy set cannot be widened by adding permissive rules. A policy whose rule type has no evaluator escalates rather than being skipped. A missing or empty purpose list fails the purpose check.
 
@@ -252,7 +252,7 @@ assert evaluation.outcome is Outcome.DENY
 assert "S2-DEPLOYMENT-MODE" in [c.citation for c in evaluation.failures()]
 ```
 
-**The MCP proxy.** `kognita serve --mcp --root-config config.json` fronts the MCP servers named in that file. The file also names the policy pack, the evidence database, and the default actor context. Every call becomes an envelope and is authorised with `run_governed()`. The backend is contacted only when the call is released: an allow, or a human approval that already has a live grant. A denial, an escalation, and an ungranted human approval return the outcome and the citations. If the evidence store cannot record the call, the proxy refuses it and does not forward. It has no degraded mode.
+**The MCP proxy.** `kognita serve --mcp --root-config config.json` fronts the MCP servers named in that file. The file also names the policy pack, the evidence database, and the default actor context. Every call becomes an envelope and is authorized with `run_governed()`. The backend is contacted only when the call is released: an allow, or a human approval that already has a live grant. A denial, an escalation, and an ungranted human approval return the outcome and the citations. If the evidence store cannot record the call, the proxy refuses it and does not forward. It has no degraded mode.
 
 **Flagship demo.** `kognita scaffold --template governed-agent` creates a small app and a SQLite policy and evidence store.
 
@@ -284,10 +284,10 @@ inspects records. It does not record or release them.
 `release_claim` loads the stored claim and checks, in this order: a stale
 status, the audience (`rm` or `client`), the label, the approved source, the
 calculation citation, the verification record, then the governed definition.
-The first failure is the reason code. A pass is `C1-LABELLED`.
+The first failure is the reason code. A pass is `C1-LABELED`.
 
-Relabelling as a verified fact requires both source references and `VERIFIED`
-status. A stale claim cannot be relabelled back into circulation.
+Relabeling as a verified fact requires both source references and `VERIFIED`
+status. A stale claim cannot be relabeled back into circulation.
 `definition_ref` is one `(term, version)` pair. When the text uses a registered
 term, that pair must be the version in force. Text that uses two governed terms
 cannot cite both. Successful RM releases appear in `kognita evidence reconstruct`.
@@ -332,7 +332,7 @@ with Session(engine) as session:
         "nav-desk", "NAV desk", "3", "Finance", ("nav",),
     ), evidence=writer, interaction_id="i1")
     register_term(session, GovernedTerm(
-        "AUM", "catalogue:aum", "Finance", "1",
+        "AUM", "catalog:aum", "Finance", "1",
         datetime(2026, 1, 1, tzinfo=timezone.utc),
     ), evidence=writer, interaction_id="i1")
     register_verifier(session, Verifier(
@@ -342,7 +342,7 @@ with Session(engine) as session:
     record_claim(session, Claim("c-bare", "client-1", "The house view is overweight."),
                  evidence=writer, interaction_id="i1")
     assert release_claim(session, "c-bare", evidence=writer, interaction_id="i1",
-                         usecase_id="advice").check == "C1-UNLABELLED"
+                         usecase_id="advice").check == "C1-UNLABELED"
 
     record_claim(session, Claim(
         "c-model", "client-1", "The house view is overweight.", ClaimType.INFERENCE,
@@ -395,7 +395,7 @@ with Session(engine) as session:
                  usecase_id="advice")
     released = release_claim(session, "c-ok", evidence=writer, interaction_id="i1",
                              usecase_id="advice", audience="rm")
-    assert released.check == "C1-LABELLED" and released.result is CheckResult.PASS
+    assert released.check == "C1-LABELED" and released.result is CheckResult.PASS
     session.commit()
 ```
 
@@ -599,7 +599,7 @@ status after verification does not widen the audience.
 
 ## Governed business definitions
 
-`kognita.definitions` records the bank's terms. The catalogue still owns the
+`kognita.definitions` records the bank's terms. The catalog still owns the
 meaning. `GovernedTerm` carries the term, the authoritative definition
 reference, the owner, the version, the effective time, and `superseded_by`.
 `register_term` retains that snapshot and appends its hash to the evidence chain.
@@ -619,7 +619,7 @@ term is not a use of it.
 `C12-AMBIGUOUS` fail closed.
 
 ```sh
-kognita definition register --db kognita.db --term AUM --definition-ref catalogue:aum --owner Finance --version 1 --effective 2026-01-01T00:00:00+00:00
+kognita definition register --db kognita.db --term AUM --definition-ref catalog:aum --owner Finance --version 1 --effective 2026-01-01T00:00:00+00:00
 kognita definition list --db kognita.db
 kognita evidence affected --db kognita.db --definition AUM
 kognita evidence affected --db kognita.db --definition AUM --from 2026-01-01T00:00:00+00:00 --to 2026-06-01T00:00:00+00:00
@@ -639,7 +639,7 @@ reference. An unknown id is refused.
 
 Interactions, RM edits and outcomes are excluded from external training,
 fine-tuning and evaluation by default. `ExportRequest` requires a purpose,
-anonymisation and validation evidence references, a requester and a distinct
+anonymization and validation evidence references, a requester and a distinct
 approver identity. The trusted calling application supplies these identities.
 `request_export` returns an approved record selection manifest or a denial with
 reason codes. It does not send data to a pipeline. Commit the transaction for
@@ -659,7 +659,7 @@ records. Use `export exclude --record <id>` to persist a record exclusion.
 
 ```sh
 kognita export exclude --db kognita.db --client client-1 --reason "Opt out" --actor operator
-kognita export request --db kognita.db --purpose "Quality evaluation" --anonymisation "control-17" --validation "report-42" --requester analyst --approval reviewer --record interaction:journey-1
+kognita export request --db kognita.db --purpose "Quality evaluation" --anonymization "control-17" --validation "report-42" --requester analyst --approval reviewer --record interaction:journey-1
 ```
 
 The request above exits 2. `interaction:journey-1` is not in the store, so the
@@ -737,7 +737,7 @@ Institutional learning uses `propose_standard` and `approve_standard`. The
 proposal carries evidence references. Only the in-force use case's Knowledge
 Lead can approve, and that person cannot be the proposer. Approval stores a
 new standard version, closes the previous version and changes the agent
-deployment hash. The manifest's memory behaviour records the standard id and
+deployment hash. The manifest's memory behavior records the standard id and
 version. Prompt text is left as it was. `current_standard` returns the single
 in-force version. A future, superseded or expired standard is refused.
 
@@ -749,7 +749,7 @@ stays in the retention store. The evidence chain stores the hash.
 
 An inference cannot be written straight into relationship memory. With no
 institutional standard in force, a verified fact still records
-`standard_version` as an empty string. That field is the memory catalogue, not
+`standard_version` as an empty string. That field is the memory catalog, not
 the use-case record.
 
 ```python
@@ -836,7 +836,7 @@ agent-level or system-level result for that version and model exits 2 with
 `EVALUATION_REQUIRED`. A model-level result does not open the gate.
 
 `fairness_report` and `kognita eval report` compute recommendation, contact and
-prioritisation rates from origination evidence. The population is the segment
+prioritization rates from origination evidence. The population is the segment
 map the bank supplies, such as nationality, age group, language, portfolio size,
 channel or RM team. Proxy attributes, such as postcode standing in for
 nationality, are named with the segments and marked on the report. A disparity
@@ -942,7 +942,7 @@ The 0.7 controls are in this tree. These are their honest gaps:
 
 ## Where it's heading
 
-The direction is **supervisory examinability**: a regulator should be able to pick one AI-assisted client interaction and reconstruct it from evidence alone. Why this client, why this product, what data the AI used, which model produced it, what the agent was authorised to do, which controls ran, what the human saw and changed, who decided, what the client was told, and whether all of that can be reproduced later.
+The direction is **supervisory examinability**: a regulator should be able to pick one AI-assisted client interaction and reconstruct it from evidence alone. Why this client, why this product, what data the AI used, which model produced it, what the agent was authorized to do, which controls ran, what the human saw and changed, who decided, what the client was told, and whether all of that can be reproduced later.
 
 The test every release is measured against:
 
