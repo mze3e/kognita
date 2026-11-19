@@ -960,6 +960,8 @@ The 0.7 trust and resilience controls ship in v0.7.0. See [Trust and resilience]
 
 **0.8 "Supervisory Alignment and Runtime Assurance"** adds: material-agent/KYA manifests, external-agent trust assertions, outcome validation, third-party update gates, monitoring-coverage and execution-environment attestations, AI cyber drills, AI software-supply-chain evidence, jurisdictional technology-transfer controls, high-risk instruction authenticity and evidence-backed supervisory conformance profiles. See the [runtime assurance guide](docs/runtime-assurance.md) and [0.8 roadmap](docs/ROADMAP.md#08-supervisory-alignment-and-runtime-assurance).
 
+The proposed [Agent Execution Interoperability and Assurance](docs/ROADMAP.md#agent-execution-interoperability-and-assurance-proposed) milestone also tracks **EU consumer-agent purchase authority and human-service handoff evidence (E8)** following the 11 November 2026 Digital Fairness Act proposal. This is **not enacted law** and adds no default runtime requirement.
+
 The full plan is in [docs/ROADMAP.md](docs/ROADMAP.md). How it maps to bank control frameworks for agentic AI is in [docs/control-frameworks.md](docs/control-frameworks.md), which consolidates a 40-domain bank-grade framework and a 70-control wealth management framework, plus the EVOLVE framework's learning loop, institutional memory, and a verified post-October-2026 regulatory/supervisory delta covering FSB, HKMA, FCA, SEC, OCC, ICO, MAS and relevant cyber/technology-transfer developments.
 
 The design rule behind all of it: **never rely on the LLM to enforce a control that can be enforced outside the LLM.**
