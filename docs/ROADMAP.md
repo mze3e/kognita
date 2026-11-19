@@ -164,6 +164,8 @@ The guidelines are principles-based and proportionate. Kognita supplies enforcem
 
 ## Release Timeline
 
+**15 November planning addendum:** A proposed **Agent Execution Interoperability and Assurance** milestone follows 0.8 and precedes 1.0, with timing **TBD** pending maintainer review. The historical timeline below remains unchanged until the release plan is approved; the 0.8.x queue is test-first hardening, not an additional committed release.
+
 ```
 Q4 2026     Q1 2027     Q2 2027     Q3 2027     Q4 2027     Q1 2028     Q2 2028
 │           │           │           │           │           │           │
@@ -1094,6 +1096,84 @@ Every drill checks that policy, monitoring, containment and evidence remain inta
 
 ---
 
+## Agent Execution Interoperability and Assurance (Proposed)
+
+**Planning status:** Proposed 15 November 2026; scope and dates require maintainer review. This section is a gap-validation and conformance plan, **not** a claim that the capabilities below are absent. Preserve implemented 0.3–0.8 controls and do not duplicate them.
+
+**Goal:** Demonstrate that Kognita's existing independent governance decisions remain enforceable across generated-code orchestration, nested MCP/tool calls, agent handoffs, durable recovery, skill/plugin changes, and portable sandbox runtimes. The enforcement boundary remains Kognita's gateways/brokers and authoritative external attestations; Kognita does not become an agent framework, code interpreter, sandbox, identity provider, vulnerability scanner, or SOC.
+
+**Entry gate:** For each candidate, inventory existing code, policy, tests and evidence from 0.3–0.8; mark **implemented / needs hardening / integration gap / out of scope**. Open implementation issues only for demonstrated gaps, linking a failing test and owner. The following items are prioritized requirements and test hypotheses, not verified deficiencies.
+
+### E1. Nested Code Mode and MCP authorization (P0)
+
+- Authorize each consequential nested tool or API operation independently of the outer generated-code execution approval; capture the actual principal, target, schema, arguments and decision before transport.
+- Treat direct SDK access, subprocesses, dynamic tool discovery and tool-to-tool calls as explicit enforcement-boundary tests. Document which paths cannot be intercepted without deployment controls.
+- Deny when the authoritative enforcement point is missing, not merely when the agent reports an unauthorized call.
+- **Acceptance:** In the supported deployment topology, adversarial tests cannot execute an unauthorized nested operation; every permitted operation has its own evidence and outcome reference.
+
+### E2. Durable approval freshness, replay and idempotency (P0)
+
+- Bind approvals to principal, delegation, operation, material arguments, policy and capability versions, run/checkpoint identity and expiry; re-evaluate after interruption, restoration or handoff.
+- Separate an execution journal from authorization decisions and authoritative external outcome receipts. Define retry/idempotency or reconciliation rules for non-idempotent operations.
+- **Acceptance:** Revoked or stale authority cannot resume an action; a crash after external commit cannot silently cause duplicate irreversible side effects; unresolved outcomes remain explicitly unresolved.
+
+### E3. Execution identity, intent and secret safety (P0)
+
+- Verify effective identity, resolved working directory and destination, credential source, environment attestation, sandbox policy and delegated scope at action time.
+- For high-impact writes, bind recipient, account, amount, destination and allowed verbs to independently approved user intent; require new authorization when dynamically discovered values exceed that contract.
+- Redact credentials from command approvals, traces, logs and evidence while preserving auditable references.
+- **Acceptance:** Symlink/path changes, identity swaps, cross-host OAuth redirects, untrusted-repository configuration and tool-output argument substitution fail closed under the applicable policy.
+
+### E4. Capability and instruction supply-chain provenance (P1)
+
+- Bind approved MCP servers/tools to issuer/identity, tool schema digest and version. Treat changed schemas, names or capabilities as material drift requiring policy re-evaluation.
+- Pin skills, plugins, AGENTS.md-style instructions, scripts and model/harness/adapter dependencies by trusted source and content digest; do not treat instruction content as authorization.
+- Reuse 0.8 A9 software-supply-chain attestations and A4 third-party update gates rather than creating a second registry or scanner.
+- **Acceptance:** A poisoned skill, modified repository instruction, substituted MCP server or changed schema cannot silently expand effective permissions.
+
+### E5. Runtime state, memory and outcome integrity (P1)
+
+- Revalidate environment identity and authority on sandbox/actor restoration. Keep model conversational memory distinct from authoritative business state; enforce source provenance, freshness and supersession.
+- Record planned, authorized, attempted, completed, failed, compensated, replayed and unresolved operations separately; never infer success from partial streamed output.
+- Reuse 0.6 memory/fact controls, 0.7 resilience and 0.8 A3/A7 outcome/environment assurance.
+- **Acceptance:** Context compaction, stale retrieved facts, interrupted streaming and resumed environments do not produce falsely verified business outcomes.
+
+### E6. Portable harness conformance and continuous evaluation (P1)
+
+- Publish one conformance suite for supported harness integrations (e.g. Claude Code, Codex, LangGraph and selected MCP clients), with documented unsupported bypass paths.
+- Bind evaluations to model, adapter, harness, tool schema, skill/prompt, policy and runtime versions; require targeted regression evidence after material updates.
+- Test delegated subagents, nested code, stale approvals, prompt injection, egress, streaming and external outcomes using existing 0.5–0.8 evidence and drill machinery.
+- **Acceptance:** Each declared supported integration passes the same security and evidence contract; a model or harness swap does not silently inherit an obsolete evaluation result.
+
+### E7. Data flow, blast radius and supervisory reconstruction (P2)
+
+- Strengthen sensitivity and destination controls across retrieved content, generated code, MCP tools and model gateways, reusing existing egress and classification decisions.
+- Verify fleet budgets, cancellation, intervention, affected-client tracing, incident closure and end-to-end reconstruction from independently sourced evidence.
+- **Acceptance:** Defined high-impact client interactions reconstruct the complete principal → authority → policy → tool execution → verified outcome chain, including interruption and key rotation.
+
+### 0.8.x hardening queue (before implementation)
+
+1. **P0:** Nested Code Mode/MCP enforcement and direct-SDK bypass regression tests (E1).
+2. **P0:** Stale-approval, retry, interrupted-commit and resumed-identity regression tests (E2–E3).
+3. **P0:** User-intent argument binding and secret-safe evidence tests (E3).
+4. **P1:** MCP schema drift and skill/plugin/instruction provenance integration (E4).
+5. **P1:** Cross-harness execution/outcome conformance and evaluation provenance (E5–E6).
+
+Treat these as **test-first verification packages**; only confirmed failures become code changes. The numbering does not assert a new 0.8.x release has been approved.
+
+### Definition of Done
+
+- Published supported-topology threat model and explicit limitations; no claim of universal non-bypassability.
+- 100% of consequential operations in the **defined conformance suite** have an independent authorization decision and linked evidence; zero successful unauthorized operations **within that suite**.
+- Zero stale approvals accepted in the defined interruption, revocation and policy-drift suite; non-idempotent retries either deduplicate or require explicit reconciliation.
+- 100% of sampled material interactions in the defined reconstruction suite have authoritative outcome, explicit failure or unresolved status; no false success from partial events.
+- Every supported harness passes version-pinned conformance tests; material dependency changes trigger documented regression gates.
+- Existing 0.3–0.8 coverage is mapped rather than duplicated, with implementation gaps assigned to specific owners/issues.
+
+**Technical drivers (not regulatory mandates):** [Cloudflare Code Mode MCP](https://blog.cloudflare.com/code-mode-mcp/), [Anthropic code execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp), [Claude Code Code Mode release](https://github.com/anthropics/claude-code/releases/tag/v2.1.323), [Codex 0.169.0](https://github.com/openai/codex/releases/tag/rust-v0.169.0), [Google Agent Substrate](https://opensource.googleblog.com/2026/11/sandboxing-untrusted-ai-agents-at-scale.html), [Google MCP and Agent Skills](https://opensource.googleblog.com/2026/11/scaling-ai-agents-open-standards-mcp-aaif.html), and [CapLite research](https://arxiv.org/abs/2611.17115). Experimental work and research are evidence for threat modeling, not proof of production guarantees.
+
+---
+
 ## 1.0 "Production Ready"
 
 **Timeline:** Q2 2028
@@ -1106,6 +1186,7 @@ Every drill checks that policy, monitoring, containment and evidence remain inta
 - **Wealth AI framework acceptance:** all fifteen non-negotiable controls demonstrated, every one of the 70 controls in [control-frameworks.md](control-frameworks.md) covered or explicitly marked boundary or out of scope, and the overarching test passed on a real interaction: the bank can explain, control, stop and reconstruct it
 - **MAS guidelines acceptance:** every paragraph of the MAS Guidelines on AI Risk Management mapped in [control-frameworks.md](control-frameworks.md) either covered or explicitly marked boundary or out of scope, with Sections 3 and 4 met by the 0.4 release ahead of 7 October 2027
 - **Graduation checklist:** coverage above 85 percent, published benchmarks, external security review, at least one production deployment in a regulated domain
+- **Agent-execution assurance (proposed acceptance extension):** complete the Agent Execution Interoperability and Assurance conformance matrix or explicitly document unimplemented/unsupported cases; prove nested-tool authorization, approval freshness, identity continuity, externally verified outcomes and reconstruction against the published supported-topology threat model. Percentages and zero-bypass targets apply to the **defined test suite**, not all possible attacks.
 
 ---
 
@@ -1177,6 +1258,11 @@ Projects assessed in September 2026 and the reason each was not adopted. "Idea o
 ---
 
 ## Decision Log
+
+**15 November 2026: Proposed agent execution interoperability assurance**
+- Consolidated technical findings from Code Mode, MCP, durable agent runtimes, skill/plugin supply chains, intent-derived authorization and model-harness evaluation into test-first 0.8.x hardening and proposed Agent Execution Interoperability and Assurance acceptance criteria.
+- Existing 0.3–0.8 controls are the baseline; implementation issues require a code-and-test gap check. No duplicate gateway, sandbox, identity provider, SOC or agent orchestrator is authorized by this proposal.
+- Proposed timing is TBD; 1.0 remains Q2 2028 unless separately revised. Research and experimental releases are not regulatory mandates or verified production guarantees.
 
 **6 November 2026: Post-12 October regulatory delta and 0.8 release**
 - Re-audited the control framework against primary-source developments since the previous full audit: FSB final Sound Practices; HKMA ART Framework and Project SAGE; FCA AI good-practice observations; Bank of England/FCA 2026 AI survey; SEC FY2027 examination priorities; OCC Bulletin 2026-54; ICO agentic-AI consultation; MAS Future of Finance Institute; CERT-In agent/BFSI/supply-chain advisories; and China MOFCOM/MOST Announcement No. 48.
