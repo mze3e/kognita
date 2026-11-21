@@ -47,6 +47,12 @@ jobs:
   pwm:
     name: PWM ontology
     runs-on: ubuntu-latest
+    env:
+      ROBOT_VERSION: "1.9.11"
+      ROBOT_SHA256: "53cd275c8e4c0dad1fc2c1c34174876795cd7d6b6926e1444adcbb0cb3c7ab26"
+      ROBOT_JAR: /tmp/robot.jar
+      FIBO_COMMIT: "33a92cd34285d532c158da97bb42add089f135d3"
+      DPV_COMMIT: "cbcd21567808812677eeb3bb0f05b2ff2c2211a5"
     steps:
       - uses: actions/checkout@v4
 
@@ -54,8 +60,33 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install PWM tooling
-        run: pip install rdflib pyshacl owlrl pytest
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install PWM tooling and Kognita
+        run: |
+          pip install -e ".[signing]"
+          pip install -r docs/ontology/pwm/tools/requirements-ci.txt
+
+      - name: Install ROBOT
+        run: |
+          curl -fsSL -o "$ROBOT_JAR" "https://github.com/ontodev/robot/releases/download/v${ROBOT_VERSION}/robot.jar"
+          echo "${ROBOT_SHA256}  ${ROBOT_JAR}" | sha256sum -c -
+
+      - name: Fetch FIBO and DPV sources
+        run: |
+          git clone --filter=blob:none https://github.com/edmcouncil/fibo /tmp/fibo
+          git -C /tmp/fibo fetch --depth 1 origin "$FIBO_COMMIT"
+          git -C /tmp/fibo checkout "$FIBO_COMMIT"
+          mkdir -p /tmp/dpv-2.3/dpv /tmp/dpv-2.3/ai
+          curl -fsSL -o /tmp/dpv-2.3/dpv/dpv.ttl "https://raw.githubusercontent.com/w3c-cg/dpv/${DPV_COMMIT}/2.3/dpv/dpv.ttl"
+          curl -fsSL -o /tmp/dpv-2.3/ai/ai.ttl "https://raw.githubusercontent.com/w3c-cg/dpv/${DPV_COMMIT}/2.3/ai/ai.ttl"
+
+      - name: Index FIBO
+        working-directory: docs/ontology/pwm
+        run: python3 tools/index_fibo.py /tmp/fibo /tmp/fibo-index.json
 
       - name: Regenerate and rebuild; fail on any difference
         working-directory: docs/ontology/pwm
@@ -66,11 +97,30 @@ jobs:
           python3 tools/gen_airg_map.py
           python3 tools/gen_mapping.py
           python3 tools/roundtrip.py context
+          python3 tools/register_roundtrip.py context
+          python3 tools/register_roundtrip.py make
           git diff --exit-code -- .
+
+      - name: Integrity check against FIBO and DPV
+        working-directory: docs/ontology/pwm
+        run: python3 tools/check.py pwm.ttl /tmp/fibo-index.json /tmp/dpv-2.3
+
+      - name: OWL 2 DL profile and HermiT
+        working-directory: docs/ontology/pwm
+        run: python3 tools/reason_check.py pwm.ttl
 
       - name: Validate example and negative fixture
         working-directory: docs/ontology/pwm
         run: python3 tools/validate.py
+
+      - name: Fresh evidence export round trip
+        working-directory: docs/ontology/pwm
+        run: |
+          python3 tools/roundtrip.py make
+          mkdir -p /tmp/pwm-exports
+          mv examples/kognita-export.json /tmp/pwm-exports/kognita-export.json
+          git checkout -- examples/kognita-export.json examples/kognita-export.pub
+          python3 tools/roundtrip.py check /tmp/pwm-exports/kognita-export.json
 
       - name: PWM tests, including Kognita vocabulary parity
         working-directory: docs/ontology/pwm
