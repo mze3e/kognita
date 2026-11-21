@@ -17,12 +17,12 @@ from __future__ import annotations
 
 import json
 import pathlib
-import re
 import sys
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 from rdflib import Graph, Literal, Namespace, RDF, RDFS, URIRef, XSD
-from rdflib.namespace import SKOS
+from rdflib.namespace import OWL, SKOS
 
 BASE = pathlib.Path(__file__).resolve().parents[1]
 PWM_NS = "https://ahmedmuzammil.com/ontology/pwm#"
@@ -45,9 +45,9 @@ ROLE_TYPES = {
 }
 
 
-def _slug(value: str) -> str:
-    text = re.sub(r"[^a-z0-9]+", "-", value.strip().casefold()).strip("-")
-    return text or "unnamed"
+def _seg(value: str) -> str:
+    """A reversible IRI path segment; identities that differ only by case or punctuation stay distinct."""
+    return quote(value, safe="")
 
 
 def _iso(value) -> str | None:
@@ -74,6 +74,7 @@ def build_context(_ont: Graph | None = None) -> dict:
         "pwm": PWM_NS,
         "rdfs": str(RDFS),
         "xsd": str(XSD),
+        "owl": str(OWL),
         "prov": "http://www.w3.org/ns/prov#",
         "cmns-rlcmp": CMNS_ROLE,
         "cmns-pts": CMNS_PARTY,
@@ -98,24 +99,25 @@ def build_context(_ont: Graph | None = None) -> dict:
         "limit_maximum": {"@id": "pwm:limitMaximum", "@type": "xsd:decimal"},
         "approved_for": {"@id": "pwm:approvedForUseCase", "@type": "@id"},
         "effective": {"@id": "prov:generatedAtTime", "@type": "xsd:dateTime"},
+        "version": "owl:versionInfo",
     }
     return {"@context": ctx}
 
 
 def _usecase_iri(usecase_id: str) -> str:
-    return f"urn:kognita:usecase:{usecase_id}"
+    return f"urn:kognita:usecase:{_seg(usecase_id)}"
 
 
 def _agent_iri(name: str) -> str:
-    return f"urn:kognita:agent:{_slug(name)}"
+    return f"urn:kognita:agent:{_seg(name)}"
 
 
 def _source_iri(source_id: str, version: str) -> str:
-    return f"urn:kognita:source:{_slug(source_id)}:{_slug(version)}"
+    return f"urn:kognita:source:{_seg(source_id)}:{_seg(version)}"
 
 
 def _person_iri(name: str) -> str:
-    return f"urn:kognita:person:{_slug(name)}"
+    return f"urn:kognita:person:{_seg(name)}"
 
 
 def to_jsonld(export: dict, ont: Graph) -> dict:
@@ -157,7 +159,7 @@ def to_jsonld(export: dict, ont: Graph) -> dict:
             node["model_type"] = entry["model_type"]
         depends = []
         for dep in entry.get("depends_on") or []:
-            dep_iri = f"urn:kognita:dependency:{_slug(str(dep))}"
+            dep_iri = f"urn:kognita:dependency:{_seg(str(dep))}"
             graph.append({"@id": dep_iri, "@type": "pwm:ModelProvider", "label": str(dep)})
             depends.append(dep_iri)
         if depends:
@@ -202,7 +204,7 @@ def to_jsonld(export: dict, ont: Graph) -> dict:
             node["registered_for"] = registered
         tools = []
         for tool in entry.get("tools") or []:
-            tool_iri = f"{iri}:tool:{_slug(tool)}"
+            tool_iri = f"{iri}:tool:{_seg(tool)}"
             graph.append({"@id": tool_iri, "@type": "pwm:Tool", "label": tool})
             tools.append(tool_iri)
         if tools:
@@ -214,15 +216,17 @@ def to_jsonld(export: dict, ont: Graph) -> dict:
             if radius.get(key) is not None
         ]
         if numeric:
-            dim, maximum = numeric[0]
-            limit_iri = iri + ":limit"
-            graph.append({
-                "@id": limit_iri,
-                "@type": "pwm:BlastRadiusLimit",
-                "limit_dimension": dim,
-                "limit_maximum": maximum,
-            })
-            node["blast_limit"] = limit_iri
+            limits = []
+            for dim, maximum in numeric:
+                limit_iri = f"{iri}:limit:{_seg(dim)}"
+                graph.append({
+                    "@id": limit_iri,
+                    "@type": "pwm:BlastRadiusLimit",
+                    "limit_dimension": dim,
+                    "limit_maximum": maximum,
+                })
+                limits.append(limit_iri)
+            node["blast_limit"] = limits
         graph.append(node)
 
     for entry in export.get("sources", []):
@@ -232,6 +236,7 @@ def to_jsonld(export: dict, ont: Graph) -> dict:
             "@type": "pwm:ApprovedSource",
             "label": entry["source_id"],
         }
+        node["version"] = entry["version"]
         if entry.get("effective"):
             node["effective"] = entry["effective"]
         approved = [_usecase_iri(u) for u in entry.get("approved_for") or []]
@@ -260,6 +265,13 @@ def _notation(ont: Graph, iri) -> str | None:
         return None
     value = ont.value(iri, SKOS.notation)
     return None if value is None else str(value)
+
+
+def _limit_number(value) -> int | float:
+    number = float(value)
+    if number == int(number):
+        return int(number)
+    return number
 
 
 def from_graph(graph: Graph, ont: Graph) -> dict:
@@ -301,18 +313,11 @@ def from_graph(graph: Graph, ont: Graph) -> dict:
         for usecase in graph.objects(subject, P.registeredForUseCase):
             registered.append(_literal(graph, usecase, RDFS.label) or str(usecase).rsplit(":", 1)[-1])
         radius = {}
-        limit = graph.value(subject, P.hasBlastRadiusLimit)
-        if limit is not None:
+        for limit in graph.objects(subject, P.hasBlastRadiusLimit):
             dim = _literal(graph, limit, P.limitDimension)
             maximum = graph.value(limit, P.limitMaximum)
             if dim and maximum is not None:
-                number = float(maximum) if "." in str(maximum) else int(str(maximum).split(".")[0])
-                try:
-                    if float(maximum) == int(float(maximum)):
-                        number = int(float(maximum))
-                except ValueError:
-                    pass
-                radius[dim] = number
+                radius[dim] = _limit_number(maximum)
         agents.append({
             "name": _literal(graph, subject, P.agentIdentifier),
             "registered_use_cases": sorted(registered),
@@ -327,7 +332,7 @@ def from_graph(graph: Graph, ont: Graph) -> dict:
             approved.append(_literal(graph, usecase, RDFS.label) or str(usecase).rsplit(":", 1)[-1])
         sources.append({
             "source_id": _literal(graph, subject, RDFS.label),
-            "version": str(subject).rsplit(":", 1)[-1],
+            "version": _literal(graph, subject, OWL.versionInfo) or str(subject).rsplit(":", 1)[-1],
             "effective": _iso(_literal(graph, subject, URIRef("http://www.w3.org/ns/prov#generatedAtTime"))),
             "approved_for": sorted(approved),
         })
@@ -358,17 +363,11 @@ def canonical(export: dict) -> dict:
             for key in ("per_minute", "per_hour", "max_clients", "max_daily_actions", "max_daily_transactions", "max_value")
             if radius.get(key) is not None
         }
-        # Re-import keeps the first numeric limit only, matching to_jsonld.
-        first = {}
-        for key in ("per_minute", "per_hour", "max_clients", "max_daily_actions", "max_daily_transactions", "max_value"):
-            if key in numeric:
-                first[key] = numeric[key]
-                break
         return {
             "name": entry["name"],
             "registered_use_cases": sorted(entry.get("registered_use_cases") or []),
             "tools": sorted(entry.get("tools") or []),
-            "blast_radius": first,
+            "blast_radius": numeric,
         }
 
     def clean_source(entry: dict) -> dict:

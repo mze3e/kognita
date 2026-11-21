@@ -39,6 +39,7 @@
    "@type": "xsd:decimal"
   },
   "model_type": "pwm:modelType",
+  "owl": "http://www.w3.org/2002/07/owl#",
   "played_by": {
    "@id": "cmns-rlcmp:isPlayedBy",
    "@type": "@id"
@@ -74,6 +75,7 @@
    "@id": "pwm:permittedTool",
    "@type": "@id"
   },
+  "version": "owl:versionInfo",
   "xsd": "http://www.w3.org/2001/XMLSchema#"
  }
 }
