@@ -1,0 +1,14 @@
+# Pinned tools for the PWM CI job. Pip packages are in requirements-ci.txt.
+# Versions are also listed in .github/workflows/ci.yml.
+
+# ROBOT 1.9.11 (includes HermiT 1.4.5.456)
+# https://github.com/ontodev/robot/releases/tag/v1.9.11
+ROBOT_VERSION=1.9.11
+ROBOT_SHA256=53cd275c8e4c0dad1fc2c1c34174876795cd7d6b6926e1444adcbb0cb3c7ab26
+
+# FIBO commit cited by src/01-references.ttl (rechecked 3 November 2026)
+FIBO_COMMIT=33a92cd34285d532c158da97bb42add089f135d3
+
+# DPV 2.3 tag (w3c-cg/dpv)
+DPV_REPO=https://github.com/w3c-cg/dpv
+DPV_COMMIT=cbcd21567808812677eeb3bb0f05b2ff2c2211a5

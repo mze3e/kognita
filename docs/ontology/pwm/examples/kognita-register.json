@@ -1,0 +1,43 @@
+{
+ "agents": [
+  {
+   "blast_radius": {
+    "per_minute": 5
+   },
+   "name": "research-assistant",
+   "registered_use_cases": [
+    "research-summary"
+   ],
+   "tools": [
+    "research-retriever"
+   ]
+  }
+ ],
+ "sources": [
+  {
+   "approved_for": [
+    "research-summary"
+   ],
+   "effective": "2026-06-01T12:00:00Z",
+   "source_id": "cio-note",
+   "version": "1"
+  }
+ ],
+ "use_cases": [
+  {
+   "business_owner": "Jane Smith",
+   "data_sensitivity": "internal",
+   "depends_on": [
+    "house"
+   ],
+   "jurisdiction": "SG",
+   "model_type": "house/summary@1",
+   "purpose": "Summarize approved research for an RM",
+   "review_date": "2027-06-01T12:00:00Z",
+   "risk_tier": 1,
+   "status": "live",
+   "technology_owner": "Omar Aziz",
+   "usecase_id": "research-summary"
+  }
+ ]
+}
