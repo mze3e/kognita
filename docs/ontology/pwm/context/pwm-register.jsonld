@@ -1,0 +1,81 @@
+{
+ "@context": {
+  "agent_name": "pwm:agentIdentifier",
+  "approved_for": {
+   "@id": "pwm:approvedForUseCase",
+   "@type": "@id"
+  },
+  "assesses": {
+   "@id": "pwm:assesses",
+   "@type": "@id"
+  },
+  "assessment": {
+   "@id": "pwm:hasMaterialityAssessment",
+   "@type": "@id"
+  },
+  "blast_limit": {
+   "@id": "pwm:hasBlastRadiusLimit",
+   "@type": "@id"
+  },
+  "cmns-pts": "https://www.omg.org/spec/Commons/PartiesAndSituations/",
+  "cmns-rlcmp": "https://www.omg.org/spec/Commons/RolesAndCompositions/",
+  "data_class": {
+   "@id": "pwm:usesDataClass",
+   "@type": "@id"
+  },
+  "depends_on": {
+   "@id": "pwm:dependsOn",
+   "@type": "@id"
+  },
+  "effective": {
+   "@id": "prov:generatedAtTime",
+   "@type": "xsd:dateTime"
+  },
+  "jurisdiction": "pwm:approvedJurisdiction",
+  "label": "rdfs:label",
+  "limit_dimension": "pwm:limitDimension",
+  "limit_maximum": {
+   "@id": "pwm:limitMaximum",
+   "@type": "xsd:decimal"
+  },
+  "model_type": "pwm:modelType",
+  "owl": "http://www.w3.org/2002/07/owl#",
+  "played_by": {
+   "@id": "cmns-rlcmp:isPlayedBy",
+   "@type": "@id"
+  },
+  "prov": "http://www.w3.org/ns/prov#",
+  "purpose_node": {
+   "@id": "pwm:hasPurpose",
+   "@type": "@id"
+  },
+  "pwm": "https://ahmedmuzammil.com/ontology/pwm#",
+  "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+  "registered_for": {
+   "@id": "pwm:registeredForUseCase",
+   "@type": "@id"
+  },
+  "review_date": {
+   "@id": "pwm:nextReviewDate",
+   "@type": "xsd:dateTime"
+  },
+  "risk_tier": {
+   "@id": "pwm:riskTier",
+   "@type": "@id"
+  },
+  "role": {
+   "@id": "pwm:hasAccountabilityRole",
+   "@type": "@id"
+  },
+  "status": {
+   "@id": "pwm:lifecycleStatus",
+   "@type": "@id"
+  },
+  "tool": {
+   "@id": "pwm:permittedTool",
+   "@type": "@id"
+  },
+  "version": "owl:versionInfo",
+  "xsd": "http://www.w3.org/2001/XMLSchema#"
+ }
+}
